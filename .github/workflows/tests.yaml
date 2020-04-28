@@ -1,0 +1,59 @@
+name: tests
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+env:
+  GO_VERSION: 1.12.15
+  CI_GOMAXPROCS: 0
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: set up go ${{env.GO_VERSION}}
+        uses: actions/setup-go@v1
+        with:
+          go-version: ${{env.GO_VERSION}}
+        id: go
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v1
+        with:
+          fetch-depth: 1
+      - name: Build
+        run: make build
+  unit:
+    name: Unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: set up go ${{env.GO_VERSION}}
+        uses: actions/setup-go@v1
+        id: go
+        with:
+          go-version: ${{env.GO_VERSION}}
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v1
+        with:
+          fetch-depth: 1
+      - name: Test
+        run: make unit
+  integration:
+    name: Integration tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: set up go ${{env.GO_VERSION}}
+        uses: actions/setup-go@v1
+        id: go
+        with:
+          go-version: ${{env.GO_VERSION}}
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v1
+        with:
+          fetch-depth: 1
+      - name: Test
+        run: make integration
