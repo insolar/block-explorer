@@ -42,7 +42,7 @@ unit:  ## run unit tests
 test: unit integration ## run unit and integrations tests with race
 
 .PHONY: integration
-integration: ## run unit and integrations tests with race
+integration: ## run integrations tests with race
 	go test -v ./... -tags integration -count 10 -race --failfast
 
 .PHONY: test-with-coverage
