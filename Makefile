@@ -39,7 +39,10 @@ unit:  ## run unit tests
 	go test -v ./... -count 10 -race
 
 .PHONY: test
-test: unit ## run unit and integrations tests with race
+test: unit integration ## run unit and integrations tests with race
+
+.PHONY: integration
+integration: ## run unit and integrations tests with race
 	go test -v ./... -tags integration -count 10 -race --failfast
 
 .PHONY: test-with-coverage
