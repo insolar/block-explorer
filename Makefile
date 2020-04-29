@@ -8,7 +8,7 @@ COVERPROFILE ?= coverage.txt
 #.DEFAULT_GOAL := all
 
 .PHONY: all
-all: build
+all: clean build
 
 .PHONY: mod
 mod:
@@ -43,7 +43,7 @@ test: unit integration ## run unit and integrations tests with race
 
 .PHONY: integration
 integration: ## run integrations tests with race
-	go test -v ./... -tags integration -count 10 -race --failfast
+	go test -v ./... -tags integration -count 10 -race
 
 .PHONY: test-with-coverage
 test-with-coverage: ## run tests with coverage mode

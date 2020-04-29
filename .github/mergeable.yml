@@ -31,8 +31,6 @@ mergeable:
               message: 'All assignees must approve this PR before merging.'
           - or:
               - required:
-                  reviewers: ["ita-sammann"]
-              - required:
                   reviewers: ["shayenblue"]
               - required:
                   reviewers: ["LinnikD"]
