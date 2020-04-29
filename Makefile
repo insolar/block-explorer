@@ -28,7 +28,7 @@ install_deps: golangci ## install necessary dependencies
 
 .PHONY: build
 build:  ## build all applications
-	@echo build
+	go build -ldflags "$(LDFLAGS)" -o $(BIN_DIR)/block-explorer cmd/block-explorer/*.go
 
 .PHONY: generate
 generate: ## generate mocks

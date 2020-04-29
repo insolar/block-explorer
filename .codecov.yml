@@ -1,5 +1,5 @@
 coverage:
   range: "60...80"
 ignore:
-  - "**/*.go"
+  - "**/*_mock.go"
   - "**/*_string.go"
