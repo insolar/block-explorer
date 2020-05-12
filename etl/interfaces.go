@@ -7,7 +7,6 @@ package etl
 
 import (
 	"github.com/insolar/insolar/ledger/heavy/exporter"
-	"github.com/tsovak/awesomeProject/etl"
 	"google.golang.org/grpc"
 )
 
@@ -35,7 +34,7 @@ type Transformer interface {
 	// Stop stops the main thread
 	Stop() error
 
-	GetJetDropsChannel() <-chan etl.JetDrop
+	GetJetDropsChannel() <-chan JetDrop
 }
 
 // Client represents a connection to the Platform
