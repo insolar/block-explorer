@@ -27,13 +27,12 @@ type ConnectionManager interface {
 // Transformer represents a transformation raw data from the Platform to conan type
 type Transformer interface {
 	// transform transforms the row data to canonical data
-	transform(record exporter.Record) JetDrop
-
+	transform(drop PlatformJetDrops) JetDrop
 	// Start starts the main thread
 	Start() error
 	// Stop stops the main thread
 	Stop() error
-
+	// GetJetDropsChannel returns the channel where canonical data will be stored
 	GetJetDropsChannel() <-chan JetDrop
 }
 
