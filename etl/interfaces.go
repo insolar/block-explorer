@@ -26,8 +26,8 @@ type ConnectionManager interface {
 
 // Transformer represents a transformation raw data from the Platform to conan type
 type Transformer interface {
-	// // transforms the row data to canonical data
-	// transform(insolar.JetDrop) JetDrop
+	// transform transforms the row data to canonical data
+	transform(record exporter.Record) JetDrop
 
 	// Start starts the main thread
 	Start() error
