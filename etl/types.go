@@ -10,7 +10,7 @@ import (
 )
 
 type JetDrop struct {
-	sections []Section
+	Sections []Section
 	RawData  []byte
 }
 
@@ -23,20 +23,20 @@ func (m MainSection) IsSection() bool {
 }
 
 type MainSection struct {
-	start        DropStart
-	dropContinue DropContinue
-	sections     []uint
-	records      []Record
+	Start        DropStart
+	DropContinue DropContinue
+	Sections     []uint
+	Records      []Record
 }
 
 type AdditionalSection struct {
-	recordExtensions []Record
+	RecordExtensions []Record
 }
 
 type DropStart struct {
-	pulseData           Pulse
-	jetDropPrefix       []byte
-	jetDropPrefixLength uint
+	PulseData           Pulse
+	JetDropPrefix       []byte
+	JetDropPrefixLength uint
 }
 
 type DropContinue struct {
@@ -44,11 +44,11 @@ type DropContinue struct {
 }
 
 type Pulse struct {
-	pulseNo        int
-	epochPulseNo   int
-	pulseTimestamp time.Time
-	nextPulseDelta int
-	prevPulseDelta int
+	PulseNo        int
+	EpochPulseNo   int
+	PulseTimestamp time.Time
+	NextPulseDelta int
+	PrevPulseDelta int
 }
 
 type RecordType int
