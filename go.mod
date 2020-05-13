@@ -1,6 +1,6 @@
 module github.com/insolar/block-explorer
 
-go 1.12
+go 1.14
 
 require (
 	github.com/insolar/assured-ledger/ledger-core/v2 v2.0.0-20200512113104-4973d6ba44e9
@@ -11,3 +11,5 @@ require (
 	github.com/stretchr/testify v1.4.0
 	google.golang.org/grpc v1.21.0
 )
+
+replace github.com/ugorji/go v1.1.4 => github.com/ugorji/go/codec v0.0.0-20190204201341-e444a5086c43
