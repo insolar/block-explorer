@@ -62,9 +62,6 @@ lint: golangci ## run linter
 config: ## generate config
 	mkdir -p $(ARTIFACTS_DIR)
 	go run ./configuration/gen/gen.go
-# 	for f in `go run ./configuration/gen/gen.go`; do \
-#   		mv ./$$f $(ARTIFACTS_DIR)/$$f      ;\
-#   	done
 
 .PHONY: help
 help: ## display help screen
