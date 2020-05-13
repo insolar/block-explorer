@@ -7,7 +7,14 @@ package etl
 
 import (
 	"time"
+
+	"github.com/insolar/insolar/ledger/heavy/exporter"
 )
+
+// PlatformJetDrops represents on the missing struct in the Platform
+type PlatformJetDrops struct {
+	Records []exporter.Record
+}
 
 type JetDrop struct {
 	Sections []Section

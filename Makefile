@@ -8,7 +8,7 @@ COVERPROFILE ?= coverage.txt
 #.DEFAULT_GOAL := all
 
 .PHONY: all
-all: clean build
+all: clean build vendor
 
 .PHONY: mod
 mod:
@@ -29,6 +29,10 @@ install_deps: golangci ## install necessary dependencies
 .PHONY: build
 build:  ## build all applications
 	go build -ldflags "$(LDFLAGS)" -o $(BIN_DIR)/block-explorer cmd/block-explorer/*.go
+
+.PHONY: vendor
+vendor:  ## update vendor dependencies
+	go mod vendor
 
 .PHONY: generate
 generate: ## generate mocks
