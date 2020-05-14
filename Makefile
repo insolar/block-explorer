@@ -57,6 +57,14 @@ test-with-coverage: ## run tests with coverage mode
 lint: golangci ## run linter
 	${BIN_DIR}/golangci-lint --color=always run ./... -v --timeout 5m
 
+.PHONY: generate-protobuf
+generate-protobuf: ## generate protobuf structs
+	@ if ! which protoc > /dev/null; then \
+		echo "error: protoc not installed" >&2; \
+		exit 1; \
+	fi
+	protoc --gogoslick_out=plugins=grpc:./ etl/connection/testdata/helloworld.proto
+
 .PHONY: help
 help: ## display help screen
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
