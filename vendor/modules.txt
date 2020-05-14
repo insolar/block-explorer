@@ -25,10 +25,12 @@ github.com/dustin/go-humanize
 # github.com/fsnotify/fsnotify v1.4.7
 github.com/fsnotify/fsnotify
 # github.com/gogo/protobuf v1.3.1
+## explicit
 github.com/gogo/protobuf/gogoproto
 github.com/gogo/protobuf/proto
 github.com/gogo/protobuf/protoc-gen-gogo/descriptor
 # github.com/gojuno/minimock/v3 v3.0.6
+## explicit
 github.com/gojuno/minimock/v3
 # github.com/golang/protobuf v1.3.2
 github.com/golang/protobuf/proto
