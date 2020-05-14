@@ -10,6 +10,8 @@ import (
 	"google.golang.org/grpc"
 )
 
+//go:generate mockgen -source interfaces.go -package mock -destination ./mock/interfaces.go
+
 // JetDropsExtractor represents the main functions of working with Platform
 type JetDropsExtractor interface {
 	// GetRecords stores Record data in the main Record channel
@@ -39,5 +41,5 @@ type Transformer interface {
 // Client represents a connection to the Platform
 type Client interface {
 	// GetGRPCConn returns a configured GRPC connection
-	GetGRPCConn() (*grpc.ClientConn, error)
+	GetGRPCConn() *grpc.ClientConn
 }
