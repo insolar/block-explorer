@@ -1,8 +1,11 @@
 # insconfig
+
+![test](https://github.com/insolar/insconfig/workflows/test/badge.svg)
+
 Config management library.
 This is the wrapper on https://github.com/spf13/viper library
 
-Key features:
+## Key features
 - .yaml format
 - No default config path, path is explicitly set by --config/-c flag. Optionally you can override this by implementing ConfigPathGetter (look at tests)
 - Environment overrides file values
@@ -12,17 +15,17 @@ Key features:
 - No unnecessary values (both in file and ENV), if not - returns error
 - Supports custom flags, go flags and pflags
 - Doesn't support overriding config by flags
-- [wip] Generates empty yaml file with descriptions
+- Generates empty yaml file with descriptions
 - [wip] By default adds 2 flags --config и --gen-config
 - Doesn't support overriding config on runtime
 - Supports custom viper decode hooks
 
-# Running example 
+## Running example 
 ```
 go run ./example/example.go --config="./example/example_config.yaml"
 ```
 
-# Usage
+## Usage
 
 With custom go flags (from example.go)
 ```go
@@ -90,3 +93,21 @@ func read(){
     println(insconfig.ToString(cfg))
 }
 ```
+
+
+### Dump config Template
+```go
+    type Configuration struct {
+    ...
+        Field Type `insonfig:"default_value|Comment for field in config"`
+    }
+    ...
+    insconfig.NewYamlTemplater(new(Configuration)).TemplateTo(os.StdOut)
+```
+
+### Using maps in config
+You can use a map in config but there are limitations:
+- only string keys are allowed
+- a map can be on the upper level
+- a map can be the property of a struct
+- nested maps (directly or through struct) are not allowed
