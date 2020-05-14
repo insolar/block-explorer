@@ -1,0 +1,45 @@
+// Copyright 2020 Insolar Network Ltd.
+// All rights reserved.
+// This material is licensed under the Insolar License version 1.0,
+// available at https://github.com/insolar/block-explorer/blob/master/LICENSE.md.
+
+package connection
+
+import (
+	"github.com/insolar/block-explorer/etl"
+	"github.com/pkg/errors"
+	"google.golang.org/grpc"
+)
+
+type client struct {
+	grpc *grpc.ClientConn
+}
+
+// NewMainNetClient returns implementation
+func NewMainNetClient(cfg etl.GRPCConfig) (*client, error) {
+	c, e := func() (*grpc.ClientConn, error) {
+		options := grpc.WithDefaultCallOptions(
+			grpc.MaxCallRecvMsgSize(cfg.MaxTransportMsg),
+			grpc.MaxCallSendMsgSize(cfg.MaxTransportMsg),
+		)
+		//todo: change to logger
+		println("trying connect to %s...", cfg.Addr)
+
+		// We omit error here because connect happens in background.
+		conn, err := grpc.Dial(cfg.Addr, options, grpc.WithInsecure())
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to grpc.Dial")
+		}
+		return conn, err
+	}()
+
+	if e != nil {
+		return &client{}, e
+	}
+
+	return &client{c}, nil
+}
+
+func (c *client) GetGRPCConn() *grpc.ClientConn {
+	return c.grpc
+}
