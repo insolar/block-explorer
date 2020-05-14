@@ -6,11 +6,21 @@
 package etl
 
 import (
+	"context"
+
 	"github.com/insolar/insolar/ledger/heavy/exporter"
 	"google.golang.org/grpc"
 )
 
-//go:generate mockgen -source interfaces.go -package mock -destination ./mock/interfaces.go
+type Starter interface {
+	// Start starts the main thread
+	Start(ctx context.Context) error
+}
+
+type Stopper interface {
+	// Stops stops the main thread
+	Stop(ctx context.Context) error
+}
 
 // JetDropsExtractor represents the main functions of working with Platform
 type JetDropsExtractor interface {
@@ -20,20 +30,16 @@ type JetDropsExtractor interface {
 
 // ConnectionManager represents management of connection to Platform
 type ConnectionManager interface {
-	// Start starts the main thread
-	Start()
-	// Stops stops the main thread
-	Stop()
+	Starter
+	Stopper
 }
 
 // Transformer represents a transformation raw data from the Platform to conan type
 type Transformer interface {
+	Starter
+	Stopper
 	// transform transforms the row data to canonical data
 	transform(drop PlatformJetDrops) JetDrop
-	// Start starts the main thread
-	Start() error
-	// Stop stops the main thread
-	Stop() error
 	// GetJetDropsChannel returns the channel where canonical data will be stored
 	GetJetDropsChannel() <-chan JetDrop
 }
@@ -42,4 +48,19 @@ type Transformer interface {
 type Client interface {
 	// GetGRPCConn returns a configured GRPC connection
 	GetGRPCConn() *grpc.ClientConn
+}
+
+// Processor saves canonical data to database
+type Processor interface {
+	Starter
+	Stopper
+	process(drop JetDrop)
+}
+
+// Controller tracks drops integrity and makes calls to reload data
+type Controller interface {
+	Starter
+	Stopper
+	// Save information about saved jetdrops
+	SetJetDropData(pulse Pulse, jetID []byte)
 }
