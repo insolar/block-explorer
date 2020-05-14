@@ -4,3 +4,4 @@ ignore:
   - "**/*_mock.go"
   - "**/mock/*.go"
   - "**/*_string.go"
+  - "**/testdata/*.go"

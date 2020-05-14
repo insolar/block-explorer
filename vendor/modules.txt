@@ -28,10 +28,8 @@ github.com/fsnotify/fsnotify
 github.com/gogo/protobuf/gogoproto
 github.com/gogo/protobuf/proto
 github.com/gogo/protobuf/protoc-gen-gogo/descriptor
-# github.com/gojuno/minimock/v3 v3.0.5
+# github.com/gojuno/minimock/v3 v3.0.6
 github.com/gojuno/minimock/v3
-# github.com/golang/mock v1.3.1
-github.com/golang/mock/gomock
 # github.com/golang/protobuf v1.3.2
 github.com/golang/protobuf/proto
 github.com/golang/protobuf/ptypes
@@ -184,7 +182,6 @@ golang.org/x/net/trace
 golang.org/x/net/internal/timeseries
 golang.org/x/net/http2
 golang.org/x/net/http2/hpack
-golang.org/x/net/context
 golang.org/x/net/http/httpguts
 golang.org/x/net/idna
 # golang.org/x/sys v0.0.0-20191005200804-aed5e4c7ecf9
@@ -238,8 +235,6 @@ google.golang.org/grpc/resolver/passthrough
 google.golang.org/grpc/stats
 google.golang.org/grpc/status
 google.golang.org/grpc/tap
-google.golang.org/grpc/examples/helloworld/helloworld
-google.golang.org/grpc/test/bufconn
 google.golang.org/grpc/balancer/base
 google.golang.org/grpc/credentials/internal
 google.golang.org/grpc/binarylog/grpc_binarylog_v1

@@ -8,11 +8,8 @@ package connection
 import (
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	"github.com/insolar/block-explorer/etl"
-	"github.com/insolar/block-explorer/etl/mock"
 	"github.com/stretchr/testify/require"
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/connectivity"
 )
 
@@ -21,21 +18,6 @@ func TestNewClient_readyToConnect(t *testing.T) {
 	client, err := NewMainNetClient(config)
 	require.NoError(t, err)
 	require.Equal(t, connectivity.Idle.String(), client.GetGRPCConn().GetState().String(), "client does not ready to connect")
-}
-
-func TestNewClient_mockConnection(t *testing.T) {
-	mc := gomock.NewController(t)
-	defer mc.Finish()
-
-	mockClient := mock.NewMockClient(mc)
-	mockClient.
-		EXPECT().
-		GetGRPCConn().
-		AnyTimes().
-		Return(&grpc.ClientConn{})
-
-	clientConn := mockClient.GetGRPCConn()
-	require.NotNil(t, clientConn)
 }
 
 func testConfig() etl.GRPCConfig {

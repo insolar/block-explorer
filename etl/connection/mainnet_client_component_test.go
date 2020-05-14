@@ -13,9 +13,9 @@ import (
 	"testing"
 
 	"github.com/insolar/block-explorer/etl"
+	pb "github.com/insolar/block-explorer/etl/connection/testdata"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
-	pb "google.golang.org/grpc/examples/helloworld/helloworld"
 )
 
 type gserver struct{}

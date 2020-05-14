@@ -12,22 +12,26 @@ import (
 	"google.golang.org/grpc"
 )
 
+//go:generate minimock -i github.com/insolar/block-explorer/etl.Starter -o ./mock -s _mock.go -g
 type Starter interface {
 	// Start starts the main thread
 	Start(ctx context.Context) error
 }
 
+//go:generate minimock -i github.com/insolar/block-explorer/etl.Stopper -o ./mock -s _mock.go -g
 type Stopper interface {
 	// Stops stops the main thread
 	Stop(ctx context.Context) error
 }
 
+//go:generate minimock -i github.com/insolar/block-explorer/etl.JetDropsExtractor -o ./mock -s _mock.go -g
 // JetDropsExtractor represents the main functions of working with Platform
 type JetDropsExtractor interface {
 	// GetRecords stores Record data in the main Record channel
 	GetRecords() (<-chan exporter.Record, error)
 }
 
+//go:generate minimock -i github.com/insolar/block-explorer/etl.ConnectionManager -o ./mock -s _mock.go -g
 // ConnectionManager represents management of connection to Platform
 type ConnectionManager interface {
 	Starter
@@ -44,6 +48,7 @@ type Transformer interface {
 	GetJetDropsChannel() <-chan JetDrop
 }
 
+//go:generate minimock -i github.com/insolar/block-explorer/etl.Client -o ./mock -s _mock.go -g
 // Client represents a connection to the Platform
 type Client interface {
 	// GetGRPCConn returns a configured GRPC connection
@@ -57,6 +62,7 @@ type Processor interface {
 	process(drop JetDrop)
 }
 
+//go:generate minimock -i github.com/insolar/block-explorer/etl.Controller -o ./mock -s _mock.go -g
 // Controller tracks drops integrity and makes calls to reload data
 type Controller interface {
 	Starter
