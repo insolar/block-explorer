@@ -8,7 +8,6 @@ package connection
 import (
 	"context"
 	"io"
-	"log"
 	"net"
 	"testing"
 
@@ -80,6 +79,6 @@ func TestClient_GetGRPCConnIsWorking(t *testing.T) {
 		require.NoError(t, err, "Err listening stream")
 
 		require.Equal(t, expectedRecord, record, "Incorrect response message")
-		log.Println(record)
+		t.Log(record)
 	}
 }
