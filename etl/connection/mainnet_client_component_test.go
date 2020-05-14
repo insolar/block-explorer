@@ -3,26 +3,36 @@
 // This material is licensed under the Insolar License version 1.0,
 // available at https://github.com/insolar/block-explorer/blob/master/LICENSE.md.
 
-// +build integration
-
 package connection
 
 import (
 	"context"
+	"io"
+	"log"
 	"net"
 	"testing"
 
 	"github.com/insolar/block-explorer/etl"
-	pb "github.com/insolar/block-explorer/etl/connection/testdata"
+	"github.com/insolar/insolar/insolar/record"
+	pb "github.com/insolar/insolar/ledger/heavy/exporter"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 )
 
-type gserver struct{}
+type recExpServer struct{}
 
-// SayHello implements of pb.GreeterServer
-func (s *gserver) SayHello(ctx context.Context, in *pb.HelloRequest) (*pb.HelloReply, error) {
-	return &pb.HelloReply{Message: "Hello " + in.Name}, nil
+var expectedRecord = &pb.Record{
+	Polymorph:         1,
+	RecordNumber:      100,
+	Record:            record.Material{},
+	ShouldIterateFrom: nil,
+}
+
+func (r *recExpServer) Export(records *pb.GetRecords, stream pb.RecordExporter_ExportServer) error {
+	if err := stream.Send(expectedRecord); err != nil {
+		return err
+	}
+	return nil
 }
 
 func TestClient_GetGRPCConnIsWorking(t *testing.T) {
@@ -30,7 +40,7 @@ func TestClient_GetGRPCConnIsWorking(t *testing.T) {
 	require.NoError(t, err, "failed to listen")
 	grpcServer := grpc.NewServer()
 	defer grpcServer.Stop()
-	pb.RegisterGreeterServer(grpcServer, &gserver{})
+	pb.RegisterRecordExporterServer(grpcServer, &recExpServer{})
 
 	// need to run grpcServer.Serve in different goroutine
 	go func() {
@@ -51,8 +61,25 @@ func TestClient_GetGRPCConnIsWorking(t *testing.T) {
 	require.NoError(t, err)
 	defer client.GetGRPCConn().Close()
 
-	greeterClient := pb.NewGreeterClient(client.GetGRPCConn())
-	resp, err := greeterClient.SayHello(context.Background(), &pb.HelloRequest{Name: "Insolar"})
-	require.NoError(t, err, "SayHello failed")
-	require.Equal(t, "Hello Insolar", resp.Message, "Incorrect response message")
+	greeterClient := pb.NewRecordExporterClient(client.GetGRPCConn())
+	// send record to stream
+	request := &pb.GetRecords{}
+	stream, err := greeterClient.Export(context.Background(), request)
+	require.NoError(t, err, "Error when sending client request")
+
+	for {
+		t.Log("listening...")
+		record, err := stream.Recv()
+		if err == io.EOF {
+			t.Log("EOF")
+			break
+		}
+		if err != nil {
+			t.Fatalf("%v.Export(_) = _, %v", client, err)
+		}
+		require.NoError(t, err, "Err listening stream")
+
+		require.Equal(t, expectedRecord, record, "Incorrect response message")
+		log.Println(record)
+	}
 }
