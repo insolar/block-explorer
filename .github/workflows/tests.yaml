@@ -47,8 +47,8 @@ jobs:
   integration:
     name: Integration tests
     runs-on: ubuntu-latest
-      env:
-        GOPATH: /home/runner/work/block-explorer/block-explorer/go
+    env:
+      GOPATH: /home/runner/work/block-explorer/block-explorer/go
     steps:
       - name: set up go ${{env.GO_VERSION}}
         uses: actions/setup-go@v1
