@@ -28,6 +28,8 @@ jobs:
   unit:
     name: Unit tests
     runs-on: ubuntu-latest
+    env:
+      GOPATH: /home/runner/work/block-explorer/block-explorer/go
     steps:
       - name: set up go ${{env.GO_VERSION}}
         uses: actions/setup-go@v1
@@ -41,9 +43,12 @@ jobs:
           fetch-depth: 1
       - name: Test
         run: make unit
+        working-directory: ${{env.GOPATH}}/src/github.com/insolar/block-explorer
   integration:
     name: Integration tests
     runs-on: ubuntu-latest
+      env:
+        GOPATH: /home/runner/work/block-explorer/block-explorer/go
     steps:
       - name: set up go ${{env.GO_VERSION}}
         uses: actions/setup-go@v1
@@ -57,3 +62,4 @@ jobs:
           fetch-depth: 1
       - name: Test
         run: make integration
+        working-directory: ${{env.GOPATH}}/src/github.com/insolar/block-explorer
