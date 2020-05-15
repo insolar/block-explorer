@@ -7,21 +7,33 @@ package models
 
 import (
 	"time"
-
-	"github.com/insolar/block-explorer/etl"
 )
 
+type RecordType string
+
+const (
+	State   RecordType = "state"
+	Request RecordType = "request"
+	Result  RecordType = "result"
+)
+
+type Reference []byte
+
 type Record struct {
-	Reference          []byte
-	JetID              []byte
-	PulseNumber        int
-	Type               etl.RecordType
-	ObjectReference    []byte
-	PrototypeReference []byte
-	Payload            []byte
-	PrevState          []byte
-	Hash               []byte
-	Order              int
-	RawData            []byte
-	Timestamp          time.Time
+	Reference           Reference
+	Type                RecordType
+	ObjectReference     Reference
+	PrototypeReference  Reference
+	Payload             []byte
+	PrevRecordReference Reference
+	Hash                []byte
+	RawData             []byte
+	JetID               []byte
+	PulseNumber         int
+	Order               int
+	Timestamp           time.Time
 }
+
+type JetDrop struct{}
+
+type Pulse struct{}

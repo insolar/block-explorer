@@ -75,5 +75,5 @@ type Controller interface {
 
 // Storage saves data to database
 type Storage interface {
-	SaveRecords(records []models.Record) error
+	SaveJetDropData(jetDrop models.JetDrop, records []models.Record) error
 }
