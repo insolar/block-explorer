@@ -6,7 +6,7 @@ on:
   pull_request:
 
 env:
-  GO_VERSION: 1.12.15
+  GO_VERSION: 1.14
   CI_GOMAXPROCS: 0
 
 jobs:
@@ -28,6 +28,8 @@ jobs:
   unit:
     name: Unit tests
     runs-on: ubuntu-latest
+    env:
+      GOPATH: /home/runner/work/block-explorer/block-explorer/go
     steps:
       - name: set up go ${{env.GO_VERSION}}
         uses: actions/setup-go@v1
@@ -37,12 +39,16 @@ jobs:
       - name: Check out code into the Go module directory
         uses: actions/checkout@master
         with:
+          path: go/src/github.com/insolar/block-explorer
           fetch-depth: 1
       - name: Test
         run: make unit
+        working-directory: ${{env.GOPATH}}/src/github.com/insolar/block-explorer
   integration:
     name: Integration tests
     runs-on: ubuntu-latest
+    env:
+      GOPATH: /home/runner/work/block-explorer/block-explorer/go
     steps:
       - name: set up go ${{env.GO_VERSION}}
         uses: actions/setup-go@v1
@@ -52,6 +58,8 @@ jobs:
       - name: Check out code into the Go module directory
         uses: actions/checkout@master
         with:
+          path: go/src/github.com/insolar/block-explorer
           fetch-depth: 1
       - name: Test
         run: make integration
+        working-directory: ${{env.GOPATH}}/src/github.com/insolar/block-explorer
