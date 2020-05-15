@@ -36,6 +36,8 @@ github.com/golang/protobuf/ptypes
 github.com/golang/protobuf/ptypes/any
 github.com/golang/protobuf/ptypes/duration
 github.com/golang/protobuf/ptypes/timestamp
+# github.com/google/gofuzz v1.0.0
+github.com/google/gofuzz
 # github.com/google/uuid v1.1.1
 github.com/google/uuid
 # github.com/hashicorp/golang-lru v0.5.3
@@ -64,6 +66,7 @@ github.com/insolar/insolar/instrumentation/insmetrics
 github.com/insolar/insolar/ledger/heavy/executor
 github.com/insolar/insolar/ledger/object
 github.com/insolar/insolar/pulse
+github.com/insolar/insolar/insolar/gen
 github.com/insolar/insolar/insolar/bits
 github.com/insolar/insolar/insolar/defaults
 github.com/insolar/insolar/longbits
