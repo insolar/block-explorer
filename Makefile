@@ -21,7 +21,7 @@ clean: ## run all cleanup tasks
 	rm -rf $(BIN_DIR)
 
 golangci: ## install golangci-linter
-	curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b ${BIN_DIR} v1.21.0
+	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b ${BIN_DIR} v1.27.0
 
 .PHONY: install_deps
 install_deps: golangci ## install necessary dependencies
