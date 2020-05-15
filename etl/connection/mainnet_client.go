@@ -6,7 +6,9 @@
 package connection
 
 import (
-	"github.com/insolar/block-explorer/etl"
+	"context"
+
+	"github.com/insolar/block-explorer/configuration"
 	"github.com/pkg/errors"
 	"google.golang.org/grpc"
 )
@@ -16,7 +18,7 @@ type MainnetClient struct {
 }
 
 // NewMainNetClient returns implementation
-func NewMainNetClient(cfg etl.GRPCConfig) (*MainnetClient, error) {
+func NewMainNetClient(ctx context.Context, cfg configuration.Replicator) (*MainnetClient, error) {
 	c, e := func() (*grpc.ClientConn, error) {
 		options := grpc.WithDefaultCallOptions(
 			grpc.MaxCallRecvMsgSize(cfg.MaxTransportMsg),

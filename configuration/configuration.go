@@ -6,13 +6,20 @@
 package configuration
 
 type BlockExplorer struct {
-	Log Log
-	DB  DB
+	Log        Log
+	DB         DB
+	Replicator Replicator
 }
 
 type DB struct {
 	URL      string `insconfig:"postgres://postgres@localhost/postgres?sslmode=disable| Path to postgres db"`
 	PoolSize int    `insconfig:"100| Maximum number of socket connections"`
+}
+
+// Replicator represents a configuration of the Platform connection
+type Replicator struct {
+	Addr            string
+	MaxTransportMsg int
 }
 
 // Log holds configuration for logging

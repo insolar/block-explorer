@@ -16,6 +16,7 @@ import (
 )
 
 func TestGetJetDrops(t *testing.T) {
+	ctx := context.Background()
 	batchSize := 1
 	mc := minimock.NewController(t)
 	recordClient := NewRecordExporterClientMock(mc)
@@ -29,17 +30,15 @@ func TestGetJetDrops(t *testing.T) {
 	stream := recordStream{
 		recv: fn,
 	}
-
 	recordClient.funcExport = func(ctx context.Context, in *exporter.GetRecords, opts ...grpc.CallOption) (r1 exporter.RecordExporter_ExportClient, err error) {
 		return stream, nil
 	}
 
 	extractor := NewMainNetExtractor(uint32(batchSize), recordClient)
-	jetDrops, errors := extractor.GetJetDrops(context.Background())
+	jetDrops, errors := extractor.GetJetDrops(ctx)
 
 	select {
 	case err := <-errors:
-		println(err)
 		require.NoError(t, err)
 	case jd := <-jetDrops:
 		require.NotNil(t, jd)

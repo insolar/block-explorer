@@ -38,30 +38,33 @@ func (m *MainNetExtractor) GetJetDrops(ctx context.Context) (<-chan *etl.Platfor
 	errorChan := make(chan error)
 	var counter uint32
 
-	println("#ext start thread")
 	go func() {
+		//todo: enable logger
+
+		// logger := belogger.FromContext(ctx)
 		for {
+			// log := logger.WithField("request_pulse_number", m.request.PulseNumber)
 			counter = 0
 			// m.log.Debug("Data request: ", m.request)
 			fmt.Println("Data request")
 			stream, err := client.Export(ctx, m.request)
 
 			if err != nil {
-				// m.log.Debug("Data request failed: ", err)
+				// log.Debug("Data request failed: ", err)
 				println("Data request failed")
 				errorChan <- errors.Wrapf(err, "failed to get gRPC stream from exporter.Export method")
 			}
 
-			// Get batch
+			// Get records from the stream
 			for {
 				resp, err := stream.Recv()
 				if err == io.EOF {
-					// m.log.Debug("EOF received, quit")
+					// log.Debug("EOF received, quit")
 					println("EOF received, quit")
 					break
 				}
 				if err != nil {
-					// m.log.Debugf("received error value from records gRPC stream %v", m.request)
+					// log.Debug("received error value from records gRPC stream %v", m.request)
 					println("received error value from records gRPC stream %v", m.request)
 					errorChan <- errors.Wrapf(err, "received error value from records gRPC stream %v", m.request)
 				}

@@ -11,6 +11,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/rs/zerolog v1.15.0
 	github.com/stretchr/testify v1.4.0
+	google.golang.org/appengine v1.4.0 // indirect
 	google.golang.org/grpc v1.21.0
 )
 

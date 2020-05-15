@@ -11,7 +11,7 @@ import (
 	"net"
 	"testing"
 
-	"github.com/insolar/block-explorer/etl"
+	"github.com/insolar/block-explorer/configuration"
 	"github.com/insolar/insolar/insolar/record"
 	pb "github.com/insolar/insolar/ledger/heavy/exporter"
 	"github.com/stretchr/testify/require"
@@ -50,13 +50,13 @@ func TestClient_GetGRPCConnIsWorking(t *testing.T) {
 	}()
 
 	// prepare config with listening address
-	cfg := etl.GRPCConfig{
+	cfg := configuration.Replicator{
 		Addr:            listener.Addr().String(),
 		MaxTransportMsg: 100500,
 	}
 
 	// initialization MainNet connection
-	client, err := NewMainNetClient(cfg)
+	client, err := NewMainNetClient(context.Background(), cfg)
 	require.NoError(t, err)
 	defer client.GetGRPCConn().Close()
 
@@ -70,15 +70,12 @@ func TestClient_GetGRPCConnIsWorking(t *testing.T) {
 		t.Log("listening...")
 		record, err := stream.Recv()
 		if err == io.EOF {
-			t.Log("EOF")
 			break
 		}
 		if err != nil {
 			t.Fatalf("%v.Export(_) = _, %v", client, err)
 		}
 		require.NoError(t, err, "Err listening stream")
-
 		require.Equal(t, expectedRecord, record, "Incorrect response message")
-		t.Log(record)
 	}
 }

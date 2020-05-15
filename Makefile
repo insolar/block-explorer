@@ -9,7 +9,7 @@ ARTIFACTS_DIR = .artifacts
 #.DEFAULT_GOAL := all
 
 .PHONY: all
-all: clean build vendor
+all: clean vendor build
 
 .PHONY: mod
 mod:

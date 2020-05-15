@@ -10,46 +10,46 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/insolar/block-explorer/etl"
+	"github.com/insolar/block-explorer/configuration"
 	"github.com/insolar/block-explorer/etl/connection"
 	"github.com/insolar/insolar/ledger/heavy/exporter"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 )
 
-var localbatchSize = 2
+var localBatchSize = 2
 
 func TestExporterIsWorking(t *testing.T) {
+	ctx := context.Background()
 	address, grpcServer := createGRPCServer(t)
 	exporter.RegisterRecordExporterServer(grpcServer, &gserver{})
 
 	// prepare config with listening address
-	cfg := etl.GRPCConfig{
+	cfg := configuration.Replicator{
 		Addr:            address,
 		MaxTransportMsg: 100500,
 	}
 
 	// initialization MainNet connection
-	client, err := connection.NewMainNetClient(cfg)
+	client, err := connection.NewMainNetClient(ctx, cfg)
 	require.NoError(t, err)
 	defer client.GetGRPCConn().Close()
 
 	g := &gclient{}
-	extractor := NewMainNetExtractor(uint32(localbatchSize), g)
-	jetDrops, errors := extractor.GetJetDrops(context.Background())
+	extractor := NewMainNetExtractor(uint32(localBatchSize), g)
+	jetDrops, errors := extractor.GetJetDrops(ctx)
 
-	for i := 0; i < localbatchSize; i++ {
+	for i := 0; i < localBatchSize; i++ {
 		select {
 		case err := <-errors:
-			println(err)
 			require.NoError(t, err)
-			panic("sss")
 		case jd := <-jetDrops:
 			require.NotEmpty(t, jd.Records)
-			println(fmt.Sprintf("RecordNumber=%d, Pn=%d\n\n", jd.Records[0].RecordNumber, jd.Records[0].GetRecord().ID))
+			t.Log(fmt.Sprintf("RecordNumber=%d, Pn=%d\n\n", jd.Records[0].RecordNumber, jd.Records[0].GetRecord().ID))
+			//todo: replace to logger
+			// logger.Debug("RecordNumber=%d, Pn=%d\n\n", jd.Records[0].RecordNumber, jd.Records[0].GetRecord().ID)
 		}
 	}
-
 }
 
 type gserver struct {
@@ -62,10 +62,8 @@ type gclient struct {
 }
 
 func (c *gclient) Export(ctx context.Context, in *exporter.GetRecords, opts ...grpc.CallOption) (exporter.RecordExporter_ExportClient, error) {
-	fmt.Println("client function")
-
 	stream := recordStream{
-		recv: generateRecords(localbatchSize),
+		recv: generateRecords(localBatchSize),
 	}
 	return stream, nil
 }
