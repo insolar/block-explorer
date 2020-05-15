@@ -27,10 +27,15 @@ func createGRPCServer(t *testing.T) (address string, server *grpc.Server) {
 
 	// need to run grpcServer.Serve in different goroutine
 	go func() {
-		if err := grpcServer.Serve(listener); err != nil {
-			require.Error(t, err, "server exited with error")
-			return
+		var e error
+		// for needs to fix the flaky behavior of grpcServer.Serve
+		for i := 0; i < 5; i++ {
+			if e = grpcServer.Serve(listener); err != nil {
+				continue
+			}
 		}
+		require.Error(t, e, "server exited with error")
+		return
 	}()
 	return listener.Addr().Network(), grpcServer
 }
