@@ -36,7 +36,6 @@ func (m *MainNetExtractor) GetJetDrops(ctx context.Context) (<-chan *etl.Platfor
 	client := m.client
 
 	errorChan := make(chan error)
-	var counter uint32
 
 	go func() {
 		//todo: enable logger
@@ -44,7 +43,6 @@ func (m *MainNetExtractor) GetJetDrops(ctx context.Context) (<-chan *etl.Platfor
 		// logger := belogger.FromContext(ctx)
 		for {
 			// log := logger.WithField("request_pulse_number", m.request.PulseNumber)
-			counter = 0
 			// m.log.Debug("Data request: ", m.request)
 			fmt.Println("Data request")
 			stream, err := client.Export(ctx, m.request)
@@ -69,7 +67,6 @@ func (m *MainNetExtractor) GetJetDrops(ctx context.Context) (<-chan *etl.Platfor
 					errorChan <- errors.Wrapf(err, "received error value from records gRPC stream %v", m.request)
 				}
 
-				counter++
 				m.request.RecordNumber = resp.RecordNumber
 				jetDrops := new(etl.PlatformJetDrops)
 				jetDrops.Records = append(jetDrops.Records, resp)
