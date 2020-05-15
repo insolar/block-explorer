@@ -17,7 +17,7 @@ func TestNewClient_readyToConnect(t *testing.T) {
 	config := testConfig()
 	client, err := NewMainNetClient(config)
 	require.NoError(t, err)
-	require.Equal(t, connectivity.Idle.String(), client.GetGRPCConn().GetState().String(), "client does not ready to connect")
+	require.Equal(t, connectivity.Idle.String(), client.GetGRPCConn().GetState().String(), "MainnetClient does not ready to connect")
 }
 
 func testConfig() etl.GRPCConfig {

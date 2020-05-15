@@ -8,7 +8,6 @@ package etl
 import (
 	"context"
 
-	"github.com/insolar/insolar/ledger/heavy/exporter"
 	"google.golang.org/grpc"
 )
 
@@ -27,8 +26,8 @@ type Stopper interface {
 //go:generate minimock -i github.com/insolar/block-explorer/etl.JetDropsExtractor -o ./mock -s _mock.go -g
 // JetDropsExtractor represents the main functions of working with Platform
 type JetDropsExtractor interface {
-	// GetRecords stores Record data in the main Record channel
-	GetRecords() (<-chan exporter.Record, error)
+	// GetJetDrops stores JetDrop data in the main JetDrop channel
+	GetJetDrops(ctx context.Context) (<-chan *PlatformJetDrops, <-chan error)
 }
 
 //go:generate minimock -i github.com/insolar/block-explorer/etl.ConnectionManager -o ./mock -s _mock.go -g

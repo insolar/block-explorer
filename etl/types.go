@@ -13,7 +13,7 @@ import (
 
 // PlatformJetDrops represents on the missing struct in the Platform
 type PlatformJetDrops struct {
-	Records []exporter.Record
+	Records []*exporter.Record
 }
 
 type JetDrop struct {
