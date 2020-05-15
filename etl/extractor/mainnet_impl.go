@@ -16,17 +16,17 @@ import (
 )
 
 type MainNetExtractor struct {
-	client            exporter.RecordExporterClient
-	request           *exporter.GetRecords
-	mainJetDropsChain chan *etl.PlatformJetDrops
+	client           exporter.RecordExporterClient
+	request          *exporter.GetRecords
+	mainJetDropsChan chan *etl.PlatformJetDrops
 }
 
 func NewMainNetExtractor(batchSize uint32, exporterClient exporter.RecordExporterClient) *MainNetExtractor {
 	request := &exporter.GetRecords{Count: batchSize}
 	return &MainNetExtractor{
-		client:            exporterClient,
-		request:           request,
-		mainJetDropsChain: make(chan *etl.PlatformJetDrops),
+		client:           exporterClient,
+		request:          request,
+		mainJetDropsChan: make(chan *etl.PlatformJetDrops),
 	}
 }
 
@@ -51,6 +51,7 @@ func (m *MainNetExtractor) GetJetDrops(ctx context.Context) (<-chan *etl.Platfor
 				// log.Debug("Data request failed: ", err)
 				println("Data request failed")
 				errorChan <- errors.Wrapf(err, "failed to get gRPC stream from exporter.Export method")
+				continue
 			}
 
 			// Get records from the stream
@@ -70,10 +71,10 @@ func (m *MainNetExtractor) GetJetDrops(ctx context.Context) (<-chan *etl.Platfor
 				m.request.RecordNumber = resp.RecordNumber
 				jetDrops := new(etl.PlatformJetDrops)
 				jetDrops.Records = append(jetDrops.Records, resp)
-				m.mainJetDropsChain <- jetDrops
+				m.mainJetDropsChan <- jetDrops
 			}
 		}
 	}()
 
-	return m.mainJetDropsChain, errorChan
+	return m.mainJetDropsChan, errorChan
 }
