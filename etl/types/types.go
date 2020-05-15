@@ -25,9 +25,7 @@ type Section interface {
 	IsSection() bool
 }
 
-func (m MainSection) IsSection() bool {
-	panic("implement me")
-}
+func (m MainSection) IsSection() bool { return true }
 
 type MainSection struct {
 	Start        DropStart
