@@ -10,14 +10,13 @@ package connection
 import (
 	"context"
 	"io"
-	"net"
 	"testing"
 
 	"github.com/insolar/block-explorer/configuration"
+	"github.com/insolar/block-explorer/testutils"
 	"github.com/insolar/insolar/insolar/record"
 	pb "github.com/insolar/insolar/ledger/heavy/exporter"
 	"github.com/stretchr/testify/require"
-	"google.golang.org/grpc"
 )
 
 type recExpServer struct{}
@@ -37,23 +36,14 @@ func (r *recExpServer) Export(records *pb.GetRecords, stream pb.RecordExporter_E
 }
 
 func TestClient_GetGRPCConnIsWorking(t *testing.T) {
-	listener, err := net.Listen("tcp", ":0")
-	require.NoError(t, err, "failed to listen")
-	grpcServer := grpc.NewServer()
-	defer grpcServer.Stop()
-	pb.RegisterRecordExporterServer(grpcServer, &recExpServer{})
-
-	// need to run grpcServer.Serve in different goroutine
-	go func() {
-		if err := grpcServer.Serve(listener); err != nil {
-			require.Error(t, err, "server exited with error")
-			return
-		}
-	}()
+	server := testutils.CreateTestGRPCServer(t)
+	pb.RegisterRecordExporterServer(server.Server, &recExpServer{})
+	server.Serve(t)
+	defer server.Server.Stop()
 
 	// prepare config with listening address
 	cfg := configuration.Replicator{
-		Addr:            listener.Addr().String(),
+		Addr:            server.Listener.Addr().String(),
 		MaxTransportMsg: 100500,
 	}
 

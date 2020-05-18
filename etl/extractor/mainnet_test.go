@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/gojuno/minimock/v3"
+	"github.com/insolar/block-explorer/testutils"
 	"github.com/insolar/insolar/ledger/heavy/exporter"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
@@ -21,7 +22,7 @@ func TestGetJetDrops(t *testing.T) {
 	mc := minimock.NewController(t)
 	recordClient := NewRecordExporterClientMock(mc)
 
-	f := generateRecords(batchSize)
+	f := testutils.GenerateRecords(batchSize)
 	expectedRecord, err := f()
 	fn := func() (record *exporter.Record, e error) {
 		return expectedRecord, err

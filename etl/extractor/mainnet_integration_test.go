@@ -14,6 +14,7 @@ import (
 
 	"github.com/insolar/block-explorer/configuration"
 	"github.com/insolar/block-explorer/etl/connection"
+	"github.com/insolar/block-explorer/testutils"
 	"github.com/insolar/insolar/ledger/heavy/exporter"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
@@ -23,12 +24,14 @@ var localBatchSize = 2
 
 func TestExporterIsWorking(t *testing.T) {
 	ctx := context.Background()
-	address, grpcServer := createGRPCServer(t)
-	exporter.RegisterRecordExporterServer(grpcServer, &gserver{})
+	server := testutils.CreateTestGRPCServer(t)
+	exporter.RegisterRecordExporterServer(server.Server, &gserver{})
+	server.Serve(t)
+	defer server.Server.Stop()
 
 	// prepare config with listening address
 	cfg := configuration.Replicator{
-		Addr:            address,
+		Addr:            server.Address,
 		MaxTransportMsg: 100500,
 	}
 
@@ -65,7 +68,7 @@ type gclient struct {
 
 func (c *gclient) Export(ctx context.Context, in *exporter.GetRecords, opts ...grpc.CallOption) (exporter.RecordExporter_ExportClient, error) {
 	stream := recordStream{
-		recv: generateRecords(localBatchSize),
+		recv: testutils.GenerateRecords(localBatchSize),
 	}
 	return stream, nil
 }
