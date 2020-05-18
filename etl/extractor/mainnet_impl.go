@@ -30,11 +30,12 @@ func NewMainNetExtractor(batchSize uint32, exporterClient exporter.RecordExporte
 	}
 }
 
-func (m *MainNetExtractor) GetJetDrops(ctx context.Context) (<-chan *etl.PlatformJetDrops, <-chan error) {
+func (m *MainNetExtractor) GetJetDrops(ctx context.Context) <-chan *etl.PlatformJetDrops {
 	m.request.PulseNumber = 0
 	m.request.RecordNumber = 0
 	client := m.client
 
+	//todo: register event in some monitoring service
 	errorChan := make(chan error)
 
 	go func() {
@@ -76,5 +77,5 @@ func (m *MainNetExtractor) GetJetDrops(ctx context.Context) (<-chan *etl.Platfor
 		}
 	}()
 
-	return m.mainJetDropsChan, errorChan
+	return m.mainJetDropsChan
 }

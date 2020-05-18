@@ -36,11 +36,9 @@ func TestGetJetDrops(t *testing.T) {
 	}
 
 	extractor := NewMainNetExtractor(uint32(batchSize), recordClient)
-	jetDrops, errors := extractor.GetJetDrops(ctx)
+	jetDrops := extractor.GetJetDrops(ctx)
 
 	select {
-	case err := <-errors:
-		require.NoError(t, err)
 	case jd := <-jetDrops:
 		require.NotNil(t, jd)
 		require.Len(t, jd.Records, 1, "no records received")

@@ -16,7 +16,7 @@ import (
 type JetDropsExtractorMock struct {
 	t minimock.Tester
 
-	funcGetJetDrops          func(ctx context.Context) (ch1 <-chan *mm_etl.PlatformJetDrops, ch2 <-chan error)
+	funcGetJetDrops          func(ctx context.Context) (ch1 <-chan *mm_etl.PlatformJetDrops)
 	inspectFuncGetJetDrops   func(ctx context.Context)
 	afterGetJetDropsCounter  uint64
 	beforeGetJetDropsCounter uint64
@@ -61,7 +61,6 @@ type JetDropsExtractorMockGetJetDropsParams struct {
 // JetDropsExtractorMockGetJetDropsResults contains results of the JetDropsExtractor.GetJetDrops
 type JetDropsExtractorMockGetJetDropsResults struct {
 	ch1 <-chan *mm_etl.PlatformJetDrops
-	ch2 <-chan error
 }
 
 // Expect sets up expected params for JetDropsExtractor.GetJetDrops
@@ -96,7 +95,7 @@ func (mmGetJetDrops *mJetDropsExtractorMockGetJetDrops) Inspect(f func(ctx conte
 }
 
 // Return sets up results that will be returned by JetDropsExtractor.GetJetDrops
-func (mmGetJetDrops *mJetDropsExtractorMockGetJetDrops) Return(ch1 <-chan *mm_etl.PlatformJetDrops, ch2 <-chan error) *JetDropsExtractorMock {
+func (mmGetJetDrops *mJetDropsExtractorMockGetJetDrops) Return(ch1 <-chan *mm_etl.PlatformJetDrops) *JetDropsExtractorMock {
 	if mmGetJetDrops.mock.funcGetJetDrops != nil {
 		mmGetJetDrops.mock.t.Fatalf("JetDropsExtractorMock.GetJetDrops mock is already set by Set")
 	}
@@ -104,12 +103,12 @@ func (mmGetJetDrops *mJetDropsExtractorMockGetJetDrops) Return(ch1 <-chan *mm_et
 	if mmGetJetDrops.defaultExpectation == nil {
 		mmGetJetDrops.defaultExpectation = &JetDropsExtractorMockGetJetDropsExpectation{mock: mmGetJetDrops.mock}
 	}
-	mmGetJetDrops.defaultExpectation.results = &JetDropsExtractorMockGetJetDropsResults{ch1, ch2}
+	mmGetJetDrops.defaultExpectation.results = &JetDropsExtractorMockGetJetDropsResults{ch1}
 	return mmGetJetDrops.mock
 }
 
 //Set uses given function f to mock the JetDropsExtractor.GetJetDrops method
-func (mmGetJetDrops *mJetDropsExtractorMockGetJetDrops) Set(f func(ctx context.Context) (ch1 <-chan *mm_etl.PlatformJetDrops, ch2 <-chan error)) *JetDropsExtractorMock {
+func (mmGetJetDrops *mJetDropsExtractorMockGetJetDrops) Set(f func(ctx context.Context) (ch1 <-chan *mm_etl.PlatformJetDrops)) *JetDropsExtractorMock {
 	if mmGetJetDrops.defaultExpectation != nil {
 		mmGetJetDrops.mock.t.Fatalf("Default expectation is already set for the JetDropsExtractor.GetJetDrops method")
 	}
@@ -138,13 +137,13 @@ func (mmGetJetDrops *mJetDropsExtractorMockGetJetDrops) When(ctx context.Context
 }
 
 // Then sets up JetDropsExtractor.GetJetDrops return parameters for the expectation previously defined by the When method
-func (e *JetDropsExtractorMockGetJetDropsExpectation) Then(ch1 <-chan *mm_etl.PlatformJetDrops, ch2 <-chan error) *JetDropsExtractorMock {
-	e.results = &JetDropsExtractorMockGetJetDropsResults{ch1, ch2}
+func (e *JetDropsExtractorMockGetJetDropsExpectation) Then(ch1 <-chan *mm_etl.PlatformJetDrops) *JetDropsExtractorMock {
+	e.results = &JetDropsExtractorMockGetJetDropsResults{ch1}
 	return e.mock
 }
 
 // GetJetDrops implements etl.JetDropsExtractor
-func (mmGetJetDrops *JetDropsExtractorMock) GetJetDrops(ctx context.Context) (ch1 <-chan *mm_etl.PlatformJetDrops, ch2 <-chan error) {
+func (mmGetJetDrops *JetDropsExtractorMock) GetJetDrops(ctx context.Context) (ch1 <-chan *mm_etl.PlatformJetDrops) {
 	mm_atomic.AddUint64(&mmGetJetDrops.beforeGetJetDropsCounter, 1)
 	defer mm_atomic.AddUint64(&mmGetJetDrops.afterGetJetDropsCounter, 1)
 
@@ -162,7 +161,7 @@ func (mmGetJetDrops *JetDropsExtractorMock) GetJetDrops(ctx context.Context) (ch
 	for _, e := range mmGetJetDrops.GetJetDropsMock.expectations {
 		if minimock.Equal(e.params, mm_params) {
 			mm_atomic.AddUint64(&e.Counter, 1)
-			return e.results.ch1, e.results.ch2
+			return e.results.ch1
 		}
 	}
 
@@ -178,7 +177,7 @@ func (mmGetJetDrops *JetDropsExtractorMock) GetJetDrops(ctx context.Context) (ch
 		if mm_results == nil {
 			mmGetJetDrops.t.Fatal("No results are set for the JetDropsExtractorMock.GetJetDrops")
 		}
-		return (*mm_results).ch1, (*mm_results).ch2
+		return (*mm_results).ch1
 	}
 	if mmGetJetDrops.funcGetJetDrops != nil {
 		return mmGetJetDrops.funcGetJetDrops(ctx)

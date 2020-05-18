@@ -27,7 +27,7 @@ type Stopper interface {
 // JetDropsExtractor represents the main functions of working with Platform
 type JetDropsExtractor interface {
 	// GetJetDrops stores JetDrop data in the main JetDrop channel
-	GetJetDrops(ctx context.Context) (<-chan *PlatformJetDrops, <-chan error)
+	GetJetDrops(ctx context.Context) <-chan *PlatformJetDrops
 }
 
 //go:generate minimock -i github.com/insolar/block-explorer/etl.ConnectionManager -o ./mock -s _mock.go -g

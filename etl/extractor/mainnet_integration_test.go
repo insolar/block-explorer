@@ -42,12 +42,10 @@ func TestExporterIsWorking(t *testing.T) {
 
 	g := &gclient{}
 	extractor := NewMainNetExtractor(uint32(localBatchSize), g)
-	jetDrops, errors := extractor.GetJetDrops(ctx)
+	jetDrops := extractor.GetJetDrops(ctx)
 
 	for i := 0; i < localBatchSize; i++ {
 		select {
-		case err := <-errors:
-			require.NoError(t, err)
 		case jd := <-jetDrops:
 			require.NotEmpty(t, jd.Records)
 			t.Log(fmt.Sprintf("RecordNumber=%d, Pn=%d\n\n", jd.Records[0].RecordNumber, jd.Records[0].GetRecord().ID))
