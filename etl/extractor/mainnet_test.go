@@ -43,7 +43,7 @@ func TestGetJetDrops(t *testing.T) {
 		require.NoError(t, err)
 	case jd := <-jetDrops:
 		require.NotNil(t, jd)
-		require.NotEmpty(t, jd.Records, "no records received")
+		require.Len(t, jd.Records, 1, "no records received")
 		require.True(t, expectedRecord.Equal(jd.Records[0]), "jetDrops are not equal")
 	}
 }
