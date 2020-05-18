@@ -25,7 +25,6 @@ github.com/dustin/go-humanize
 # github.com/fsnotify/fsnotify v1.4.7
 github.com/fsnotify/fsnotify
 # github.com/gogo/protobuf v1.3.1
-## explicit
 github.com/gogo/protobuf/gogoproto
 github.com/gogo/protobuf/proto
 github.com/gogo/protobuf/protoc-gen-gogo/descriptor
@@ -130,6 +129,17 @@ github.com/jackc/pgx/v4/pgxpool
 github.com/jackc/puddle
 # github.com/jbenet/go-base58 v0.0.0-20150317085156-6237cf65f3a6
 github.com/jbenet/go-base58
+# github.com/jinzhu/gorm v1.9.12
+## explicit
+github.com/jinzhu/gorm
+github.com/jinzhu/gorm/dialects/postgres
+# github.com/jinzhu/inflection v1.0.0
+github.com/jinzhu/inflection
+# github.com/lib/pq v1.2.0
+github.com/lib/pq
+github.com/lib/pq/hstore
+github.com/lib/pq/oid
+github.com/lib/pq/scram
 # github.com/lithammer/shortuuid/v3 v3.0.4
 github.com/lithammer/shortuuid/v3
 # github.com/magiconair/properties v1.8.1
@@ -268,6 +278,9 @@ google.golang.org/grpc/resolver/passthrough
 google.golang.org/grpc/stats
 google.golang.org/grpc/status
 google.golang.org/grpc/tap
+# gopkg.in/gormigrate.v1 v1.6.0
+## explicit
+gopkg.in/gormigrate.v1
 # gopkg.in/ini.v1 v1.51.0
 gopkg.in/ini.v1
 # gopkg.in/yaml.v2 v2.2.8

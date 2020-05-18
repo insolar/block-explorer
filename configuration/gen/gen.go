@@ -17,26 +17,33 @@ import (
 )
 
 func main() {
-	filePath := ".artifacts/block-explorer.yaml"
+	configs := map[string]interface{}{
+		".artifacts/block-explorer.yaml": configuration.BlockExplorer{},
+		".artifacts/migrate.yaml": configuration.DB{},
+	}
 
 	log := belogger.FromContext(context.Background())
 
-	f, err := os.Create(filePath)
-	if err != nil {
-		log.Error(errors.Wrapf(err, "failed to create config file %s", filePath))
-		return
-	}
-	err = insconfig.NewYamlTemplater(new(configuration.BlockExplorer)).TemplateTo(f)
+	for filePath, config := range configs {
+		func() {
+			f, err := os.Create(filePath)
+			if err != nil {
+				log.Error(errors.Wrapf(err, "failed to create config file %s", filePath))
+				return
+			}
+			err = insconfig.NewYamlTemplater(config).TemplateTo(f)
 
-	defer func() {
-		err := f.Close()
-		if err != nil {
-			log.Error(errors.Wrapf(err, "failed to close config file %s", filePath))
-		}
-	}()
+			defer func() {
+				err := f.Close()
+				if err != nil {
+					log.Error(errors.Wrapf(err, "failed to close config file %s", filePath))
+				}
+			}()
 
-	if err != nil {
-		log.Error(errors.Wrapf(err, "failed to write config file %s", filePath))
-		return
+			if err != nil {
+				log.Error(errors.Wrapf(err, "failed to write config file %s", filePath))
+				return
+			}
+		}()
 	}
 }

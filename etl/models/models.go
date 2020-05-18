@@ -34,6 +34,20 @@ type Record struct {
 	Timestamp           time.Time
 }
 
-type JetDrop struct{}
+type JetDrop struct {
+	JetID          []byte
+	PulseNumber    int
+	FirstPrevHash  []byte
+	SecondPrevHash []byte
+	Hash           []byte
+	RawData        []byte
+	Timestamp      time.Time
+}
 
-type Pulse struct{}
+type Pulse struct {
+	PulseNumber     int
+	PrevPulseNumber int
+	NextPulseNumber int
+	IsComplete      bool
+	Timestamp       time.Time
+}
