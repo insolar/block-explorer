@@ -28,21 +28,19 @@ func main() {
 		func() {
 			f, err := os.Create(filePath)
 			if err != nil {
-				log.Error(errors.Wrapf(err, "failed to create config file %s", filePath))
-				return
+				log.Fatal(errors.Wrapf(err, "failed to create config file %s", filePath))
 			}
 			err = insconfig.NewYamlTemplater(config).TemplateTo(f)
 
 			defer func() {
 				err := f.Close()
 				if err != nil {
-					log.Error(errors.Wrapf(err, "failed to close config file %s", filePath))
+					log.Fatal(errors.Wrapf(err, "failed to close config file %s", filePath))
 				}
 			}()
 
 			if err != nil {
-				log.Error(errors.Wrapf(err, "failed to write config file %s", filePath))
-				return
+				log.Fatal(errors.Wrapf(err, "failed to write config file %s", filePath))
 			}
 		}()
 	}

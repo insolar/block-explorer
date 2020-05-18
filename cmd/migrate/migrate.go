@@ -71,15 +71,7 @@ func migrations() []*gormigrate.Migration {
 				if err := tx.Model(Pulse{}).AddIndex("idx_prevpulsenumber", "prev_pulse_number").Error; err != nil {
 					return err
 				}
-				return nil
-			},
-			Rollback: func(tx *gorm.DB) error {
-				return tx.DropTable("pulses").Error
-			},
-		},
-		{
-			ID: "202005180520",
-			Migrate: func(tx *gorm.DB) error {
+
 				type JetDrop struct {
 					JetID          []byte `gorm:"primary_key;auto_increment:false"`
 					PulseNumber    int    `gorm:"primary_key;auto_increment:false"`
@@ -98,15 +90,7 @@ func migrations() []*gormigrate.Migration {
 				if err := tx.Model(&JetDrop{}).AddForeignKey("pulse_number", "pulses(pulse_number)", "CASCADE", "CASCADE").Error; err != nil {
 					return err
 				}
-				return nil
-			},
-			Rollback: func(tx *gorm.DB) error {
-				return tx.DropTable("jet_drops").Error
-			},
-		},
-		{
-			ID: "202005180732",
-			Migrate: func(tx *gorm.DB) error {
+
 				type Record struct {
 					Reference           models.Reference `gorm:"primary_key;auto_increment:false"`
 					Type                models.RecordType
@@ -138,7 +122,7 @@ func migrations() []*gormigrate.Migration {
 				return nil
 			},
 			Rollback: func(tx *gorm.DB) error {
-				return tx.DropTable("records").Error
+				return tx.DropTableIfExists("records", "jet_drops", "pulses").Error
 			},
 		},
 	}
