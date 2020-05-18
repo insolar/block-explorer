@@ -16,6 +16,8 @@ import (
 )
 
 type MainNetExtractor struct {
+	stopSignal chan bool
+
 	client           exporter.RecordExporterClient
 	request          *exporter.GetRecords
 	mainJetDropsChan chan *etl.PlatformJetDrops
@@ -24,6 +26,7 @@ type MainNetExtractor struct {
 func NewMainNetExtractor(batchSize uint32, exporterClient exporter.RecordExporterClient) *MainNetExtractor {
 	request := &exporter.GetRecords{Count: batchSize}
 	return &MainNetExtractor{
+		stopSignal:       make(chan bool, 1),
 		client:           exporterClient,
 		request:          request,
 		mainJetDropsChan: make(chan *etl.PlatformJetDrops),
@@ -31,6 +34,8 @@ func NewMainNetExtractor(batchSize uint32, exporterClient exporter.RecordExporte
 }
 
 func (m *MainNetExtractor) GetJetDrops(ctx context.Context) <-chan *etl.PlatformJetDrops {
+	// from pulse, 0 means start to get from pulse number 0
+	//todo: add pulse fetcher
 	m.request.PulseNumber = 0
 	m.request.RecordNumber = 0
 	client := m.client
@@ -43,6 +48,9 @@ func (m *MainNetExtractor) GetJetDrops(ctx context.Context) <-chan *etl.Platform
 
 		// logger := belogger.FromContext(ctx)
 		for {
+			if m.needStop() {
+				return
+			}
 			// log := logger.WithField("request_pulse_number", m.request.PulseNumber)
 			// m.log.Debug("Data request: ", m.request)
 			fmt.Println("Data request")
@@ -57,6 +65,9 @@ func (m *MainNetExtractor) GetJetDrops(ctx context.Context) <-chan *etl.Platform
 
 			// Get records from the stream
 			for {
+				if m.needStop() {
+					return
+				}
 				resp, err := stream.Recv()
 				if err == io.EOF {
 					// log.Debug("EOF received, quit")
@@ -69,7 +80,10 @@ func (m *MainNetExtractor) GetJetDrops(ctx context.Context) <-chan *etl.Platform
 					errorChan <- errors.Wrapf(err, "received error value from records gRPC stream %v", m.request)
 				}
 
+				// save the last pulse for future requests
 				m.request.RecordNumber = resp.RecordNumber
+				m.request.PulseNumber = resp.Record.ID.Pulse()
+
 				jetDrops := new(etl.PlatformJetDrops)
 				jetDrops.Records = append(jetDrops.Records, resp)
 				m.mainJetDropsChan <- jetDrops
@@ -78,4 +92,18 @@ func (m *MainNetExtractor) GetJetDrops(ctx context.Context) <-chan *etl.Platform
 	}()
 
 	return m.mainJetDropsChan
+}
+
+func (m *MainNetExtractor) Stop() {
+	m.stopSignal <- true
+}
+
+func (m *MainNetExtractor) needStop() bool {
+	select {
+	case <-m.stopSignal:
+		return true
+	default:
+		// continue
+	}
+	return false
 }
