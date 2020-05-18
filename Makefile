@@ -9,7 +9,7 @@ ARTIFACTS_DIR = .artifacts
 #.DEFAULT_GOAL := all
 
 .PHONY: all
-all: clean build vendor
+all: clean vendor build
 
 .PHONY: mod
 mod:
@@ -22,7 +22,7 @@ clean: ## run all cleanup tasks
 	rm -rf $(BIN_DIR)
 
 golangci: ## install golangci-linter
-	curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b ${BIN_DIR} v1.21.0
+	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b ${BIN_DIR} v1.27.0
 
 .PHONY: install_deps
 install_deps: golangci ## install necessary dependencies

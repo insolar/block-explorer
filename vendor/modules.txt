@@ -38,6 +38,8 @@ github.com/golang/protobuf/ptypes
 github.com/golang/protobuf/ptypes/any
 github.com/golang/protobuf/ptypes/duration
 github.com/golang/protobuf/ptypes/timestamp
+# github.com/google/gofuzz v1.0.0
+github.com/google/gofuzz
 # github.com/google/uuid v1.1.1
 github.com/google/uuid
 # github.com/hashicorp/golang-lru v0.5.3
@@ -83,6 +85,7 @@ github.com/insolar/insolar/insolar
 github.com/insolar/insolar/insolar/bits
 github.com/insolar/insolar/insolar/bus/meta
 github.com/insolar/insolar/insolar/defaults
+github.com/insolar/insolar/insolar/gen
 github.com/insolar/insolar/insolar/jet
 github.com/insolar/insolar/insolar/node
 github.com/insolar/insolar/insolar/payload
@@ -232,6 +235,8 @@ golang.org/x/text/width
 # golang.org/x/xerrors v0.0.0-20191204190536-9bdfabe68543
 golang.org/x/xerrors
 golang.org/x/xerrors/internal
+# google.golang.org/appengine v1.4.0
+## explicit
 # google.golang.org/genproto v0.0.0-20190819201941-24fa4b261c55
 google.golang.org/genproto/googleapis/rpc/status
 # google.golang.org/grpc v1.21.0

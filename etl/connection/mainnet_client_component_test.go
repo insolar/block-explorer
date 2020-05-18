@@ -3,19 +3,20 @@
 // This material is licensed under the Insolar License version 1.0,
 // available at https://github.com/insolar/block-explorer/blob/master/LICENSE.md.
 
+// +build integration
+
 package connection
 
 import (
 	"context"
 	"io"
-	"net"
 	"testing"
 
-	"github.com/insolar/block-explorer/etl"
+	"github.com/insolar/block-explorer/configuration"
+	"github.com/insolar/block-explorer/testutils"
 	"github.com/insolar/insolar/insolar/record"
 	pb "github.com/insolar/insolar/ledger/heavy/exporter"
 	"github.com/stretchr/testify/require"
-	"google.golang.org/grpc"
 )
 
 type recExpServer struct{}
@@ -35,28 +36,19 @@ func (r *recExpServer) Export(records *pb.GetRecords, stream pb.RecordExporter_E
 }
 
 func TestClient_GetGRPCConnIsWorking(t *testing.T) {
-	listener, err := net.Listen("tcp", ":0")
-	require.NoError(t, err, "failed to listen")
-	grpcServer := grpc.NewServer()
-	defer grpcServer.Stop()
-	pb.RegisterRecordExporterServer(grpcServer, &recExpServer{})
-
-	// need to run grpcServer.Serve in different goroutine
-	go func() {
-		if err := grpcServer.Serve(listener); err != nil {
-			require.Error(t, err, "server exited with error")
-			return
-		}
-	}()
+	server := testutils.CreateTestGRPCServer(t)
+	pb.RegisterRecordExporterServer(server.Server, &recExpServer{})
+	server.Serve(t)
+	defer server.Server.Stop()
 
 	// prepare config with listening address
-	cfg := etl.GRPCConfig{
-		Addr:            listener.Addr().String(),
+	cfg := configuration.Replicator{
+		Addr:            server.Listener.Addr().String(),
 		MaxTransportMsg: 100500,
 	}
 
 	// initialization MainNet connection
-	client, err := NewMainNetClient(cfg)
+	client, err := NewMainNetClient(context.Background(), cfg)
 	require.NoError(t, err)
 	defer client.GetGRPCConn().Close()
 
@@ -70,15 +62,12 @@ func TestClient_GetGRPCConnIsWorking(t *testing.T) {
 		t.Log("listening...")
 		record, err := stream.Recv()
 		if err == io.EOF {
-			t.Log("EOF")
 			break
 		}
 		if err != nil {
 			t.Fatalf("%v.Export(_) = _, %v", client, err)
 		}
 		require.NoError(t, err, "Err listening stream")
-
 		require.Equal(t, expectedRecord, record, "Incorrect response message")
-		t.Log(record)
 	}
 }
