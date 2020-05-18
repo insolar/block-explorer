@@ -10,6 +10,8 @@ import (
 
 	"github.com/insolar/insolar/ledger/heavy/exporter"
 	"google.golang.org/grpc"
+
+	"github.com/insolar/block-explorer/etl/models"
 )
 
 //go:generate minimock -i github.com/insolar/block-explorer/etl.Starter -o ./mock -s _mock.go -g
@@ -69,4 +71,9 @@ type Controller interface {
 	Stopper
 	// Save information about saved jetdrops
 	SetJetDropData(pulse Pulse, jetID []byte)
+}
+
+// Storage saves data to database
+type Storage interface {
+	SaveJetDropData(jetDrop models.JetDrop, records []models.Record) error
 }
