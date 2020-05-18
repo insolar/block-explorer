@@ -79,4 +79,5 @@ jobs:
       - name: Migrate
         run: |
           make config
+          make docker_postgresql
           make migrate
