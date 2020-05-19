@@ -16,13 +16,15 @@ type Processor struct {
 }
 
 func NewProcessor(jb interfaces.Transformer, storage interfaces.Storage, workers int) *Processor {
-	this := Processor{
+	if workers < 1 {
+		workers = 1
+	}
+	return &Processor{
 		JDC:     jb.GetJetDropsChannel(),
 		Workers: workers,
 		Storage: storage,
 	}
 
-	return &this
 }
 
 func (p *Processor) Start(ctx context.Context) error {
