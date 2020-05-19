@@ -9,15 +9,15 @@ import (
 	mm_time "time"
 
 	"github.com/gojuno/minimock/v3"
-	mm_etl "github.com/insolar/block-explorer/etl"
+	"github.com/insolar/block-explorer/etl/types"
 )
 
-// ControllerMock implements etl.Controller
+// ControllerMock implements interfaces.Controller
 type ControllerMock struct {
 	t minimock.Tester
 
-	funcSetJetDropData          func(pulse mm_etl.Pulse, jetID []byte)
-	inspectFuncSetJetDropData   func(pulse mm_etl.Pulse, jetID []byte)
+	funcSetJetDropData          func(pulse types.Pulse, jetID []byte)
+	inspectFuncSetJetDropData   func(pulse types.Pulse, jetID []byte)
 	afterSetJetDropDataCounter  uint64
 	beforeSetJetDropDataCounter uint64
 	SetJetDropDataMock          mControllerMockSetJetDropData
@@ -35,7 +35,7 @@ type ControllerMock struct {
 	StopMock          mControllerMockStop
 }
 
-// NewControllerMock returns a mock for etl.Controller
+// NewControllerMock returns a mock for interfaces.Controller
 func NewControllerMock(t minimock.Tester) *ControllerMock {
 	m := &ControllerMock{t: t}
 	if controller, ok := t.(minimock.MockController); ok {
@@ -73,12 +73,12 @@ type ControllerMockSetJetDropDataExpectation struct {
 
 // ControllerMockSetJetDropDataParams contains parameters of the Controller.SetJetDropData
 type ControllerMockSetJetDropDataParams struct {
-	pulse mm_etl.Pulse
+	pulse types.Pulse
 	jetID []byte
 }
 
 // Expect sets up expected params for Controller.SetJetDropData
-func (mmSetJetDropData *mControllerMockSetJetDropData) Expect(pulse mm_etl.Pulse, jetID []byte) *mControllerMockSetJetDropData {
+func (mmSetJetDropData *mControllerMockSetJetDropData) Expect(pulse types.Pulse, jetID []byte) *mControllerMockSetJetDropData {
 	if mmSetJetDropData.mock.funcSetJetDropData != nil {
 		mmSetJetDropData.mock.t.Fatalf("ControllerMock.SetJetDropData mock is already set by Set")
 	}
@@ -98,7 +98,7 @@ func (mmSetJetDropData *mControllerMockSetJetDropData) Expect(pulse mm_etl.Pulse
 }
 
 // Inspect accepts an inspector function that has same arguments as the Controller.SetJetDropData
-func (mmSetJetDropData *mControllerMockSetJetDropData) Inspect(f func(pulse mm_etl.Pulse, jetID []byte)) *mControllerMockSetJetDropData {
+func (mmSetJetDropData *mControllerMockSetJetDropData) Inspect(f func(pulse types.Pulse, jetID []byte)) *mControllerMockSetJetDropData {
 	if mmSetJetDropData.mock.inspectFuncSetJetDropData != nil {
 		mmSetJetDropData.mock.t.Fatalf("Inspect function is already set for ControllerMock.SetJetDropData")
 	}
@@ -122,7 +122,7 @@ func (mmSetJetDropData *mControllerMockSetJetDropData) Return() *ControllerMock 
 }
 
 //Set uses given function f to mock the Controller.SetJetDropData method
-func (mmSetJetDropData *mControllerMockSetJetDropData) Set(f func(pulse mm_etl.Pulse, jetID []byte)) *ControllerMock {
+func (mmSetJetDropData *mControllerMockSetJetDropData) Set(f func(pulse types.Pulse, jetID []byte)) *ControllerMock {
 	if mmSetJetDropData.defaultExpectation != nil {
 		mmSetJetDropData.mock.t.Fatalf("Default expectation is already set for the Controller.SetJetDropData method")
 	}
@@ -135,8 +135,8 @@ func (mmSetJetDropData *mControllerMockSetJetDropData) Set(f func(pulse mm_etl.P
 	return mmSetJetDropData.mock
 }
 
-// SetJetDropData implements etl.Controller
-func (mmSetJetDropData *ControllerMock) SetJetDropData(pulse mm_etl.Pulse, jetID []byte) {
+// SetJetDropData implements interfaces.Controller
+func (mmSetJetDropData *ControllerMock) SetJetDropData(pulse types.Pulse, jetID []byte) {
 	mm_atomic.AddUint64(&mmSetJetDropData.beforeSetJetDropDataCounter, 1)
 	defer mm_atomic.AddUint64(&mmSetJetDropData.afterSetJetDropDataCounter, 1)
 
@@ -348,7 +348,7 @@ func (e *ControllerMockStartExpectation) Then(err error) *ControllerMock {
 	return e.mock
 }
 
-// Start implements etl.Controller
+// Start implements interfaces.Controller
 func (mmStart *ControllerMock) Start(ctx context.Context) (err error) {
 	mm_atomic.AddUint64(&mmStart.beforeStartCounter, 1)
 	defer mm_atomic.AddUint64(&mmStart.afterStartCounter, 1)
@@ -563,7 +563,7 @@ func (e *ControllerMockStopExpectation) Then(err error) *ControllerMock {
 	return e.mock
 }
 
-// Stop implements etl.Controller
+// Stop implements interfaces.Controller
 func (mmStop *ControllerMock) Stop(ctx context.Context) (err error) {
 	mm_atomic.AddUint64(&mmStop.beforeStopCounter, 1)
 	defer mm_atomic.AddUint64(&mmStop.afterStopCounter, 1)

@@ -10,7 +10,7 @@ import (
 	"google.golang.org/grpc"
 )
 
-// ClientMock implements etl.Client
+// ClientMock implements interfaces.Client
 type ClientMock struct {
 	t minimock.Tester
 
@@ -21,7 +21,7 @@ type ClientMock struct {
 	GetGRPCConnMock          mClientMockGetGRPCConn
 }
 
-// NewClientMock returns a mock for etl.Client
+// NewClientMock returns a mock for interfaces.Client
 func NewClientMock(t minimock.Tester) *ClientMock {
 	m := &ClientMock{t: t}
 	if controller, ok := t.(minimock.MockController); ok {
@@ -103,7 +103,7 @@ func (mmGetGRPCConn *mClientMockGetGRPCConn) Set(f func() (cp1 *grpc.ClientConn)
 	return mmGetGRPCConn.mock
 }
 
-// GetGRPCConn implements etl.Client
+// GetGRPCConn implements interfaces.Client
 func (mmGetGRPCConn *ClientMock) GetGRPCConn() (cp1 *grpc.ClientConn) {
 	mm_atomic.AddUint64(&mmGetGRPCConn.beforeGetGRPCConnCounter, 1)
 	defer mm_atomic.AddUint64(&mmGetGRPCConn.afterGetGRPCConnCounter, 1)

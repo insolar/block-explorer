@@ -11,7 +11,7 @@ import (
 	"github.com/gojuno/minimock/v3"
 )
 
-// StopperMock implements etl.Stopper
+// StopperMock implements interfaces.Stopper
 type StopperMock struct {
 	t minimock.Tester
 
@@ -22,7 +22,7 @@ type StopperMock struct {
 	StopMock          mStopperMockStop
 }
 
-// NewStopperMock returns a mock for etl.Stopper
+// NewStopperMock returns a mock for interfaces.Stopper
 func NewStopperMock(t minimock.Tester) *StopperMock {
 	m := &StopperMock{t: t}
 	if controller, ok := t.(minimock.MockController); ok {
@@ -141,7 +141,7 @@ func (e *StopperMockStopExpectation) Then(err error) *StopperMock {
 	return e.mock
 }
 
-// Stop implements etl.Stopper
+// Stop implements interfaces.Stopper
 func (mmStop *StopperMock) Stop(ctx context.Context) (err error) {
 	mm_atomic.AddUint64(&mmStop.beforeStopCounter, 1)
 	defer mm_atomic.AddUint64(&mmStop.afterStopCounter, 1)
