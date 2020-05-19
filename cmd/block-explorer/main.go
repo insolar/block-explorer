@@ -10,10 +10,15 @@ import (
 	"fmt"
 
 	"github.com/insolar/insconfig"
+	"github.com/pkg/errors"
 
+	"github.com/insolar/block-explorer/etl/dbconn"
+	"github.com/insolar/block-explorer/etl/storage"
 	"github.com/insolar/block-explorer/instrumentation/belogger"
 
 	"github.com/insolar/block-explorer/configuration"
+
+	_ "github.com/jinzhu/gorm/dialects/postgres"
 )
 
 func main() {
@@ -30,4 +35,20 @@ func main() {
 	ctx := context.Background()
 	ctx, logger := belogger.InitLogger(ctx, cfg.Log, "block_explorer")
 	logger.Info("Config and logger were initialized")
+
+	db, err := dbconn.Connect(cfg.DB)
+	if err != nil {
+		logger.Fatalf("Error while connecting to database: %s", err.Error())
+	}
+
+	defer func() {
+		logger := belogger.FromContext(ctx)
+		err := db.DB().Close()
+		if err != nil {
+			logger.Error(errors.Wrapf(err, "failed to close db"))
+		}
+	}()
+
+	storage.NewStorage(db)
+
 }
