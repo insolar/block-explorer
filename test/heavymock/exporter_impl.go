@@ -12,14 +12,18 @@ import (
 )
 
 const (
-	Timeout = 10 * time.Microsecond
+	timeout              = 10 * time.Microsecond
+	MagicPolymorphExport = 101010
 )
 
 type RecordExporter struct {
+	importerServer *ImporterServer
 }
 
-func NewRecordExporter() *RecordExporter {
-	return &RecordExporter{}
+func NewRecordExporter(importerServer *ImporterServer) *RecordExporter {
+	return &RecordExporter{
+		importerServer,
+	}
 }
 
 func (r *RecordExporter) Export(records *exporter.GetRecords, stream exporter.RecordExporter_ExportServer) error {
@@ -28,7 +32,7 @@ func (r *RecordExporter) Export(records *exporter.GetRecords, stream exporter.Re
 
 	if records.PulseNumber == 0 {
 		for i := 0; i < count; i++ {
-			time.Sleep(Timeout)
+			time.Sleep(timeout)
 			if err := stream.Send(SimpleRecord); err != nil {
 				return err
 			}
@@ -36,9 +40,21 @@ func (r *RecordExporter) Export(records *exporter.GetRecords, stream exporter.Re
 	} else {
 		records := GetRecordsByPulse(pulse, count)
 		for _, r := range records {
-			time.Sleep(Timeout)
+			time.Sleep(timeout)
 			if err := stream.Send(&r); err != nil {
 				return err
+			}
+		}
+	}
+
+	if records.Polymorph == MagicPolymorphExport {
+		savedRecords := r.importerServer.GetSavedRecords()
+		if len(savedRecords) > 0 {
+			for _, r := range savedRecords {
+				time.Sleep(timeout)
+				if err := stream.Send(&r); err != nil {
+					return err
+				}
 			}
 		}
 	}

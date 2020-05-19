@@ -23,17 +23,21 @@ import (
 
 type integrationTest struct {
 	suite.Suite
-	s   *testutils.TestGRPCServer
-	c   *connection.MainnetClient
-	t   *testing.T
-	cfg configuration.Replicator
-	cli exporter.RecordExporterClient
+	s      *testutils.TestGRPCServer
+	c      *connection.MainnetClient
+	i      *heavymock.ImporterClient
+	t      *testing.T
+	cfg    configuration.Replicator
+	expcli exporter.RecordExporterClient
+	impcli heavymock.HeavymockImporterClient
 }
 
 func (a *integrationTest) SetupSuite() {
 	a.t = a.T()
 	a.s = testutils.CreateTestGRPCServer(a.t)
-	exporter.RegisterRecordExporterServer(a.s.Server, heavymock.NewRecordExporter())
+	importer := heavymock.NewHeavymockImporter()
+	heavymock.RegisterHeavymockImporterServer(a.s.Server, importer)
+	exporter.RegisterRecordExporterServer(a.s.Server, heavymock.NewRecordExporter(importer))
 	a.s.Serve(a.t)
 
 	ctx := context.Background()
@@ -45,12 +49,18 @@ func (a *integrationTest) SetupSuite() {
 	require.NoError(a.t, err)
 	a.c = c
 
-	a.cli = exporter.NewRecordExporterClient(a.c.GetGRPCConn())
+	i, err := heavymock.NewImporterClient(a.s.GetPort())
+	require.NoError(a.t, err)
+	a.i = i
+
+	a.expcli = exporter.NewRecordExporterClient(a.c.GetGRPCConn())
+	a.impcli = heavymock.NewHeavymockImporterClient(a.i.GetGRPCConn())
 }
 
 func (a *integrationTest) TearDownSuite() {
 	a.s.Server.Stop()
 	a.c.GetGRPCConn().Close()
+	a.i.GetGRPCConn().Close()
 }
 
 func (a *integrationTest) TestGetRecords_simpleRecord() {
@@ -58,7 +68,7 @@ func (a *integrationTest) TestGetRecords_simpleRecord() {
 		Count: uint32(5),
 	}
 
-	stream, err := a.cli.Export(context.Background(), request)
+	stream, err := a.expcli.Export(context.Background(), request)
 	require.NoError(a.t, err, "Error when sending client request")
 
 	for {
@@ -79,7 +89,7 @@ func (a *integrationTest) TestGetRecords_pulseRecords() {
 		PulseNumber: expPulse,
 	}
 
-	stream, err := a.cli.Export(context.Background(), request)
+	stream, err := a.expcli.Export(context.Background(), request)
 	require.NoError(a.t, err, "Error when sending client request")
 
 	for {
@@ -91,6 +101,48 @@ func (a *integrationTest) TestGetRecords_pulseRecords() {
 		a.t.Logf("received record: %v", record)
 		require.Equal(a.t, &expPulse, record.ShouldIterateFrom, "Incorrect record pulse number")
 	}
+}
+
+func (a *integrationTest) TestGetRecords_sendAndReceiveWithImporter() {
+	var expectedRecords []exporter.Record
+	recordsCount := 10
+	for i := 0; i < recordsCount; i++ {
+		expectedRecords = append(expectedRecords, *heavymock.SimpleRecord)
+	}
+
+	stream, err := a.impcli.Import(context.Background())
+	require.NoError(a.t, err)
+	for _, record := range expectedRecords {
+		if err := stream.Send(&record); err != nil {
+			if err == io.EOF {
+				break
+			}
+			a.t.Fatal("Error sending to stream", err)
+		}
+	}
+	reply, err := stream.CloseAndRecv()
+	require.NoError(a.t, err)
+	require.True(a.t, reply.Ok)
+
+	request := &exporter.GetRecords{
+		Polymorph: heavymock.MagicPolymorphExport,
+	}
+
+	expStream, err := a.expcli.Export(context.Background(), request)
+	require.NoError(a.t, err, "Error when sending export request")
+
+	var c int
+	for {
+		record, err := expStream.Recv()
+		if err == io.EOF {
+			break
+		}
+		c++
+		require.NoError(a.t, err, "Err listening stream")
+		a.t.Logf("received record: %v", record)
+		require.True(a.t, heavymock.SimpleRecord.Equal(record), "Incorrect record pulse number")
+	}
+	require.Equal(a.t, recordsCount, c)
 }
 
 func TestAllTests(t *testing.T) {

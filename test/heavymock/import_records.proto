@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package heavymock;
+
+import "github.com/insolar/insolar/ledger/heavy/exporter/record_exporter.proto";
+
+
+service HeavymockImporter {
+  rpc Import (stream exporter.Record) returns (Ok) {
+  }
+}
+
+message Ok {
+  bool ok = 1;
+}
