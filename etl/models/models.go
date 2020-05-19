@@ -7,9 +7,15 @@ package models
 
 import (
 	"time"
+
+	"github.com/insolar/block-explorer/etl/types"
 )
 
 type RecordType string
+
+func RecordTypeFromTypes(rt types.RecordType) RecordType {
+	return []RecordType{"state", "request", "result"}[rt]
+}
 
 const (
 	State   RecordType = "state"
@@ -18,6 +24,10 @@ const (
 )
 
 type Reference []byte
+
+func ReferenceFromTypes(r types.Reference) Reference {
+	return Reference(r)
+}
 
 type Record struct {
 	Reference           Reference

@@ -3,24 +3,29 @@ package processor
 import (
 	"context"
 
-	"github.com/insolar/block-explorer/etl"
+	"github.com/insolar/block-explorer/etl/interfaces"
+	"github.com/insolar/block-explorer/etl/models"
+	"github.com/insolar/block-explorer/etl/types"
 )
 
 type Processor struct {
-	JDC     <-chan etl.JetDrop
+	JDC     <-chan types.JetDrop
 	TaskC   chan Task
 	Workers int
+	Storage interfaces.Storage
 }
 
-func NewProcessor(jb etl.Transformer, workers int) *Processor {
-	this := Processor{}
-	this.JDC = jb.GetJetDropsChannel()
-	this.Workers = workers
+func NewProcessor(jb interfaces.Transformer, storage interfaces.Storage, workers int) *Processor {
+	this := Processor{
+		JDC:     jb.GetJetDropsChannel(),
+		Workers: workers,
+		Storage: storage,
+	}
 
 	return &this
 }
 
-func (p Processor) Start(ctx context.Context) error {
+func (p *Processor) Start(ctx context.Context) error {
 	p.TaskC = make(chan Task)
 	for i := 0; i < p.Workers; i++ {
 		go func() {
@@ -29,7 +34,7 @@ func (p Processor) Start(ctx context.Context) error {
 				if !ok {
 					return
 				}
-				t.Work()
+				MakeSection(t.Section).Process(p, t.JD)
 			}
 		}()
 	}
@@ -43,10 +48,7 @@ func (p Processor) Start(ctx context.Context) error {
 			}
 
 			for _, s := range jd.Sections {
-				ms := s.(etl.MainSection)
-				for _, r := range ms.Records {
-					p.TaskC <- Task{&s, &r}
-				}
+				p.TaskC <- Task{s, &jd}
 			}
 
 		}
@@ -62,10 +64,55 @@ func (p Processor) Stop(ctx context.Context) error {
 }
 
 type Task struct {
-	Section *etl.Section
-	Record  *etl.Record
+	Section types.Section
+	JD      *types.JetDrop
 }
 
-func (t Task) Work() {
-	// do something with record
+type Section interface {
+	Process(processor *Processor, jd *types.JetDrop)
+}
+
+func MakeSection(s types.Section) Section {
+	switch d := s.(type) {
+	case types.MainSection:
+		return &MainSection{d}
+	default:
+		panic("Unknown internal section type")
+	}
+}
+
+type MainSection struct {
+	types.MainSection
+}
+
+func (ms *MainSection) Process(p *Processor, jd *types.JetDrop) {
+	pd := ms.Start.PulseData
+	mjd := models.JetDrop{
+		JetID:          nil,
+		PulseNumber:    pd.PulseNo,
+		FirstPrevHash:  nil,
+		SecondPrevHash: nil,
+		Hash:           nil,
+		RawData:        nil,
+		Timestamp:      pd.PulseTimestamp,
+	}
+
+	mrs := []models.Record{}
+	for i, r := range ms.Records {
+		mrs = append(mrs, models.Record{
+			Reference:           models.ReferenceFromTypes(r.Ref),
+			Type:                models.RecordTypeFromTypes(r.Type),
+			ObjectReference:     models.ReferenceFromTypes(r.ObjectReference),
+			PrototypeReference:  models.ReferenceFromTypes(r.PrototypeReference),
+			Payload:             r.RecordPayload,
+			PrevRecordReference: models.ReferenceFromTypes(r.PrevRecordReference),
+			Hash:                r.Hash,
+			RawData:             r.RawData,
+			JetID:               mjd.JetID,
+			PulseNumber:         mjd.PulseNumber,
+			Order:               i,
+			Timestamp:           mjd.Timestamp,
+		})
+	}
+	p.Storage.SaveJetDropData(mjd, mrs)
 }
