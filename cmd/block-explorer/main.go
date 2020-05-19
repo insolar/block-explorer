@@ -17,8 +17,6 @@ import (
 	"github.com/insolar/block-explorer/instrumentation/belogger"
 
 	"github.com/insolar/block-explorer/configuration"
-
-	_ "github.com/jinzhu/gorm/dialects/postgres"
 )
 
 func main() {
@@ -45,7 +43,7 @@ func main() {
 		logger := belogger.FromContext(ctx)
 		err := db.DB().Close()
 		if err != nil {
-			logger.Error(errors.Wrapf(err, "failed to close db"))
+			logger.Error(errors.Wrapf(err, "failed to close database"))
 		}
 	}()
 
