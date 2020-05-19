@@ -45,7 +45,7 @@ func main() {
 	db.LogMode(true)
 	db.SetLogger(belogger.NewGORMLogAdapter(log))
 
-	m := gormigrate.New(db, gormigrate.DefaultOptions, Migrations())
+	m := gormigrate.New(db, gormigrate.DefaultOptions, migrations())
 
 	if err = m.Migrate(); err != nil {
 		log.Fatalf("Could not migrate: %v", err)
@@ -53,7 +53,7 @@ func main() {
 	log.Info("migrated successfully!")
 }
 
-func Migrations() []*gormigrate.Migration {
+func migrations() []*gormigrate.Migration {
 	return []*gormigrate.Migration{
 		{
 			ID: "202005180423",
