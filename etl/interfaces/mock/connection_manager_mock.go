@@ -11,7 +11,7 @@ import (
 	"github.com/gojuno/minimock/v3"
 )
 
-// ConnectionManagerMock implements etl.ConnectionManager
+// ConnectionManagerMock implements interfaces.ConnectionManager
 type ConnectionManagerMock struct {
 	t minimock.Tester
 
@@ -28,7 +28,7 @@ type ConnectionManagerMock struct {
 	StopMock          mConnectionManagerMockStop
 }
 
-// NewConnectionManagerMock returns a mock for etl.ConnectionManager
+// NewConnectionManagerMock returns a mock for interfaces.ConnectionManager
 func NewConnectionManagerMock(t minimock.Tester) *ConnectionManagerMock {
 	m := &ConnectionManagerMock{t: t}
 	if controller, ok := t.(minimock.MockController); ok {
@@ -150,7 +150,7 @@ func (e *ConnectionManagerMockStartExpectation) Then(err error) *ConnectionManag
 	return e.mock
 }
 
-// Start implements etl.ConnectionManager
+// Start implements interfaces.ConnectionManager
 func (mmStart *ConnectionManagerMock) Start(ctx context.Context) (err error) {
 	mm_atomic.AddUint64(&mmStart.beforeStartCounter, 1)
 	defer mm_atomic.AddUint64(&mmStart.afterStartCounter, 1)
@@ -365,7 +365,7 @@ func (e *ConnectionManagerMockStopExpectation) Then(err error) *ConnectionManage
 	return e.mock
 }
 
-// Stop implements etl.ConnectionManager
+// Stop implements interfaces.ConnectionManager
 func (mmStop *ConnectionManagerMock) Stop(ctx context.Context) (err error) {
 	mm_atomic.AddUint64(&mmStop.beforeStopCounter, 1)
 	defer mm_atomic.AddUint64(&mmStop.afterStopCounter, 1)

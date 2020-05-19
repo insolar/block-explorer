@@ -9,21 +9,21 @@ import (
 	mm_time "time"
 
 	"github.com/gojuno/minimock/v3"
-	mm_etl "github.com/insolar/block-explorer/etl"
+	"github.com/insolar/block-explorer/etl/types"
 )
 
-// JetDropsExtractorMock implements etl.JetDropsExtractor
+// JetDropsExtractorMock implements interfaces.JetDropsExtractor
 type JetDropsExtractorMock struct {
 	t minimock.Tester
 
-	funcGetJetDrops          func(ctx context.Context) (ch1 <-chan *mm_etl.PlatformJetDrops)
+	funcGetJetDrops          func(ctx context.Context) (ch1 <-chan *types.PlatformJetDrops)
 	inspectFuncGetJetDrops   func(ctx context.Context)
 	afterGetJetDropsCounter  uint64
 	beforeGetJetDropsCounter uint64
 	GetJetDropsMock          mJetDropsExtractorMockGetJetDrops
 }
 
-// NewJetDropsExtractorMock returns a mock for etl.JetDropsExtractor
+// NewJetDropsExtractorMock returns a mock for interfaces.JetDropsExtractor
 func NewJetDropsExtractorMock(t minimock.Tester) *JetDropsExtractorMock {
 	m := &JetDropsExtractorMock{t: t}
 	if controller, ok := t.(minimock.MockController); ok {
@@ -60,7 +60,7 @@ type JetDropsExtractorMockGetJetDropsParams struct {
 
 // JetDropsExtractorMockGetJetDropsResults contains results of the JetDropsExtractor.GetJetDrops
 type JetDropsExtractorMockGetJetDropsResults struct {
-	ch1 <-chan *mm_etl.PlatformJetDrops
+	ch1 <-chan *types.PlatformJetDrops
 }
 
 // Expect sets up expected params for JetDropsExtractor.GetJetDrops
@@ -95,7 +95,7 @@ func (mmGetJetDrops *mJetDropsExtractorMockGetJetDrops) Inspect(f func(ctx conte
 }
 
 // Return sets up results that will be returned by JetDropsExtractor.GetJetDrops
-func (mmGetJetDrops *mJetDropsExtractorMockGetJetDrops) Return(ch1 <-chan *mm_etl.PlatformJetDrops) *JetDropsExtractorMock {
+func (mmGetJetDrops *mJetDropsExtractorMockGetJetDrops) Return(ch1 <-chan *types.PlatformJetDrops) *JetDropsExtractorMock {
 	if mmGetJetDrops.mock.funcGetJetDrops != nil {
 		mmGetJetDrops.mock.t.Fatalf("JetDropsExtractorMock.GetJetDrops mock is already set by Set")
 	}
@@ -108,7 +108,7 @@ func (mmGetJetDrops *mJetDropsExtractorMockGetJetDrops) Return(ch1 <-chan *mm_et
 }
 
 //Set uses given function f to mock the JetDropsExtractor.GetJetDrops method
-func (mmGetJetDrops *mJetDropsExtractorMockGetJetDrops) Set(f func(ctx context.Context) (ch1 <-chan *mm_etl.PlatformJetDrops)) *JetDropsExtractorMock {
+func (mmGetJetDrops *mJetDropsExtractorMockGetJetDrops) Set(f func(ctx context.Context) (ch1 <-chan *types.PlatformJetDrops)) *JetDropsExtractorMock {
 	if mmGetJetDrops.defaultExpectation != nil {
 		mmGetJetDrops.mock.t.Fatalf("Default expectation is already set for the JetDropsExtractor.GetJetDrops method")
 	}
@@ -137,13 +137,13 @@ func (mmGetJetDrops *mJetDropsExtractorMockGetJetDrops) When(ctx context.Context
 }
 
 // Then sets up JetDropsExtractor.GetJetDrops return parameters for the expectation previously defined by the When method
-func (e *JetDropsExtractorMockGetJetDropsExpectation) Then(ch1 <-chan *mm_etl.PlatformJetDrops) *JetDropsExtractorMock {
+func (e *JetDropsExtractorMockGetJetDropsExpectation) Then(ch1 <-chan *types.PlatformJetDrops) *JetDropsExtractorMock {
 	e.results = &JetDropsExtractorMockGetJetDropsResults{ch1}
 	return e.mock
 }
 
-// GetJetDrops implements etl.JetDropsExtractor
-func (mmGetJetDrops *JetDropsExtractorMock) GetJetDrops(ctx context.Context) (ch1 <-chan *mm_etl.PlatformJetDrops) {
+// GetJetDrops implements interfaces.JetDropsExtractor
+func (mmGetJetDrops *JetDropsExtractorMock) GetJetDrops(ctx context.Context) (ch1 <-chan *types.PlatformJetDrops) {
 	mm_atomic.AddUint64(&mmGetJetDrops.beforeGetJetDropsCounter, 1)
 	defer mm_atomic.AddUint64(&mmGetJetDrops.afterGetJetDropsCounter, 1)
 

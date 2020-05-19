@@ -11,7 +11,7 @@ import (
 	"github.com/gojuno/minimock/v3"
 )
 
-// StarterMock implements etl.Starter
+// StarterMock implements interfaces.Starter
 type StarterMock struct {
 	t minimock.Tester
 
@@ -22,7 +22,7 @@ type StarterMock struct {
 	StartMock          mStarterMockStart
 }
 
-// NewStarterMock returns a mock for etl.Starter
+// NewStarterMock returns a mock for interfaces.Starter
 func NewStarterMock(t minimock.Tester) *StarterMock {
 	m := &StarterMock{t: t}
 	if controller, ok := t.(minimock.MockController); ok {
@@ -141,7 +141,7 @@ func (e *StarterMockStartExpectation) Then(err error) *StarterMock {
 	return e.mock
 }
 
-// Start implements etl.Starter
+// Start implements interfaces.Starter
 func (mmStart *StarterMock) Start(ctx context.Context) (err error) {
 	mm_atomic.AddUint64(&mmStart.beforeStartCounter, 1)
 	defer mm_atomic.AddUint64(&mmStart.afterStartCounter, 1)

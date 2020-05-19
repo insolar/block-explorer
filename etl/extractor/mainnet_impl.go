@@ -10,7 +10,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/insolar/block-explorer/etl"
+	"github.com/insolar/block-explorer/etl/types"
 	"github.com/insolar/insolar/ledger/heavy/exporter"
 	"github.com/pkg/errors"
 )
@@ -20,7 +20,7 @@ type MainNetExtractor struct {
 
 	client           exporter.RecordExporterClient
 	request          *exporter.GetRecords
-	mainJetDropsChan chan *etl.PlatformJetDrops
+	mainJetDropsChan chan *types.PlatformJetDrops
 }
 
 func NewMainNetExtractor(batchSize uint32, exporterClient exporter.RecordExporterClient) *MainNetExtractor {
@@ -29,11 +29,11 @@ func NewMainNetExtractor(batchSize uint32, exporterClient exporter.RecordExporte
 		stopSignal:       make(chan bool, 1),
 		client:           exporterClient,
 		request:          request,
-		mainJetDropsChan: make(chan *etl.PlatformJetDrops),
+		mainJetDropsChan: make(chan *types.PlatformJetDrops),
 	}
 }
 
-func (m *MainNetExtractor) GetJetDrops(ctx context.Context) <-chan *etl.PlatformJetDrops {
+func (m *MainNetExtractor) GetJetDrops(ctx context.Context) <-chan *types.PlatformJetDrops {
 	// from pulse, 0 means start to get from pulse number 0
 	//todo: add pulse fetcher
 	m.request.PulseNumber = 0
@@ -84,7 +84,7 @@ func (m *MainNetExtractor) GetJetDrops(ctx context.Context) <-chan *etl.Platform
 				m.request.RecordNumber = resp.RecordNumber
 				m.request.PulseNumber = resp.Record.ID.Pulse()
 
-				jetDrops := new(etl.PlatformJetDrops)
+				jetDrops := new(types.PlatformJetDrops)
 				jetDrops.Records = append(jetDrops.Records, resp)
 				m.mainJetDropsChan <- jetDrops
 			}
