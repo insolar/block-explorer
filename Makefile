@@ -44,7 +44,7 @@ unit:  ## run unit tests
 	go test -v ./... -count 10 -race
 
 .PHONY: test
-test: unit integration ## run unit and integrations tests with race
+test: unit integration test-with-mock ## run unit and integrations tests with race
 
 .PHONY: integration
 integration: ## run integrations tests with race
@@ -53,6 +53,10 @@ integration: ## run integrations tests with race
 .PHONY: test-with-coverage
 test-with-coverage: ## run tests with coverage mode
 	go test -v ./... -tags integration -count 1 --coverprofile=$(COVERPROFILE) --covermode=count
+
+.PHONY: test-with-mock
+test-with-mock:
+	go test -v ./test/integration/... -tags mock_integration -count 10 -race -failfast
 
 .PHONY: lint
 lint: golangci ## run linter
@@ -69,7 +73,7 @@ generate-protobuf: ## generate protobuf structs
 		echo "error: protoc not installed" >&2; \
 		exit 1; \
 	fi
-	protoc --gogoslick_out=plugins=grpc:./ etl/connection/testdata/helloworld.proto
+	protoc -I./vendor -I./ --gogoslick_out=plugins=grpc:./ test/heavymock/import_records.proto
 
 .PHONY: migrate
 migrate: ## migrate

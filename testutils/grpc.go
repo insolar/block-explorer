@@ -48,3 +48,7 @@ func (s *TestGRPCServer) Serve(t *testing.T) {
 		return
 	}()
 }
+
+func (s *TestGRPCServer) GetPort() string {
+	return s.Listener.Addr().String()
+}
