@@ -18,7 +18,7 @@ func TestNewProcessor(t *testing.T) {
 		return JDC
 	})
 	sm := mock.NewStorageMock(t)
-	p := NewProcessor(trm, sm, 0)
+	p := NewProcessor(trm, sm, 10)
 	require.NotNil(t, p)
 
 	require.NoError(t, p.Start(ctx))
