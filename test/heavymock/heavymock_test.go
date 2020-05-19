@@ -19,7 +19,7 @@ import (
 
 func TestConnect(t *testing.T) {
 	server := testutils.CreateTestGRPCServer(t)
-	exporter.RegisterRecordExporterServer(server.Server, NewRecordExporter())
+	exporter.RegisterRecordExporterServer(server.Server, NewRecordExporter(&ImporterServer{}))
 	server.Serve(t)
 	defer server.Server.Stop()
 
