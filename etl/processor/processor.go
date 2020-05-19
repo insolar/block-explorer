@@ -34,7 +34,7 @@ func (p *Processor) Start(ctx context.Context) error {
 				if !ok {
 					return
 				}
-				MakeSection(t.Section).Process(p, t.JD)
+				p.Process(t.JD)
 			}
 		}()
 	}
@@ -46,10 +46,7 @@ func (p *Processor) Start(ctx context.Context) error {
 				close(p.TaskC)
 				return
 			}
-
-			for _, s := range jd.Sections {
-				p.TaskC <- Task{s, &jd}
-			}
+			p.TaskC <- Task{&jd}
 
 		}
 
@@ -64,28 +61,11 @@ func (p Processor) Stop(ctx context.Context) error {
 }
 
 type Task struct {
-	Section types.Section
-	JD      *types.JetDrop
+	JD *types.JetDrop
 }
 
-type Section interface {
-	Process(processor *Processor, jd *types.JetDrop)
-}
-
-func MakeSection(s types.Section) Section {
-	switch d := s.(type) {
-	case types.MainSection:
-		return &MainSection{d}
-	default:
-		panic("Unknown internal section type")
-	}
-}
-
-type MainSection struct {
-	types.MainSection
-}
-
-func (ms *MainSection) Process(p *Processor, jd *types.JetDrop) {
+func (p *Processor) Process(jd *types.JetDrop) {
+	ms := jd.MainSection
 	pd := ms.Start.PulseData
 	mjd := models.JetDrop{
 		JetID:          nil,

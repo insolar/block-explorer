@@ -17,8 +17,9 @@ type PlatformJetDrops struct {
 }
 
 type JetDrop struct {
-	Sections []Section
-	RawData  []byte
+	MainSection *MainSection
+	Sections    []Section
+	RawData     []byte
 }
 
 type Section interface {
