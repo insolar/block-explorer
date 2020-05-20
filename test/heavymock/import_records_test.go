@@ -17,7 +17,8 @@ import (
 
 func TestHeavymockImporter_import(t *testing.T) {
 	server := testutils.CreateTestGRPCServer(t)
-	RegisterHeavymockImporterServer(server.Server, NewHeavymockImporter())
+	importer := NewHeavymockImporter()
+	RegisterHeavymockImporterServer(server.Server, importer)
 	server.Serve(t)
 	defer server.Server.Stop()
 
@@ -32,7 +33,8 @@ func TestHeavymockImporter_import(t *testing.T) {
 	require.NoError(t, err)
 
 	var expectedRecords []exporter.Record
-	for i := 0; i < 5; i++ {
+	recordsCount := 5
+	for i := 0; i < recordsCount; i++ {
 		expectedRecords = append(expectedRecords, *SimpleRecord)
 	}
 	for _, record := range expectedRecords {
@@ -47,4 +49,6 @@ func TestHeavymockImporter_import(t *testing.T) {
 	reply, err := stream.CloseAndRecv()
 	require.NoError(t, err)
 	require.True(t, reply.Ok)
+	require.Len(t, importer.savedRecords, recordsCount)
+	require.Equal(t, importer.savedRecords, expectedRecords)
 }
