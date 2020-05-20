@@ -36,7 +36,7 @@ func TestExporterIsWorking(t *testing.T) {
 	}
 
 	// initialization MainNet connection
-	client, err := connection.NewMainNetClient(ctx, cfg)
+	client, err := connection.NewGrpcClientConnection(ctx, cfg)
 	require.NoError(t, err)
 	defer client.GetGRPCConn().Close()
 

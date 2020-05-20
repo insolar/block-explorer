@@ -31,7 +31,7 @@ func TestConnect(t *testing.T) {
 
 	// initialization MainNet connection
 	ctx := context.Background()
-	client, err := connection.NewMainNetClient(ctx, cfg)
+	client, err := connection.NewGrpcClientConnection(ctx, cfg)
 	require.NoError(t, err)
 	defer client.GetGRPCConn().Close()
 

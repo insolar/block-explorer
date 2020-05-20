@@ -10,6 +10,7 @@ import (
 	"io"
 	"testing"
 
+	"github.com/insolar/block-explorer/etl/connection"
 	"github.com/insolar/block-explorer/testutils"
 	"github.com/insolar/insolar/ledger/heavy/exporter"
 	"github.com/stretchr/testify/require"
@@ -22,7 +23,8 @@ func TestHeavymockImporter_import(t *testing.T) {
 	server.Serve(t)
 	defer server.Server.Stop()
 
-	importerConn, err := NewImporterClient(server.Address)
+	cfg := connection.GetClientConfiguration(server.Address)
+	importerConn, err := connection.NewGrpcClientConnection(context.Background(), cfg)
 	require.NoError(t, err)
 
 	defer importerConn.GetGRPCConn().Close()

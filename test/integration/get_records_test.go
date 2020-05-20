@@ -11,7 +11,6 @@ import (
 	"io"
 	"testing"
 
-	"github.com/insolar/block-explorer/configuration"
 	"github.com/insolar/block-explorer/etl/connection"
 	"github.com/insolar/block-explorer/test/heavymock"
 	"github.com/insolar/block-explorer/testutils"
@@ -24,9 +23,7 @@ import (
 type integrationSuite struct {
 	suite.Suite
 	s              *testutils.TestGRPCServer
-	c              *connection.MainnetClient
-	i              *heavymock.ImporterClient
-	cfg            configuration.Replicator
+	c              *connection.GrpcClientConnection
 	exporterClient exporter.RecordExporterClient
 	importerClient heavymock.HeavymockImporterClient
 }
@@ -39,26 +36,19 @@ func (a *integrationSuite) SetupSuite() {
 	a.s.Serve(a.T())
 
 	ctx := context.Background()
-	a.cfg = configuration.Replicator{
-		Addr:            a.s.Address,
-		MaxTransportMsg: 100500,
-	}
-	c, err := connection.NewMainNetClient(ctx, a.cfg)
+	cfg := connection.GetClientConfiguration(a.s.Address)
+
+	c, err := connection.NewGrpcClientConnection(ctx, cfg)
 	require.NoError(a.T(), err)
 	a.c = c
 
-	i, err := heavymock.NewImporterClient(a.s.Address)
-	require.NoError(a.T(), err)
-	a.i = i
-
 	a.exporterClient = exporter.NewRecordExporterClient(a.c.GetGRPCConn())
-	a.importerClient = heavymock.NewHeavymockImporterClient(a.i.GetGRPCConn())
+	a.importerClient = heavymock.NewHeavymockImporterClient(a.c.GetGRPCConn())
 }
 
 func (a *integrationSuite) TearDownSuite() {
 	a.s.Server.Stop()
 	a.c.GetGRPCConn().Close()
-	a.i.GetGRPCConn().Close()
 }
 
 func (a *integrationSuite) TestGetRecords_simpleRecord() {
