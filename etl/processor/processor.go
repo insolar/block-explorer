@@ -17,11 +17,11 @@ import (
 )
 
 type Processor struct {
-	JDC          <-chan types.JetDrop
-	TaskC        chan Task
-	TaskCCloseMu sync.Mutex
-	Storage      interfaces.Storage
-	Workers      int
+	jdC          <-chan types.JetDrop
+	taskC        chan Task
+	taskCCloseMu sync.Mutex
+	storage      interfaces.Storage
+	workers      int
 	active       int32
 }
 
@@ -30,10 +30,10 @@ func NewProcessor(jb interfaces.Transformer, storage interfaces.Storage, workers
 		workers = 1
 	}
 	return &Processor{
-		JDC:          jb.GetJetDropsChannel(),
-		Workers:      workers,
-		TaskCCloseMu: sync.Mutex{},
-		Storage:      storage,
+		jdC:          jb.GetJetDropsChannel(),
+		workers:      workers,
+		taskCCloseMu: sync.Mutex{},
+		storage:      storage,
 	}
 
 }
@@ -41,17 +41,18 @@ func NewProcessor(jb interfaces.Transformer, storage interfaces.Storage, workers
 var ErrorAlreadyStarted = errors.New("Already started")
 
 func (p *Processor) Start(ctx context.Context) error {
-	p.TaskCCloseMu.Lock()
+	p.taskCCloseMu.Lock()
 	if !atomic.CompareAndSwapInt32(&p.active, 0, 1) {
+		p.taskCCloseMu.Unlock()
 		return ErrorAlreadyStarted
 	}
-	p.TaskC = make(chan Task)
-	p.TaskCCloseMu.Unlock()
+	p.taskC = make(chan Task)
+	p.taskCCloseMu.Unlock()
 
-	for i := 0; i < p.Workers; i++ {
+	for i := 0; i < p.workers; i++ {
 		go func() {
 			for {
-				t, ok := <-p.TaskC
+				t, ok := <-p.taskC
 				if !ok {
 					return
 				}
@@ -62,20 +63,20 @@ func (p *Processor) Start(ctx context.Context) error {
 
 	go func() {
 		for {
-			jd, ok := <-p.JDC
+			jd, ok := <-p.jdC
 			if !ok {
-				p.TaskCCloseMu.Lock()
+				p.taskCCloseMu.Lock()
 				if atomic.CompareAndSwapInt32(&p.active, 1, 0) {
-					close(p.TaskC)
+					close(p.taskC)
 				}
-				p.TaskCCloseMu.Unlock()
+				p.taskCCloseMu.Unlock()
 				return
 			}
-			p.TaskCCloseMu.Lock()
+			p.taskCCloseMu.Lock()
 			if atomic.LoadInt32(&p.active) == 1 {
-				p.TaskC <- Task{&jd}
+				p.taskC <- Task{&jd}
 			}
-			p.TaskCCloseMu.Unlock()
+			p.taskCCloseMu.Unlock()
 		}
 
 	}()
@@ -83,11 +84,11 @@ func (p *Processor) Start(ctx context.Context) error {
 }
 
 func (p *Processor) Stop(ctx context.Context) error {
-	p.TaskCCloseMu.Lock()
+	p.taskCCloseMu.Lock()
 	if atomic.CompareAndSwapInt32(&p.active, 1, 0) {
-		close(p.TaskC)
+		close(p.taskC)
 	}
-	p.TaskCCloseMu.Unlock()
+	p.taskCCloseMu.Unlock()
 
 	return nil
 }
@@ -126,5 +127,5 @@ func (p *Processor) Process(jd *types.JetDrop) {
 			Timestamp:           mjd.Timestamp,
 		})
 	}
-	p.Storage.SaveJetDropData(mjd, mrs)
+	p.storage.SaveJetDropData(mjd, mrs)
 }

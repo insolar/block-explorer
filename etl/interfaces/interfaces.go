@@ -72,8 +72,8 @@ type Controller interface {
 	SetJetDropData(pulse types.Pulse, jetID []byte)
 }
 
-//go:generate minimock -i github.com/insolar/block-explorer/etl/interfaces.Storage -o ./mock -s _mock.go -g
-// Storage saves data to database
+//go:generate minimock -i github.com/insolar/block-explorer/etl/interfaces.storage -o ./mock -s _mock.go -g
+// storage saves data to database
 type Storage interface {
 	SaveJetDropData(jetDrop models.JetDrop, records []models.Record) error
 }
