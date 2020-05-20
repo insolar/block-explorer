@@ -8,7 +8,7 @@ package processor
 import (
 	"context"
 	"errors"
-	"sync"
+	"sync/atomic"
 
 	"github.com/insolar/block-explorer/etl/interfaces"
 	"github.com/insolar/block-explorer/etl/models"
@@ -18,9 +18,9 @@ import (
 type Processor struct {
 	JDC     <-chan types.JetDrop
 	TaskC   chan Task
-	TaskCMU sync.Mutex
 	Storage interfaces.Storage
 	Workers int
+	active  int32
 }
 
 func NewProcessor(jb interfaces.Transformer, storage interfaces.Storage, workers int) *Processor {
@@ -38,13 +38,15 @@ func NewProcessor(jb interfaces.Transformer, storage interfaces.Storage, workers
 var ErrorAlreadyStarted = errors.New("Already started")
 
 func (p *Processor) Start(ctx context.Context) error {
+	if !atomic.CompareAndSwapInt32(&p.active, 0, 1) {
+		return ErrorAlreadyStarted
+	}
 	p.TaskC = make(chan Task)
-	p.TaskCMU = sync.Mutex{}
+
 	for i := 0; i < p.Workers; i++ {
 		go func() {
 			for {
 				t, ok := <-p.TaskC
-
 				if !ok {
 					return
 				}
@@ -57,14 +59,14 @@ func (p *Processor) Start(ctx context.Context) error {
 		for {
 			jd, ok := <-p.JDC
 			if !ok {
-				p.TaskCMU.Lock()
-				close(p.TaskC)
-				p.TaskCMU.Unlock()
+				if atomic.CompareAndSwapInt32(&p.active, 1, 0) {
+					close(p.TaskC)
+				}
 				return
 			}
-			p.TaskCMU.Lock()
-			p.TaskC <- Task{&jd}
-			p.TaskCMU.Unlock()
+			if atomic.LoadInt32(&p.active) == 1 {
+				p.TaskC <- Task{&jd}
+			}
 		}
 
 	}()
@@ -72,10 +74,9 @@ func (p *Processor) Start(ctx context.Context) error {
 }
 
 func (p *Processor) Stop(ctx context.Context) error {
-	p.TaskCMU.Lock()
-	close(p.TaskC)
-	p.TaskCMU.Unlock()
-
+	if atomic.CompareAndSwapInt32(&p.active, 1, 0) {
+		close(p.TaskC)
+	}
 	return nil
 }
 

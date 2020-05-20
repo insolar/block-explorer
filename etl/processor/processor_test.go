@@ -23,7 +23,6 @@ func TestNewProcessor(t *testing.T) {
 	})
 
 	wg := sync.WaitGroup{}
-	wg.Add(5)
 	saves := int32(0)
 	sm := mock.NewStorageMock(t)
 	sm.SaveJetDropDataMock.Set(func(jetDrop models.JetDrop, records []models.Record) (err error) {
@@ -37,6 +36,7 @@ func TestNewProcessor(t *testing.T) {
 
 	require.NoError(t, p.Start(ctx))
 
+	wg.Add(5)
 	for i := 0; i < 5; i++ {
 		JDC <- types.JetDrop{
 			MainSection: &types.MainSection{
