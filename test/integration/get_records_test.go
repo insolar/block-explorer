@@ -40,14 +40,14 @@ func (a *integrationSuite) SetupSuite() {
 
 	ctx := context.Background()
 	a.cfg = configuration.Replicator{
-		Addr:            a.s.GetAddress(),
+		Addr:            a.s.Address,
 		MaxTransportMsg: 100500,
 	}
 	c, err := connection.NewMainNetClient(ctx, a.cfg)
 	require.NoError(a.T(), err)
 	a.c = c
 
-	i, err := heavymock.NewImporterClient(a.s.GetAddress())
+	i, err := heavymock.NewImporterClient(a.s.Address)
 	require.NoError(a.T(), err)
 	a.i = i
 

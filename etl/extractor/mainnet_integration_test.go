@@ -31,7 +31,7 @@ func TestExporterIsWorking(t *testing.T) {
 
 	// prepare config with listening address
 	cfg := configuration.Replicator{
-		Addr:            server.Address,
+		Addr:            server.Network,
 		MaxTransportMsg: 100500,
 	}
 

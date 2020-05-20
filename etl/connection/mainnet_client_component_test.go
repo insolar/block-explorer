@@ -43,7 +43,7 @@ func TestClient_GetGRPCConnIsWorking(t *testing.T) {
 
 	// prepare config with listening address
 	cfg := configuration.Replicator{
-		Addr:            server.GetAddress(),
+		Addr:            server.Address,
 		MaxTransportMsg: 100500,
 	}
 

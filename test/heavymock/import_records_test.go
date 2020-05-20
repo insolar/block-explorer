@@ -22,7 +22,7 @@ func TestHeavymockImporter_import(t *testing.T) {
 	server.Serve(t)
 	defer server.Server.Stop()
 
-	importerConn, err := NewImporterClient(server.GetAddress())
+	importerConn, err := NewImporterClient(server.Address)
 	require.NoError(t, err)
 
 	defer importerConn.GetGRPCConn().Close()
