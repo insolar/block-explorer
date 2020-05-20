@@ -6,8 +6,6 @@
 package migrations
 
 import (
-	"time"
-
 	"github.com/jinzhu/gorm"
 	"gopkg.in/gormigrate.v1"
 
@@ -24,7 +22,7 @@ func Migrations() []*gormigrate.Migration {
 					PrevPulseNumber int
 					NextPulseNumber int
 					IsComplete      bool
-					Timestamp       time.Time
+					Timestamp       int64
 				}
 				if err := tx.CreateTable(&Pulse{}).Error; err != nil {
 					return err
@@ -40,7 +38,7 @@ func Migrations() []*gormigrate.Migration {
 					SecondPrevHash []byte
 					Hash           []byte
 					RawData        []byte
-					Timestamp      time.Time
+					Timestamp      int64
 				}
 				if err := tx.CreateTable(&JetDrop{}).Error; err != nil {
 					return err
@@ -64,7 +62,7 @@ func Migrations() []*gormigrate.Migration {
 					JetID               []byte
 					PulseNumber         int
 					Order               int
-					Timestamp           time.Time
+					Timestamp           int64
 				}
 				if err := tx.CreateTable(&Record{}).Error; err != nil {
 					return err

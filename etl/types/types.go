@@ -6,8 +6,6 @@
 package types
 
 import (
-	"time"
-
 	"github.com/insolar/insolar/ledger/heavy/exporter"
 )
 
@@ -53,7 +51,7 @@ type DropContinue struct {
 type Pulse struct {
 	PulseNo        int
 	EpochPulseNo   int
-	PulseTimestamp time.Time
+	PulseTimestamp int64
 	NextPulseDelta int
 	PrevPulseDelta int
 }

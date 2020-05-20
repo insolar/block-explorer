@@ -18,11 +18,6 @@ import (
 	"github.com/insolar/block-explorer/testutils"
 )
 
-func currentTime() time.Time {
-	loc, _ := time.LoadLocation("Etc/UTC")
-	return time.Now().In(loc)
-}
-
 func initRecord() models.Record {
 	return models.Record{
 		Reference:           gen.Reference().Bytes(),
@@ -36,7 +31,7 @@ func initRecord() models.Record {
 		JetID:               []byte{1, 1, 1},
 		PulseNumber:         1,
 		Order:               1,
-		Timestamp:           currentTime(),
+		Timestamp:           time.Now().Unix(),
 	}
 }
 

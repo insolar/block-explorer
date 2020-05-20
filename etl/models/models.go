@@ -5,10 +5,6 @@
 
 package models
 
-import (
-	"time"
-)
-
 type RecordType string
 
 const (
@@ -31,7 +27,7 @@ type Record struct {
 	JetID               []byte
 	PulseNumber         int
 	Order               int
-	Timestamp           time.Time
+	Timestamp           int64
 }
 
 type JetDrop struct {
@@ -41,7 +37,7 @@ type JetDrop struct {
 	SecondPrevHash []byte
 	Hash           []byte
 	RawData        []byte
-	Timestamp      time.Time
+	Timestamp      int64
 }
 
 type Pulse struct {
@@ -49,5 +45,5 @@ type Pulse struct {
 	PrevPulseNumber int
 	NextPulseNumber int
 	IsComplete      bool
-	Timestamp       time.Time
+	Timestamp       int64
 }
