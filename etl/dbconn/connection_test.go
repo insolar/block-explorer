@@ -22,6 +22,7 @@ func TestConnect(t *testing.T) {
 	dbName := "test_db"
 	dbPassword := "secret"
 	pool, resource, poolCleaner := testutils.RunDBInDocker(dbName, dbPassword)
+	defer poolCleaner()
 
 	cfg := configuration.DB{
 		URL: fmt.Sprintf("postgres://postgres:%s@localhost:%s/%s?sslmode=disable", dbPassword, resource.GetPort("5432/tcp"), dbName),
@@ -35,7 +36,6 @@ func TestConnect(t *testing.T) {
 	})
 	require.NoError(t, err)
 	require.NotNil(t, db)
-	poolCleaner()
 }
 
 func TestConnect_WrongURL(t *testing.T) {

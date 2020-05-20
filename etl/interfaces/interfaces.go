@@ -73,7 +73,18 @@ type Controller interface {
 	SetJetDropData(pulse types.Pulse, jetID []byte)
 }
 
-// Storage saves data to database
-type Storage interface {
+// Setter saves data to database
+type Setter interface {
 	SaveJetDropData(jetDrop models.JetDrop, records []models.Record) error
+}
+
+// Fetcher gets data from database
+type Fetcher interface {
+	GetRecord(ref models.Reference) (models.Record, error)
+}
+
+// Storage manipulates data in database
+type Storage interface {
+	Setter
+	Fetcher
 }

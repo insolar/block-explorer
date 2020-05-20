@@ -6,10 +6,15 @@
 package testutils
 
 import (
+	"fmt"
 	"log"
 
+	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/ory/dockertest/v3"
+	"gopkg.in/gormigrate.v1"
+
+	"github.com/insolar/block-explorer/migrations"
 )
 
 
@@ -39,4 +44,46 @@ func RunDBInDocker(dbName, dbPassword string) (*dockertest.Pool, *dockertest.Res
 		}
 	}
 	return pool, resource, poolCleaner
+}
+
+func SetupDB() (*gorm.DB, func()) {
+	dbName := "test_db"
+	dbPassword := "secret"
+	pool, resource, poolCleaner := RunDBInDocker(dbName, dbPassword)
+	dbURL := fmt.Sprintf("postgres://postgres:%s@localhost:%s/%s?sslmode=disable", dbPassword, resource.GetPort("5432/tcp"), dbName)
+
+	var db *gorm.DB
+	err := pool.Retry(func() error {
+		var err error
+
+		db, err = gorm.Open("postgres", dbURL)
+		if err != nil {
+			return err
+		}
+		err = db.Exec("select 1").Error
+		return err
+	})
+	if err != nil {
+		poolCleaner()
+		log.Panicf("Could not start postgres: %s", err)
+	}
+
+	dbCleaner := func() {
+		err := db.Close()
+		if err != nil {
+			log.Printf("failed to purge docker pool: %s", err)
+		}
+	}
+	cleaner := func() {
+		dbCleaner()
+		poolCleaner()
+	}
+
+	m := gormigrate.New(db, gormigrate.DefaultOptions, migrations.Migrations())
+
+	if err = m.Migrate(); err != nil {
+		log.Fatalf("Could not migrate: %v", err)
+	}
+
+	return db, cleaner
 }

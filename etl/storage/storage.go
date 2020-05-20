@@ -7,6 +7,7 @@ package storage
 
 import (
 	"github.com/jinzhu/gorm"
+	"github.com/pkg/errors"
 
 	"github.com/insolar/block-explorer/etl/interfaces"
 	"github.com/insolar/block-explorer/etl/models"
@@ -23,5 +24,33 @@ func NewStorage(db *gorm.DB) interfaces.Storage {
 }
 
 func (s *storage) SaveJetDropData(jetDrop models.JetDrop, records []models.Record) error {
-	panic("not implemented")
+	return s.db.Transaction(func(tx *gorm.DB) error {
+		// create zero pulse and zero jetDrop for FK at Record table
+		// TODO: save pulse correctly at PENV-266
+		pulse := models.Pulse{PulseNumber:1}
+		if err := tx.Save(&pulse).Error; err != nil {
+			return errors.Wrap(err, "error while saving pulse")
+		}
+		// TODO: save jetDrop correctly at PENV-267
+		jetDrop.PulseNumber = 1
+		if err := tx.Save(&jetDrop).Error; err != nil {
+			return errors.Wrap(err, "error while saving jetDrop")
+		}
+
+		for _, record := range records {
+			// TODO: dont rewrite pulseNumber, fix it at PENV-266 or PENV-267
+			record.PulseNumber = 1
+			if err := tx.Save(&record).Error; err != nil {
+				return errors.Wrap(err, "error while saving record")
+			}
+		}
+
+		return nil
+	})
+}
+
+func (s *storage) GetRecord(ref models.Reference) (models.Record, error) {
+	record := models.Record{}
+	err := s.db.Where("reference = ?", []byte(ref)).First(&record).Error
+	return record, err
 }

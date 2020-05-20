@@ -20,7 +20,7 @@ const (
 type Reference []byte
 
 type Record struct {
-	Reference           Reference
+	Reference           Reference `gorm:"primary_key;auto_increment:false"`
 	Type                RecordType
 	ObjectReference     Reference
 	PrototypeReference  Reference
@@ -35,8 +35,8 @@ type Record struct {
 }
 
 type JetDrop struct {
-	JetID          []byte
-	PulseNumber    int
+	JetID          []byte `gorm:"primary_key;auto_increment:false"`
+	PulseNumber    int    `gorm:"primary_key;auto_increment:false"`
 	FirstPrevHash  []byte
 	SecondPrevHash []byte
 	Hash           []byte
@@ -45,7 +45,7 @@ type JetDrop struct {
 }
 
 type Pulse struct {
-	PulseNumber     int
+	PulseNumber     int `gorm:"primary_key;auto_increment:false"`
 	PrevPulseNumber int
 	NextPulseNumber int
 	IsComplete      bool
