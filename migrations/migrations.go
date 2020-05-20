@@ -68,7 +68,7 @@ func Migrations() []*gormigrate.Migration {
 					return err
 				}
 				if err := tx.Model(Record{}).AddIndex(
-					"idx_objectreference_pulsenumber_order", "object_reference", "pulse_number", "order").Error; err != nil {
+					"idx_objectreference_type_pulsenumber_order", "object_reference", "type", "pulse_number", "order").Error; err != nil {
 					return err
 				}
 				if err := tx.Model(Record{}).AddIndex(

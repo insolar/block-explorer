@@ -57,4 +57,5 @@ func main() {
 	}
 	// TODO: change to logger after PENV-279
 	// log.Info("migrated successfully!")
+	fmt.Println("migrated successfully!")
 }
