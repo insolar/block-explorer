@@ -8,6 +8,7 @@ package processor
 import (
 	"context"
 	"errors"
+	"sync"
 	"sync/atomic"
 
 	"github.com/insolar/block-explorer/etl/interfaces"
@@ -16,11 +17,12 @@ import (
 )
 
 type Processor struct {
-	JDC     <-chan types.JetDrop
-	TaskC   chan Task
-	Storage interfaces.Storage
-	Workers int
-	active  int32
+	JDC          <-chan types.JetDrop
+	TaskC        chan Task
+	TaskCCloseMu sync.Mutex
+	Storage      interfaces.Storage
+	Workers      int
+	active       int32
 }
 
 func NewProcessor(jb interfaces.Transformer, storage interfaces.Storage, workers int) *Processor {
@@ -28,9 +30,10 @@ func NewProcessor(jb interfaces.Transformer, storage interfaces.Storage, workers
 		workers = 1
 	}
 	return &Processor{
-		JDC:     jb.GetJetDropsChannel(),
-		Workers: workers,
-		Storage: storage,
+		JDC:          jb.GetJetDropsChannel(),
+		Workers:      workers,
+		TaskCCloseMu: sync.Mutex{},
+		Storage:      storage,
 	}
 
 }
@@ -59,14 +62,18 @@ func (p *Processor) Start(ctx context.Context) error {
 		for {
 			jd, ok := <-p.JDC
 			if !ok {
+				p.TaskCCloseMu.Lock()
 				if atomic.CompareAndSwapInt32(&p.active, 1, 0) {
 					close(p.TaskC)
 				}
+				p.TaskCCloseMu.Unlock()
 				return
 			}
+			p.TaskCCloseMu.Lock()
 			if atomic.LoadInt32(&p.active) == 1 {
 				p.TaskC <- Task{&jd}
 			}
+			p.TaskCCloseMu.Unlock()
 		}
 
 	}()
@@ -74,9 +81,12 @@ func (p *Processor) Start(ctx context.Context) error {
 }
 
 func (p *Processor) Stop(ctx context.Context) error {
+	p.TaskCCloseMu.Lock()
 	if atomic.CompareAndSwapInt32(&p.active, 1, 0) {
 		close(p.TaskC)
 	}
+	p.TaskCCloseMu.Unlock()
+
 	return nil
 }
 
