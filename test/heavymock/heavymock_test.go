@@ -3,9 +3,7 @@
 // This material is licensed under the Insolar License version 1.0,
 // available at https://github.com/insolar/block-explorer/blob/master/LICENSE.md.
 
-// +build integration
-
-package connection
+package heavymock
 
 import (
 	"context"
@@ -13,53 +11,37 @@ import (
 	"testing"
 
 	"github.com/insolar/block-explorer/configuration"
+	"github.com/insolar/block-explorer/etl/connection"
 	"github.com/insolar/block-explorer/testutils"
-	"github.com/insolar/insolar/insolar/record"
-	pb "github.com/insolar/insolar/ledger/heavy/exporter"
+	"github.com/insolar/insolar/ledger/heavy/exporter"
 	"github.com/stretchr/testify/require"
 )
 
-type recExpServer struct{}
-
-var expectedRecord = &pb.Record{
-	Polymorph:         1,
-	RecordNumber:      100,
-	Record:            record.Material{},
-	ShouldIterateFrom: nil,
-}
-
-func (r *recExpServer) Export(records *pb.GetRecords, stream pb.RecordExporter_ExportServer) error {
-	if err := stream.Send(expectedRecord); err != nil {
-		return err
-	}
-	return nil
-}
-
-func TestClient_GetGRPCConnIsWorking(t *testing.T) {
+func TestConnect(t *testing.T) {
 	server := testutils.CreateTestGRPCServer(t)
-	pb.RegisterRecordExporterServer(server.Server, &recExpServer{})
+	exporter.RegisterRecordExporterServer(server.Server, NewRecordExporter(&ImporterServer{}))
 	server.Serve(t)
 	defer server.Server.Stop()
 
 	// prepare config with listening address
 	cfg := configuration.Replicator{
-		Addr:            server.Listener.Addr().String(),
+		Addr:            server.Address,
 		MaxTransportMsg: 100500,
 	}
 
 	// initialization MainNet connection
-	client, err := NewMainNetClient(context.Background(), cfg)
+	ctx := context.Background()
+	client, err := connection.NewGrpcClientConnection(ctx, cfg)
 	require.NoError(t, err)
 	defer client.GetGRPCConn().Close()
 
-	greeterClient := pb.NewRecordExporterClient(client.GetGRPCConn())
+	greeterClient := exporter.NewRecordExporterClient(client.GetGRPCConn())
 	// send record to stream
-	request := &pb.GetRecords{}
+	request := &exporter.GetRecords{}
 	stream, err := greeterClient.Export(context.Background(), request)
 	require.NoError(t, err, "Error when sending client request")
 
 	for {
-		t.Log("listening...")
 		record, err := stream.Recv()
 		if err == io.EOF {
 			break
@@ -68,6 +50,7 @@ func TestClient_GetGRPCConnIsWorking(t *testing.T) {
 			t.Fatalf("%v.Export(_) = _, %v", client, err)
 		}
 		require.NoError(t, err, "Err listening stream")
-		require.Equal(t, expectedRecord, record, "Incorrect response message")
+		require.True(t, SimpleRecord.Equal(record), "Incorrect response message")
+		t.Logf("received record: %v", record)
 	}
 }

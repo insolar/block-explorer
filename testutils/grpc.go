@@ -17,6 +17,7 @@ import (
 type TestGRPCServer struct {
 	Listener net.Listener
 	Server   *grpc.Server
+	Network  string
 	Address  string
 }
 
@@ -28,7 +29,8 @@ func CreateTestGRPCServer(t *testing.T) *TestGRPCServer {
 	return &TestGRPCServer{
 		Listener: listener,
 		Server:   grpcServer,
-		Address:  listener.Addr().Network(),
+		Network:  listener.Addr().Network(),
+		Address:  listener.Addr().String(),
 	}
 }
 
