@@ -56,7 +56,7 @@ func (p *Processor) Start(ctx context.Context) error {
 				if !ok {
 					return
 				}
-				p.Process(t.JD)
+				p.process(t.JD)
 			}
 		}()
 	}
@@ -97,7 +97,7 @@ type Task struct {
 	JD *types.JetDrop
 }
 
-func (p *Processor) Process(jd *types.JetDrop) {
+func (p *Processor) process(jd *types.JetDrop) {
 	ms := jd.MainSection
 	pd := ms.Start.PulseData
 	mjd := models.JetDrop{
