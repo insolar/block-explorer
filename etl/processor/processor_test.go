@@ -2,7 +2,9 @@ package processor
 
 import (
 	"context"
+	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/insolar/block-explorer/etl/models"
 
@@ -20,12 +22,14 @@ func TestNewProcessor(t *testing.T) {
 		return JDC
 	})
 
+	saves := int32(0)
 	sm := mock.NewStorageMock(t)
 	sm.SaveJetDropDataMock.Set(func(jetDrop models.JetDrop, records []models.Record) (err error) {
+		atomic.AddInt32(&saves, 1)
 		return nil
 	})
 
-	p := NewProcessor(trm, sm, 0)
+	p := NewProcessor(trm, sm, 5)
 	require.NotNil(t, p)
 
 	require.NoError(t, p.Start(ctx))
@@ -46,6 +50,7 @@ func TestNewProcessor(t *testing.T) {
 			RawData:  nil,
 		}
 	}
-
+	time.Sleep(time.Millisecond)
 	require.NoError(t, p.Stop(ctx))
+	require.Equal(t, int32(5), saves)
 }
