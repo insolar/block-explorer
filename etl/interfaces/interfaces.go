@@ -44,10 +44,8 @@ type ConnectionManager interface {
 type Transformer interface {
 	Starter
 	Stopper
-	// transform transforms the row data to canonical data
-	transform(drop types.PlatformJetDrops) types.JetDrop
 	// GetJetDropsChannel returns the channel where canonical data will be stored
-	GetJetDropsChannel() <-chan types.JetDrop
+	GetJetDropsChannel() <-chan *types.JetDrop
 }
 
 //go:generate minimock -i github.com/insolar/block-explorer/etl/interfaces.Client -o ./mock -s _mock.go -g

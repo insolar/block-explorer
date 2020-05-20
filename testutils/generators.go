@@ -6,7 +6,6 @@
 package testutils
 
 import (
-	"fmt"
 	"io"
 
 	"github.com/insolar/insolar/insolar/gen"
@@ -21,7 +20,6 @@ func GenerateRecords(batchSize int) func() (record *exporter.Record, e error) {
 	eof := true
 
 	generateRecords := func() (record *exporter.Record, e error) {
-		fmt.Println("Start generating records number " + string(cnt))
 		if !eof && cnt%batchSize == 0 {
 			eof = true
 			return &exporter.Record{}, io.EOF
@@ -31,7 +29,8 @@ func GenerateRecords(batchSize int) func() (record *exporter.Record, e error) {
 		return &exporter.Record{
 			RecordNumber: uint32(cnt),
 			Record: insrecord.Material{
-				ID: gen.IDWithPulse(pn),
+				ID:    gen.IDWithPulse(pn),
+				JetID: gen.JetID(),
 			},
 			ShouldIterateFrom: nil,
 		}, nil

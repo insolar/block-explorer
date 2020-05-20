@@ -25,18 +25,15 @@ type Section interface {
 	IsSection() bool
 }
 
-func (m MainSection) IsSection() bool {
-	panic("implement me")
-}
-
 type MainSection struct {
+	Section
 	Start        DropStart
 	DropContinue DropContinue
-	Sections     []uint
 	Records      []Record
 }
 
 type AdditionalSection struct {
+	Section
 	RecordExtensions []Record
 }
 
