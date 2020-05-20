@@ -2,7 +2,7 @@
 // All rights reserved.
 // This material is licensed under the Insolar License version 1.0,
 // available at https://github.com/insolar/block-explorer/blob/master/LICENSE.md.
-// +build mock_integration
+// +build heavy_mock_integration
 
 package integration
 
@@ -21,115 +21,113 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-type integrationTest struct {
+type integrationSuite struct {
 	suite.Suite
-	s      *testutils.TestGRPCServer
-	c      *connection.MainnetClient
-	i      *heavymock.ImporterClient
-	t      *testing.T
-	cfg    configuration.Replicator
-	expcli exporter.RecordExporterClient
-	impcli heavymock.HeavymockImporterClient
+	s              *testutils.TestGRPCServer
+	c              *connection.MainnetClient
+	i              *heavymock.ImporterClient
+	cfg            configuration.Replicator
+	exporterClient exporter.RecordExporterClient
+	importerClient heavymock.HeavymockImporterClient
 }
 
-func (a *integrationTest) SetupSuite() {
-	a.t = a.T()
-	a.s = testutils.CreateTestGRPCServer(a.t)
+func (a *integrationSuite) SetupSuite() {
+	a.s = testutils.CreateTestGRPCServer(a.T())
 	importer := heavymock.NewHeavymockImporter()
 	heavymock.RegisterHeavymockImporterServer(a.s.Server, importer)
 	exporter.RegisterRecordExporterServer(a.s.Server, heavymock.NewRecordExporter(importer))
-	a.s.Serve(a.t)
+	a.s.Serve(a.T())
 
 	ctx := context.Background()
 	a.cfg = configuration.Replicator{
-		Addr:            a.s.GetPort(),
+		Addr:            a.s.GetAddress(),
 		MaxTransportMsg: 100500,
 	}
 	c, err := connection.NewMainNetClient(ctx, a.cfg)
-	require.NoError(a.t, err)
+	require.NoError(a.T(), err)
 	a.c = c
 
-	i, err := heavymock.NewImporterClient(a.s.GetPort())
-	require.NoError(a.t, err)
+	i, err := heavymock.NewImporterClient(a.s.GetAddress())
+	require.NoError(a.T(), err)
 	a.i = i
 
-	a.expcli = exporter.NewRecordExporterClient(a.c.GetGRPCConn())
-	a.impcli = heavymock.NewHeavymockImporterClient(a.i.GetGRPCConn())
+	a.exporterClient = exporter.NewRecordExporterClient(a.c.GetGRPCConn())
+	a.importerClient = heavymock.NewHeavymockImporterClient(a.i.GetGRPCConn())
 }
 
-func (a *integrationTest) TearDownSuite() {
+func (a *integrationSuite) TearDownSuite() {
 	a.s.Server.Stop()
 	a.c.GetGRPCConn().Close()
 	a.i.GetGRPCConn().Close()
 }
 
-func (a *integrationTest) TestGetRecords_simpleRecord() {
+func (a *integrationSuite) TestGetRecords_simpleRecord() {
 	request := &exporter.GetRecords{
 		Count: uint32(5),
 	}
 
-	stream, err := a.expcli.Export(context.Background(), request)
-	require.NoError(a.t, err, "Error when sending client request")
+	stream, err := a.exporterClient.Export(context.Background(), request)
+	require.NoError(a.T(), err, "Error when sending client request")
 
 	for {
 		record, err := stream.Recv()
 		if err == io.EOF {
 			break
 		}
-		require.NoError(a.t, err, "Err listening stream")
-		require.Equal(a.t, heavymock.SimpleRecord, record, "Incorrect response message")
-		a.t.Logf("received record: %v", record)
+		require.NoError(a.T(), err, "Err listening stream")
+		require.True(a.T(), heavymock.SimpleRecord.Equal(record), "Incorrect response message")
+		a.T().Logf("received record: %v", record)
 	}
 }
 
-func (a *integrationTest) TestGetRecords_pulseRecords() {
+func (a *integrationSuite) TestGetRecords_pulseRecords() {
 	expPulse := gen.PulseNumber()
 	request := &exporter.GetRecords{
 		Count:       uint32(5),
 		PulseNumber: expPulse,
 	}
 
-	stream, err := a.expcli.Export(context.Background(), request)
-	require.NoError(a.t, err, "Error when sending client request")
+	stream, err := a.exporterClient.Export(context.Background(), request)
+	require.NoError(a.T(), err, "Error when sending client request")
 
 	for {
 		record, err := stream.Recv()
 		if err == io.EOF {
 			break
 		}
-		require.NoError(a.t, err, "Err listening stream")
-		a.t.Logf("received record: %v", record)
-		require.Equal(a.t, &expPulse, record.ShouldIterateFrom, "Incorrect record pulse number")
+		require.NoError(a.T(), err, "Err listening stream")
+		a.T().Logf("received record: %v", record)
+		require.Equal(a.T(), &expPulse, record.ShouldIterateFrom, "Incorrect record pulse number")
 	}
 }
 
-func (a *integrationTest) TestGetRecords_sendAndReceiveWithImporter() {
+func (a *integrationSuite) TestGetRecords_sendAndReceiveWithImporter() {
 	var expectedRecords []exporter.Record
 	recordsCount := 10
 	for i := 0; i < recordsCount; i++ {
 		expectedRecords = append(expectedRecords, *heavymock.SimpleRecord)
 	}
 
-	stream, err := a.impcli.Import(context.Background())
-	require.NoError(a.t, err)
+	stream, err := a.importerClient.Import(context.Background())
+	require.NoError(a.T(), err)
 	for _, record := range expectedRecords {
 		if err := stream.Send(&record); err != nil {
 			if err == io.EOF {
 				break
 			}
-			a.t.Fatal("Error sending to stream", err)
+			a.T().Fatal("Error sending to stream", err)
 		}
 	}
 	reply, err := stream.CloseAndRecv()
-	require.NoError(a.t, err)
-	require.True(a.t, reply.Ok)
+	require.NoError(a.T(), err)
+	require.True(a.T(), reply.Ok)
 
 	request := &exporter.GetRecords{
 		Polymorph: heavymock.MagicPolymorphExport,
 	}
 
-	expStream, err := a.expcli.Export(context.Background(), request)
-	require.NoError(a.t, err, "Error when sending export request")
+	expStream, err := a.exporterClient.Export(context.Background(), request)
+	require.NoError(a.T(), err, "Error when sending export request")
 
 	var c int
 	for {
@@ -138,13 +136,13 @@ func (a *integrationTest) TestGetRecords_sendAndReceiveWithImporter() {
 			break
 		}
 		c++
-		require.NoError(a.t, err, "Err listening stream")
-		a.t.Logf("received record: %v", record)
-		require.True(a.t, heavymock.SimpleRecord.Equal(record), "Incorrect record pulse number")
+		require.NoError(a.T(), err, "Err listening stream")
+		a.T().Logf("received record: %v", record)
+		require.True(a.T(), heavymock.SimpleRecord.Equal(record), "Incorrect record pulse number")
 	}
-	require.Equal(a.t, recordsCount, c)
+	require.Equal(a.T(), recordsCount, c)
 }
 
 func TestAllTests(t *testing.T) {
-	suite.Run(t, new(integrationTest))
+	suite.Run(t, new(integrationSuite))
 }

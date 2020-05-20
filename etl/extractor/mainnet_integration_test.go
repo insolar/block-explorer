@@ -50,7 +50,7 @@ func TestExporterIsWorking(t *testing.T) {
 			require.NotEmpty(t, jd.Records)
 			t.Log(fmt.Sprintf("RecordNumber=%d, Pn=%d\n\n", jd.Records[0].RecordNumber, jd.Records[0].GetRecord().ID))
 			//todo: replace to logger
-			// logger.Debug("RecordNumber=%d, Pn=%d\n\n", jd.SavedRecords[0].RecordNumber, jd.SavedRecords[0].GetRecord().ID)
+			// logger.Debug("RecordNumber=%d, Pn=%d\n\n", jd.Records[0].RecordNumber, jd.Records[0].GetRecord().ID)
 		}
 	}
 }

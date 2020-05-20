@@ -43,7 +43,7 @@ func TestClient_GetGRPCConnIsWorking(t *testing.T) {
 
 	// prepare config with listening address
 	cfg := configuration.Replicator{
-		Addr:            server.GetPort(),
+		Addr:            server.GetAddress(),
 		MaxTransportMsg: 100500,
 	}
 
@@ -68,6 +68,6 @@ func TestClient_GetGRPCConnIsWorking(t *testing.T) {
 			t.Fatalf("%v.Export(_) = _, %v", client, err)
 		}
 		require.NoError(t, err, "Err listening stream")
-		require.Equal(t, expectedRecord, record, "Incorrect response message")
+		require.True(t, expectedRecord.Equal(record), "Incorrect response message")
 	}
 }

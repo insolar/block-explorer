@@ -44,7 +44,7 @@ unit:  ## run unit tests
 	go test -v ./... -count 10 -race
 
 .PHONY: test
-test: unit integration test-with-mock ## run unit and integrations tests with race
+test: unit integration test-heavy-mock-integration ## run all tests
 
 .PHONY: integration
 integration: ## run integrations tests with race
@@ -54,9 +54,9 @@ integration: ## run integrations tests with race
 test-with-coverage: ## run tests with coverage mode
 	go test -v ./... -tags integration -count 1 --coverprofile=$(COVERPROFILE) --covermode=count
 
-.PHONY: test-with-mock
-test-with-mock:
-	go test -v ./test/integration/... -tags mock_integration -count 10 -race -failfast
+.PHONY: test-heavy-mock-integration
+test-heavy-mock-integration:
+	go test -v ./test/integration/... -tags heavy_mock_integration -count 10 -race -failfast
 
 .PHONY: lint
 lint: golangci ## run linter

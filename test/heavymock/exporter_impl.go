@@ -12,7 +12,11 @@ import (
 )
 
 const (
-	timeout              = 10 * time.Microsecond
+	// timeout to wait between sending records to the stream
+	recordSendingIntervalTimeout = 10 * time.Microsecond
+	// this constant is used to be set in the field exporter.GetRecords.Polymorph when
+	// sending request to heavymock. Response stream must contain saved records in heavymock, which
+	// were previously imported using heavymock.ImporterClient.
 	MagicPolymorphExport = 101010
 )
 
@@ -32,7 +36,7 @@ func (r *RecordExporter) Export(records *exporter.GetRecords, stream exporter.Re
 
 	if records.PulseNumber == 0 {
 		for i := 0; i < count; i++ {
-			time.Sleep(timeout)
+			time.Sleep(recordSendingIntervalTimeout)
 			if err := stream.Send(SimpleRecord); err != nil {
 				return err
 			}
@@ -40,7 +44,7 @@ func (r *RecordExporter) Export(records *exporter.GetRecords, stream exporter.Re
 	} else {
 		records := GetRecordsByPulse(pulse, count)
 		for _, r := range records {
-			time.Sleep(timeout)
+			time.Sleep(recordSendingIntervalTimeout)
 			if err := stream.Send(&r); err != nil {
 				return err
 			}
@@ -49,12 +53,10 @@ func (r *RecordExporter) Export(records *exporter.GetRecords, stream exporter.Re
 
 	if records.Polymorph == MagicPolymorphExport {
 		savedRecords := r.importerServer.GetSavedRecords()
-		if len(savedRecords) > 0 {
-			for _, r := range savedRecords {
-				time.Sleep(timeout)
-				if err := stream.Send(&r); err != nil {
-					return err
-				}
+		for _, r := range savedRecords {
+			time.Sleep(recordSendingIntervalTimeout)
+			if err := stream.Send(&r); err != nil {
+				return err
 			}
 		}
 	}
