@@ -41,9 +41,12 @@ func NewProcessor(jb interfaces.Transformer, storage interfaces.Storage, workers
 var ErrorAlreadyStarted = errors.New("Already started")
 
 func (p *Processor) Start(ctx context.Context) error {
+	p.TaskCCloseMu.Lock()
 	if !atomic.CompareAndSwapInt32(&p.active, 0, 1) {
 		return ErrorAlreadyStarted
 	}
+	p.TaskCCloseMu.Unlock()
+
 	p.TaskC = make(chan Task)
 
 	for i := 0; i < p.Workers; i++ {
