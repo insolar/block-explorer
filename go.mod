@@ -9,10 +9,10 @@ require (
 	github.com/insolar/insconfig v0.0.0-20200430133349-77f6f1624abf
 	github.com/insolar/insolar v1.5.2
 	github.com/jinzhu/gorm v1.9.12
+	github.com/ory/dockertest/v3 v3.5.2
 	github.com/pkg/errors v0.9.1
 	github.com/rs/zerolog v1.15.0
 	github.com/stretchr/testify v1.4.0
-	google.golang.org/appengine v1.4.0 // indirect
 	google.golang.org/grpc v1.21.0
 	gopkg.in/gormigrate.v1 v1.6.0
 )

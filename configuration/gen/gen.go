@@ -19,7 +19,7 @@ import (
 func main() {
 	configs := map[string]interface{}{
 		".artifacts/block-explorer.yaml": configuration.BlockExplorer{},
-		".artifacts/migrate.yaml": configuration.DB{},
+		".artifacts/migrate.yaml":        configuration.DB{},
 	}
 
 	log := belogger.FromContext(context.Background())

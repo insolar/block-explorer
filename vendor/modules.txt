@@ -2,6 +2,14 @@
 contrib.go.opencensus.io/exporter/prometheus
 # github.com/AndreasBriese/bbloom v0.0.0-20190825152654-46b345b51c96
 github.com/AndreasBriese/bbloom
+# github.com/Azure/go-ansiterm v0.0.0-20170929234023-d6e3b3328b78
+github.com/Azure/go-ansiterm
+github.com/Azure/go-ansiterm/winterm
+# github.com/Microsoft/go-winio v0.4.14
+github.com/Microsoft/go-winio
+github.com/Microsoft/go-winio/pkg/guid
+# github.com/Nvveen/Gotty v0.0.0-20120604004816-cd527374f1e5
+github.com/Nvveen/Gotty
 # github.com/ThreeDotsLabs/watermill v1.0.2
 github.com/ThreeDotsLabs/watermill
 github.com/ThreeDotsLabs/watermill/internal
@@ -9,6 +17,10 @@ github.com/ThreeDotsLabs/watermill/message
 github.com/ThreeDotsLabs/watermill/pubsub/sync
 # github.com/beorn7/perks v1.0.1
 github.com/beorn7/perks/quantile
+# github.com/cenkalti/backoff/v3 v3.0.0
+github.com/cenkalti/backoff/v3
+# github.com/containerd/continuity v0.0.0-20190827140505-75bee3e2ccb6
+github.com/containerd/continuity/pathdriver
 # github.com/davecgh/go-spew v1.1.1
 github.com/davecgh/go-spew/spew
 # github.com/dgraph-io/badger v1.6.0-rc1.0.20191024172150-efb9d9d15d7f
@@ -20,6 +32,10 @@ github.com/dgraph-io/badger/table
 github.com/dgraph-io/badger/y
 # github.com/dgryski/go-farm v0.0.0-20190423205320-6a90982ecee2
 github.com/dgryski/go-farm
+# github.com/docker/go-connections v0.4.0
+github.com/docker/go-connections/nat
+# github.com/docker/go-units v0.4.0
+github.com/docker/go-units
 # github.com/dustin/go-humanize v1.0.0
 github.com/dustin/go-humanize
 # github.com/fsnotify/fsnotify v1.4.7
@@ -139,6 +155,8 @@ github.com/jinzhu/gorm
 github.com/jinzhu/gorm/dialects/postgres
 # github.com/jinzhu/inflection v1.0.0
 github.com/jinzhu/inflection
+# github.com/konsorten/go-windows-terminal-sequences v1.0.2
+github.com/konsorten/go-windows-terminal-sequences
 # github.com/lib/pq v1.2.0
 github.com/lib/pq
 github.com/lib/pq/hstore
@@ -154,6 +172,40 @@ github.com/matttproud/golang_protobuf_extensions/pbutil
 github.com/mitchellh/mapstructure
 # github.com/oklog/ulid v1.3.1
 github.com/oklog/ulid
+# github.com/opencontainers/go-digest v1.0.0-rc1
+github.com/opencontainers/go-digest
+# github.com/opencontainers/image-spec v1.0.1
+github.com/opencontainers/image-spec/specs-go
+github.com/opencontainers/image-spec/specs-go/v1
+# github.com/opencontainers/runc v1.0.0-rc5
+github.com/opencontainers/runc/libcontainer/user
+# github.com/ory/dockertest/v3 v3.5.2
+## explicit
+github.com/ory/dockertest/v3
+github.com/ory/dockertest/v3/docker
+github.com/ory/dockertest/v3/docker/opts
+github.com/ory/dockertest/v3/docker/pkg/archive
+github.com/ory/dockertest/v3/docker/pkg/fileutils
+github.com/ory/dockertest/v3/docker/pkg/homedir
+github.com/ory/dockertest/v3/docker/pkg/idtools
+github.com/ory/dockertest/v3/docker/pkg/ioutils
+github.com/ory/dockertest/v3/docker/pkg/jsonmessage
+github.com/ory/dockertest/v3/docker/pkg/longpath
+github.com/ory/dockertest/v3/docker/pkg/mount
+github.com/ory/dockertest/v3/docker/pkg/pools
+github.com/ory/dockertest/v3/docker/pkg/stdcopy
+github.com/ory/dockertest/v3/docker/pkg/system
+github.com/ory/dockertest/v3/docker/pkg/term
+github.com/ory/dockertest/v3/docker/pkg/term/windows
+github.com/ory/dockertest/v3/docker/types
+github.com/ory/dockertest/v3/docker/types/blkiodev
+github.com/ory/dockertest/v3/docker/types/container
+github.com/ory/dockertest/v3/docker/types/filters
+github.com/ory/dockertest/v3/docker/types/mount
+github.com/ory/dockertest/v3/docker/types/network
+github.com/ory/dockertest/v3/docker/types/registry
+github.com/ory/dockertest/v3/docker/types/strslice
+github.com/ory/dockertest/v3/docker/types/versions
 # github.com/pelletier/go-toml v1.4.0
 github.com/pelletier/go-toml
 # github.com/pkg/errors v0.9.1
@@ -182,6 +234,8 @@ github.com/rs/zerolog/internal/cbor
 github.com/rs/zerolog/internal/json
 # github.com/satori/go.uuid v1.2.1-0.20181028125025-b2ce2384e17b
 github.com/satori/go.uuid
+# github.com/sirupsen/logrus v1.4.2
+github.com/sirupsen/logrus
 # github.com/spf13/afero v1.2.2
 github.com/spf13/afero
 github.com/spf13/afero/mem
@@ -220,6 +274,7 @@ go.opencensus.io/trace/tracestate
 # golang.org/x/crypto v0.0.0-20191206172530-e9b2fee46413
 golang.org/x/crypto/pbkdf2
 # golang.org/x/net v0.0.0-20200226121028-0de0cce0169b
+golang.org/x/net/context
 golang.org/x/net/http/httpguts
 golang.org/x/net/http2
 golang.org/x/net/http2/hpack
@@ -246,8 +301,6 @@ golang.org/x/text/width
 # golang.org/x/xerrors v0.0.0-20191204190536-9bdfabe68543
 golang.org/x/xerrors
 golang.org/x/xerrors/internal
-# google.golang.org/appengine v1.4.0
-## explicit
 # google.golang.org/genproto v0.0.0-20190819201941-24fa4b261c55
 google.golang.org/genproto/googleapis/rpc/status
 # google.golang.org/grpc v1.21.0
