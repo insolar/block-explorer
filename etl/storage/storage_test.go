@@ -74,7 +74,7 @@ func TestStorage_SaveJetDropData_UpdateExistedRecord(t *testing.T) {
 	require.EqualValues(t, record, recordInDB)
 }
 
-func TestStorage_SaveJetDropData_NilPK(t *testing.T) {
+func TestStorage_SaveJetDropData_Error_NilPK(t *testing.T) {
 	testDB, dbCleaner := testutils.SetupDB()
 	defer dbCleaner()
 	s := NewStorage(testDB)
@@ -87,7 +87,7 @@ func TestStorage_SaveJetDropData_NilPK(t *testing.T) {
 	require.Contains(t, err.Error(), "violates not-null constraint")
 }
 
-func TestStorage_SaveJetDropData_CheckTransaction(t *testing.T) {
+func TestStorage_SaveJetDropData_ErrorAtTransaction(t *testing.T) {
 	testDB, dbCleaner := testutils.SetupDB()
 	defer dbCleaner()
 	s := NewStorage(testDB)
