@@ -7,7 +7,12 @@ package types
 
 import (
 	"github.com/insolar/insolar/ledger/heavy/exporter"
+	"go.opencensus.io/stats/view"
 )
+
+func init() {
+	view.Unregister(&view.View{Name: "log_write_delays"})
+}
 
 // PlatformJetDrops represents on the missing struct in the Platform
 type PlatformJetDrops struct {
