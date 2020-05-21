@@ -29,14 +29,12 @@ type Section interface {
 func (m MainSection) IsSection() bool { return true }
 
 type MainSection struct {
-	Section
 	Start        DropStart
 	DropContinue DropContinue
 	Records      []Record
 }
 
 type AdditionalSection struct {
-	Section
 	RecordExtensions []Record
 }
 
