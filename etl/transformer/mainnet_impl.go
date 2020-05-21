@@ -29,7 +29,6 @@ func NewMainNetTransformer(ch <-chan *types.PlatformJetDrops) *MainNetTransforme
 func (m *MainNetTransformer) Start(ctx context.Context) error {
 	// belogger.FromContext(ctx).Info("MainNetTransformer is starting")
 	go func() {
-		defer func() { _ = m.Stop(ctx) }()
 		for {
 			m.run(ctx)
 			if m.needStop() {
@@ -62,9 +61,6 @@ func (m *MainNetTransformer) needStop() bool {
 }
 
 func (m *MainNetTransformer) run(ctx context.Context) {
-	if m.needStop() {
-		return
-	}
 	select {
 	case jd := <-m.extractorChan:
 		transform, err := Transform(ctx, jd)
@@ -80,6 +76,7 @@ func (m *MainNetTransformer) run(ctx context.Context) {
 			}
 		}()
 	case <-m.stopSignal:
+		m.stopSignal <- true
 		return
 	}
 }
