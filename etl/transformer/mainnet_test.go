@@ -56,8 +56,8 @@ func TestTransformer_withDifferentJetId(t *testing.T) {
 		jd := <-transformer.GetJetDropsChannel()
 		require.NotNil(t, jd)
 		require.NotNil(t, jd.Sections)
-		require.Len(t, jd.Sections, 1, "section should be one")
-		mainSection := jd.Sections[0].(types.MainSection)
+		require.NotNil(t, jd.MainSection)
+		mainSection := jd.MainSection
 		require.Len(t, mainSection.Records, 1)
 		// it's easy to compare integers for testing
 		id := binary.BigEndian.Uint64(mainSection.Start.JetDropPrefix)

@@ -43,7 +43,7 @@ func (jd *PlatformJetDrops) Transform() ([]*JetDrop, error) {
 	for jetID, records := range m {
 		sections := make([]Section, 0)
 		prefix := jetID.Prefix()
-		tmpSection := MainSection{
+		mainSection := &MainSection{
 			Start: DropStart{
 				PulseData:           pulseData,
 				JetDropPrefix:       prefix,
@@ -52,15 +52,15 @@ func (jd *PlatformJetDrops) Transform() ([]*JetDrop, error) {
 			DropContinue: DropContinue{},
 			Records:      records,
 		}
-		sections = append(sections, tmpSection)
 
 		hash, err := hash(records)
 		if err != nil {
 			return nil, errors.Wrapf(err, "cannot calculate JetDrop hash")
 		}
 		localJetDrop := &JetDrop{
-			Sections: sections,
-			RawData:  hash,
+			MainSection: mainSection,
+			Sections:    sections,
+			RawData:     hash,
 		}
 		result = append(result, localJetDrop)
 	}
