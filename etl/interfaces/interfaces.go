@@ -46,7 +46,7 @@ type Transformer interface {
 	Starter
 	Stopper
 	// GetJetDropsChannel returns the channel where canonical data will be stored
-	GetJetDropsChannel() <-chan types.JetDrop
+	GetJetDropsChannel() <-chan *types.JetDrop
 }
 
 //go:generate minimock -i github.com/insolar/block-explorer/etl/interfaces.Client -o ./mock -s _mock.go -g
