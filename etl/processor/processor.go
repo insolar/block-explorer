@@ -17,7 +17,7 @@ import (
 )
 
 type Processor struct {
-	jdC          <-chan types.JetDrop
+	jdC          <-chan *types.JetDrop
 	taskC        chan Task
 	taskCCloseMu sync.Mutex
 	storage      interfaces.Storage
@@ -74,7 +74,7 @@ func (p *Processor) Start(ctx context.Context) error {
 			}
 			p.taskCCloseMu.Lock()
 			if atomic.LoadInt32(&p.active) == 1 {
-				p.taskC <- Task{&jd}
+				p.taskC <- Task{jd}
 			}
 			p.taskCCloseMu.Unlock()
 		}

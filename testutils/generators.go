@@ -6,9 +6,11 @@
 package testutils
 
 import (
-	"fmt"
+	"encoding/binary"
 	"io"
+	"sync"
 
+	"github.com/insolar/insolar/insolar"
 	"github.com/insolar/insolar/insolar/gen"
 	insrecord "github.com/insolar/insolar/insolar/record"
 	"github.com/insolar/insolar/ledger/heavy/exporter"
@@ -21,7 +23,6 @@ func GenerateRecords(batchSize int) func() (record *exporter.Record, e error) {
 	eof := true
 
 	generateRecords := func() (record *exporter.Record, e error) {
-		fmt.Println("Start generating records number " + string(cnt))
 		if !eof && cnt%batchSize == 0 {
 			eof = true
 			return &exporter.Record{}, io.EOF
@@ -31,11 +32,30 @@ func GenerateRecords(batchSize int) func() (record *exporter.Record, e error) {
 		return &exporter.Record{
 			RecordNumber: uint32(cnt),
 			Record: insrecord.Material{
-				ID: gen.IDWithPulse(pn),
+				ID:    gen.IDWithPulse(pn),
+				JetID: GenerateUniqueJetID(),
 			},
 			ShouldIterateFrom: nil,
 		}, nil
 	}
 
 	return generateRecords
+}
+
+var uniqueJetId = make(map[uint64]bool)
+var mutex = &sync.Mutex{}
+
+func GenerateUniqueJetID() insolar.JetID {
+	for {
+		jetID := gen.JetID()
+		id := binary.BigEndian.Uint64(jetID.Prefix())
+		mutex.Lock()
+		_, hasKey := uniqueJetId[id]
+		if !hasKey {
+			uniqueJetId[id] = true
+			mutex.Unlock()
+			return jetID
+		}
+		mutex.Unlock()
+	}
 }

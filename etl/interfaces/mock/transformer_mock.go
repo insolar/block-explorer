@@ -16,7 +16,7 @@ import (
 type TransformerMock struct {
 	t minimock.Tester
 
-	funcGetJetDropsChannel          func() (ch1 <-chan types.JetDrop)
+	funcGetJetDropsChannel          func() (ch1 <-chan *types.JetDrop)
 	inspectFuncGetJetDropsChannel   func()
 	afterGetJetDropsChannelCounter  uint64
 	beforeGetJetDropsChannelCounter uint64
@@ -69,7 +69,7 @@ type TransformerMockGetJetDropsChannelExpectation struct {
 
 // TransformerMockGetJetDropsChannelResults contains results of the Transformer.GetJetDropsChannel
 type TransformerMockGetJetDropsChannelResults struct {
-	ch1 <-chan types.JetDrop
+	ch1 <-chan *types.JetDrop
 }
 
 // Expect sets up expected params for Transformer.GetJetDropsChannel
@@ -97,7 +97,7 @@ func (mmGetJetDropsChannel *mTransformerMockGetJetDropsChannel) Inspect(f func()
 }
 
 // Return sets up results that will be returned by Transformer.GetJetDropsChannel
-func (mmGetJetDropsChannel *mTransformerMockGetJetDropsChannel) Return(ch1 <-chan types.JetDrop) *TransformerMock {
+func (mmGetJetDropsChannel *mTransformerMockGetJetDropsChannel) Return(ch1 <-chan *types.JetDrop) *TransformerMock {
 	if mmGetJetDropsChannel.mock.funcGetJetDropsChannel != nil {
 		mmGetJetDropsChannel.mock.t.Fatalf("TransformerMock.GetJetDropsChannel mock is already set by Set")
 	}
@@ -110,7 +110,7 @@ func (mmGetJetDropsChannel *mTransformerMockGetJetDropsChannel) Return(ch1 <-cha
 }
 
 //Set uses given function f to mock the Transformer.GetJetDropsChannel method
-func (mmGetJetDropsChannel *mTransformerMockGetJetDropsChannel) Set(f func() (ch1 <-chan types.JetDrop)) *TransformerMock {
+func (mmGetJetDropsChannel *mTransformerMockGetJetDropsChannel) Set(f func() (ch1 <-chan *types.JetDrop)) *TransformerMock {
 	if mmGetJetDropsChannel.defaultExpectation != nil {
 		mmGetJetDropsChannel.mock.t.Fatalf("Default expectation is already set for the Transformer.GetJetDropsChannel method")
 	}
@@ -124,7 +124,7 @@ func (mmGetJetDropsChannel *mTransformerMockGetJetDropsChannel) Set(f func() (ch
 }
 
 // GetJetDropsChannel implements interfaces.Transformer
-func (mmGetJetDropsChannel *TransformerMock) GetJetDropsChannel() (ch1 <-chan types.JetDrop) {
+func (mmGetJetDropsChannel *TransformerMock) GetJetDropsChannel() (ch1 <-chan *types.JetDrop) {
 	mm_atomic.AddUint64(&mmGetJetDropsChannel.beforeGetJetDropsChannelCounter, 1)
 	defer mm_atomic.AddUint64(&mmGetJetDropsChannel.afterGetJetDropsChannelCounter, 1)
 

@@ -21,9 +21,9 @@ import (
 func TestNewProcessor(t *testing.T) {
 
 	ctx := context.Background()
-	JDC := make(chan types.JetDrop)
+	JDC := make(chan *types.JetDrop)
 	trm := mock.NewTransformerMock(t)
-	trm.GetJetDropsChannelMock.Set(func() (ch1 <-chan types.JetDrop) {
+	trm.GetJetDropsChannelMock.Set(func() (ch1 <-chan *types.JetDrop) {
 		return JDC
 	})
 
@@ -43,7 +43,7 @@ func TestNewProcessor(t *testing.T) {
 
 	wg.Add(5)
 	for i := 0; i < 5; i++ {
-		JDC <- types.JetDrop{
+		JDC <- &types.JetDrop{
 			MainSection: &types.MainSection{
 				Start: types.DropStart{
 					PulseData:           types.Pulse{},
@@ -51,7 +51,6 @@ func TestNewProcessor(t *testing.T) {
 					JetDropPrefixLength: 0,
 				},
 				DropContinue: types.DropContinue{},
-				Sections:     nil,
 				Records:      nil,
 			},
 			Sections: nil,

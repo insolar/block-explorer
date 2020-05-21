@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/gojuno/minimock/v3"
+	"github.com/insolar/block-explorer/etl/interfaces/mock"
 	"github.com/insolar/block-explorer/testutils"
 	"github.com/insolar/insolar/ledger/heavy/exporter"
 	"github.com/stretchr/testify/require"
@@ -20,7 +21,7 @@ func TestGetJetDrops(t *testing.T) {
 	ctx := context.Background()
 	batchSize := 1
 	mc := minimock.NewController(t)
-	recordClient := NewRecordExporterClientMock(mc)
+	recordClient := mock.NewRecordExporterClientMock(mc)
 
 	f := testutils.GenerateRecords(batchSize)
 	expectedRecord, err := f()
@@ -31,9 +32,9 @@ func TestGetJetDrops(t *testing.T) {
 	stream := recordStream{
 		recv: fn,
 	}
-	recordClient.funcExport = func(ctx context.Context, in *exporter.GetRecords, opts ...grpc.CallOption) (r1 exporter.RecordExporter_ExportClient, err error) {
+	recordClient.ExportMock.Set(func(ctx context.Context, in *exporter.GetRecords, opts ...grpc.CallOption) (r1 exporter.RecordExporter_ExportClient, err error) {
 		return stream, nil
-	}
+	})
 
 	extractor := NewMainNetExtractor(uint32(batchSize), recordClient)
 	jetDrops := extractor.GetJetDrops(ctx)

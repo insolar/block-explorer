@@ -31,7 +31,6 @@ func (m MainSection) IsSection() bool { return true }
 type MainSection struct {
 	Start        DropStart
 	DropContinue DropContinue
-	Sections     []uint
 	Records      []Record
 }
 
@@ -77,4 +76,5 @@ type Record struct {
 	RecordPayload       []byte
 	Hash                []byte
 	RawData             []byte
+	Order               uint32
 }

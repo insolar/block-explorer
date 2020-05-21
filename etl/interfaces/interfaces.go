@@ -46,7 +46,7 @@ type Transformer interface {
 	Starter
 	Stopper
 	// GetJetDropsChannel returns the channel where canonical data will be stored
-	GetJetDropsChannel() <-chan types.JetDrop
+	GetJetDropsChannel() <-chan *types.JetDrop
 }
 
 //go:generate minimock -i github.com/insolar/block-explorer/etl/interfaces.Client -o ./mock -s _mock.go -g
@@ -72,7 +72,7 @@ type Controller interface {
 	SetJetDropData(pulse types.Pulse, jetID []byte)
 }
 
-//go:generate minimock -i github.com/insolar/block-explorer/etl/interfaces.storage -o ./mock -s _mock.go -g
+//go:generate minimock -i github.com/insolar/block-explorer/etl/interfaces.Storage -o ./mock -s _mock.go -g
 // storage saves data to database
 type Storage interface {
 	SaveJetDropData(jetDrop models.JetDrop, records []models.Record) error
