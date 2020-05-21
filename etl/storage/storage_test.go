@@ -9,39 +9,20 @@ package storage
 
 import (
 	"testing"
-	"time"
 
-	"github.com/insolar/insolar/insolar/gen"
 	"github.com/stretchr/testify/require"
 
 	"github.com/insolar/block-explorer/etl/models"
 	"github.com/insolar/block-explorer/testutils"
 )
 
-func initRecord() models.Record {
-	return models.Record{
-		Reference:           gen.Reference().Bytes(),
-		Type:                "",
-		ObjectReference:     gen.Reference().Bytes(),
-		PrototypeReference:  gen.Reference().Bytes(),
-		Payload:             []byte{1, 2, 3},
-		PrevRecordReference: gen.Reference().Bytes(),
-		Hash:                []byte{1, 2, 3, 4},
-		RawData:             []byte{1, 2, 3, 4, 5},
-		JetID:               []byte{1},
-		PulseNumber:         1,
-		Order:               1,
-		Timestamp:           time.Now().Unix(),
-	}
-}
-
 func TestStorage_SaveJetDropData(t *testing.T) {
 	testDB, dbCleaner := testutils.SetupDB()
 	defer dbCleaner()
 	s := NewStorage(testDB)
 
-	firstRecord := initRecord()
-	secondRecord := initRecord()
+	firstRecord := testutils.InitRecordDB()
+	secondRecord := testutils.InitRecordDB()
 
 	err := s.SaveJetDropData(models.JetDrop{}, []models.Record{firstRecord, secondRecord})
 	require.NoError(t, err)
@@ -59,7 +40,7 @@ func TestStorage_SaveJetDropData_UpdateExistedRecord(t *testing.T) {
 	defer dbCleaner()
 	s := NewStorage(testDB)
 
-	record := initRecord()
+	record := testutils.InitRecordDB()
 	err := s.SaveJetDropData(models.JetDrop{}, []models.Record{record})
 	require.NoError(t, err)
 	newPayload := []byte{0,1,0,1}
@@ -79,7 +60,7 @@ func TestStorage_SaveJetDropData_Error_NilPK(t *testing.T) {
 	defer dbCleaner()
 	s := NewStorage(testDB)
 
-	record := initRecord()
+	record := testutils.InitRecordDB()
 	record.Reference = nil
 
 	err := s.SaveJetDropData(models.JetDrop{}, []models.Record{record})
@@ -92,8 +73,8 @@ func TestStorage_SaveJetDropData_ErrorAtTransaction(t *testing.T) {
 	defer dbCleaner()
 	s := NewStorage(testDB)
 
-	firstRecord := initRecord()
-	secondRecord := initRecord()
+	firstRecord := testutils.InitRecordDB()
+	secondRecord := testutils.InitRecordDB()
 	secondRecord.Reference = nil
 
 	err := s.SaveJetDropData(models.JetDrop{}, []models.Record{firstRecord, secondRecord})
