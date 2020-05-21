@@ -124,11 +124,11 @@ func transferToCanonicalRecord(r *exporter.Record) (types.Record, error) {
 	ref = r.Record.ID.Bytes()
 	hash = r.Record.ID.Hash()
 	objectReference = r.Record.ObjectID.Bytes()
-	dAtA, err := r.Marshal()
+	data, err := r.Marshal()
 	if err != nil {
 		return types.Record{}, errors.Wrapf(err, "cannot get record raw data")
 	}
-	rawData = dAtA
+	rawData = data
 	order = r.RecordNumber
 
 	virtual := r.GetRecord().Virtual
