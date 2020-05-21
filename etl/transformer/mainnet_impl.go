@@ -31,7 +31,7 @@ func (m *MainNetTransformer) Start(ctx context.Context) error {
 	go func() {
 		defer func() { _ = m.Stop(ctx) }()
 		for {
-			m.run()
+			m.run(ctx)
 			if m.needStop() {
 				return
 			}
@@ -61,16 +61,17 @@ func (m *MainNetTransformer) needStop() bool {
 	return false
 }
 
-func (m *MainNetTransformer) run() {
+func (m *MainNetTransformer) run(ctx context.Context) {
 	if m.needStop() {
 		return
 	}
 	select {
 	case jd := <-m.extractorChan:
-		transform, err := jd.Transform()
+		transform, err := Transform(ctx, jd)
 		if err != nil {
 			//todo: add logging here
 			fmt.Print(err.Error())
+			return
 		}
 		go func() {
 			//todo: add logging here

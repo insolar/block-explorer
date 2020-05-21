@@ -13,8 +13,6 @@ import (
 	"github.com/insolar/block-explorer/etl/interfaces"
 	"github.com/insolar/block-explorer/etl/types"
 	"github.com/insolar/block-explorer/testutils"
-	"github.com/insolar/insolar/insolar"
-	"github.com/insolar/insolar/insolar/gen"
 	"github.com/stretchr/testify/require"
 )
 
@@ -24,23 +22,9 @@ func TestTransformer_withDifferentJetId(t *testing.T) {
 	recordGenFunc := testutils.GenerateRecords(differentJetIdCount)
 
 	jetDrops := new(types.PlatformJetDrops)
-	uniqueJetId := make(map[uint64]bool)
 	for i := 0; i < differentJetIdCount; i++ {
-		var jetID insolar.JetID
-		// we need to check the generated JetID
-		for {
-			jetID = gen.JetID()
-			id := binary.BigEndian.Uint64(jetID.Prefix())
-			_, hasKey := uniqueJetId[id]
-			if !hasKey {
-				uniqueJetId[id] = true
-				break
-			}
-
-		}
 		record, err := recordGenFunc()
 		require.NoError(t, err)
-		record.Record.JetID = jetID
 		jetDrops.Records = append(jetDrops.Records, record)
 	}
 

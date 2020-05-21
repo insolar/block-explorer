@@ -6,8 +6,11 @@
 package testutils
 
 import (
+	"encoding/binary"
 	"io"
+	"sync"
 
+	"github.com/insolar/insolar/insolar"
 	"github.com/insolar/insolar/insolar/gen"
 	insrecord "github.com/insolar/insolar/insolar/record"
 	"github.com/insolar/insolar/ledger/heavy/exporter"
@@ -30,11 +33,29 @@ func GenerateRecords(batchSize int) func() (record *exporter.Record, e error) {
 			RecordNumber: uint32(cnt),
 			Record: insrecord.Material{
 				ID:    gen.IDWithPulse(pn),
-				JetID: gen.JetID(),
+				JetID: GenerateUniqueJetID(),
 			},
 			ShouldIterateFrom: nil,
 		}, nil
 	}
 
 	return generateRecords
+}
+
+var uniqueJetId = make(map[uint64]bool)
+var mutex = &sync.Mutex{}
+
+func GenerateUniqueJetID() insolar.JetID {
+	for {
+		jetID := gen.JetID()
+		id := binary.BigEndian.Uint64(jetID.Prefix())
+		mutex.Lock()
+		_, hasKey := uniqueJetId[id]
+		if !hasKey {
+			uniqueJetId[id] = true
+			mutex.Unlock()
+			return jetID
+		}
+		mutex.Unlock()
+	}
 }
