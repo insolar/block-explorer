@@ -13,12 +13,12 @@ import (
 	"google.golang.org/grpc"
 )
 
-type MainnetClient struct {
+type GrpcClientConnection struct {
 	grpc *grpc.ClientConn
 }
 
-// NewMainNetClient returns implementation
-func NewMainNetClient(ctx context.Context, cfg configuration.Replicator) (*MainnetClient, error) {
+// NewGrpcClientConnection returns implementation
+func NewGrpcClientConnection(ctx context.Context, cfg configuration.Replicator) (*GrpcClientConnection, error) {
 	c, e := func() (*grpc.ClientConn, error) {
 		options := grpc.WithDefaultCallOptions(
 			grpc.MaxCallRecvMsgSize(cfg.MaxTransportMsg),
@@ -36,12 +36,19 @@ func NewMainNetClient(ctx context.Context, cfg configuration.Replicator) (*Mainn
 	}()
 
 	if e != nil {
-		return &MainnetClient{}, e
+		return &GrpcClientConnection{}, e
 	}
 
-	return &MainnetClient{c}, nil
+	return &GrpcClientConnection{c}, nil
 }
 
-func (c *MainnetClient) GetGRPCConn() *grpc.ClientConn {
+func (c *GrpcClientConnection) GetGRPCConn() *grpc.ClientConn {
 	return c.grpc
+}
+
+func GetClientConfiguration(addr string) configuration.Replicator {
+	return configuration.Replicator{
+		Addr:            addr,
+		MaxTransportMsg: 100500,
+	}
 }

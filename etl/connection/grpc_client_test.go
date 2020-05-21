@@ -17,13 +17,13 @@ import (
 
 func TestNewClient_readyToConnect(t *testing.T) {
 	config := testConfig()
-	client, err := NewMainNetClient(context.Background(), config)
+	client, err := NewGrpcClientConnection(context.Background(), config)
 	require.NoError(t, err)
 	defer client.GetGRPCConn().Close()
 	for i := 0; i < 10 && client.GetGRPCConn().GetState() != connectivity.Idle; i++ {
 		time.Sleep(time.Millisecond * 50)
 	}
-	require.Equal(t, connectivity.Idle.String(), client.GetGRPCConn().GetState().String(), "MainnetClient does not ready to connect")
+	require.Equal(t, connectivity.Idle.String(), client.GetGRPCConn().GetState().String(), "GrpcClientConnection does not ready to connect")
 }
 
 func testConfig() configuration.Replicator {

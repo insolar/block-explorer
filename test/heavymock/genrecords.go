@@ -1,0 +1,43 @@
+// Copyright 2020 Insolar Network Ltd.
+// All rights reserved.
+// This material is licensed under the Insolar License version 1.0,
+// available at https://github.com/insolar/block-explorer/blob/master/LICENSE.md.
+
+package heavymock
+
+import (
+	"github.com/insolar/insolar/insolar"
+	"github.com/insolar/insolar/insolar/gen"
+	"github.com/insolar/insolar/insolar/record"
+	"github.com/insolar/insolar/ledger/heavy/exporter"
+	"github.com/insolar/insolar/pulse"
+)
+
+var SimpleRecord = &exporter.Record{
+	Polymorph:    1,
+	RecordNumber: 100,
+	Record: record.Material{
+		ID: insolar.ID{},
+	},
+	ShouldIterateFrom: nil,
+}
+
+func GetRecordsByPulse(pulse insolar.PulseNumber, count int) []exporter.Record {
+	var res []exporter.Record
+	for i := 0; i < count; i++ {
+		res = append(res, exporter.Record{
+			Polymorph:    1,
+			RecordNumber: uint32(i),
+			Record: record.Material{
+				ID: gen.IDWithPulse(pulse),
+			},
+			ShouldIterateFrom: &pulse,
+		})
+	}
+	return res
+}
+
+func GetRecordsByPulseNumber(pulse pulse.Number, count int) []exporter.Record {
+	pulseNumber := insolar.NewPulseNumber(pulse.Bytes())
+	return GetRecordsByPulse(pulseNumber, count)
+}
