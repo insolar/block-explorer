@@ -46,6 +46,7 @@ func main() {
 		// TODO: change to logger after PENV-279
 		// logger.Fatalf("Error while connecting to database: %s", err.Error())
 		fmt.Printf("Error while connecting to database: %s\n", err.Error())
+		return
 	}
 
 	storage.NewStorage(db)

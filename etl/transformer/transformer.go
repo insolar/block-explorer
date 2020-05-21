@@ -87,7 +87,7 @@ func getPulseData(rec *exporter.Record) (types.Pulse, error) {
 	return types.Pulse{
 		PulseNo:        int(pulse.AsUint32()),
 		EpochPulseNo:   int(pulse.AsEpoch()),
-		PulseTimestamp: time,
+		PulseTimestamp: time.Unix(),
 		NextPulseDelta: int(pulseDelta),
 		PrevPulseDelta: int(pulseDelta),
 	}, nil

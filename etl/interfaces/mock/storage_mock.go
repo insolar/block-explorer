@@ -15,6 +15,12 @@ import (
 type StorageMock struct {
 	t minimock.Tester
 
+	funcGetRecord          func(ref models.Reference) (r1 models.Record, err error)
+	inspectFuncGetRecord   func(ref models.Reference)
+	afterGetRecordCounter  uint64
+	beforeGetRecordCounter uint64
+	GetRecordMock          mStorageMockGetRecord
+
 	funcSaveJetDropData          func(jetDrop models.JetDrop, records []models.Record) (err error)
 	inspectFuncSaveJetDropData   func(jetDrop models.JetDrop, records []models.Record)
 	afterSaveJetDropDataCounter  uint64
@@ -29,10 +35,229 @@ func NewStorageMock(t minimock.Tester) *StorageMock {
 		controller.RegisterMocker(m)
 	}
 
+	m.GetRecordMock = mStorageMockGetRecord{mock: m}
+	m.GetRecordMock.callArgs = []*StorageMockGetRecordParams{}
+
 	m.SaveJetDropDataMock = mStorageMockSaveJetDropData{mock: m}
 	m.SaveJetDropDataMock.callArgs = []*StorageMockSaveJetDropDataParams{}
 
 	return m
+}
+
+type mStorageMockGetRecord struct {
+	mock               *StorageMock
+	defaultExpectation *StorageMockGetRecordExpectation
+	expectations       []*StorageMockGetRecordExpectation
+
+	callArgs []*StorageMockGetRecordParams
+	mutex    sync.RWMutex
+}
+
+// StorageMockGetRecordExpectation specifies expectation struct of the Storage.GetRecord
+type StorageMockGetRecordExpectation struct {
+	mock    *StorageMock
+	params  *StorageMockGetRecordParams
+	results *StorageMockGetRecordResults
+	Counter uint64
+}
+
+// StorageMockGetRecordParams contains parameters of the Storage.GetRecord
+type StorageMockGetRecordParams struct {
+	ref models.Reference
+}
+
+// StorageMockGetRecordResults contains results of the Storage.GetRecord
+type StorageMockGetRecordResults struct {
+	r1  models.Record
+	err error
+}
+
+// Expect sets up expected params for Storage.GetRecord
+func (mmGetRecord *mStorageMockGetRecord) Expect(ref models.Reference) *mStorageMockGetRecord {
+	if mmGetRecord.mock.funcGetRecord != nil {
+		mmGetRecord.mock.t.Fatalf("StorageMock.GetRecord mock is already set by Set")
+	}
+
+	if mmGetRecord.defaultExpectation == nil {
+		mmGetRecord.defaultExpectation = &StorageMockGetRecordExpectation{}
+	}
+
+	mmGetRecord.defaultExpectation.params = &StorageMockGetRecordParams{ref}
+	for _, e := range mmGetRecord.expectations {
+		if minimock.Equal(e.params, mmGetRecord.defaultExpectation.params) {
+			mmGetRecord.mock.t.Fatalf("Expectation set by When has same params: %#v", *mmGetRecord.defaultExpectation.params)
+		}
+	}
+
+	return mmGetRecord
+}
+
+// Inspect accepts an inspector function that has same arguments as the Storage.GetRecord
+func (mmGetRecord *mStorageMockGetRecord) Inspect(f func(ref models.Reference)) *mStorageMockGetRecord {
+	if mmGetRecord.mock.inspectFuncGetRecord != nil {
+		mmGetRecord.mock.t.Fatalf("Inspect function is already set for StorageMock.GetRecord")
+	}
+
+	mmGetRecord.mock.inspectFuncGetRecord = f
+
+	return mmGetRecord
+}
+
+// Return sets up results that will be returned by Storage.GetRecord
+func (mmGetRecord *mStorageMockGetRecord) Return(r1 models.Record, err error) *StorageMock {
+	if mmGetRecord.mock.funcGetRecord != nil {
+		mmGetRecord.mock.t.Fatalf("StorageMock.GetRecord mock is already set by Set")
+	}
+
+	if mmGetRecord.defaultExpectation == nil {
+		mmGetRecord.defaultExpectation = &StorageMockGetRecordExpectation{mock: mmGetRecord.mock}
+	}
+	mmGetRecord.defaultExpectation.results = &StorageMockGetRecordResults{r1, err}
+	return mmGetRecord.mock
+}
+
+//Set uses given function f to mock the Storage.GetRecord method
+func (mmGetRecord *mStorageMockGetRecord) Set(f func(ref models.Reference) (r1 models.Record, err error)) *StorageMock {
+	if mmGetRecord.defaultExpectation != nil {
+		mmGetRecord.mock.t.Fatalf("Default expectation is already set for the Storage.GetRecord method")
+	}
+
+	if len(mmGetRecord.expectations) > 0 {
+		mmGetRecord.mock.t.Fatalf("Some expectations are already set for the Storage.GetRecord method")
+	}
+
+	mmGetRecord.mock.funcGetRecord = f
+	return mmGetRecord.mock
+}
+
+// When sets expectation for the Storage.GetRecord which will trigger the result defined by the following
+// Then helper
+func (mmGetRecord *mStorageMockGetRecord) When(ref models.Reference) *StorageMockGetRecordExpectation {
+	if mmGetRecord.mock.funcGetRecord != nil {
+		mmGetRecord.mock.t.Fatalf("StorageMock.GetRecord mock is already set by Set")
+	}
+
+	expectation := &StorageMockGetRecordExpectation{
+		mock:   mmGetRecord.mock,
+		params: &StorageMockGetRecordParams{ref},
+	}
+	mmGetRecord.expectations = append(mmGetRecord.expectations, expectation)
+	return expectation
+}
+
+// Then sets up Storage.GetRecord return parameters for the expectation previously defined by the When method
+func (e *StorageMockGetRecordExpectation) Then(r1 models.Record, err error) *StorageMock {
+	e.results = &StorageMockGetRecordResults{r1, err}
+	return e.mock
+}
+
+// GetRecord implements interfaces.Storage
+func (mmGetRecord *StorageMock) GetRecord(ref models.Reference) (r1 models.Record, err error) {
+	mm_atomic.AddUint64(&mmGetRecord.beforeGetRecordCounter, 1)
+	defer mm_atomic.AddUint64(&mmGetRecord.afterGetRecordCounter, 1)
+
+	if mmGetRecord.inspectFuncGetRecord != nil {
+		mmGetRecord.inspectFuncGetRecord(ref)
+	}
+
+	mm_params := &StorageMockGetRecordParams{ref}
+
+	// Record call args
+	mmGetRecord.GetRecordMock.mutex.Lock()
+	mmGetRecord.GetRecordMock.callArgs = append(mmGetRecord.GetRecordMock.callArgs, mm_params)
+	mmGetRecord.GetRecordMock.mutex.Unlock()
+
+	for _, e := range mmGetRecord.GetRecordMock.expectations {
+		if minimock.Equal(e.params, mm_params) {
+			mm_atomic.AddUint64(&e.Counter, 1)
+			return e.results.r1, e.results.err
+		}
+	}
+
+	if mmGetRecord.GetRecordMock.defaultExpectation != nil {
+		mm_atomic.AddUint64(&mmGetRecord.GetRecordMock.defaultExpectation.Counter, 1)
+		mm_want := mmGetRecord.GetRecordMock.defaultExpectation.params
+		mm_got := StorageMockGetRecordParams{ref}
+		if mm_want != nil && !minimock.Equal(*mm_want, mm_got) {
+			mmGetRecord.t.Errorf("StorageMock.GetRecord got unexpected parameters, want: %#v, got: %#v%s\n", *mm_want, mm_got, minimock.Diff(*mm_want, mm_got))
+		}
+
+		mm_results := mmGetRecord.GetRecordMock.defaultExpectation.results
+		if mm_results == nil {
+			mmGetRecord.t.Fatal("No results are set for the StorageMock.GetRecord")
+		}
+		return (*mm_results).r1, (*mm_results).err
+	}
+	if mmGetRecord.funcGetRecord != nil {
+		return mmGetRecord.funcGetRecord(ref)
+	}
+	mmGetRecord.t.Fatalf("Unexpected call to StorageMock.GetRecord. %v", ref)
+	return
+}
+
+// GetRecordAfterCounter returns a count of finished StorageMock.GetRecord invocations
+func (mmGetRecord *StorageMock) GetRecordAfterCounter() uint64 {
+	return mm_atomic.LoadUint64(&mmGetRecord.afterGetRecordCounter)
+}
+
+// GetRecordBeforeCounter returns a count of StorageMock.GetRecord invocations
+func (mmGetRecord *StorageMock) GetRecordBeforeCounter() uint64 {
+	return mm_atomic.LoadUint64(&mmGetRecord.beforeGetRecordCounter)
+}
+
+// Calls returns a list of arguments used in each call to StorageMock.GetRecord.
+// The list is in the same order as the calls were made (i.e. recent calls have a higher index)
+func (mmGetRecord *mStorageMockGetRecord) Calls() []*StorageMockGetRecordParams {
+	mmGetRecord.mutex.RLock()
+
+	argCopy := make([]*StorageMockGetRecordParams, len(mmGetRecord.callArgs))
+	copy(argCopy, mmGetRecord.callArgs)
+
+	mmGetRecord.mutex.RUnlock()
+
+	return argCopy
+}
+
+// MinimockGetRecordDone returns true if the count of the GetRecord invocations corresponds
+// the number of defined expectations
+func (m *StorageMock) MinimockGetRecordDone() bool {
+	for _, e := range m.GetRecordMock.expectations {
+		if mm_atomic.LoadUint64(&e.Counter) < 1 {
+			return false
+		}
+	}
+
+	// if default expectation was set then invocations count should be greater than zero
+	if m.GetRecordMock.defaultExpectation != nil && mm_atomic.LoadUint64(&m.afterGetRecordCounter) < 1 {
+		return false
+	}
+	// if func was set then invocations count should be greater than zero
+	if m.funcGetRecord != nil && mm_atomic.LoadUint64(&m.afterGetRecordCounter) < 1 {
+		return false
+	}
+	return true
+}
+
+// MinimockGetRecordInspect logs each unmet expectation
+func (m *StorageMock) MinimockGetRecordInspect() {
+	for _, e := range m.GetRecordMock.expectations {
+		if mm_atomic.LoadUint64(&e.Counter) < 1 {
+			m.t.Errorf("Expected call to StorageMock.GetRecord with params: %#v", *e.params)
+		}
+	}
+
+	// if default expectation was set then invocations count should be greater than zero
+	if m.GetRecordMock.defaultExpectation != nil && mm_atomic.LoadUint64(&m.afterGetRecordCounter) < 1 {
+		if m.GetRecordMock.defaultExpectation.params == nil {
+			m.t.Error("Expected call to StorageMock.GetRecord")
+		} else {
+			m.t.Errorf("Expected call to StorageMock.GetRecord with params: %#v", *m.GetRecordMock.defaultExpectation.params)
+		}
+	}
+	// if func was set then invocations count should be greater than zero
+	if m.funcGetRecord != nil && mm_atomic.LoadUint64(&m.afterGetRecordCounter) < 1 {
+		m.t.Error("Expected call to StorageMock.GetRecord")
+	}
 }
 
 type mStorageMockSaveJetDropData struct {
@@ -254,6 +479,8 @@ func (m *StorageMock) MinimockSaveJetDropDataInspect() {
 // MinimockFinish checks that all mocked methods have been called the expected number of times
 func (m *StorageMock) MinimockFinish() {
 	if !m.minimockDone() {
+		m.MinimockGetRecordInspect()
+
 		m.MinimockSaveJetDropDataInspect()
 		m.t.FailNow()
 	}
@@ -278,5 +505,6 @@ func (m *StorageMock) MinimockWait(timeout mm_time.Duration) {
 func (m *StorageMock) minimockDone() bool {
 	done := true
 	return done &&
+		m.MinimockGetRecordDone() &&
 		m.MinimockSaveJetDropDataDone()
 }
