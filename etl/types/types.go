@@ -75,4 +75,5 @@ type Record struct {
 	RecordPayload       []byte
 	Hash                []byte
 	RawData             []byte
+	Order               uint32
 }

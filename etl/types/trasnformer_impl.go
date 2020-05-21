@@ -119,6 +119,7 @@ func transferToCanonicalRecord(r *exporter.Record) (Record, error) {
 		recordPayload       []byte    = make([]byte, 0)
 		hash                []byte
 		rawData             []byte
+		order               uint32
 	)
 
 	ref = r.Record.ID.Bytes()
@@ -129,6 +130,7 @@ func transferToCanonicalRecord(r *exporter.Record) (Record, error) {
 		return Record{}, errors.Wrapf(err, "cannot get record raw data")
 	}
 	rawData = dAtA
+	order = r.RecordNumber
 
 	virtual := r.GetRecord().Virtual
 	switch virtual.Union.(type) {
@@ -180,6 +182,7 @@ func transferToCanonicalRecord(r *exporter.Record) (Record, error) {
 		RecordPayload:       recordPayload,
 		Hash:                hash,
 		RawData:             rawData,
+		Order:               order,
 	}
 
 	return retRecord, nil
