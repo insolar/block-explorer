@@ -40,12 +40,11 @@ type ConnectionManager interface {
 	Stopper
 }
 
+//go:generate minimock -i github.com/insolar/block-explorer/etl/interfaces.Transformer -o ./mock -s _mock.go -g
 // Transformer represents a transformation raw data from the Platform to conan type
 type Transformer interface {
 	Starter
 	Stopper
-	// transform transforms the row data to canonical data
-	transform(drop types.PlatformJetDrops) types.JetDrop
 	// GetJetDropsChannel returns the channel where canonical data will be stored
 	GetJetDropsChannel() <-chan types.JetDrop
 }
@@ -73,7 +72,8 @@ type Controller interface {
 	SetJetDropData(pulse types.Pulse, jetID []byte)
 }
 
-// Storage saves data to database
+//go:generate minimock -i github.com/insolar/block-explorer/etl/interfaces.storage -o ./mock -s _mock.go -g
+// storage saves data to database
 type Storage interface {
 	SaveJetDropData(jetDrop models.JetDrop, records []models.Record) error
 }
