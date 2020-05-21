@@ -31,12 +31,12 @@ func TestExporterIsWorking(t *testing.T) {
 
 	// prepare config with listening address
 	cfg := configuration.Replicator{
-		Addr:            server.Address,
+		Addr:            server.Network,
 		MaxTransportMsg: 100500,
 	}
 
 	// initialization MainNet connection
-	client, err := connection.NewMainNetClient(ctx, cfg)
+	client, err := connection.NewGrpcClientConnection(ctx, cfg)
 	require.NoError(t, err)
 	defer client.GetGRPCConn().Close()
 
