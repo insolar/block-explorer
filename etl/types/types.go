@@ -17,13 +17,16 @@ type PlatformJetDrops struct {
 }
 
 type JetDrop struct {
-	Sections []Section
-	RawData  []byte
+	MainSection *MainSection
+	Sections    []Section
+	RawData     []byte
 }
 
 type Section interface {
 	IsSection() bool
 }
+
+func (m MainSection) IsSection() bool { return true }
 
 type MainSection struct {
 	Section
