@@ -28,7 +28,7 @@ func initRecord() models.Record {
 		PrevRecordReference: gen.Reference().Bytes(),
 		Hash:                []byte{1, 2, 3, 4},
 		RawData:             []byte{1, 2, 3, 4, 5},
-		JetID:               []byte{1, 1, 1},
+		JetID:               []byte{1},
 		PulseNumber:         1,
 		Order:               1,
 		Timestamp:           time.Now().Unix(),
@@ -43,7 +43,7 @@ func TestStorage_SaveJetDropData(t *testing.T) {
 	firstRecord := initRecord()
 	secondRecord := initRecord()
 
-	err := s.SaveJetDropData(models.JetDrop{JetID: firstRecord.JetID}, []models.Record{firstRecord, secondRecord})
+	err := s.SaveJetDropData(models.JetDrop{}, []models.Record{firstRecord, secondRecord})
 	require.NoError(t, err)
 
 	recordInDB := []models.Record{}
@@ -60,14 +60,13 @@ func TestStorage_SaveJetDropData_UpdateExistedRecord(t *testing.T) {
 	s := NewStorage(testDB)
 
 	record := initRecord()
-	jetDrop := models.JetDrop{JetID: record.JetID}
-	err := s.SaveJetDropData(jetDrop, []models.Record{record})
+	err := s.SaveJetDropData(models.JetDrop{}, []models.Record{record})
 	require.NoError(t, err)
 	newPayload := []byte{0,1,0,1}
 	require.NotEqual(t, record.Payload, newPayload)
 	record.Payload = newPayload
 
-	err = s.SaveJetDropData(jetDrop, []models.Record{record})
+	err = s.SaveJetDropData(models.JetDrop{}, []models.Record{record})
 	require.NoError(t, err)
 
 	recordInDB, err := s.GetRecord(record.Reference)
@@ -82,9 +81,8 @@ func TestStorage_SaveJetDropData_NilPK(t *testing.T) {
 
 	record := initRecord()
 	record.Reference = nil
-	jetDrop := models.JetDrop{JetID: record.JetID}
 
-	err := s.SaveJetDropData(jetDrop, []models.Record{record})
+	err := s.SaveJetDropData(models.JetDrop{}, []models.Record{record})
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "violates not-null constraint")
 }
@@ -98,7 +96,7 @@ func TestStorage_SaveJetDropData_CheckTransaction(t *testing.T) {
 	secondRecord := initRecord()
 	secondRecord.Reference = nil
 
-	err := s.SaveJetDropData(models.JetDrop{JetID: firstRecord.JetID}, []models.Record{firstRecord, secondRecord})
+	err := s.SaveJetDropData(models.JetDrop{}, []models.Record{firstRecord, secondRecord})
 	require.Error(t, err)
 
 	recordInDB := []models.Record{}

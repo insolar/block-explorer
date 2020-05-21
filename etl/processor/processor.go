@@ -20,12 +20,12 @@ type Processor struct {
 	jdC          <-chan types.JetDrop
 	taskC        chan Task
 	taskCCloseMu sync.Mutex
-	storage      interfaces.Storage
+	storage      interfaces.StorageSetter
 	workers      int
 	active       int32
 }
 
-func NewProcessor(jb interfaces.Transformer, storage interfaces.Storage, workers int) *Processor {
+func NewProcessor(jb interfaces.Transformer, storage interfaces.StorageSetter, workers int) *Processor {
 	if workers < 1 {
 		workers = 1
 	}

@@ -33,13 +33,15 @@ func (s *storage) SaveJetDropData(jetDrop models.JetDrop, records []models.Recor
 		}
 		// TODO: save jetDrop correctly at PENV-267
 		jetDrop.PulseNumber = 1
+		jetDrop.JetID = []byte{1}
 		if err := tx.Save(&jetDrop).Error; err != nil {
 			return errors.Wrap(err, "error while saving jetDrop")
 		}
 
 		for _, record := range records {
-			// TODO: dont rewrite pulseNumber, fix it at PENV-266 or PENV-267
+			// TODO: dont rewrite data at record, fix it at PENV-266 and PENV-267
 			record.PulseNumber = 1
+			record.JetID = []byte{1}
 			if err := tx.Save(&record).Error; err != nil {
 				return errors.Wrap(err, "error while saving record")
 			}

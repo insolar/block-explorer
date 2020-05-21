@@ -13,9 +13,10 @@ import (
 
 	"github.com/insolar/block-explorer/etl/models"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/insolar/block-explorer/etl/interfaces/mock"
 	"github.com/insolar/block-explorer/etl/types"
-	"github.com/stretchr/testify/require"
 )
 
 func TestNewProcessor(t *testing.T) {
@@ -29,7 +30,7 @@ func TestNewProcessor(t *testing.T) {
 
 	wg := sync.WaitGroup{}
 	saves := int32(0)
-	sm := mock.NewStorageMock(t)
+	sm := mock.NewStorageSetterMock(t)
 	sm.SaveJetDropDataMock.Set(func(jetDrop models.JetDrop, records []models.Record) (err error) {
 		atomic.AddInt32(&saves, 1)
 		wg.Done()
