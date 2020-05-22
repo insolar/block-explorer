@@ -8,7 +8,6 @@ package connection
 import (
 	"context"
 	"testing"
-	"time"
 
 	"github.com/insolar/block-explorer/configuration"
 	"github.com/stretchr/testify/require"
@@ -21,7 +20,6 @@ func TestNewClient_readyToConnect(t *testing.T) {
 	require.NoError(t, err)
 	defer client.GetGRPCConn().Close()
 	require.Equal(t, connectivity.Idle.String(), client.GetGRPCConn().GetState().String(), "GrpcClientConnection does not ready to connect")
-	time.Sleep(time.Millisecond * 50)
 }
 
 func testConfig() configuration.Replicator {
