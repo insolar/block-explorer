@@ -28,7 +28,6 @@ services:
       - postgres
     ports:
       - 8080:8080
-#      - 5679:5678
     environment:
       BLOCK_EXPLORER_REPLICATOR_ADDR: 'docker.for.mac.localhost:5678'
       BLOCK_EXPLORER_DB_URL: 'postgres://postgres:secret@postgres:5432/postgres?sslmode=disable'
