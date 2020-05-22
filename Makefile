@@ -1,5 +1,6 @@
 export GOPATH ?= $(shell go env GOPATH)
 export GO111MODULE ?= on
+export GOPRIVATE ?= github.com/insolar
 
 BIN_DIR = bin
 LDFLAGS ?=

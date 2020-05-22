@@ -20,10 +20,8 @@ func TestNewClient_readyToConnect(t *testing.T) {
 	client, err := NewGrpcClientConnection(context.Background(), config)
 	require.NoError(t, err)
 	defer client.GetGRPCConn().Close()
-	for i := 0; i < 10 && client.GetGRPCConn().GetState() != connectivity.Idle; i++ {
-		time.Sleep(time.Millisecond * 50)
-	}
 	require.Equal(t, connectivity.Idle.String(), client.GetGRPCConn().GetState().String(), "GrpcClientConnection does not ready to connect")
+	time.Sleep(time.Millisecond * 50)
 }
 
 func testConfig() configuration.Replicator {
