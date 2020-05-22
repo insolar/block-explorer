@@ -82,7 +82,7 @@ func SetupDB() (*gorm.DB, func(), error) {
 	m := gormigrate.New(db, gormigrate.DefaultOptions, migrations.Migrations())
 
 	if err = m.Migrate(); err != nil {
-		log.Fatalf("Could not migrate: %v", err)
+		return nil, nil, errors.Wrap(err, "Could not migrate:")
 	}
 
 	return db, cleaner, nil
