@@ -7,6 +7,7 @@ package transformer
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/insolar/block-explorer/etl/types"
 	"github.com/insolar/block-explorer/utils"
@@ -41,7 +42,10 @@ func Transform(ctx context.Context, jd *types.PlatformJetDrops) ([]*types.JetDro
 	result := make([]*types.JetDrop, 0)
 	for jetID, records := range m {
 		sections := make([]types.Section, 0)
-		prefix := jetID.Prefix()
+		var prefix []byte
+		if jetID.IsValid() {
+			prefix = jetID.Prefix()
+		}
 		mainSection := &types.MainSection{
 			Start: types.DropStart{
 				PulseData:           pulseData,
@@ -82,11 +86,12 @@ func getPulseData(rec *exporter.Record) (types.Pulse, error) {
 	pulse := r.ID.Pulse()
 	time, err := pulse.AsApproximateTime()
 	if err != nil {
-		return types.Pulse{}, errors.Wrapf(err, "could not get pulse ApproximateTime")
+		// return types.Pulse{}, errors.Wrapf(err, "could not get pulse ApproximateTime. pulse: %v", pulse.String())
+		fmt.Printf("could not get pulse ApproximateTime. pulse: %v", pulse.String())
 	}
 	return types.Pulse{
-		PulseNo:        int(pulse.AsUint32()),
-		EpochPulseNo:   int(pulse.AsEpoch()),
+		PulseNo: int(pulse.AsUint32()),
+		// EpochPulseNo:   int(pulse.AsEpoch()),
 		PulseTimestamp: time.Unix(),
 		NextPulseDelta: int(pulseDelta),
 		PrevPulseDelta: int(pulseDelta),
@@ -138,20 +143,19 @@ func transferToCanonicalRecord(r *exporter.Record) (types.Record, error) {
 		activate := virtual.GetActivate()
 		prototypeReference = activate.Image.Bytes()
 		recordPayload = activate.Memory
-		prevRecordReference = activate.PrevStateID().AsBytes()
 
 	case *ins_record.Virtual_Amend:
 		recordType = types.STATE
 		amend := virtual.GetAmend()
 		prototypeReference = amend.Image.Bytes()
 		recordPayload = amend.Memory
-		prevRecordReference = amend.PrevStateID().AsBytes()
+		prevRecordReference = amend.PrevStateID().Bytes()
 
 	case *ins_record.Virtual_Deactivate:
 		recordType = types.STATE
 		deactivate := virtual.GetDeactivate()
-		prototypeReference = deactivate.GetImage().AsBytes()
-		prevRecordReference = deactivate.PrevStateID().AsBytes()
+		prototypeReference = deactivate.GetImage().Bytes()
+		prevRecordReference = deactivate.PrevStateID().Bytes()
 
 	case *ins_record.Virtual_Result:
 		recordType = types.RESULT
@@ -160,13 +164,13 @@ func transferToCanonicalRecord(r *exporter.Record) (types.Record, error) {
 	case *ins_record.Virtual_IncomingRequest:
 		recordType = types.REQUEST
 		object := virtual.GetIncomingRequest().GetObject()
-		if object.IsObjectReference() {
+		if object != nil && object.IsObjectReference() {
 			objectReference = object.Bytes()
 		}
 	case *ins_record.Virtual_OutgoingRequest:
 		recordType = types.REQUEST
 		object := virtual.GetOutgoingRequest().GetObject()
-		if object.IsObjectReference() {
+		if object != nil && object.IsObjectReference() {
 			objectReference = object.Bytes()
 		}
 	}

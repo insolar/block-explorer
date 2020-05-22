@@ -59,6 +59,7 @@ func (m *MainNetExtractor) GetJetDrops(ctx context.Context) <-chan *types.Platfo
 			if err != nil {
 				// log.Debug("Data request failed: ", err)
 				println("Data request failed")
+				println(err.Error())
 				errorChan <- errors.Wrapf(err, "failed to get gRPC stream from exporter.Export method")
 				continue
 			}

@@ -8,6 +8,7 @@ package processor
 import (
 	"context"
 	"errors"
+	"fmt"
 	"sync"
 	"sync/atomic"
 
@@ -98,6 +99,7 @@ type Task struct {
 }
 
 func (p *Processor) process(jd *types.JetDrop) {
+	fmt.Printf("records = %d\n", len(jd.MainSection.Records))
 	ms := jd.MainSection
 	pd := ms.Start.PulseData
 	mjd := models.JetDrop{
