@@ -32,6 +32,7 @@ func (a *getRecordsSuite) TearDownSuite() {
 	a.c.Stop()
 }
 
+// TODO: uncomment after NewMainnetClient starts to support request as a parameter instead of batchSize
 // func (a *getRecordsSuite) TestGetRecords_simpleRecord() {
 // 	request := &exporter.GetRecords{
 // 		Count: uint32(5),
