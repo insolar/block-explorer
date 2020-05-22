@@ -1,0 +1,4 @@
+bin
+Dockerfile
+./postgres-data
+*.md

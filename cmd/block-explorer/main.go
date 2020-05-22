@@ -8,11 +8,17 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
 	"os"
 	"os/signal"
 	"syscall"
 
+	"github.com/insolar/block-explorer/etl/connection"
+	"github.com/insolar/block-explorer/etl/extractor"
+	"github.com/insolar/block-explorer/etl/processor"
+	"github.com/insolar/block-explorer/etl/transformer"
 	"github.com/insolar/insconfig"
+	"github.com/insolar/insolar/ledger/heavy/exporter"
 	"github.com/jinzhu/gorm"
 	"github.com/pkg/errors"
 
@@ -41,6 +47,23 @@ func main() {
 	// logger.Info("Config and logger were initialized")
 	fmt.Println("Config and logger were initialized")
 
+	client, err := connection.NewGrpcClientConnection(ctx, cfg.Replicator)
+	if err != nil {
+		// TODO: change to logger after PENV-279
+		log.Fatal("cannot connect to GRPC server", err)
+	}
+	defer client.GetGRPCConn().Close()
+
+	extractor := extractor.NewMainNetExtractor(100, exporter.NewRecordExporterClient(client.GetGRPCConn()))
+
+	trn := transformer.NewMainNetTransformer(extractor.GetJetDrops(ctx))
+	err = trn.Start(ctx)
+	if err != nil {
+		// TODO: change to logger after PENV-279
+		log.Fatal("cannot connect to GRPC server", err)
+	}
+	defer trn.Stop(ctx)
+
 	db, err := dbconn.Connect(cfg.DB)
 	if err != nil {
 		// TODO: change to logger after PENV-279
@@ -49,7 +72,15 @@ func main() {
 		return
 	}
 
-	storage.NewStorage(db)
+	s := storage.NewStorage(db)
+
+	proc := processor.NewProcessor(trn, s, 1)
+	err = proc.Start(ctx)
+	if err != nil {
+		// TODO: change to logger after PENV-279
+		log.Fatal("cannot connect to GRPC server", err)
+	}
+	defer proc.Stop(ctx)
 
 	graceful(ctx, makeStopper(ctx, db))
 }
