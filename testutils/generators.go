@@ -17,7 +17,7 @@ import (
 	"github.com/insolar/insolar/ledger/heavy/exporter"
 )
 
-// return a function for generating record
+// GenerateRecords returns a function for generating record with error
 func GenerateRecords(batchSize int) func() (record *exporter.Record, e error) {
 	pn := gen.PulseNumber()
 	cnt := 0
@@ -44,7 +44,7 @@ func GenerateRecords(batchSize int) func() (record *exporter.Record, e error) {
 				},
 				ID:        gen.IDWithPulse(pn),
 				ObjectID:  gen.ID(),
-				JetID:     gen.JetID(),
+				JetID:     GenerateUniqueJetID(),
 				Signature: []byte{0, 1, 2},
 			},
 			ShouldIterateFrom: &pn,
@@ -55,15 +55,17 @@ func GenerateRecords(batchSize int) func() (record *exporter.Record, e error) {
 	return generateRecords
 }
 
-func GenerateRecordsList(count int) *[]exporter.Record {
+// GenerateRecordsSilence returns new generated records without errors
+func GenerateRecordsSilence(count int) *[]exporter.Record {
 	var res []exporter.Record
 	f := GenerateRecords(count)
-	for {
+	for count > 0 {
 		record, err := f()
 		if err != nil {
-			break
+			continue
 		}
 		res = append(res, *record)
+		count--
 	}
 	return &res
 }

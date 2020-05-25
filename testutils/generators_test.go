@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestGenerateRecords(t *testing.T) {
+func TestGenerateRecords_CanReturnEOF(t *testing.T) {
 	batchSize := 5
 	f := GenerateRecords(batchSize)
 
@@ -30,9 +30,9 @@ func TestGenerateRecords(t *testing.T) {
 	require.Equal(t, &exporter.Record{}, res)
 }
 
-func TestGenerateRecordsList(t *testing.T) {
+func TestGenerateRecordsSilence_recordsAreUnique(t *testing.T) {
 	count := 5
-	records := *GenerateRecordsList(count)
+	records := *GenerateRecordsSilence(count)
 	require.Len(t, records, count)
 	for i, r := range records {
 		require.Equal(t, uint32(i+1), r.RecordNumber)

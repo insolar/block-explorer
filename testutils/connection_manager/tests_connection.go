@@ -17,6 +17,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// ConnectionManager for test gRPC server, client, DB and heavy
 type ConnectionManager struct {
 	grpcServer     *testutils.TestGRPCServer
 	grpcClientConn *connection.GrpcClientConnection
