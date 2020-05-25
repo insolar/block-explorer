@@ -1,6 +1,9 @@
 export GOPATH ?= $(shell go env GOPATH)
 export GO111MODULE ?= on
 export GOPRIVATE ?= github.com/insolar
+export GOSUMDB ?= sum.golang.org
+export GOFLAGS ?= -mod=vendor
+export GOPROXY=https://proxy.golang.org,https://goproxy.io,direct
 
 BIN_DIR = bin
 LDFLAGS ?=
@@ -42,7 +45,7 @@ vendor:  ## update vendor dependencies
 
 .PHONY: generate
 generate: ## generate mocks
-	go generate ./...
+	GOFLAGS="" go generate ./...
 
 .PHONY: unit
 unit:  ## run unit tests
