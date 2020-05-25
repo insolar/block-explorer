@@ -106,7 +106,7 @@ jobs:
       - name: Upload coverage to Codecov
         run: bash <(curl -s https://codecov.io/bash) -f coverage.out -y .codecov.yml -n coverage-report
         working-directory: ${{env.GOPATH}}/src/github.com/insolar/block-explorer
-golangci-lint:
+  golangci-lint:
     name: Run golangci-lint
     runs-on: ubuntu-latest
     env:
