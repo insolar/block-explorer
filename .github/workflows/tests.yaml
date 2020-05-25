@@ -125,7 +125,7 @@ jobs:
       - name: Add bin to path
         run: echo "::add-path::${{env.GOPATH}}/bin"
       - name: Install golangci
-        run: make golangci
+        run: make all golangci
         working-directory: ${{env.GOPATH}}/src/github.com/insolar/block-explorer
       - name: Run golangci-lint
         run: make lint
