@@ -91,10 +91,6 @@ github.com/insolar/assured-ledger/ledger-core/v2/vanilla/args
 github.com/insolar/assured-ledger/ledger-core/v2/vanilla/protokit
 github.com/insolar/assured-ledger/ledger-core/v2/vanilla/reflectkit
 github.com/insolar/assured-ledger/ledger-core/v2/vanilla/throw
-# github.com/insolar/common-test v0.0.9
-## explicit
-github.com/insolar/common-test/apierrors
-github.com/insolar/common-test/generator
 # github.com/insolar/insconfig v0.0.0-20200430133349-77f6f1624abf
 ## explicit
 github.com/insolar/insconfig
@@ -131,12 +127,6 @@ github.com/insolar/insolar/network/consensus/common/args
 github.com/insolar/insolar/network/consensus/common/cryptkit
 github.com/insolar/insolar/pulse
 github.com/insolar/insolar/reference
-# github.com/insolar/x-crypto v0.0.0-20191031140942-75fab8a325f6
-github.com/insolar/x-crypto
-github.com/insolar/x-crypto/ecdsa
-github.com/insolar/x-crypto/elliptic
-github.com/insolar/x-crypto/internal/randutil
-github.com/insolar/x-crypto/sha512
 # github.com/jackc/chunkreader/v2 v2.0.0
 github.com/jackc/chunkreader/v2
 # github.com/jackc/pgconn v1.2.1
@@ -295,7 +285,6 @@ golang.org/x/net/idna
 golang.org/x/net/internal/timeseries
 golang.org/x/net/trace
 # golang.org/x/sys v0.0.0-20191105231009-c1f44814a5cd
-golang.org/x/sys/cpu
 golang.org/x/sys/unix
 golang.org/x/sys/windows
 # golang.org/x/text v0.3.2
