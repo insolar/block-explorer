@@ -99,7 +99,7 @@ jobs:
           path: go/src/github.com/insolar/block-explorer
           fetch-depth: 1
       - name: Test
-        run: make test-with-coverage
+        run: make go-acc test-with-coverage
         working-directory: ${{env.GOPATH}}/src/github.com/insolar/block-explorer
       - name: Upload coverage to Codecov
         run: bash <(curl -s https://codecov.io/bash) -f coverage.out -y .codecov.yml -n coverage-report
