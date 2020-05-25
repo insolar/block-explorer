@@ -69,7 +69,7 @@ test-heavy-mock-integration:
 	go test -v ./test/integration/... -tags heavy_mock_integration -count 10 -race -failfast
 
 .PHONY: lint
-lint: golangci ## run linter
+lint: ## run linter
 	${BIN_DIR}/golangci-lint --color=always run ./... -v --timeout 5m
 
 .PHONY: config
