@@ -98,6 +98,8 @@ jobs:
         with:
           path: go/src/github.com/insolar/block-explorer
           fetch-depth: 1
+      - name: Add bin to path
+        run: echo "::add-path::${{env.GOPATH}}/bin"
       - name: Test
         run: make go-acc test-with-coverage
         working-directory: ${{env.GOPATH}}/src/github.com/insolar/block-explorer
