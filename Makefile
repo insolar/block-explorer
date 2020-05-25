@@ -4,7 +4,7 @@ export GOPRIVATE ?= github.com/insolar
 
 BIN_DIR = bin
 LDFLAGS ?=
-COVERPROFILE ?= coverage.txt
+COVERPROFILE ?= coverage.out
 ARTIFACTS_DIR = .artifacts
 
 #.DEFAULT_GOAL := all
@@ -54,7 +54,9 @@ integration: ## run integrations tests with race
 
 .PHONY: test-with-coverage
 test-with-coverage: ## run tests with coverage mode
-	go test -v ./... -tags integration -count 1 --coverprofile=$(COVERPROFILE) --covermode=count
+	go-acc --covermode=count --output=coverage.tmp.out ./... -- -tags "integration heavy_mock_integration" -count=1
+	cat coverage.tmp.out | grep -v _mock.go > ${COVERPROFILE}
+	go tool cover -html=${COVERPROFILE} -o coverage.html
 
 .PHONY: test-heavy-mock-integration
 test-heavy-mock-integration:

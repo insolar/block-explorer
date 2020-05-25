@@ -48,6 +48,8 @@ github.com/gogo/protobuf/protoc-gen-gogo/descriptor
 # github.com/gojuno/minimock/v3 v3.0.6
 ## explicit
 github.com/gojuno/minimock/v3
+# github.com/golang/groupcache v0.0.0-20190702054246-869f871628b6
+github.com/golang/groupcache/lru
 # github.com/golang/protobuf v1.3.2
 github.com/golang/protobuf/proto
 github.com/golang/protobuf/ptypes
@@ -58,8 +60,6 @@ github.com/golang/protobuf/ptypes/timestamp
 github.com/google/gofuzz
 # github.com/google/uuid v1.1.1
 github.com/google/uuid
-# github.com/hashicorp/golang-lru v0.5.3
-github.com/hashicorp/golang-lru/simplelru
 # github.com/hashicorp/hcl v1.0.0
 github.com/hashicorp/hcl
 github.com/hashicorp/hcl/hcl/ast
@@ -216,6 +216,8 @@ github.com/ory/dockertest/v3/docker/types/network
 github.com/ory/dockertest/v3/docker/types/registry
 github.com/ory/dockertest/v3/docker/types/strslice
 github.com/ory/dockertest/v3/docker/types/versions
+# github.com/ory/go-acc v0.2.1
+## explicit
 # github.com/pelletier/go-toml v1.4.0
 github.com/pelletier/go-toml
 # github.com/pkg/errors v0.9.1
@@ -266,7 +268,8 @@ github.com/stretchr/testify/suite
 github.com/subosito/gotenv
 # github.com/ugorji/go/codec v0.0.0-20181204163529-d75b2dcb6bc8
 github.com/ugorji/go/codec
-# go.opencensus.io v0.22.0
+# go.opencensus.io v0.22.1
+## explicit
 go.opencensus.io
 go.opencensus.io/internal
 go.opencensus.io/internal/tagencoding
@@ -291,7 +294,7 @@ golang.org/x/net/http2/hpack
 golang.org/x/net/idna
 golang.org/x/net/internal/timeseries
 golang.org/x/net/trace
-# golang.org/x/sys v0.0.0-20191005200804-aed5e4c7ecf9
+# golang.org/x/sys v0.0.0-20191105231009-c1f44814a5cd
 golang.org/x/sys/cpu
 golang.org/x/sys/unix
 golang.org/x/sys/windows
@@ -314,7 +317,7 @@ golang.org/x/xerrors
 golang.org/x/xerrors/internal
 # google.golang.org/genproto v0.0.0-20190819201941-24fa4b261c55
 google.golang.org/genproto/googleapis/rpc/status
-# google.golang.org/grpc v1.21.0
+# google.golang.org/grpc v1.22.0
 ## explicit
 google.golang.org/grpc
 google.golang.org/grpc/balancer
@@ -345,6 +348,7 @@ google.golang.org/grpc/peer
 google.golang.org/grpc/resolver
 google.golang.org/grpc/resolver/dns
 google.golang.org/grpc/resolver/passthrough
+google.golang.org/grpc/serviceconfig
 google.golang.org/grpc/stats
 google.golang.org/grpc/status
 google.golang.org/grpc/tap

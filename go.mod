@@ -6,15 +6,17 @@ require (
 	github.com/gogo/protobuf v1.3.1
 	github.com/gojuno/minimock/v3 v3.0.6
 	github.com/insolar/assured-ledger/ledger-core/v2 v2.0.0-20200512113104-4973d6ba44e9
+	github.com/insolar/common-test v0.0.9
 	github.com/insolar/insconfig v0.0.0-20200430133349-77f6f1624abf
 	github.com/insolar/insolar v1.5.2
-	github.com/insolar/common-test v0.0.9
 	github.com/jinzhu/gorm v1.9.12
 	github.com/ory/dockertest/v3 v3.5.2
+	github.com/ory/go-acc v0.2.1 // indirect
 	github.com/pkg/errors v0.9.1
 	github.com/rs/zerolog v1.15.0
 	github.com/stretchr/testify v1.4.0
-	google.golang.org/grpc v1.21.0
+	go.opencensus.io v0.22.1
+	google.golang.org/grpc v1.22.0
 	gopkg.in/gormigrate.v1 v1.6.0
 )
 

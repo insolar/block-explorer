@@ -82,6 +82,29 @@ jobs:
       - name: Test
         run: make test-heavy-mock-integration
         working-directory: ${{env.GOPATH}}/src/github.com/insolar/block-explorer
+  test-with-coverage:
+    name: tests with coverage
+    runs-on: ubuntu-latest
+    env:
+      GOPATH: /home/runner/work/block-explorer/block-explorer/go
+    steps:
+      - name: set up go ${{env.GO_VERSION}}
+        uses: actions/setup-go@v1
+        id: go
+        with:
+          go-version: ${{env.GO_VERSION}}
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@master
+        with:
+          path: go/src/github.com/insolar/block-explorer
+          fetch-depth: 1
+      - name: Test
+        run: make test-with-coverage
+        working-directory: ${{env.GOPATH}}/src/github.com/insolar/block-explorer
+      - name: Upload coverage to Codecov
+          run: bash <(curl -s https://codecov.io/bash) -f coverage.out -y .codecov.yml -n coverage-report
+          working-directory: ${{env.GOPATH}}/src/github.com/insolar/block-explorer
+
   migrate:
     name: Test migrate command
     runs-on: ubuntu-latest
