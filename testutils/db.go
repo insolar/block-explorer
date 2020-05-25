@@ -12,11 +12,11 @@ import (
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/ory/dockertest/v3"
+	"github.com/pkg/errors"
 	"gopkg.in/gormigrate.v1"
 
 	"github.com/insolar/block-explorer/migrations"
 )
-
 
 func RunDBInDocker(dbName, dbPassword string) (*dockertest.Pool, *dockertest.Resource, func()) {
 	var err error
@@ -46,7 +46,7 @@ func RunDBInDocker(dbName, dbPassword string) (*dockertest.Pool, *dockertest.Res
 	return pool, resource, poolCleaner
 }
 
-func SetupDB() (*gorm.DB, func()) {
+func SetupDB() (*gorm.DB, func(), error) {
 	dbName := "test_db"
 	dbPassword := "secret"
 	pool, resource, poolCleaner := RunDBInDocker(dbName, dbPassword)
@@ -65,7 +65,7 @@ func SetupDB() (*gorm.DB, func()) {
 	})
 	if err != nil {
 		poolCleaner()
-		log.Panicf("Could not start postgres: %s", err)
+		return nil, nil, errors.Wrap(err, "Could not start postgres:")
 	}
 
 	dbCleaner := func() {
@@ -82,8 +82,8 @@ func SetupDB() (*gorm.DB, func()) {
 	m := gormigrate.New(db, gormigrate.DefaultOptions, migrations.Migrations())
 
 	if err = m.Migrate(); err != nil {
-		log.Fatalf("Could not migrate: %v", err)
+		return nil, nil, errors.Wrap(err, "Could not migrate:")
 	}
 
-	return db, cleaner
+	return db, cleaner, nil
 }

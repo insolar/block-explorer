@@ -31,33 +31,11 @@ func NewRecordExporter(importerServer *ImporterServer) *RecordExporter {
 }
 
 func (r *RecordExporter) Export(records *exporter.GetRecords, stream exporter.RecordExporter_ExportServer) error {
-	count := int(records.Count)
-	pulse := records.PulseNumber
-
-	if records.PulseNumber == 0 {
-		for i := 0; i < count; i++ {
-			time.Sleep(recordSendingIntervalTimeout)
-			if err := stream.Send(SimpleRecord); err != nil {
-				return err
-			}
-		}
-	} else {
-		records := GetRecordsByPulse(pulse, count)
-		for _, r := range records {
-			time.Sleep(recordSendingIntervalTimeout)
-			if err := stream.Send(&r); err != nil {
-				return err
-			}
-		}
-	}
-
-	if records.Polymorph == MagicPolymorphExport {
-		savedRecords := r.importerServer.GetSavedRecords()
-		for _, r := range savedRecords {
-			time.Sleep(recordSendingIntervalTimeout)
-			if err := stream.Send(&r); err != nil {
-				return err
-			}
+	savedRecords := r.importerServer.GetSavedRecords()
+	for _, r := range savedRecords {
+		time.Sleep(recordSendingIntervalTimeout)
+		if err := stream.Send(&r); err != nil {
+			return err
 		}
 	}
 	return nil

@@ -8,6 +8,7 @@ require (
 	github.com/insolar/assured-ledger/ledger-core/v2 v2.0.0-20200512113104-4973d6ba44e9
 	github.com/insolar/insconfig v0.0.0-20200430133349-77f6f1624abf
 	github.com/insolar/insolar v1.5.2
+	github.com/insolar/common-test v0.0.9
 	github.com/jinzhu/gorm v1.9.12
 	github.com/ory/dockertest/v3 v3.5.2
 	github.com/pkg/errors v0.9.1

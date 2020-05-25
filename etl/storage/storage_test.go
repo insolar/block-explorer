@@ -17,14 +17,16 @@ import (
 )
 
 func TestStorage_SaveJetDropData(t *testing.T) {
-	testDB, dbCleaner := testutils.SetupDB()
+	var err error
+	testDB, dbCleaner, err := testutils.SetupDB()
+	require.NoError(t, err)
 	defer dbCleaner()
 	s := NewStorage(testDB)
 
 	firstRecord := testutils.InitRecordDB()
 	secondRecord := testutils.InitRecordDB()
 
-	err := s.SaveJetDropData(models.JetDrop{}, []models.Record{firstRecord, secondRecord})
+	err = s.SaveJetDropData(models.JetDrop{}, []models.Record{firstRecord, secondRecord})
 	require.NoError(t, err)
 
 	recordInDB := []models.Record{}
@@ -36,14 +38,16 @@ func TestStorage_SaveJetDropData(t *testing.T) {
 }
 
 func TestStorage_SaveJetDropData_UpdateExistedRecord(t *testing.T) {
-	testDB, dbCleaner := testutils.SetupDB()
+	var err error
+	testDB, dbCleaner, err := testutils.SetupDB()
+	require.NoError(t, err)
 	defer dbCleaner()
 	s := NewStorage(testDB)
 
 	record := testutils.InitRecordDB()
-	err := s.SaveJetDropData(models.JetDrop{}, []models.Record{record})
+	err = s.SaveJetDropData(models.JetDrop{}, []models.Record{record})
 	require.NoError(t, err)
-	newPayload := []byte{0,1,0,1}
+	newPayload := []byte{0, 1, 0, 1}
 	require.NotEqual(t, record.Payload, newPayload)
 	record.Payload = newPayload
 
@@ -56,20 +60,24 @@ func TestStorage_SaveJetDropData_UpdateExistedRecord(t *testing.T) {
 }
 
 func TestStorage_SaveJetDropData_Error_NilPK(t *testing.T) {
-	testDB, dbCleaner := testutils.SetupDB()
+	var err error
+	testDB, dbCleaner, err := testutils.SetupDB()
+	require.NoError(t, err)
 	defer dbCleaner()
 	s := NewStorage(testDB)
 
 	record := testutils.InitRecordDB()
 	record.Reference = nil
 
-	err := s.SaveJetDropData(models.JetDrop{}, []models.Record{record})
+	err = s.SaveJetDropData(models.JetDrop{}, []models.Record{record})
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "violates not-null constraint")
 }
 
 func TestStorage_SaveJetDropData_ErrorAtTransaction(t *testing.T) {
-	testDB, dbCleaner := testutils.SetupDB()
+	var err error
+	testDB, dbCleaner, err := testutils.SetupDB()
+	require.NoError(t, err)
 	defer dbCleaner()
 	s := NewStorage(testDB)
 
@@ -77,7 +85,7 @@ func TestStorage_SaveJetDropData_ErrorAtTransaction(t *testing.T) {
 	secondRecord := testutils.InitRecordDB()
 	secondRecord.Reference = nil
 
-	err := s.SaveJetDropData(models.JetDrop{}, []models.Record{firstRecord, secondRecord})
+	err = s.SaveJetDropData(models.JetDrop{}, []models.Record{firstRecord, secondRecord})
 	require.Error(t, err)
 
 	recordInDB := []models.Record{}
