@@ -93,3 +93,58 @@ func TestStorage_SaveJetDropData_ErrorAtTransaction(t *testing.T) {
 	require.NoError(t, err)
 	require.Empty(t, recordInDB)
 }
+
+func TestStorage_GetNotCompletePulses(t *testing.T) {
+	var err error
+	testDB, dbCleaner, err := testutils.SetupDB()
+	require.NoError(t, err)
+	defer dbCleaner()
+	s := NewStorage(testDB)
+
+	completePulse, err := testutils.InitPulseDB()
+	require.NoError(t, err)
+	completePulse.IsComplete = true
+	err = testutils.CreatePulse(testDB, completePulse)
+	require.NoError(t, err)
+
+	notCompletePulse, err := testutils.InitPulseDB()
+	require.NoError(t, err)
+	err = testutils.CreatePulse(testDB, notCompletePulse)
+	require.NoError(t, err)
+
+	pulses, err := s.GetNotCompletePulses()
+	require.NoError(t, err)
+	require.Equal(t, []models.Pulse{notCompletePulse}, pulses)
+	require.False(t, pulses[0].IsComplete)
+}
+
+func TestStorage_GetJetDrops(t *testing.T) {
+	var err error
+	testDB, dbCleaner, err := testutils.SetupDB()
+	require.NoError(t, err)
+	defer dbCleaner()
+	s := NewStorage(testDB)
+
+	firstPulse, err := testutils.InitPulseDB()
+	require.NoError(t, err)
+	err = testutils.CreatePulse(testDB, firstPulse)
+	require.NoError(t, err)
+	jetDropForFirstPulse1 := testutils.InitJetDropDB(firstPulse)
+	err = testutils.CreateJetDrop(testDB, jetDropForFirstPulse1)
+	require.NoError(t, err)
+	jetDropForFirstPulse2 := testutils.InitJetDropDB(firstPulse)
+	err = testutils.CreateJetDrop(testDB, jetDropForFirstPulse2)
+	require.NoError(t, err)
+
+	secondPulse, err := testutils.InitPulseDB()
+	require.NoError(t, err)
+	err = testutils.CreatePulse(testDB, secondPulse)
+	require.NoError(t, err)
+	jetDropForSecondPulse := testutils.InitJetDropDB(secondPulse)
+	err = testutils.CreateJetDrop(testDB, jetDropForSecondPulse)
+	require.NoError(t, err)
+
+	jetDrops, err := s.GetJetDrops(firstPulse)
+	require.NoError(t, err)
+	require.Equal(t, []models.JetDrop{jetDropForFirstPulse1, jetDropForFirstPulse2}, jetDrops)
+}
