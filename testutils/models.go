@@ -37,7 +37,7 @@ func InitRecordDB() models.Record {
 // InitJetDropDB returns generated jet drop with provided pulse
 func InitJetDropDB(pulse models.Pulse) models.JetDrop {
 	return models.JetDrop{
-		JetID: gen.JetID().Prefix(),
+		JetID: GenerateUniqueJetID().Prefix(),
 		PulseNumber: pulse.PulseNumber,
 		FirstPrevHash: []byte{1, 2, 3, 3},
 		SecondPrevHash: []byte{1, 2, 3, 5},

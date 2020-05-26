@@ -112,7 +112,7 @@ func TestStorage_GetNotCompletePulses(t *testing.T) {
 	err = testutils.CreatePulse(testDB, notCompletePulse)
 	require.NoError(t, err)
 
-	pulses, err := s.GetNotCompletePulses()
+	pulses, err := s.GetIncompletePulses()
 	require.NoError(t, err)
 	require.Equal(t, []models.Pulse{notCompletePulse}, pulses)
 	require.False(t, pulses[0].IsComplete)

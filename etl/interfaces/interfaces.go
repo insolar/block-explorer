@@ -82,8 +82,8 @@ type StorageSetter interface {
 type StorageFetcher interface {
 	// GetJetDrops returns records with provided reference from db.
 	GetRecord(ref models.Reference) (models.Record, error)
-	// GetNotCompletePulses returns pulses that are not complete from db.
-	GetNotCompletePulses() ([]models.Pulse, error)
+	// GetIncompletePulses returns pulses that are not complete from db.
+	GetIncompletePulses() ([]models.Pulse, error)
 	// GetJetDrops returns jetDrops for provided pulse from db.
 	GetJetDrops(pulse models.Pulse) ([]models.JetDrop, error)
 }

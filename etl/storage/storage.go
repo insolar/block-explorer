@@ -60,8 +60,8 @@ func (s *storage) GetRecord(ref models.Reference) (models.Record, error) {
 	return record, err
 }
 
-// GetNotCompletePulses returns pulses that are not complete from db.
-func (s *storage) GetNotCompletePulses() ([]models.Pulse, error) {
+// GetIncompletePulses returns pulses that are not complete from db.
+func (s *storage) GetIncompletePulses() ([]models.Pulse, error) {
 	var pulses []models.Pulse
 	err := s.db.Where("is_complete = ?", false).Find(&pulses).Error
 	return pulses, err

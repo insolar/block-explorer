@@ -36,7 +36,7 @@ func NewController(extractor interfaces.JetDropsExtractor, storage interfaces.St
 		jetDropRegister:         make(map[types.Pulse][][]byte),
 		missedDataRequestsQueue: make(map[types.Pulse]bool),
 	}
-	pulses, err := c.storage.GetNotCompletePulses()
+	pulses, err := c.storage.GetIncompletePulses()
 	if err != nil {
 		return nil, errors.Wrap(err, "can't get not complete pulses from storage")
 	}
