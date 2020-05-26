@@ -28,22 +28,20 @@ func NewStorage(db *gorm.DB) interfaces.Storage {
 func (s *storage) SaveJetDropData(jetDrop models.JetDrop, records []models.Record) error {
 	return s.db.Transaction(func(tx *gorm.DB) error {
 		// create zero pulse and zero jetDrop for FK at Record table
-		// TODO: save pulse correctly at PENV-266
-		pulse := models.Pulse{PulseNumber:1}
+		// TODO: remove it at PENV-212
+		pulse := models.Pulse{PulseNumber: 1}
 		if err := tx.Save(&pulse).Error; err != nil {
 			return errors.Wrap(err, "error while saving pulse")
 		}
-		// TODO: save jetDrop correctly at PENV-267
+		// TODO: dont rewrite pulse at jetDrop, remove it at PENV-212
 		jetDrop.PulseNumber = 1
-		jetDrop.JetID = []byte{1}
 		if err := tx.Save(&jetDrop).Error; err != nil {
 			return errors.Wrap(err, "error while saving jetDrop")
 		}
 
 		for _, record := range records {
-			// TODO: dont rewrite data at record, fix it at PENV-266 and PENV-267
+			// TODO: dont rewrite pulse at record, remove it at PENV-212
 			record.PulseNumber = 1
-			record.JetID = []byte{1}
 			if err := tx.Save(&record).Error; err != nil {
 				return errors.Wrap(err, "error while saving record")
 			}
