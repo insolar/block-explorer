@@ -5,6 +5,7 @@ go 1.14
 require (
 	github.com/gogo/protobuf v1.3.1
 	github.com/gojuno/minimock/v3 v3.0.6
+	github.com/google/gofuzz v1.0.0
 	github.com/insolar/assured-ledger/ledger-core/v2 v2.0.0-20200512113104-4973d6ba44e9
 	github.com/insolar/insconfig v0.0.0-20200430133349-77f6f1624abf
 	github.com/insolar/insolar v1.5.2

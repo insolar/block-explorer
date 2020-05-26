@@ -22,12 +22,12 @@ type Processor struct {
 	taskC        chan Task
 	taskCCloseMu sync.Mutex
 	storage      interfaces.StorageSetter
-	controller      interfaces.Controller
+	controller   interfaces.Controller
 	workers      int
 	active       int32
 }
 
-func NewProcessor(jb interfaces.Transformer, storage interfaces.StorageSetter, controller      interfaces.Controller, workers int) *Processor {
+func NewProcessor(jb interfaces.Transformer, storage interfaces.StorageSetter, controller interfaces.Controller, workers int) *Processor {
 	if workers < 1 {
 		workers = 1
 	}
@@ -36,7 +36,7 @@ func NewProcessor(jb interfaces.Transformer, storage interfaces.StorageSetter, c
 		workers:      workers,
 		taskCCloseMu: sync.Mutex{},
 		storage:      storage,
-		controller: controller,
+		controller:   controller,
 	}
 
 }
