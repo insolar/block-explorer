@@ -12,6 +12,7 @@ import (
 	"sync"
 	"time"
 
+	fuzz "github.com/google/gofuzz"
 	"github.com/insolar/insolar/insolar"
 	"github.com/insolar/insolar/insolar/gen"
 	insrecord "github.com/insolar/insolar/insolar/record"
@@ -96,4 +97,11 @@ func GenerateUniqueJetID() insolar.JetID {
 // RandNumberOverRange generates random number over a range
 func RandNumberOverRange(min int64, max int64) int64 {
 	return rand.Int63n(max-min+1) + min
+}
+
+// GenerateRandBytes generates random bytes array
+func GenerateRandBytes() []byte {
+	var hash []byte
+	fuzz.New().NilChance(0).Fuzz(&hash)
+	return hash[:]
 }

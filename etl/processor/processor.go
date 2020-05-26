@@ -8,13 +8,13 @@ package processor
 import (
 	"context"
 	"errors"
-	"fmt"
 	"sync"
 	"sync/atomic"
 
 	"github.com/insolar/block-explorer/etl/interfaces"
 	"github.com/insolar/block-explorer/etl/models"
 	"github.com/insolar/block-explorer/etl/types"
+	"github.com/insolar/block-explorer/instrumentation/belogger"
 )
 
 type Processor struct {
@@ -22,11 +22,12 @@ type Processor struct {
 	taskC        chan Task
 	taskCCloseMu sync.Mutex
 	storage      interfaces.StorageSetter
+	controller      interfaces.Controller
 	workers      int
 	active       int32
 }
 
-func NewProcessor(jb interfaces.Transformer, storage interfaces.StorageSetter, workers int) *Processor {
+func NewProcessor(jb interfaces.Transformer, storage interfaces.StorageSetter, controller      interfaces.Controller, workers int) *Processor {
 	if workers < 1 {
 		workers = 1
 	}
@@ -35,6 +36,7 @@ func NewProcessor(jb interfaces.Transformer, storage interfaces.StorageSetter, w
 		workers:      workers,
 		taskCCloseMu: sync.Mutex{},
 		storage:      storage,
+		controller: controller,
 	}
 
 }
@@ -57,7 +59,7 @@ func (p *Processor) Start(ctx context.Context) error {
 				if !ok {
 					return
 				}
-				p.process(t.JD)
+				p.process(ctx, t.JD)
 			}
 		}()
 	}
@@ -98,17 +100,29 @@ type Task struct {
 	JD *types.JetDrop
 }
 
-func (p *Processor) process(jd *types.JetDrop) {
-	fmt.Printf("records = %d\n", len(jd.MainSection.Records))
+func (p *Processor) process(ctx context.Context, jd *types.JetDrop) {
 	ms := jd.MainSection
 	pd := ms.Start.PulseData
+
+	logger := belogger.FromContext(ctx)
+	logger.Infof("pulse = %d, jetDrop = %v, record amount = %d", pd.PulseNo, ms.Start.JetDropPrefix, len(jd.MainSection.Records))
+
+	var firstPrevHash []byte
+	var secondPrevHash []byte
+	if len(ms.DropContinue.PrevDropHash) > 0 {
+		firstPrevHash = ms.DropContinue.PrevDropHash[0]
+	}
+	if len(ms.DropContinue.PrevDropHash) > 1 {
+		secondPrevHash = ms.DropContinue.PrevDropHash[1]
+	}
+
 	mjd := models.JetDrop{
-		JetID:          nil,
+		JetID:          ms.Start.JetDropPrefix,
 		PulseNumber:    pd.PulseNo,
-		FirstPrevHash:  nil,
-		SecondPrevHash: nil,
-		Hash:           nil,
-		RawData:        nil,
+		FirstPrevHash:  firstPrevHash,
+		SecondPrevHash: secondPrevHash,
+		Hash:           jd.Hash,
+		RawData:        jd.RawData,
 		Timestamp:      pd.PulseTimestamp,
 	}
 
@@ -129,5 +143,11 @@ func (p *Processor) process(jd *types.JetDrop) {
 			Timestamp:           mjd.Timestamp,
 		})
 	}
-	p.storage.SaveJetDropData(mjd, mrs)
+	err := p.storage.SaveJetDropData(mjd, mrs)
+	if err != nil {
+		logger.Errorf("cannot save jetDrop data: %s. jetDrop = %v, records = %v", err.Error(), mjd, mrs)
+		return
+	}
+	p.controller.SetJetDropData(pd, mjd.JetID)
+	logger.Infof("Processed: pulseNumber = %d, jetID = %v\n", pd.PulseNo, mjd.JetID)
 }
