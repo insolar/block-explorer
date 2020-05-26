@@ -76,7 +76,7 @@ func GenerateRecordsSilence(count int) *[]exporter.Record {
 	return &res
 }
 
-var uniqueJetId = make(map[uint64]bool)
+var uniqueJetID= make(map[uint64]bool)
 var mutex = &sync.Mutex{}
 
 func GenerateUniqueJetID() insolar.JetID {
@@ -84,9 +84,9 @@ func GenerateUniqueJetID() insolar.JetID {
 		jetID := gen.JetID()
 		id := binary.BigEndian.Uint64(jetID.Prefix())
 		mutex.Lock()
-		_, hasKey := uniqueJetId[id]
+		_, hasKey := uniqueJetID[id]
 		if !hasKey {
-			uniqueJetId[id] = true
+			uniqueJetID[id] = true
 			mutex.Unlock()
 			return jetID
 		}
@@ -103,5 +103,5 @@ func RandNumberOverRange(min int64, max int64) int64 {
 func GenerateRandBytes() []byte {
 	var hash []byte
 	fuzz.New().NilChance(0).Fuzz(&hash)
-	return hash[:]
+	return hash
 }
