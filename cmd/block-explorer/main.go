@@ -91,7 +91,12 @@ func main() {
 	if err != nil {
 		logger.Fatal("cannot start controller", err)
 	}
-	defer contr.Stop(ctx)
+	defer func() {
+		err := contr.Stop(ctx)
+		if err != nil {
+			logger.Fatal("cannot stop controller", err)
+		}
+	}()
 
 	graceful(ctx, makeStopper(ctx, db))
 }
