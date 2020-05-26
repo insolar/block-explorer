@@ -24,7 +24,7 @@ jobs:
         with:
           fetch-depth: 1
       - name: Build
-        run: make build
+        run: make all
   unit:
     name: Unit tests
     runs-on: ubuntu-latest
@@ -42,7 +42,7 @@ jobs:
           path: go/src/github.com/insolar/block-explorer
           fetch-depth: 1
       - name: Test
-        run: make unit
+        run: make all unit
         working-directory: ${{env.GOPATH}}/src/github.com/insolar/block-explorer
   integration:
     name: Integration tests
@@ -61,7 +61,7 @@ jobs:
           path: go/src/github.com/insolar/block-explorer
           fetch-depth: 1
       - name: Test
-        run: make integration
+        run: make all integration
         working-directory: ${{env.GOPATH}}/src/github.com/insolar/block-explorer
   test-with-mock:
     name: heavy mock integration tests
@@ -80,7 +80,55 @@ jobs:
           path: go/src/github.com/insolar/block-explorer
           fetch-depth: 1
       - name: Test
-        run: make test-heavy-mock-integration
+        run: make all test-heavy-mock-integration
+        working-directory: ${{env.GOPATH}}/src/github.com/insolar/block-explorer
+  test-with-coverage:
+    name: tests with coverage
+    runs-on: ubuntu-latest
+    env:
+      GOPATH: /home/runner/work/block-explorer/block-explorer/go
+    steps:
+      - name: set up go ${{env.GO_VERSION}}
+        uses: actions/setup-go@v1
+        id: go
+        with:
+          go-version: ${{env.GO_VERSION}}
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@master
+        with:
+          path: go/src/github.com/insolar/block-explorer
+          fetch-depth: 1
+      - name: Add bin to path
+        run: echo "::add-path::${{env.GOPATH}}/bin"
+      - name: Test
+        run: make all go-acc test-with-coverage
+        working-directory: ${{env.GOPATH}}/src/github.com/insolar/block-explorer
+      - name: Upload coverage to Codecov
+        run: bash <(curl -s https://codecov.io/bash) -f coverage.out -y .codecov.yml -n coverage-report
+        working-directory: ${{env.GOPATH}}/src/github.com/insolar/block-explorer
+  golangci-lint:
+    name: Run golangci-lint
+    runs-on: ubuntu-latest
+    env:
+      GOPATH: /home/runner/work/block-explorer/block-explorer/go
+    steps:
+      - name: set up go ${{env.GO_VERSION}}
+        uses: actions/setup-go@v1
+        id: go
+        with:
+          go-version: ${{env.GO_VERSION}}
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@master
+        with:
+          path: go/src/github.com/insolar/block-explorer
+          fetch-depth: 1
+      - name: Add bin to path
+        run: echo "::add-path::${{env.GOPATH}}/bin"
+      - name: Install golangci
+        run: make all golangci
+        working-directory: ${{env.GOPATH}}/src/github.com/insolar/block-explorer
+      - name: Run golangci-lint
+        run: make lint
         working-directory: ${{env.GOPATH}}/src/github.com/insolar/block-explorer
   migrate:
     name: Test migrate command
@@ -97,6 +145,7 @@ jobs:
           fetch-depth: 1
       - name: Migrate
         run: |
+          make all
           make config
           make docker_postgresql
           make migrate

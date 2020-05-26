@@ -8,14 +8,19 @@ package testutils
 import (
 	"encoding/binary"
 	"io"
+	"math/rand"
 	"sync"
+	"time"
 
-	utils "github.com/insolar/common-test/generator"
 	"github.com/insolar/insolar/insolar"
 	"github.com/insolar/insolar/insolar/gen"
 	insrecord "github.com/insolar/insolar/insolar/record"
 	"github.com/insolar/insolar/ledger/heavy/exporter"
 )
+
+func init() {
+	rand.Seed(time.Now().UnixNano())
+}
 
 // GenerateRecords returns a function for generating record with error
 func GenerateRecords(batchSize int) func() (record *exporter.Record, e error) {
@@ -23,7 +28,7 @@ func GenerateRecords(batchSize int) func() (record *exporter.Record, e error) {
 	cnt := 0
 	eof := true
 	randNum := func() int64 {
-		return utils.RandNumberOverRange(100, 500)
+		return RandNumberOverRange(100, 500)
 	}
 
 	generateRecords := func() (record *exporter.Record, e error) {
@@ -86,4 +91,9 @@ func GenerateUniqueJetID() insolar.JetID {
 		}
 		mutex.Unlock()
 	}
+}
+
+// RandNumberOverRange generates random number over a range
+func RandNumberOverRange(min int64, max int64) int64 {
+	return rand.Int63n(max-min+1) + min
 }

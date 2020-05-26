@@ -1,16 +1,18 @@
 export GOPATH ?= $(shell go env GOPATH)
 export GO111MODULE ?= on
-export GOPRIVATE ?= github.com/insolar
+export GOSUMDB ?= sum.golang.org
+export GOFLAGS ?= -mod=vendor
+export GOPROXY=https://proxy.golang.org,https://goproxy.io,direct
 
 BIN_DIR = bin
 LDFLAGS ?=
-COVERPROFILE ?= coverage.txt
+COVERPROFILE ?= coverage.out
 ARTIFACTS_DIR = .artifacts
 
 #.DEFAULT_GOAL := all
 
 .PHONY: all
-all: clean vendor build
+all: vendor clean build
 
 .PHONY: mod
 mod:
@@ -25,8 +27,11 @@ clean: ## run all cleanup tasks
 golangci: ## install golangci-linter
 	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b ${BIN_DIR} v1.27.0
 
+go-acc: ## install coverage tool
+	go get github.com/ory/go-acc
+
 .PHONY: install_deps
-install_deps: golangci ## install necessary dependencies
+install_deps: golangci go-acc ## install necessary dependencies
 
 .PHONY: build
 build:  ## build all applications
@@ -39,7 +44,7 @@ vendor:  ## update vendor dependencies
 
 .PHONY: generate
 generate: ## generate mocks
-	go generate ./...
+	GOFLAGS="" go generate ./...
 
 .PHONY: unit
 unit:  ## run unit tests
@@ -54,14 +59,16 @@ integration: ## run integrations tests with race
 
 .PHONY: test-with-coverage
 test-with-coverage: ## run tests with coverage mode
-	go test -v ./... -tags integration -count 1 --coverprofile=$(COVERPROFILE) --covermode=count
+	go-acc --covermode=count --output=coverage.tmp.out ./... -- -tags "integration heavy_mock_integration" -count=1
+	cat coverage.tmp.out | grep -v _mock.go > ${COVERPROFILE}
+	go tool cover -html=${COVERPROFILE} -o coverage.html
 
 .PHONY: test-heavy-mock-integration
 test-heavy-mock-integration:
 	go test -v ./test/integration/... -tags heavy_mock_integration -count 10 -race -failfast
 
 .PHONY: lint
-lint: golangci ## run linter
+lint: ## run linter
 	${BIN_DIR}/golangci-lint --color=always run ./... -v --timeout 5m
 
 .PHONY: config
