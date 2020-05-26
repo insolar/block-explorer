@@ -1,6 +1,5 @@
 export GOPATH ?= $(shell go env GOPATH)
 export GO111MODULE ?= on
-export GOPRIVATE ?= github.com/insolar
 export GOSUMDB ?= sum.golang.org
 export GOFLAGS ?= -mod=vendor
 export GOPROXY=https://proxy.golang.org,https://goproxy.io,direct
