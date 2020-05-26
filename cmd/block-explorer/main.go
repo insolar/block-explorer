@@ -13,14 +13,17 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/insolar/block-explorer/etl/connection"
-	"github.com/insolar/block-explorer/etl/extractor"
-	"github.com/insolar/block-explorer/etl/processor"
-	"github.com/insolar/block-explorer/etl/transformer"
 	"github.com/insolar/insconfig"
 	"github.com/insolar/insolar/ledger/heavy/exporter"
 	"github.com/jinzhu/gorm"
 	"github.com/pkg/errors"
+
+	"github.com/insolar/block-explorer/etl/connection"
+	"github.com/insolar/block-explorer/etl/controller"
+	"github.com/insolar/block-explorer/etl/extractor"
+	"github.com/insolar/block-explorer/etl/processor"
+	"github.com/insolar/block-explorer/etl/transformer"
+	"github.com/insolar/block-explorer/instrumentation/belogger"
 
 	"github.com/insolar/block-explorer/etl/dbconn"
 	"github.com/insolar/block-explorer/etl/storage"
@@ -42,10 +45,8 @@ func main() {
 	}
 	fmt.Println("Starts with configuration:\n", insConfigurator.ToYaml(cfg))
 	ctx := context.Background()
-	// TODO: enable logger after PENV-279
-	// ctx, logger := belogger.InitLogger(ctx, cfg.Log, "block_explorer")
-	// logger.Info("Config and logger were initialized")
-	fmt.Println("Config and logger were initialized")
+	ctx, logger := belogger.InitLogger(ctx, cfg.Log, "block_explorer")
+	logger.Info("Config and logger were initialized")
 
 	client, err := connection.NewGrpcClientConnection(ctx, cfg.Replicator)
 	if err != nil {
@@ -81,6 +82,16 @@ func main() {
 		log.Fatal("cannot connect to GRPC server", err)
 	}
 	defer proc.Stop(ctx)
+
+	contr, err := controller.NewController(extractor, s)
+	if err != nil {
+		logger.Fatal("cannot initialize controller", err)
+	}
+	err = contr.Start(ctx)
+	if err != nil {
+		logger.Fatal("cannot start controller", err)
+	}
+	defer contr.Stop(ctx)
 
 	graceful(ctx, makeStopper(ctx, db))
 }

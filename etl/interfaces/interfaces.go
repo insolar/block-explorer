@@ -60,7 +60,6 @@ type Client interface {
 type Processor interface {
 	Starter
 	Stopper
-	process(drop types.JetDrop)
 }
 
 //go:generate minimock -i github.com/insolar/block-explorer/etl/interfaces.Controller -o ./mock -s _mock.go -g
@@ -81,6 +80,8 @@ type StorageSetter interface {
 // StorageFetcher gets data from database
 type StorageFetcher interface {
 	GetRecord(ref models.Reference) (models.Record, error)
+	GetNotCompletePulses() ([]models.Pulse, error)
+	GetJetDrops(pulse models.Pulse) ([]models.JetDrop, error)
 }
 
 //go:generate minimock -i github.com/insolar/block-explorer/etl/interfaces.Storage -o ./mock -s _mock.go -g

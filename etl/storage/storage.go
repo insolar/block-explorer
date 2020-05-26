@@ -17,12 +17,14 @@ type storage struct {
 	db *gorm.DB
 }
 
+// NewStorage returns implementation of interfaces.Storage
 func NewStorage(db *gorm.DB) interfaces.Storage {
 	return &storage{
 		db: db,
 	}
 }
 
+// SaveJetDropData saves provided jetDrop and records to db in one transaction.
 func (s *storage) SaveJetDropData(jetDrop models.JetDrop, records []models.Record) error {
 	return s.db.Transaction(func(tx *gorm.DB) error {
 		// create zero pulse and zero jetDrop for FK at Record table
@@ -51,8 +53,23 @@ func (s *storage) SaveJetDropData(jetDrop models.JetDrop, records []models.Recor
 	})
 }
 
+// GetJetDrops returns records with provided reference from db.
 func (s *storage) GetRecord(ref models.Reference) (models.Record, error) {
 	record := models.Record{}
 	err := s.db.Where("reference = ?", []byte(ref)).First(&record).Error
 	return record, err
+}
+
+// GetNotCompletePulses returns pulses that are not complete from db.
+func (s *storage) GetNotCompletePulses() ([]models.Pulse, error) {
+	var pulses []models.Pulse
+	err := s.db.Where("is_complete = ?", false).Find(&pulses).Error
+	return pulses, err
+}
+
+// GetJetDrops returns jetDrops for provided pulse from db.
+func (s *storage) GetJetDrops(pulse models.Pulse) ([]models.JetDrop, error) {
+	var jetDrops []models.JetDrop
+	err := s.db.Where("pulse_number = ?", pulse.PulseNumber).Find(&jetDrops).Error
+	return jetDrops, err
 }
