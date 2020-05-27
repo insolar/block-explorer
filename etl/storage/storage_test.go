@@ -31,7 +31,6 @@ func TestMain(t *testing.M) {
 	}
 	retCode := t.Run()
 	defer dbCleaner()
-	dbCleaner()
 	os.Exit(retCode)
 }
 
