@@ -17,7 +17,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// ConnectionManager for test gRPC server, client, DB and heavy
+// struct that represents all connections that can be used throughout integration tests
 type ConnectionManager struct {
 	grpcServer     *testutils.TestGRPCServer
 	grpcClientConn *connection.GrpcClientConnection
@@ -28,7 +28,8 @@ type ConnectionManager struct {
 	dbPoolCleaner  func()
 }
 
-func (c *ConnectionManager) StartGrpc(t *testing.T) {
+// Starts GRPC server and initializes connection from GRPC clients
+func (c *ConnectionManager) Start(t *testing.T) {
 	var err error
 	c.grpcServer = testutils.CreateTestGRPCServer(t)
 	c.Importer = heavymock.NewHeavymockImporter()
@@ -46,6 +47,7 @@ func (c *ConnectionManager) StartGrpc(t *testing.T) {
 	c.ImporterClient = heavymock.NewHeavymockImporterClient(c.grpcClientConn.GetGRPCConn())
 }
 
+// run postgres in docker and perform migrations
 func (c *ConnectionManager) StartDB(t *testing.T) {
 	db, poolCleaner, err := testutils.SetupDB()
 	require.NoError(t, err)
@@ -53,11 +55,11 @@ func (c *ConnectionManager) StartDB(t *testing.T) {
 	c.dbPoolCleaner = poolCleaner
 }
 
+// close all opened connections
 func (c *ConnectionManager) Stop() {
 	c.grpcServer.Server.Stop()
 	c.grpcClientConn.GetGRPCConn().Close()
-	f := c.dbPoolCleaner
-	if f != nil {
+	if f := c.dbPoolCleaner; f != nil {
 		f()
 	}
 }

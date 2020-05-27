@@ -31,7 +31,7 @@ type dbIntegrationSuite struct {
 }
 
 func (a *dbIntegrationSuite) SetupSuite() {
-	a.c.StartGrpc(a.T())
+	a.c.Start(a.T())
 	a.c.StartDB(a.T())
 }
 
@@ -87,13 +87,7 @@ func (a *dbIntegrationSuite) TestGetRecordsFromDb() {
 	proc.Start(ctx)
 	defer proc.Stop(ctx)
 
-	//todo: add waiter here
-	time.Sleep(5 * time.Second)
-
-	var c int
-	record := models.Record{}
-	a.c.DB.Model(&record).Count(&c)
-	require.Equal(a.T(), recordsCount, c, "Records count in DB not as expected")
+	a.waitRecordsCount(recordsCount)
 
 	for _, ref := range refs {
 		modelRef := models.ReferenceFromTypes(ref)
@@ -102,6 +96,21 @@ func (a *dbIntegrationSuite) TestGetRecordsFromDb() {
 		require.NotEmpty(a.T(), record, "Record is empty")
 		require.Equal(a.T(), modelRef, record.Reference, "Reference not equal")
 	}
+}
+
+func (a *dbIntegrationSuite) waitRecordsCount(expCount int) {
+	var c int
+	for i := 0; i < 60; i++ {
+		record := models.Record{}
+		a.c.DB.Model(&record).Count(&c)
+		a.T().Logf("Select from record, expected rows count=%v, actual=%v, attempt: %v", expCount, c, i)
+		if c >= expCount {
+			break
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+	a.T().Logf("Found %v rows", c)
+	require.Equal(a.T(), expCount, c, "Records count in DB not as expected")
 }
 
 func TestAll(t *testing.T) {
