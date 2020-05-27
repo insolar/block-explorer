@@ -30,7 +30,7 @@ func TestMain(t *testing.M) {
 		belogger.FromContext(context.Background()).Fatal(err)
 	}
 	retCode := t.Run()
-	defer dbCleaner()
+	dbCleaner()
 	os.Exit(retCode)
 }
 
