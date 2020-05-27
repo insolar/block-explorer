@@ -75,14 +75,6 @@ func main() {
 
 	s := storage.NewStorage(db)
 
-	proc := processor.NewProcessor(trn, s, 1)
-	err = proc.Start(ctx)
-	if err != nil {
-		// TODO: change to logger after PENV-279
-		log.Fatal("cannot connect to GRPC server", err)
-	}
-	defer proc.Stop(ctx)
-
 	contr, err := controller.NewController(extractor, s)
 	if err != nil {
 		logger.Fatal("cannot initialize controller", err)
@@ -98,28 +90,35 @@ func main() {
 		}
 	}()
 
+	proc := processor.NewProcessor(trn, s, contr, 1)
+	err = proc.Start(ctx)
+	if err != nil {
+		logger.Fatal("cannot start processor", err)
+	}
+	defer func() {
+		err := proc.Stop(ctx)
+		if err != nil {
+			logger.Fatal("cannot stop processor", err)
+		}
+	}()
+
 	graceful(ctx, makeStopper(ctx, db))
 }
 
 func graceful(ctx context.Context, that func()) {
 	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)
 	<-stop
-	// TODO: change to logger after PENV-279
-	// logger := belogger.FromContext(ctx)
-	// logger.Infof("gracefully stopping...")
-	fmt.Println("gracefully stopping...")
+	logger := belogger.FromContext(ctx)
+	logger.Infof("gracefully stopping...")
 	that()
 }
 
 func makeStopper(ctx context.Context, db *gorm.DB) func() {
-	// TODO: enable logger after PENV-279
-	// logger := belogger.FromContext(ctx)
+	logger := belogger.FromContext(ctx)
 	return func() {
 		err := db.DB().Close()
 		if err != nil {
-			// TODO: change to logger after PENV-279
-			// logger.Error(errors.Wrapf(err, "failed to close database"))
-			fmt.Println(errors.Wrapf(err, "failed to close database").Error())
+			logger.Error(errors.Wrapf(err, "failed to close database"))
 		}
 	}
 }

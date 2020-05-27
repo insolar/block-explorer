@@ -23,6 +23,7 @@ type JetDrop struct {
 	MainSection *MainSection
 	Sections    []Section
 	RawData     []byte
+	Hash        []byte
 }
 
 type Section interface {

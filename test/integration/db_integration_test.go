@@ -13,6 +13,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/insolar/block-explorer/etl/controller"
 	"github.com/insolar/block-explorer/etl/extractor"
 	"github.com/insolar/block-explorer/etl/models"
 	"github.com/insolar/block-explorer/etl/processor"
@@ -83,7 +84,9 @@ func (a *dbIntegrationSuite) TestGetRecordsFromDb() {
 	defer transformerMn.Stop(ctx)
 
 	s := storage.NewStorage(a.c.DB)
-	proc := processor.NewProcessor(transformerMn, s, 1)
+	contr, err := controller.NewController(extractorMn, s)
+	require.NoError(a.T(), err)
+	proc := processor.NewProcessor(transformerMn, s, contr, 1)
 	proc.Start(ctx)
 	defer proc.Stop(ctx)
 
