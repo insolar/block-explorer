@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/jinzhu/gorm"
+	// import database's driver
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/ory/dockertest/v3"
 	"github.com/pkg/errors"

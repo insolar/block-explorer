@@ -7,6 +7,7 @@ package dbconn
 
 import (
 	"github.com/jinzhu/gorm"
+	// import database's driver
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/pkg/errors"
 
