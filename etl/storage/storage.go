@@ -42,7 +42,7 @@ func (s *storage) SaveJetDropData(jetDrop models.JetDrop, records []models.Recor
 		for _, record := range records {
 			// TODO: dont rewrite pulse at record, remove it at PENV-212
 			record.PulseNumber = 1
-			if err := tx.Save(&record).Error; err != nil {
+			if err := tx.Save(&record).Error; err != nil { // nolint
 				return errors.Wrap(err, "error while saving record")
 			}
 		}
