@@ -38,3 +38,15 @@ func TestGenerateRecordsSilence_recordsAreUnique(t *testing.T) {
 		require.Equal(t, uint32(i+1), r.RecordNumber)
 	}
 }
+
+func TestGenerateUniqueJetIDFunction(t *testing.T) {
+	ids := len(uniqueJetID)
+	idFirst := GenerateUniqueJetID()
+	require.NotEmpty(t, idFirst)
+	require.Len(t, uniqueJetID, ids+1)
+
+	idSecond := GenerateUniqueJetID()
+	require.NotEqual(t, idFirst, idSecond)
+	require.NotEmpty(t, idSecond)
+	require.Len(t, uniqueJetID, ids+2)
+}
