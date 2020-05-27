@@ -260,7 +260,6 @@ func TestStorage_CompletePulse_ErrorUpdateSeveralRows(t *testing.T) {
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "several rows were affected")
 
-	pulse.IsComplete = true
 	pulseInDB := []models.Pulse{}
 	err = testDB.Find(&pulseInDB).Error
 	require.NoError(t, err)
@@ -283,7 +282,6 @@ func TestStorage_CompletePulse_AlreadyCompleted(t *testing.T) {
 	err = s.CompletePulse(pulse.PulseNumber)
 	require.NoError(t, err)
 
-	pulse.IsComplete = true
 	pulseInDB := []models.Pulse{}
 	err = testDB.Find(&pulseInDB).Error
 	require.NoError(t, err)
@@ -302,7 +300,6 @@ func TestStorage_CompletePulse_ErrorNotExist(t *testing.T) {
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "try to complete not existing pulse")
 
-	pulse.IsComplete = true
 	pulseInDB := []models.Pulse{}
 	err = testDB.Find(&pulseInDB).Error
 	require.NoError(t, err)
