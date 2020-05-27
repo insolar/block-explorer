@@ -8,11 +8,14 @@ package testutils
 import (
 	"fmt"
 	"log"
+	"testing"
 
 	"github.com/jinzhu/gorm"
+	// import database's driver
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/ory/dockertest/v3"
 	"github.com/pkg/errors"
+	"github.com/stretchr/testify/require"
 	"gopkg.in/gormigrate.v1"
 
 	"github.com/insolar/block-explorer/migrations"
@@ -86,4 +89,11 @@ func SetupDB() (*gorm.DB, func(), error) {
 	}
 
 	return db, cleaner, nil
+}
+
+func TruncateTables(t *testing.T, db *gorm.DB, models []interface{}) {
+	for _, m := range models {
+		err := db.Delete(m).Error
+		require.NoError(t, err)
+	}
 }

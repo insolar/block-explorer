@@ -6,44 +6,43 @@
 package testutils
 
 import (
-	"time"
-
 	"github.com/insolar/insolar/insolar/gen"
 	"github.com/jinzhu/gorm"
 	"github.com/pkg/errors"
 
 	"github.com/insolar/block-explorer/etl/models"
 )
+
 var pulseDelta = uint16(10)
 
 // InitRecordDB returns generated record
-func InitRecordDB() models.Record {
+func InitRecordDB(jetDrop models.JetDrop) models.Record {
 	return models.Record{
 		Reference:           gen.Reference().Bytes(),
 		Type:                "",
 		ObjectReference:     gen.Reference().Bytes(),
 		PrototypeReference:  gen.Reference().Bytes(),
-		Payload:             []byte{1, 2, 3},
+		Payload:             GenerateRandBytes(),
 		PrevRecordReference: gen.Reference().Bytes(),
-		Hash:                []byte{1, 2, 3, 4},
-		RawData:             []byte{1, 2, 3, 4, 5},
-		JetID:               []byte{1},
-		PulseNumber:         1,
+		Hash:                GenerateRandBytes(),
+		RawData:             GenerateRandBytes(),
+		JetID:               jetDrop.JetID,
+		PulseNumber:         jetDrop.PulseNumber,
 		Order:               1,
-		Timestamp:           time.Now().Unix(),
+		Timestamp:           jetDrop.Timestamp,
 	}
 }
 
 // InitJetDropDB returns generated jet drop with provided pulse
 func InitJetDropDB(pulse models.Pulse) models.JetDrop {
 	return models.JetDrop{
-		JetID: GenerateUniqueJetID().Prefix(),
-		PulseNumber: pulse.PulseNumber,
-		FirstPrevHash: []byte{1, 2, 3, 3},
-		SecondPrevHash: []byte{1, 2, 3, 5},
-		Hash: []byte{1, 2, 3, 4},
-		RawData: []byte{1, 2, 3, 4, 5},
-		Timestamp: pulse.Timestamp,
+		JetID:          GenerateUniqueJetID().Prefix(),
+		PulseNumber:    pulse.PulseNumber,
+		FirstPrevHash:  GenerateRandBytes(),
+		SecondPrevHash: GenerateRandBytes(),
+		Hash:           GenerateRandBytes(),
+		RawData:        GenerateRandBytes(),
+		Timestamp:      pulse.Timestamp,
 	}
 }
 
@@ -55,11 +54,11 @@ func InitPulseDB() (models.Pulse, error) {
 		return models.Pulse{}, err
 	}
 	return models.Pulse{
-		PulseNumber: int(pulseNumber.AsUint32()),
+		PulseNumber:     int(pulseNumber.AsUint32()),
 		PrevPulseNumber: int(pulseNumber.Prev(pulseDelta)),
 		NextPulseNumber: int(pulseNumber.Next(pulseDelta)),
-		IsComplete: false,
-		Timestamp: timestamp.Unix(),
+		IsComplete:      false,
+		Timestamp:       timestamp.Unix(),
 	}, nil
 }
 
