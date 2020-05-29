@@ -96,7 +96,10 @@ func (a *dbIntegrationSuite) TestIntegrationWithDb_GetRecords() {
 func (a *dbIntegrationSuite) TestIntegrationWithDb_GetJetDrops() {
 	recordsCount := 10
 	pulse := gen.PulseNumber()
-	expRecords := testutils.GenerateRecordsFromOneJetSilence(recordsCount, pulse)
+	expRecordsPt1 := testutils.GenerateRecordsFromOneJetSilence(recordsCount, pulse)
+	expRecordsPt2 := testutils.GenerateRecordsFromOneJetSilence(recordsCount, pulse)
+	expRecords := append(expRecordsPt1, expRecordsPt2...)
+	totalCount := recordsCount * 2
 
 	stream, err := a.c.ImporterClient.Import(context.Background())
 	require.NoError(a.T(), err)
@@ -111,22 +114,22 @@ func (a *dbIntegrationSuite) TestIntegrationWithDb_GetJetDrops() {
 	reply, err := stream.CloseAndRecv()
 	require.NoError(a.T(), err)
 	require.True(a.T(), reply.Ok)
-	require.Len(a.T(), a.c.Importer.GetSavedRecords(), recordsCount)
+	require.Len(a.T(), a.c.Importer.GetSavedRecords(), totalCount)
 
-	a.waitRecordsCount(recordsCount)
+	a.waitRecordsCount(totalCount)
 
 	// TODO: change it to '{PulseNumber: int(pulse)}' at PENV-212
 	jetDropsDB, err := a.be.Storage().GetJetDrops(models.Pulse{PulseNumber: 1})
 	require.NoError(a.T(), err)
-	require.NotEmptyf(a.T(), jetDropsDB, "Found no jetDrops in db by pulse %v", pulse)
+	require.Len(a.T(), jetDropsDB, 2, "jetDrops count in db not as expected")
 
-	prefix := expRecords[0].Record.JetID.Prefix()
+	prefixFirst := expRecordsPt1[0].Record.JetID.Prefix()
+	prefixSecond := expRecordsPt2[0].Record.JetID.Prefix()
 	require.NoError(a.T(), err)
-	jd := jetDropsDB[0]
-	require.Equal(a.T(), prefix, jd.JetID, "JetID in db not as expected")
-	require.NotEmpty(a.T(), jd.RawData)
-	require.NotNil(a.T(), jd.PulseNumber)
-	require.NotEmpty(a.T(), jd.Timestamp)
+	jds := [][]byte{jetDropsDB[0].JetID, jetDropsDB[1].JetID}
+	// require.Equal(a.T(), prefix, jd.JetID, "JetID in db not as expected")
+	require.Contains(a.T(), jds, prefixFirst)
+	require.Contains(a.T(), jds, prefixSecond)
 }
 
 func (a *dbIntegrationSuite) waitRecordsCount(expCount int) {
