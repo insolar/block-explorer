@@ -7,10 +7,11 @@ package extractor
 
 import (
 	"context"
-	"fmt"
 	"io"
 
 	"github.com/insolar/block-explorer/etl/types"
+	"github.com/insolar/block-explorer/instrumentation/belogger"
+	"github.com/insolar/insolar/insolar"
 	"github.com/insolar/insolar/ledger/heavy/exporter"
 	"github.com/pkg/errors"
 )
@@ -42,27 +43,27 @@ func (m *MainNetExtractor) GetJetDrops(ctx context.Context) <-chan *types.Platfo
 
 	//todo: register event in some monitoring service
 	errorChan := make(chan error)
+	lastPulseNumber := uint32(0)
+	receivedPulseNumber := uint32(0)
 
 	go func() {
 		//todo: enable logger
-
-		// logger := belogger.FromContext(ctx)
+		logger := belogger.FromContext(ctx)
 		for {
 			if m.needStop() {
 				return
 			}
-			// log := logger.WithField("request_pulse_number", m.request.PulseNumber)
-			// m.log.Debug("Data request: ", m.request)
-			fmt.Println("Data request")
+			log := logger.WithField("request_pulse_number", m.request.PulseNumber)
+			log.Debug("Data request: ", m.request)
 			stream, err := client.Export(ctx, m.request)
 
 			if err != nil {
-				// log.Debug("Data request failed: ", err)
-				println("Data request failed")
-				println(err.Error())
+				log.Debug("Data request failed: ", err)
 				errorChan <- errors.Wrapf(err, "failed to get gRPC stream from exporter.Export method")
 				continue
 			}
+			// need to collect all records from pulse
+			jetDrops := new(types.PlatformJetDrops)
 
 			// Get records from the stream
 			for {
@@ -71,28 +72,146 @@ func (m *MainNetExtractor) GetJetDrops(ctx context.Context) <-chan *types.Platfo
 				}
 				resp, err := stream.Recv()
 				if err == io.EOF {
-					// log.Debug("EOF received, quit")
-					println("EOF received, quit")
+					log.Debug("EOF received, quit")
+					streamError := stream.CloseSend()
+					if streamError != nil {
+						log.Warn("Error closing stream: ", streamError)
+					}
 					break
 				}
 				if err != nil {
-					// log.Debug("received error value from records gRPC stream %v", m.request)
-					println("received error value from records gRPC stream %v", m.request)
+					log.Debug("received error value from records gRPC stream %v", m.request)
 					errorChan <- errors.Wrapf(err, "received error value from records gRPC stream %v", m.request)
+				}
+
+				if resp.ShouldIterateFrom != nil {
+					m.request.PulseNumber = *resp.ShouldIterateFrom
+					receivedPulseNumber = m.request.PulseNumber.AsUint32()
+					break
 				}
 
 				// save the last pulse for future requests
 				m.request.RecordNumber = resp.RecordNumber
 				m.request.PulseNumber = resp.Record.ID.Pulse()
+				receivedPulseNumber = m.request.PulseNumber.AsUint32()
 
-				jetDrops := new(types.PlatformJetDrops)
-				jetDrops.Records = append(jetDrops.Records, resp)
+				// collect all records by PulseNumber
+				if receivedPulseNumber == lastPulseNumber {
+					jetDrops.Records = append(jetDrops.Records, resp)
+					continue
+				}
+
+				lastPulseNumber = receivedPulseNumber
+
 				m.mainJetDropsChan <- jetDrops
+				// zeroing variable which collecting jetDrops
+				jetDrops = new(types.PlatformJetDrops)
 			}
 		}
 	}()
 
 	return m.mainJetDropsChan
+}
+
+func (m *MainNetExtractor) LoadJetDrops(ctx context.Context, fromPulseNumber int, toPulseNumber int) error {
+	if fromPulseNumber < 0 {
+		return errors.New("fromPulseNumber cannot be negative")
+	}
+	if toPulseNumber < 1 {
+		return errors.New("fromPulseNumber cannot be greater than 1")
+	}
+	if fromPulseNumber > toPulseNumber {
+		return errors.New("fromPulseNumber cannot be greater than toPulseNumber")
+	}
+	unsignedToPulseNumber := uint32(toPulseNumber)
+
+	//todo: register event in some monitoring service
+	errorChan := make(chan error)
+	lastPulseNumber := uint32(fromPulseNumber)
+	receivedPulseNumber := uint32(toPulseNumber)
+
+	client := m.client
+	request := &exporter.GetRecords{
+		Count:        100,
+		PulseNumber:  insolar.PulseNumber(fromPulseNumber),
+		RecordNumber: 0,
+	}
+
+	go func() {
+		logger := belogger.FromContext(ctx)
+		for {
+			if m.needStop() {
+				return
+			}
+
+			log := logger.WithField("request_pulse_number", request.PulseNumber)
+			log.Debug("Data request: ", request)
+			stream, err := client.Export(ctx, request)
+
+			if err != nil {
+				log.Warnf("Data request failed: ", err)
+				errorChan <- errors.Wrapf(err, "failed to get gRPC stream from exporter.Export method")
+				continue
+			}
+
+			// need to collect all records from pulse
+			jetDrops := new(types.PlatformJetDrops)
+			// Get records from the stream
+			for {
+				if m.needStop() {
+					closeStream(stream, ctx)
+					return
+				}
+				resp, err := stream.Recv()
+				if err == io.EOF {
+					log.Debug("EOF received, quit")
+					closeStream(stream, ctx)
+					break
+				}
+				if err != nil {
+					log.Warnf("received error value from records gRPC stream %v", request)
+					errorChan <- errors.Wrapf(err, "received error value from records gRPC stream %v", request)
+				}
+
+				if resp.ShouldIterateFrom != nil {
+					request.PulseNumber = *resp.ShouldIterateFrom
+					receivedPulseNumber = request.PulseNumber.AsUint32()
+					break
+				}
+
+				// save the last pulse for future requests
+				request.RecordNumber = resp.RecordNumber
+				request.PulseNumber = resp.Record.ID.Pulse()
+
+				receivedPulseNumber = request.PulseNumber.AsUint32()
+				if receivedPulseNumber > unsignedToPulseNumber {
+					// now we have received all needed data
+					return
+				}
+
+				// collect all records by PulseNumber
+				if receivedPulseNumber == lastPulseNumber {
+					jetDrops.Records = append(jetDrops.Records, resp)
+					continue
+				}
+
+				lastPulseNumber = receivedPulseNumber
+
+				m.mainJetDropsChan <- jetDrops
+				// zeroing variable which collecting jetDrops
+				jetDrops = new(types.PlatformJetDrops)
+			}
+		}
+	}()
+
+	return nil
+}
+
+func closeStream(stream exporter.RecordExporter_ExportClient, ctx context.Context) {
+	streamError := stream.CloseSend()
+	if streamError != nil {
+		belogger.FromContext(ctx).Warn("Error closing stream: ", streamError)
+	}
 }
 
 func (m *MainNetExtractor) Stop() {

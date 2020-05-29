@@ -9,8 +9,8 @@ package extractor
 
 import (
 	"context"
-	"fmt"
 	"testing"
+	"time"
 
 	"github.com/insolar/block-explorer/configuration"
 	"github.com/insolar/block-explorer/etl/connection"
@@ -44,13 +44,17 @@ func TestExporterIsWorking(t *testing.T) {
 	extractor := NewMainNetExtractor(uint32(localBatchSize), g)
 	jetDrops := extractor.GetJetDrops(ctx)
 
-	for i := 0; i < localBatchSize; i++ {
+	for i := 0; i < 2; i++ {
 		select {
 		case jd := <-jetDrops:
+			// when i ∈ [0,1) we received records with some pulse
+			// when i ≥ 2 we received records with different pulse, now records from i ∈ [0,1) should be returned
+			if i < 1 {
+				continue
+			}
 			require.NotEmpty(t, jd.Records)
-			t.Log(fmt.Sprintf("RecordNumber=%d, Pn=%d\n\n", jd.Records[0].RecordNumber, jd.Records[0].GetRecord().ID))
-			//todo: replace to logger
-			// logger.Debug("RecordNumber=%d, Pn=%d\n\n", jd.Records[0].RecordNumber, jd.Records[0].GetRecord().ID)
+		case <-time.After(time.Second * 1):
+			t.Fatal("chan receive timeout ")
 		}
 	}
 }
@@ -65,8 +69,10 @@ type gclient struct {
 }
 
 func (c *gclient) Export(ctx context.Context, in *exporter.GetRecords, opts ...grpc.CallOption) (exporter.RecordExporter_ExportClient, error) {
+	records, _ := testutils.GenerateRecords(localBatchSize)()
+	withDifferencePulses := testutils.GenerateRecordsWithDifferencePulses(localBatchSize, records)
 	stream := recordStream{
-		recv: testutils.GenerateRecords(localBatchSize),
+		recv: withDifferencePulses,
 	}
 	return stream, nil
 }

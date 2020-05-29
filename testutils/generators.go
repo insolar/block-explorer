@@ -61,22 +61,40 @@ func GenerateRecords(batchSize int) func() (record *exporter.Record, e error) {
 	return generateRecords
 }
 
+func GenerateRecordsWithDifferencePulses(batchSize int, expectedRecord *exporter.Record) func() (record *exporter.Record, e error) {
+	count := 0
+	fn := func() (record *exporter.Record, e error) {
+		// we need to emulate pulse changing
+		switch count {
+		case 0, 1:
+			count++
+			expectedRecord.ShouldIterateFrom = nil
+			return expectedRecord, nil
+		default:
+			retRecord, e := GenerateRecords(batchSize)()
+			retRecord.ShouldIterateFrom = nil
+			retRecord.Record.ID = gen.IDWithPulse(expectedRecord.Record.ID.Pulse() + 10)
+			return retRecord, e
+		}
+	}
+	return fn
+}
+
 // GenerateRecordsSilence returns new generated records without errors
-func GenerateRecordsSilence(count int) *[]exporter.Record {
-	var res []exporter.Record
+func GenerateRecordsSilence(count int) []*exporter.Record {
+	res := make([]*exporter.Record, count)
 	f := GenerateRecords(count)
-	for count > 0 {
+	for i := 0; i < count; i++ {
 		record, err := f()
 		if err != nil {
 			continue
 		}
-		res = append(res, *record)
-		count--
+		res[i] = record
 	}
-	return &res
+	return res
 }
 
-var uniqueJetID= make(map[uint64]bool)
+var uniqueJetID = make(map[uint64]bool)
 var mutex = &sync.Mutex{}
 
 func GenerateUniqueJetID() insolar.JetID {

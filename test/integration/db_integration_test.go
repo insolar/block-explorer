@@ -41,12 +41,15 @@ func (a *dbIntegrationSuite) TearDownSuite() {
 }
 
 func (a *dbIntegrationSuite) TestGetRecordsFromDb() {
-	recordsCount := 10
-	expRecords := testutils.GenerateRecordsSilence(recordsCount)
+	recordsCount := 1
+	expRecords, _ := testutils.GenerateRecords(recordsCount)()
+	recordsWithDifferencePulses := testutils.GenerateRecordsWithDifferencePulses(recordsCount, expRecords)
 	stream, err := a.c.ImporterClient.Import(context.Background())
 	require.NoError(a.T(), err)
-	for _, record := range *expRecords {
-		if err := stream.Send(&record); err != nil {
+
+	for i := 0; i < 3; i++ {
+		record, _ := recordsWithDifferencePulses()
+		if err := stream.Send(record); err != nil {
 			if err == io.EOF {
 				break
 			}
@@ -57,14 +60,14 @@ func (a *dbIntegrationSuite) TestGetRecordsFromDb() {
 	require.NoError(a.T(), err)
 	require.True(a.T(), reply.Ok)
 
-	require.Len(a.T(), a.c.Importer.GetSavedRecords(), recordsCount)
+	require.Len(a.T(), a.c.Importer.GetSavedRecords(), 3) // because recordsWithDifferencePulses generates 3 records
 
 	ctx := context.Background()
 	extractorMn := extractor.NewMainNetExtractor(100, a.c.ExporterClient)
 
 	jetDrops := extractorMn.GetJetDrops(ctx)
 	refs := make([]types.Reference, 0)
-	for i := 0; i < recordsCount; i++ {
+	for i := 0; i < 2; i++ {
 		select {
 		case jd := <-jetDrops:
 			transform, err := transformer.Transform(ctx, jd)

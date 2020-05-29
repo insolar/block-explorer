@@ -8,6 +8,7 @@ package extractor
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/gojuno/minimock/v3"
 	"github.com/insolar/block-explorer/etl/interfaces/mock"
@@ -25,25 +26,35 @@ func TestGetJetDrops(t *testing.T) {
 
 	f := testutils.GenerateRecords(batchSize)
 	expectedRecord, err := f()
-	fn := func() (record *exporter.Record, e error) {
-		return expectedRecord, err
-	}
+	require.NoError(t, err)
+	withDifferencePulses := testutils.GenerateRecordsWithDifferencePulses(batchSize, expectedRecord)
 
 	stream := recordStream{
-		recv: fn,
+		recv: withDifferencePulses,
 	}
-	recordClient.ExportMock.Set(func(ctx context.Context, in *exporter.GetRecords, opts ...grpc.CallOption) (r1 exporter.RecordExporter_ExportClient, err error) {
-		return stream, nil
-	})
+	recordClient.ExportMock.Set(
+		func(ctx context.Context, in *exporter.GetRecords, opts ...grpc.CallOption) (
+			r1 exporter.RecordExporter_ExportClient, err error) {
+			return stream, nil
+		})
 
 	extractor := NewMainNetExtractor(uint32(batchSize), recordClient)
 	jetDrops := extractor.GetJetDrops(ctx)
 
-	select {
-	case jd := <-jetDrops:
-		require.NotNil(t, jd)
-		require.Len(t, jd.Records, 1, "no records received")
-		require.True(t, expectedRecord.Equal(jd.Records[0]), "jetDrops are not equal")
+	for i := 0; i < 2; i++ {
+		select {
+		case jd := <-jetDrops:
+			if i < 1 {
+				// when i ∈ [0,1) we received records with some pulse
+				// when i ≥ 2 we received records with different pulse, now records from i ∈ [0,1) should be returned
+				continue
+			}
+			require.NotNil(t, jd)
+			require.Len(t, jd.Records, 1, "no records received")
+			require.True(t, expectedRecord.Equal(jd.Records[0]), "jetDrops are not equal")
+		case <-time.After(time.Second * 1):
+			t.Fatal("chan receive timeout ")
+		}
 	}
 }
 

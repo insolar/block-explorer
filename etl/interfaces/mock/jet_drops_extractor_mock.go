@@ -21,6 +21,12 @@ type JetDropsExtractorMock struct {
 	afterGetJetDropsCounter  uint64
 	beforeGetJetDropsCounter uint64
 	GetJetDropsMock          mJetDropsExtractorMockGetJetDrops
+
+	funcLoadJetDrops          func(ctx context.Context, fromPulseNumber int, toPulseNumber int) (err error)
+	inspectFuncLoadJetDrops   func(ctx context.Context, fromPulseNumber int, toPulseNumber int)
+	afterLoadJetDropsCounter  uint64
+	beforeLoadJetDropsCounter uint64
+	LoadJetDropsMock          mJetDropsExtractorMockLoadJetDrops
 }
 
 // NewJetDropsExtractorMock returns a mock for interfaces.JetDropsExtractor
@@ -32,6 +38,9 @@ func NewJetDropsExtractorMock(t minimock.Tester) *JetDropsExtractorMock {
 
 	m.GetJetDropsMock = mJetDropsExtractorMockGetJetDrops{mock: m}
 	m.GetJetDropsMock.callArgs = []*JetDropsExtractorMockGetJetDropsParams{}
+
+	m.LoadJetDropsMock = mJetDropsExtractorMockLoadJetDrops{mock: m}
+	m.LoadJetDropsMock.callArgs = []*JetDropsExtractorMockLoadJetDropsParams{}
 
 	return m
 }
@@ -251,10 +260,229 @@ func (m *JetDropsExtractorMock) MinimockGetJetDropsInspect() {
 	}
 }
 
+type mJetDropsExtractorMockLoadJetDrops struct {
+	mock               *JetDropsExtractorMock
+	defaultExpectation *JetDropsExtractorMockLoadJetDropsExpectation
+	expectations       []*JetDropsExtractorMockLoadJetDropsExpectation
+
+	callArgs []*JetDropsExtractorMockLoadJetDropsParams
+	mutex    sync.RWMutex
+}
+
+// JetDropsExtractorMockLoadJetDropsExpectation specifies expectation struct of the JetDropsExtractor.LoadJetDrops
+type JetDropsExtractorMockLoadJetDropsExpectation struct {
+	mock    *JetDropsExtractorMock
+	params  *JetDropsExtractorMockLoadJetDropsParams
+	results *JetDropsExtractorMockLoadJetDropsResults
+	Counter uint64
+}
+
+// JetDropsExtractorMockLoadJetDropsParams contains parameters of the JetDropsExtractor.LoadJetDrops
+type JetDropsExtractorMockLoadJetDropsParams struct {
+	ctx             context.Context
+	fromPulseNumber int
+	toPulseNumber   int
+}
+
+// JetDropsExtractorMockLoadJetDropsResults contains results of the JetDropsExtractor.LoadJetDrops
+type JetDropsExtractorMockLoadJetDropsResults struct {
+	err error
+}
+
+// Expect sets up expected params for JetDropsExtractor.LoadJetDrops
+func (mmLoadJetDrops *mJetDropsExtractorMockLoadJetDrops) Expect(ctx context.Context, fromPulseNumber int, toPulseNumber int) *mJetDropsExtractorMockLoadJetDrops {
+	if mmLoadJetDrops.mock.funcLoadJetDrops != nil {
+		mmLoadJetDrops.mock.t.Fatalf("JetDropsExtractorMock.LoadJetDrops mock is already set by Set")
+	}
+
+	if mmLoadJetDrops.defaultExpectation == nil {
+		mmLoadJetDrops.defaultExpectation = &JetDropsExtractorMockLoadJetDropsExpectation{}
+	}
+
+	mmLoadJetDrops.defaultExpectation.params = &JetDropsExtractorMockLoadJetDropsParams{ctx, fromPulseNumber, toPulseNumber}
+	for _, e := range mmLoadJetDrops.expectations {
+		if minimock.Equal(e.params, mmLoadJetDrops.defaultExpectation.params) {
+			mmLoadJetDrops.mock.t.Fatalf("Expectation set by When has same params: %#v", *mmLoadJetDrops.defaultExpectation.params)
+		}
+	}
+
+	return mmLoadJetDrops
+}
+
+// Inspect accepts an inspector function that has same arguments as the JetDropsExtractor.LoadJetDrops
+func (mmLoadJetDrops *mJetDropsExtractorMockLoadJetDrops) Inspect(f func(ctx context.Context, fromPulseNumber int, toPulseNumber int)) *mJetDropsExtractorMockLoadJetDrops {
+	if mmLoadJetDrops.mock.inspectFuncLoadJetDrops != nil {
+		mmLoadJetDrops.mock.t.Fatalf("Inspect function is already set for JetDropsExtractorMock.LoadJetDrops")
+	}
+
+	mmLoadJetDrops.mock.inspectFuncLoadJetDrops = f
+
+	return mmLoadJetDrops
+}
+
+// Return sets up results that will be returned by JetDropsExtractor.LoadJetDrops
+func (mmLoadJetDrops *mJetDropsExtractorMockLoadJetDrops) Return(err error) *JetDropsExtractorMock {
+	if mmLoadJetDrops.mock.funcLoadJetDrops != nil {
+		mmLoadJetDrops.mock.t.Fatalf("JetDropsExtractorMock.LoadJetDrops mock is already set by Set")
+	}
+
+	if mmLoadJetDrops.defaultExpectation == nil {
+		mmLoadJetDrops.defaultExpectation = &JetDropsExtractorMockLoadJetDropsExpectation{mock: mmLoadJetDrops.mock}
+	}
+	mmLoadJetDrops.defaultExpectation.results = &JetDropsExtractorMockLoadJetDropsResults{err}
+	return mmLoadJetDrops.mock
+}
+
+//Set uses given function f to mock the JetDropsExtractor.LoadJetDrops method
+func (mmLoadJetDrops *mJetDropsExtractorMockLoadJetDrops) Set(f func(ctx context.Context, fromPulseNumber int, toPulseNumber int) (err error)) *JetDropsExtractorMock {
+	if mmLoadJetDrops.defaultExpectation != nil {
+		mmLoadJetDrops.mock.t.Fatalf("Default expectation is already set for the JetDropsExtractor.LoadJetDrops method")
+	}
+
+	if len(mmLoadJetDrops.expectations) > 0 {
+		mmLoadJetDrops.mock.t.Fatalf("Some expectations are already set for the JetDropsExtractor.LoadJetDrops method")
+	}
+
+	mmLoadJetDrops.mock.funcLoadJetDrops = f
+	return mmLoadJetDrops.mock
+}
+
+// When sets expectation for the JetDropsExtractor.LoadJetDrops which will trigger the result defined by the following
+// Then helper
+func (mmLoadJetDrops *mJetDropsExtractorMockLoadJetDrops) When(ctx context.Context, fromPulseNumber int, toPulseNumber int) *JetDropsExtractorMockLoadJetDropsExpectation {
+	if mmLoadJetDrops.mock.funcLoadJetDrops != nil {
+		mmLoadJetDrops.mock.t.Fatalf("JetDropsExtractorMock.LoadJetDrops mock is already set by Set")
+	}
+
+	expectation := &JetDropsExtractorMockLoadJetDropsExpectation{
+		mock:   mmLoadJetDrops.mock,
+		params: &JetDropsExtractorMockLoadJetDropsParams{ctx, fromPulseNumber, toPulseNumber},
+	}
+	mmLoadJetDrops.expectations = append(mmLoadJetDrops.expectations, expectation)
+	return expectation
+}
+
+// Then sets up JetDropsExtractor.LoadJetDrops return parameters for the expectation previously defined by the When method
+func (e *JetDropsExtractorMockLoadJetDropsExpectation) Then(err error) *JetDropsExtractorMock {
+	e.results = &JetDropsExtractorMockLoadJetDropsResults{err}
+	return e.mock
+}
+
+// LoadJetDrops implements interfaces.JetDropsExtractor
+func (mmLoadJetDrops *JetDropsExtractorMock) LoadJetDrops(ctx context.Context, fromPulseNumber int, toPulseNumber int) (err error) {
+	mm_atomic.AddUint64(&mmLoadJetDrops.beforeLoadJetDropsCounter, 1)
+	defer mm_atomic.AddUint64(&mmLoadJetDrops.afterLoadJetDropsCounter, 1)
+
+	if mmLoadJetDrops.inspectFuncLoadJetDrops != nil {
+		mmLoadJetDrops.inspectFuncLoadJetDrops(ctx, fromPulseNumber, toPulseNumber)
+	}
+
+	mm_params := &JetDropsExtractorMockLoadJetDropsParams{ctx, fromPulseNumber, toPulseNumber}
+
+	// Record call args
+	mmLoadJetDrops.LoadJetDropsMock.mutex.Lock()
+	mmLoadJetDrops.LoadJetDropsMock.callArgs = append(mmLoadJetDrops.LoadJetDropsMock.callArgs, mm_params)
+	mmLoadJetDrops.LoadJetDropsMock.mutex.Unlock()
+
+	for _, e := range mmLoadJetDrops.LoadJetDropsMock.expectations {
+		if minimock.Equal(e.params, mm_params) {
+			mm_atomic.AddUint64(&e.Counter, 1)
+			return e.results.err
+		}
+	}
+
+	if mmLoadJetDrops.LoadJetDropsMock.defaultExpectation != nil {
+		mm_atomic.AddUint64(&mmLoadJetDrops.LoadJetDropsMock.defaultExpectation.Counter, 1)
+		mm_want := mmLoadJetDrops.LoadJetDropsMock.defaultExpectation.params
+		mm_got := JetDropsExtractorMockLoadJetDropsParams{ctx, fromPulseNumber, toPulseNumber}
+		if mm_want != nil && !minimock.Equal(*mm_want, mm_got) {
+			mmLoadJetDrops.t.Errorf("JetDropsExtractorMock.LoadJetDrops got unexpected parameters, want: %#v, got: %#v%s\n", *mm_want, mm_got, minimock.Diff(*mm_want, mm_got))
+		}
+
+		mm_results := mmLoadJetDrops.LoadJetDropsMock.defaultExpectation.results
+		if mm_results == nil {
+			mmLoadJetDrops.t.Fatal("No results are set for the JetDropsExtractorMock.LoadJetDrops")
+		}
+		return (*mm_results).err
+	}
+	if mmLoadJetDrops.funcLoadJetDrops != nil {
+		return mmLoadJetDrops.funcLoadJetDrops(ctx, fromPulseNumber, toPulseNumber)
+	}
+	mmLoadJetDrops.t.Fatalf("Unexpected call to JetDropsExtractorMock.LoadJetDrops. %v %v %v", ctx, fromPulseNumber, toPulseNumber)
+	return
+}
+
+// LoadJetDropsAfterCounter returns a count of finished JetDropsExtractorMock.LoadJetDrops invocations
+func (mmLoadJetDrops *JetDropsExtractorMock) LoadJetDropsAfterCounter() uint64 {
+	return mm_atomic.LoadUint64(&mmLoadJetDrops.afterLoadJetDropsCounter)
+}
+
+// LoadJetDropsBeforeCounter returns a count of JetDropsExtractorMock.LoadJetDrops invocations
+func (mmLoadJetDrops *JetDropsExtractorMock) LoadJetDropsBeforeCounter() uint64 {
+	return mm_atomic.LoadUint64(&mmLoadJetDrops.beforeLoadJetDropsCounter)
+}
+
+// Calls returns a list of arguments used in each call to JetDropsExtractorMock.LoadJetDrops.
+// The list is in the same order as the calls were made (i.e. recent calls have a higher index)
+func (mmLoadJetDrops *mJetDropsExtractorMockLoadJetDrops) Calls() []*JetDropsExtractorMockLoadJetDropsParams {
+	mmLoadJetDrops.mutex.RLock()
+
+	argCopy := make([]*JetDropsExtractorMockLoadJetDropsParams, len(mmLoadJetDrops.callArgs))
+	copy(argCopy, mmLoadJetDrops.callArgs)
+
+	mmLoadJetDrops.mutex.RUnlock()
+
+	return argCopy
+}
+
+// MinimockLoadJetDropsDone returns true if the count of the LoadJetDrops invocations corresponds
+// the number of defined expectations
+func (m *JetDropsExtractorMock) MinimockLoadJetDropsDone() bool {
+	for _, e := range m.LoadJetDropsMock.expectations {
+		if mm_atomic.LoadUint64(&e.Counter) < 1 {
+			return false
+		}
+	}
+
+	// if default expectation was set then invocations count should be greater than zero
+	if m.LoadJetDropsMock.defaultExpectation != nil && mm_atomic.LoadUint64(&m.afterLoadJetDropsCounter) < 1 {
+		return false
+	}
+	// if func was set then invocations count should be greater than zero
+	if m.funcLoadJetDrops != nil && mm_atomic.LoadUint64(&m.afterLoadJetDropsCounter) < 1 {
+		return false
+	}
+	return true
+}
+
+// MinimockLoadJetDropsInspect logs each unmet expectation
+func (m *JetDropsExtractorMock) MinimockLoadJetDropsInspect() {
+	for _, e := range m.LoadJetDropsMock.expectations {
+		if mm_atomic.LoadUint64(&e.Counter) < 1 {
+			m.t.Errorf("Expected call to JetDropsExtractorMock.LoadJetDrops with params: %#v", *e.params)
+		}
+	}
+
+	// if default expectation was set then invocations count should be greater than zero
+	if m.LoadJetDropsMock.defaultExpectation != nil && mm_atomic.LoadUint64(&m.afterLoadJetDropsCounter) < 1 {
+		if m.LoadJetDropsMock.defaultExpectation.params == nil {
+			m.t.Error("Expected call to JetDropsExtractorMock.LoadJetDrops")
+		} else {
+			m.t.Errorf("Expected call to JetDropsExtractorMock.LoadJetDrops with params: %#v", *m.LoadJetDropsMock.defaultExpectation.params)
+		}
+	}
+	// if func was set then invocations count should be greater than zero
+	if m.funcLoadJetDrops != nil && mm_atomic.LoadUint64(&m.afterLoadJetDropsCounter) < 1 {
+		m.t.Error("Expected call to JetDropsExtractorMock.LoadJetDrops")
+	}
+}
+
 // MinimockFinish checks that all mocked methods have been called the expected number of times
 func (m *JetDropsExtractorMock) MinimockFinish() {
 	if !m.minimockDone() {
 		m.MinimockGetJetDropsInspect()
+
+		m.MinimockLoadJetDropsInspect()
 		m.t.FailNow()
 	}
 }
@@ -278,5 +506,6 @@ func (m *JetDropsExtractorMock) MinimockWait(timeout mm_time.Duration) {
 func (m *JetDropsExtractorMock) minimockDone() bool {
 	done := true
 	return done &&
-		m.MinimockGetJetDropsDone()
+		m.MinimockGetJetDropsDone() &&
+		m.MinimockLoadJetDropsDone()
 }

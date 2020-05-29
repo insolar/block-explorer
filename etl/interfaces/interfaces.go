@@ -31,6 +31,8 @@ type Stopper interface {
 type JetDropsExtractor interface {
 	// GetJetDrops stores JetDrop data in the main JetDrop channel
 	GetJetDrops(ctx context.Context) <-chan *types.PlatformJetDrops
+	// LoadJetDrops loads JetDrop data between pulse numbers
+	LoadJetDrops(ctx context.Context, fromPulseNumber int, toPulseNumber int) error
 }
 
 //go:generate minimock -i github.com/insolar/block-explorer/etl/interfaces.ConnectionManager -o ./mock -s _mock.go -g
