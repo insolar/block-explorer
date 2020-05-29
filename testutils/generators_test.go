@@ -32,7 +32,7 @@ func TestGenerateRecords_CanReturnEOF(t *testing.T) {
 
 func TestGenerateRecordsSilence_recordsAreUnique(t *testing.T) {
 	count := 5
-	records := *GenerateRecordsSilence(count)
+	records := GenerateRecordsSilence(count)
 	require.Len(t, records, count)
 	for i, r := range records {
 		require.Equal(t, uint32(i+1), r.RecordNumber)
