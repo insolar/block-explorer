@@ -206,6 +206,8 @@ func (m *MainNetExtractor) getJetDropsContinuously(ctx context.Context) {
 				m.mainJetDropsChan <- jetDrops
 				// zeroing variable which collecting jetDrops
 				jetDrops = new(types.PlatformJetDrops)
+				// don't forget to save the last data
+				jetDrops.Records = append(jetDrops.Records, resp)
 			}
 		}
 	}()
