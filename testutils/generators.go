@@ -75,9 +75,9 @@ func GenerateRecordsSilence(count int) []*exporter.Record {
 // GenerateRecordsFromPulseSilence returns new generated records without errors
 func GenerateRecordsFromOneJetSilence(count int, pulse insolar.PulseNumber) []*exporter.Record {
 	records := GenerateRecordsFromPulseSilence(count, pulse)
-	jetId := GenerateUniqueJetID()
+	jetID := GenerateUniqueJetID()
 	for _, r := range records {
-		r.Record.JetID = jetId
+		r.Record.JetID = jetID
 	}
 	return records
 }

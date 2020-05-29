@@ -13,7 +13,7 @@ import (
 	"testing"
 
 	"github.com/insolar/block-explorer/test/heavymock"
-	"github.com/insolar/block-explorer/testutils/connection_manager"
+	"github.com/insolar/block-explorer/testutils/connectionmanager"
 	"github.com/insolar/insolar/insolar/gen"
 	"github.com/insolar/insolar/ledger/heavy/exporter"
 	"github.com/stretchr/testify/require"
@@ -22,7 +22,7 @@ import (
 
 type receiveRecordsSuite struct {
 	suite.Suite
-	c connection_manager.ConnectionManager
+	c connectionmanager.ConnectionManager
 }
 
 func (a *receiveRecordsSuite) SetupSuite() {

@@ -17,8 +17,8 @@ import (
 	"github.com/insolar/block-explorer/etl/transformer"
 	"github.com/insolar/block-explorer/etl/types"
 	"github.com/insolar/block-explorer/testutils"
-	betest "github.com/insolar/block-explorer/testutils/be-test-setup"
-	"github.com/insolar/block-explorer/testutils/connection_manager"
+	betest "github.com/insolar/block-explorer/testutils/betestsetup"
+	"github.com/insolar/block-explorer/testutils/connectionmanager"
 	"github.com/insolar/insolar/insolar/gen"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -26,7 +26,7 @@ import (
 
 type dbIntegrationSuite struct {
 	suite.Suite
-	c  connection_manager.ConnectionManager
+	c  connectionmanager.ConnectionManager
 	be betest.BlockExplorerTestSetUp
 }
 
@@ -125,9 +125,7 @@ func (a *dbIntegrationSuite) TestIntegrationWithDb_GetJetDrops() {
 
 	prefixFirst := expRecordsPt1[0].Record.JetID.Prefix()
 	prefixSecond := expRecordsPt2[0].Record.JetID.Prefix()
-	require.NoError(a.T(), err)
 	jds := [][]byte{jetDropsDB[0].JetID, jetDropsDB[1].JetID}
-	// require.Equal(a.T(), prefix, jd.JetID, "JetID in db not as expected")
 	require.Contains(a.T(), jds, prefixFirst)
 	require.Contains(a.T(), jds, prefixSecond)
 }
