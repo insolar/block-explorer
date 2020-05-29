@@ -26,6 +26,11 @@ func init() {
 // GenerateRecords returns a function for generating record with error
 func GenerateRecords(batchSize int) func() (record *exporter.Record, e error) {
 	pn := gen.PulseNumber()
+	return GenerateRecordsFromPulse(batchSize, pn)
+}
+
+// GenerateRecordsFromPulse returns a function for generating record with error
+func GenerateRecordsFromPulse(batchSize int, pulse insolar.PulseNumber) func() (record *exporter.Record, e error) {
 	cnt := 0
 	eof := true
 	randNum := func() int64 {
@@ -48,12 +53,12 @@ func GenerateRecords(batchSize int) func() (record *exporter.Record, e error) {
 					Union:     nil,
 					Signature: []byte{0, 1, 2},
 				},
-				ID:        gen.IDWithPulse(pn),
+				ID:        gen.IDWithPulse(pulse),
 				ObjectID:  gen.ID(),
 				JetID:     GenerateUniqueJetID(),
 				Signature: []byte{0, 1, 2},
 			},
-			ShouldIterateFrom: &pn,
+			ShouldIterateFrom: &pulse,
 			Polymorph:         uint32(randNum()),
 		}, nil
 	}
@@ -62,21 +67,37 @@ func GenerateRecords(batchSize int) func() (record *exporter.Record, e error) {
 }
 
 // GenerateRecordsSilence returns new generated records without errors
-func GenerateRecordsSilence(count int) *[]exporter.Record {
-	var res []exporter.Record
-	f := GenerateRecords(count)
+func GenerateRecordsSilence(count int) []*exporter.Record {
+	pulse := gen.PulseNumber()
+	return GenerateRecordsFromPulseSilence(count, pulse)
+}
+
+// GenerateRecordsFromPulseSilence returns new generated records without errors
+func GenerateRecordsFromOneJetSilence(count int, pulse insolar.PulseNumber) []*exporter.Record {
+	records := GenerateRecordsFromPulseSilence(count, pulse)
+	jetId := GenerateUniqueJetID()
+	for _, r := range records {
+		r.Record.JetID = jetId
+	}
+	return records
+}
+
+// GenerateRecordsFromPulseSilence returns new generated records without errors
+func GenerateRecordsFromPulseSilence(count int, pulse insolar.PulseNumber) []*exporter.Record {
+	res := make([]*exporter.Record, 0)
+	f := GenerateRecordsFromPulse(count, pulse)
 	for count > 0 {
 		record, err := f()
 		if err != nil {
 			continue
 		}
-		res = append(res, *record)
+		res = append(res, record)
 		count--
 	}
-	return &res
+	return res
 }
 
-var uniqueJetID= make(map[uint64]bool)
+var uniqueJetID = make(map[uint64]bool)
 var mutex = &sync.Mutex{}
 
 func GenerateUniqueJetID() insolar.JetID {

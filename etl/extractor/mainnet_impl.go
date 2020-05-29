@@ -20,7 +20,7 @@ type MainNetExtractor struct {
 
 	client           exporter.RecordExporterClient
 	request          *exporter.GetRecords
-	mainJetDropsChan chan *types.PlatformJetDrops
+	MainJetDropsChan chan *types.PlatformJetDrops
 }
 
 func NewMainNetExtractor(batchSize uint32, exporterClient exporter.RecordExporterClient) *MainNetExtractor {
@@ -29,7 +29,7 @@ func NewMainNetExtractor(batchSize uint32, exporterClient exporter.RecordExporte
 		stopSignal:       make(chan bool, 1),
 		client:           exporterClient,
 		request:          request,
-		mainJetDropsChan: make(chan *types.PlatformJetDrops),
+		MainJetDropsChan: make(chan *types.PlatformJetDrops),
 	}
 }
 
@@ -87,12 +87,12 @@ func (m *MainNetExtractor) GetJetDrops(ctx context.Context) <-chan *types.Platfo
 
 				jetDrops := new(types.PlatformJetDrops)
 				jetDrops.Records = append(jetDrops.Records, resp)
-				m.mainJetDropsChan <- jetDrops
+				m.MainJetDropsChan <- jetDrops
 			}
 		}
 	}()
 
-	return m.mainJetDropsChan
+	return m.MainJetDropsChan
 }
 
 func (m *MainNetExtractor) Stop() {

@@ -13,40 +13,46 @@ import (
 	"testing"
 	"time"
 
-	"github.com/insolar/block-explorer/etl/controller"
-	"github.com/insolar/block-explorer/etl/extractor"
 	"github.com/insolar/block-explorer/etl/models"
-	"github.com/insolar/block-explorer/etl/processor"
-	"github.com/insolar/block-explorer/etl/storage"
 	"github.com/insolar/block-explorer/etl/transformer"
 	"github.com/insolar/block-explorer/etl/types"
 	"github.com/insolar/block-explorer/testutils"
+	betest "github.com/insolar/block-explorer/testutils/be-test-setup"
 	"github.com/insolar/block-explorer/testutils/connection_manager"
+	"github.com/insolar/insolar/insolar/gen"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
 type dbIntegrationSuite struct {
 	suite.Suite
-	c connection_manager.ConnectionManager
+	c  connection_manager.ConnectionManager
+	be betest.BlockExplorerTestSetUp
 }
 
-func (a *dbIntegrationSuite) SetupSuite() {
+func (a *dbIntegrationSuite) SetupTest() {
 	a.c.Start(a.T())
 	a.c.StartDB(a.T())
+
+	a.be = betest.NewBlockExplorer(a.c.ExporterClient, a.c.DB)
+	err := a.be.Start()
+	require.NoError(a.T(), err)
 }
 
-func (a *dbIntegrationSuite) TearDownSuite() {
+func (a *dbIntegrationSuite) TearDownTest() {
+	err := a.be.Stop()
+	require.NoError(a.T(), err)
 	a.c.Stop()
 }
 
-func (a *dbIntegrationSuite) TestGetRecordsFromDb() {
+func (a *dbIntegrationSuite) TestIntegrationWithDb_GetRecords() {
 	recordsCount := 10
 	expRecords := testutils.GenerateRecordsSilence(recordsCount)
 	stream, err := a.c.ImporterClient.Import(context.Background())
 	require.NoError(a.T(), err)
-	for _, record := range *expRecords {
-		if err := stream.Send(&record); err != nil {
+
+	for _, record := range expRecords {
+		if err := stream.Send(record); err != nil {
 			if err == io.EOF {
 				break
 			}
@@ -56,13 +62,11 @@ func (a *dbIntegrationSuite) TestGetRecordsFromDb() {
 	reply, err := stream.CloseAndRecv()
 	require.NoError(a.T(), err)
 	require.True(a.T(), reply.Ok)
-
 	require.Len(a.T(), a.c.Importer.GetSavedRecords(), recordsCount)
 
 	ctx := context.Background()
-	extractorMn := extractor.NewMainNetExtractor(100, a.c.ExporterClient)
 
-	jetDrops := extractorMn.GetJetDrops(ctx)
+	jetDrops := a.be.Extractor().MainJetDropsChan
 	refs := make([]types.Reference, 0)
 	for i := 0; i < recordsCount; i++ {
 		select {
@@ -78,27 +82,51 @@ func (a *dbIntegrationSuite) TestGetRecordsFromDb() {
 		}
 	}
 
-	transformerMn := transformer.NewMainNetTransformer(jetDrops)
-	err = transformerMn.Start(ctx)
-	require.NoError(a.T(), err)
-	defer transformerMn.Stop(ctx)
-
-	s := storage.NewStorage(a.c.DB)
-	contr, err := controller.NewController(extractorMn, s)
-	require.NoError(a.T(), err)
-	proc := processor.NewProcessor(transformerMn, s, contr, 1)
-	proc.Start(ctx)
-	defer proc.Stop(ctx)
-
 	a.waitRecordsCount(recordsCount)
 
 	for _, ref := range refs {
 		modelRef := models.ReferenceFromTypes(ref)
-		record, err := s.GetRecord(modelRef)
+		record, err := a.be.Storage().GetRecord(modelRef)
 		require.NoError(a.T(), err, "Error executing GetRecord from db")
 		require.NotEmpty(a.T(), record, "Record is empty")
 		require.Equal(a.T(), modelRef, record.Reference, "Reference not equal")
 	}
+}
+
+func (a *dbIntegrationSuite) TestIntegrationWithDb_GetJetDrops() {
+	recordsCount := 10
+	pulse := gen.PulseNumber()
+	expRecords := testutils.GenerateRecordsFromOneJetSilence(recordsCount, pulse)
+
+	stream, err := a.c.ImporterClient.Import(context.Background())
+	require.NoError(a.T(), err)
+	for _, record := range expRecords {
+		if err := stream.Send(record); err != nil {
+			if err == io.EOF {
+				break
+			}
+			a.T().Fatal("Error sending to stream", err)
+		}
+	}
+	reply, err := stream.CloseAndRecv()
+	require.NoError(a.T(), err)
+	require.True(a.T(), reply.Ok)
+	require.Len(a.T(), a.c.Importer.GetSavedRecords(), recordsCount)
+
+	a.waitRecordsCount(recordsCount)
+
+	// TODO: change it to '{PulseNumber: int(pulse)}' at PENV-212
+	jetDropsDB, err := a.be.Storage().GetJetDrops(models.Pulse{PulseNumber: 1})
+	require.NoError(a.T(), err)
+	require.NotEmptyf(a.T(), jetDropsDB, "Found no jetDrops in db by pulse %v", pulse)
+
+	prefix := expRecords[0].Record.JetID.Prefix()
+	require.NoError(a.T(), err)
+	jd := jetDropsDB[0]
+	require.Equal(a.T(), prefix, jd.JetID, "JetID in db not as expected")
+	require.NotEmpty(a.T(), jd.RawData)
+	require.NotNil(a.T(), jd.PulseNumber)
+	require.NotEmpty(a.T(), jd.Timestamp)
 }
 
 func (a *dbIntegrationSuite) waitRecordsCount(expCount int) {
