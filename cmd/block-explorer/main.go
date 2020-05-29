@@ -69,7 +69,12 @@ func main() {
 	if err != nil {
 		logger.Fatal("cannot connect to GRPC server", err)
 	}
-	defer trn.Stop(ctx)
+	defer func() {
+		err := trn.Stop(ctx)
+		if err != nil {
+			logger.Fatal("cannot stop transformer", err)
+		}
+	}()
 
 	db, err := dbconn.Connect(cfg.DB)
 	if err != nil {

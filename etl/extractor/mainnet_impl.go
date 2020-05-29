@@ -86,7 +86,7 @@ func (m *MainNetExtractor) LoadJetDrops(ctx context.Context, fromPulseNumber int
 			// Get records from the stream
 			for {
 				if m.needStop() {
-					closeStream(stream, ctx)
+					closeStream(ctx, stream)
 					return
 				}
 				resp, err := stream.Recv()
@@ -176,10 +176,7 @@ func (m *MainNetExtractor) getJetDropsContinuously(ctx context.Context) {
 				resp, err := stream.Recv()
 				if err == io.EOF {
 					log.Debug("EOF received, quit")
-					streamError := stream.CloseSend()
-					if streamError != nil {
-						log.Warn("Error closing stream: ", streamError)
-					}
+					closeStream(ctx, stream)
 					break
 				}
 				if err != nil {
@@ -214,7 +211,7 @@ func (m *MainNetExtractor) getJetDropsContinuously(ctx context.Context) {
 	}()
 }
 
-func closeStream(stream exporter.RecordExporter_ExportClient, ctx context.Context) {
+func closeStream(ctx context.Context, stream exporter.RecordExporter_ExportClient) {
 	streamError := stream.CloseSend()
 	if streamError != nil {
 		belogger.FromContext(ctx).Warn("Error closing stream: ", streamError)
