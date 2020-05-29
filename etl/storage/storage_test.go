@@ -221,3 +221,141 @@ func TestStorage_GetJetDrops(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, []models.JetDrop{jetDropForFirstPulse1, jetDropForFirstPulse2}, jetDrops)
 }
+
+func TestStorage_CompletePulse(t *testing.T) {
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Pulse{}})
+	s := NewStorage(testDB)
+
+	pulse, err := testutils.InitPulseDB()
+	require.NoError(t, err)
+	err = testutils.CreatePulse(testDB, pulse)
+	require.NoError(t, err)
+
+	err = s.CompletePulse(pulse.PulseNumber)
+	require.NoError(t, err)
+
+	pulse.IsComplete = true
+	pulseInDB := []models.Pulse{}
+	err = testDB.Find(&pulseInDB).Error
+	require.NoError(t, err)
+	require.Len(t, pulseInDB, 1)
+	require.EqualValues(t, pulse, pulseInDB[0])
+}
+
+func TestStorage_CompletePulse_ErrorUpdateSeveralRows(t *testing.T) {
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Pulse{}})
+	s := NewStorage(testDB)
+
+	pulse, err := testutils.InitPulseDB()
+	require.NoError(t, err)
+	err = testutils.CreatePulse(testDB, pulse)
+	require.NoError(t, err)
+	pulse, err = testutils.InitPulseDB()
+	require.NoError(t, err)
+	err = testutils.CreatePulse(testDB, pulse)
+	require.NoError(t, err)
+
+	err = s.CompletePulse(0)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "several rows were affected")
+
+	pulseInDB := []models.Pulse{}
+	err = testDB.Find(&pulseInDB).Error
+	require.NoError(t, err)
+	require.Len(t, pulseInDB, 2)
+	require.EqualValues(t, false, pulseInDB[0].IsComplete)
+	require.EqualValues(t, false, pulseInDB[1].IsComplete)
+
+}
+
+func TestStorage_CompletePulse_AlreadyCompleted(t *testing.T) {
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Pulse{}})
+	s := NewStorage(testDB)
+
+	pulse, err := testutils.InitPulseDB()
+	require.NoError(t, err)
+	pulse.IsComplete = true
+	err = testutils.CreatePulse(testDB, pulse)
+	require.NoError(t, err)
+
+	err = s.CompletePulse(pulse.PulseNumber)
+	require.NoError(t, err)
+
+	pulseInDB := []models.Pulse{}
+	err = testDB.Find(&pulseInDB).Error
+	require.NoError(t, err)
+	require.Len(t, pulseInDB, 1)
+	require.EqualValues(t, pulse, pulseInDB[0])
+}
+
+func TestStorage_CompletePulse_ErrorNotExist(t *testing.T) {
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Pulse{}})
+	s := NewStorage(testDB)
+
+	pulse, err := testutils.InitPulseDB()
+	require.NoError(t, err)
+
+	err = s.CompletePulse(pulse.PulseNumber)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "try to complete not existing pulse")
+
+	pulseInDB := []models.Pulse{}
+	err = testDB.Find(&pulseInDB).Error
+	require.NoError(t, err)
+	require.Empty(t, pulseInDB)
+}
+
+func TestStorage_SavePulse(t *testing.T) {
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Pulse{}})
+	s := NewStorage(testDB)
+
+	pulse, err := testutils.InitPulseDB()
+	require.NoError(t, err)
+
+	err = s.SavePulse(pulse)
+	require.NoError(t, err)
+
+	pulseInDB := []models.Pulse{}
+	err = testDB.Find(&pulseInDB).Error
+	require.NoError(t, err)
+	require.Len(t, pulseInDB, 1)
+	require.EqualValues(t, pulse, pulseInDB[0])
+}
+
+func TestStorage_SavePulse_Existed(t *testing.T) {
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Pulse{}})
+	s := NewStorage(testDB)
+
+	pulse, err := testutils.InitPulseDB()
+	require.NoError(t, err)
+	err = testutils.CreatePulse(testDB, pulse)
+	require.NoError(t, err)
+
+	err = s.SavePulse(pulse)
+	require.NoError(t, err)
+
+	pulseInDB := []models.Pulse{}
+	err = testDB.Find(&pulseInDB).Error
+	require.NoError(t, err)
+	require.Len(t, pulseInDB, 1)
+	require.EqualValues(t, pulse, pulseInDB[0])
+}
+
+func TestStorage_SavePulse_Error(t *testing.T) {
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Pulse{}})
+	s := NewStorage(testDB)
+
+	pulse, err := testutils.InitPulseDB()
+	require.NoError(t, err)
+	pulse.PulseNumber = 0
+
+	err = s.SavePulse(pulse)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "violates not-null constraint")
+	require.Contains(t, err.Error(), "error while saving pulse")
+
+	pulseInDB := []models.Pulse{}
+	err = testDB.Find(&pulseInDB).Error
+	require.NoError(t, err)
+	require.Empty(t, pulseInDB)
+}

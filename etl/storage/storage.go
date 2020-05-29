@@ -42,11 +42,35 @@ func (s *storage) SaveJetDropData(jetDrop models.JetDrop, records []models.Recor
 		for _, record := range records {
 			// TODO: dont rewrite pulse at record, remove it at PENV-212
 			record.PulseNumber = 1
-			if err := tx.Save(&record).Error; err != nil {
+			if err := tx.Save(&record).Error; err != nil { // nolint
 				return errors.Wrap(err, "error while saving record")
 			}
 		}
 
+		return nil
+	})
+}
+
+// SavePulse saves provided pulse to db.
+func (s *storage) SavePulse(pulse models.Pulse) error {
+	return errors.Wrap(s.db.Save(&pulse).Error, "error while saving pulse")
+}
+
+// CompletePulse update pulse with provided number to completeness in db.
+func (s *storage) CompletePulse(pulseNumber int) error {
+	return s.db.Transaction(func(tx *gorm.DB) error {
+		pulse := models.Pulse{PulseNumber: pulseNumber}
+		update := tx.Model(&pulse).Update(models.Pulse{IsComplete: true})
+		if update.Error != nil {
+			return errors.Wrap(update.Error, "error while updating pulse completeness")
+		}
+		rowsAffected := update.RowsAffected
+		if rowsAffected == 0 {
+			return errors.Errorf("try to complete not existing pulse with number %d", pulseNumber)
+		}
+		if rowsAffected != 1 {
+			return errors.Errorf("several rows were affected by update for pulse with number %d, it was not expected", pulseNumber)
+		}
 		return nil
 	})
 }
