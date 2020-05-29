@@ -39,6 +39,9 @@ func TestGetJetDrops(t *testing.T) {
 		})
 
 	extractor := NewMainNetExtractor(uint32(batchSize), recordClient)
+	err = extractor.Start(ctx)
+	require.NoError(t, err)
+	defer extractor.Stop(ctx)
 	jetDrops := extractor.GetJetDrops(ctx)
 
 	for i := 0; i < 2; i++ {

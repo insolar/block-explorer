@@ -29,6 +29,8 @@ type Stopper interface {
 //go:generate minimock -i github.com/insolar/block-explorer/etl/interfaces.JetDropsExtractor -o ./mock -s _mock.go -g
 // JetDropsExtractor represents the main functions of working with Platform
 type JetDropsExtractor interface {
+	Starter
+	Stopper
 	// GetJetDrops stores JetDrop data in the main JetDrop channel
 	GetJetDrops(ctx context.Context) <-chan *types.PlatformJetDrops
 	// LoadJetDrops loads JetDrop data between pulse numbers

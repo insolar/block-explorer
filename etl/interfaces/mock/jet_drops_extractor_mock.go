@@ -27,6 +27,18 @@ type JetDropsExtractorMock struct {
 	afterLoadJetDropsCounter  uint64
 	beforeLoadJetDropsCounter uint64
 	LoadJetDropsMock          mJetDropsExtractorMockLoadJetDrops
+
+	funcStart          func(ctx context.Context) (err error)
+	inspectFuncStart   func(ctx context.Context)
+	afterStartCounter  uint64
+	beforeStartCounter uint64
+	StartMock          mJetDropsExtractorMockStart
+
+	funcStop          func(ctx context.Context) (err error)
+	inspectFuncStop   func(ctx context.Context)
+	afterStopCounter  uint64
+	beforeStopCounter uint64
+	StopMock          mJetDropsExtractorMockStop
 }
 
 // NewJetDropsExtractorMock returns a mock for interfaces.JetDropsExtractor
@@ -41,6 +53,12 @@ func NewJetDropsExtractorMock(t minimock.Tester) *JetDropsExtractorMock {
 
 	m.LoadJetDropsMock = mJetDropsExtractorMockLoadJetDrops{mock: m}
 	m.LoadJetDropsMock.callArgs = []*JetDropsExtractorMockLoadJetDropsParams{}
+
+	m.StartMock = mJetDropsExtractorMockStart{mock: m}
+	m.StartMock.callArgs = []*JetDropsExtractorMockStartParams{}
+
+	m.StopMock = mJetDropsExtractorMockStop{mock: m}
+	m.StopMock.callArgs = []*JetDropsExtractorMockStopParams{}
 
 	return m
 }
@@ -477,12 +495,446 @@ func (m *JetDropsExtractorMock) MinimockLoadJetDropsInspect() {
 	}
 }
 
+type mJetDropsExtractorMockStart struct {
+	mock               *JetDropsExtractorMock
+	defaultExpectation *JetDropsExtractorMockStartExpectation
+	expectations       []*JetDropsExtractorMockStartExpectation
+
+	callArgs []*JetDropsExtractorMockStartParams
+	mutex    sync.RWMutex
+}
+
+// JetDropsExtractorMockStartExpectation specifies expectation struct of the JetDropsExtractor.Start
+type JetDropsExtractorMockStartExpectation struct {
+	mock    *JetDropsExtractorMock
+	params  *JetDropsExtractorMockStartParams
+	results *JetDropsExtractorMockStartResults
+	Counter uint64
+}
+
+// JetDropsExtractorMockStartParams contains parameters of the JetDropsExtractor.Start
+type JetDropsExtractorMockStartParams struct {
+	ctx context.Context
+}
+
+// JetDropsExtractorMockStartResults contains results of the JetDropsExtractor.Start
+type JetDropsExtractorMockStartResults struct {
+	err error
+}
+
+// Expect sets up expected params for JetDropsExtractor.Start
+func (mmStart *mJetDropsExtractorMockStart) Expect(ctx context.Context) *mJetDropsExtractorMockStart {
+	if mmStart.mock.funcStart != nil {
+		mmStart.mock.t.Fatalf("JetDropsExtractorMock.Start mock is already set by Set")
+	}
+
+	if mmStart.defaultExpectation == nil {
+		mmStart.defaultExpectation = &JetDropsExtractorMockStartExpectation{}
+	}
+
+	mmStart.defaultExpectation.params = &JetDropsExtractorMockStartParams{ctx}
+	for _, e := range mmStart.expectations {
+		if minimock.Equal(e.params, mmStart.defaultExpectation.params) {
+			mmStart.mock.t.Fatalf("Expectation set by When has same params: %#v", *mmStart.defaultExpectation.params)
+		}
+	}
+
+	return mmStart
+}
+
+// Inspect accepts an inspector function that has same arguments as the JetDropsExtractor.Start
+func (mmStart *mJetDropsExtractorMockStart) Inspect(f func(ctx context.Context)) *mJetDropsExtractorMockStart {
+	if mmStart.mock.inspectFuncStart != nil {
+		mmStart.mock.t.Fatalf("Inspect function is already set for JetDropsExtractorMock.Start")
+	}
+
+	mmStart.mock.inspectFuncStart = f
+
+	return mmStart
+}
+
+// Return sets up results that will be returned by JetDropsExtractor.Start
+func (mmStart *mJetDropsExtractorMockStart) Return(err error) *JetDropsExtractorMock {
+	if mmStart.mock.funcStart != nil {
+		mmStart.mock.t.Fatalf("JetDropsExtractorMock.Start mock is already set by Set")
+	}
+
+	if mmStart.defaultExpectation == nil {
+		mmStart.defaultExpectation = &JetDropsExtractorMockStartExpectation{mock: mmStart.mock}
+	}
+	mmStart.defaultExpectation.results = &JetDropsExtractorMockStartResults{err}
+	return mmStart.mock
+}
+
+//Set uses given function f to mock the JetDropsExtractor.Start method
+func (mmStart *mJetDropsExtractorMockStart) Set(f func(ctx context.Context) (err error)) *JetDropsExtractorMock {
+	if mmStart.defaultExpectation != nil {
+		mmStart.mock.t.Fatalf("Default expectation is already set for the JetDropsExtractor.Start method")
+	}
+
+	if len(mmStart.expectations) > 0 {
+		mmStart.mock.t.Fatalf("Some expectations are already set for the JetDropsExtractor.Start method")
+	}
+
+	mmStart.mock.funcStart = f
+	return mmStart.mock
+}
+
+// When sets expectation for the JetDropsExtractor.Start which will trigger the result defined by the following
+// Then helper
+func (mmStart *mJetDropsExtractorMockStart) When(ctx context.Context) *JetDropsExtractorMockStartExpectation {
+	if mmStart.mock.funcStart != nil {
+		mmStart.mock.t.Fatalf("JetDropsExtractorMock.Start mock is already set by Set")
+	}
+
+	expectation := &JetDropsExtractorMockStartExpectation{
+		mock:   mmStart.mock,
+		params: &JetDropsExtractorMockStartParams{ctx},
+	}
+	mmStart.expectations = append(mmStart.expectations, expectation)
+	return expectation
+}
+
+// Then sets up JetDropsExtractor.Start return parameters for the expectation previously defined by the When method
+func (e *JetDropsExtractorMockStartExpectation) Then(err error) *JetDropsExtractorMock {
+	e.results = &JetDropsExtractorMockStartResults{err}
+	return e.mock
+}
+
+// Start implements interfaces.JetDropsExtractor
+func (mmStart *JetDropsExtractorMock) Start(ctx context.Context) (err error) {
+	mm_atomic.AddUint64(&mmStart.beforeStartCounter, 1)
+	defer mm_atomic.AddUint64(&mmStart.afterStartCounter, 1)
+
+	if mmStart.inspectFuncStart != nil {
+		mmStart.inspectFuncStart(ctx)
+	}
+
+	mm_params := &JetDropsExtractorMockStartParams{ctx}
+
+	// Record call args
+	mmStart.StartMock.mutex.Lock()
+	mmStart.StartMock.callArgs = append(mmStart.StartMock.callArgs, mm_params)
+	mmStart.StartMock.mutex.Unlock()
+
+	for _, e := range mmStart.StartMock.expectations {
+		if minimock.Equal(e.params, mm_params) {
+			mm_atomic.AddUint64(&e.Counter, 1)
+			return e.results.err
+		}
+	}
+
+	if mmStart.StartMock.defaultExpectation != nil {
+		mm_atomic.AddUint64(&mmStart.StartMock.defaultExpectation.Counter, 1)
+		mm_want := mmStart.StartMock.defaultExpectation.params
+		mm_got := JetDropsExtractorMockStartParams{ctx}
+		if mm_want != nil && !minimock.Equal(*mm_want, mm_got) {
+			mmStart.t.Errorf("JetDropsExtractorMock.Start got unexpected parameters, want: %#v, got: %#v%s\n", *mm_want, mm_got, minimock.Diff(*mm_want, mm_got))
+		}
+
+		mm_results := mmStart.StartMock.defaultExpectation.results
+		if mm_results == nil {
+			mmStart.t.Fatal("No results are set for the JetDropsExtractorMock.Start")
+		}
+		return (*mm_results).err
+	}
+	if mmStart.funcStart != nil {
+		return mmStart.funcStart(ctx)
+	}
+	mmStart.t.Fatalf("Unexpected call to JetDropsExtractorMock.Start. %v", ctx)
+	return
+}
+
+// StartAfterCounter returns a count of finished JetDropsExtractorMock.Start invocations
+func (mmStart *JetDropsExtractorMock) StartAfterCounter() uint64 {
+	return mm_atomic.LoadUint64(&mmStart.afterStartCounter)
+}
+
+// StartBeforeCounter returns a count of JetDropsExtractorMock.Start invocations
+func (mmStart *JetDropsExtractorMock) StartBeforeCounter() uint64 {
+	return mm_atomic.LoadUint64(&mmStart.beforeStartCounter)
+}
+
+// Calls returns a list of arguments used in each call to JetDropsExtractorMock.Start.
+// The list is in the same order as the calls were made (i.e. recent calls have a higher index)
+func (mmStart *mJetDropsExtractorMockStart) Calls() []*JetDropsExtractorMockStartParams {
+	mmStart.mutex.RLock()
+
+	argCopy := make([]*JetDropsExtractorMockStartParams, len(mmStart.callArgs))
+	copy(argCopy, mmStart.callArgs)
+
+	mmStart.mutex.RUnlock()
+
+	return argCopy
+}
+
+// MinimockStartDone returns true if the count of the Start invocations corresponds
+// the number of defined expectations
+func (m *JetDropsExtractorMock) MinimockStartDone() bool {
+	for _, e := range m.StartMock.expectations {
+		if mm_atomic.LoadUint64(&e.Counter) < 1 {
+			return false
+		}
+	}
+
+	// if default expectation was set then invocations count should be greater than zero
+	if m.StartMock.defaultExpectation != nil && mm_atomic.LoadUint64(&m.afterStartCounter) < 1 {
+		return false
+	}
+	// if func was set then invocations count should be greater than zero
+	if m.funcStart != nil && mm_atomic.LoadUint64(&m.afterStartCounter) < 1 {
+		return false
+	}
+	return true
+}
+
+// MinimockStartInspect logs each unmet expectation
+func (m *JetDropsExtractorMock) MinimockStartInspect() {
+	for _, e := range m.StartMock.expectations {
+		if mm_atomic.LoadUint64(&e.Counter) < 1 {
+			m.t.Errorf("Expected call to JetDropsExtractorMock.Start with params: %#v", *e.params)
+		}
+	}
+
+	// if default expectation was set then invocations count should be greater than zero
+	if m.StartMock.defaultExpectation != nil && mm_atomic.LoadUint64(&m.afterStartCounter) < 1 {
+		if m.StartMock.defaultExpectation.params == nil {
+			m.t.Error("Expected call to JetDropsExtractorMock.Start")
+		} else {
+			m.t.Errorf("Expected call to JetDropsExtractorMock.Start with params: %#v", *m.StartMock.defaultExpectation.params)
+		}
+	}
+	// if func was set then invocations count should be greater than zero
+	if m.funcStart != nil && mm_atomic.LoadUint64(&m.afterStartCounter) < 1 {
+		m.t.Error("Expected call to JetDropsExtractorMock.Start")
+	}
+}
+
+type mJetDropsExtractorMockStop struct {
+	mock               *JetDropsExtractorMock
+	defaultExpectation *JetDropsExtractorMockStopExpectation
+	expectations       []*JetDropsExtractorMockStopExpectation
+
+	callArgs []*JetDropsExtractorMockStopParams
+	mutex    sync.RWMutex
+}
+
+// JetDropsExtractorMockStopExpectation specifies expectation struct of the JetDropsExtractor.Stop
+type JetDropsExtractorMockStopExpectation struct {
+	mock    *JetDropsExtractorMock
+	params  *JetDropsExtractorMockStopParams
+	results *JetDropsExtractorMockStopResults
+	Counter uint64
+}
+
+// JetDropsExtractorMockStopParams contains parameters of the JetDropsExtractor.Stop
+type JetDropsExtractorMockStopParams struct {
+	ctx context.Context
+}
+
+// JetDropsExtractorMockStopResults contains results of the JetDropsExtractor.Stop
+type JetDropsExtractorMockStopResults struct {
+	err error
+}
+
+// Expect sets up expected params for JetDropsExtractor.Stop
+func (mmStop *mJetDropsExtractorMockStop) Expect(ctx context.Context) *mJetDropsExtractorMockStop {
+	if mmStop.mock.funcStop != nil {
+		mmStop.mock.t.Fatalf("JetDropsExtractorMock.Stop mock is already set by Set")
+	}
+
+	if mmStop.defaultExpectation == nil {
+		mmStop.defaultExpectation = &JetDropsExtractorMockStopExpectation{}
+	}
+
+	mmStop.defaultExpectation.params = &JetDropsExtractorMockStopParams{ctx}
+	for _, e := range mmStop.expectations {
+		if minimock.Equal(e.params, mmStop.defaultExpectation.params) {
+			mmStop.mock.t.Fatalf("Expectation set by When has same params: %#v", *mmStop.defaultExpectation.params)
+		}
+	}
+
+	return mmStop
+}
+
+// Inspect accepts an inspector function that has same arguments as the JetDropsExtractor.Stop
+func (mmStop *mJetDropsExtractorMockStop) Inspect(f func(ctx context.Context)) *mJetDropsExtractorMockStop {
+	if mmStop.mock.inspectFuncStop != nil {
+		mmStop.mock.t.Fatalf("Inspect function is already set for JetDropsExtractorMock.Stop")
+	}
+
+	mmStop.mock.inspectFuncStop = f
+
+	return mmStop
+}
+
+// Return sets up results that will be returned by JetDropsExtractor.Stop
+func (mmStop *mJetDropsExtractorMockStop) Return(err error) *JetDropsExtractorMock {
+	if mmStop.mock.funcStop != nil {
+		mmStop.mock.t.Fatalf("JetDropsExtractorMock.Stop mock is already set by Set")
+	}
+
+	if mmStop.defaultExpectation == nil {
+		mmStop.defaultExpectation = &JetDropsExtractorMockStopExpectation{mock: mmStop.mock}
+	}
+	mmStop.defaultExpectation.results = &JetDropsExtractorMockStopResults{err}
+	return mmStop.mock
+}
+
+//Set uses given function f to mock the JetDropsExtractor.Stop method
+func (mmStop *mJetDropsExtractorMockStop) Set(f func(ctx context.Context) (err error)) *JetDropsExtractorMock {
+	if mmStop.defaultExpectation != nil {
+		mmStop.mock.t.Fatalf("Default expectation is already set for the JetDropsExtractor.Stop method")
+	}
+
+	if len(mmStop.expectations) > 0 {
+		mmStop.mock.t.Fatalf("Some expectations are already set for the JetDropsExtractor.Stop method")
+	}
+
+	mmStop.mock.funcStop = f
+	return mmStop.mock
+}
+
+// When sets expectation for the JetDropsExtractor.Stop which will trigger the result defined by the following
+// Then helper
+func (mmStop *mJetDropsExtractorMockStop) When(ctx context.Context) *JetDropsExtractorMockStopExpectation {
+	if mmStop.mock.funcStop != nil {
+		mmStop.mock.t.Fatalf("JetDropsExtractorMock.Stop mock is already set by Set")
+	}
+
+	expectation := &JetDropsExtractorMockStopExpectation{
+		mock:   mmStop.mock,
+		params: &JetDropsExtractorMockStopParams{ctx},
+	}
+	mmStop.expectations = append(mmStop.expectations, expectation)
+	return expectation
+}
+
+// Then sets up JetDropsExtractor.Stop return parameters for the expectation previously defined by the When method
+func (e *JetDropsExtractorMockStopExpectation) Then(err error) *JetDropsExtractorMock {
+	e.results = &JetDropsExtractorMockStopResults{err}
+	return e.mock
+}
+
+// Stop implements interfaces.JetDropsExtractor
+func (mmStop *JetDropsExtractorMock) Stop(ctx context.Context) (err error) {
+	mm_atomic.AddUint64(&mmStop.beforeStopCounter, 1)
+	defer mm_atomic.AddUint64(&mmStop.afterStopCounter, 1)
+
+	if mmStop.inspectFuncStop != nil {
+		mmStop.inspectFuncStop(ctx)
+	}
+
+	mm_params := &JetDropsExtractorMockStopParams{ctx}
+
+	// Record call args
+	mmStop.StopMock.mutex.Lock()
+	mmStop.StopMock.callArgs = append(mmStop.StopMock.callArgs, mm_params)
+	mmStop.StopMock.mutex.Unlock()
+
+	for _, e := range mmStop.StopMock.expectations {
+		if minimock.Equal(e.params, mm_params) {
+			mm_atomic.AddUint64(&e.Counter, 1)
+			return e.results.err
+		}
+	}
+
+	if mmStop.StopMock.defaultExpectation != nil {
+		mm_atomic.AddUint64(&mmStop.StopMock.defaultExpectation.Counter, 1)
+		mm_want := mmStop.StopMock.defaultExpectation.params
+		mm_got := JetDropsExtractorMockStopParams{ctx}
+		if mm_want != nil && !minimock.Equal(*mm_want, mm_got) {
+			mmStop.t.Errorf("JetDropsExtractorMock.Stop got unexpected parameters, want: %#v, got: %#v%s\n", *mm_want, mm_got, minimock.Diff(*mm_want, mm_got))
+		}
+
+		mm_results := mmStop.StopMock.defaultExpectation.results
+		if mm_results == nil {
+			mmStop.t.Fatal("No results are set for the JetDropsExtractorMock.Stop")
+		}
+		return (*mm_results).err
+	}
+	if mmStop.funcStop != nil {
+		return mmStop.funcStop(ctx)
+	}
+	mmStop.t.Fatalf("Unexpected call to JetDropsExtractorMock.Stop. %v", ctx)
+	return
+}
+
+// StopAfterCounter returns a count of finished JetDropsExtractorMock.Stop invocations
+func (mmStop *JetDropsExtractorMock) StopAfterCounter() uint64 {
+	return mm_atomic.LoadUint64(&mmStop.afterStopCounter)
+}
+
+// StopBeforeCounter returns a count of JetDropsExtractorMock.Stop invocations
+func (mmStop *JetDropsExtractorMock) StopBeforeCounter() uint64 {
+	return mm_atomic.LoadUint64(&mmStop.beforeStopCounter)
+}
+
+// Calls returns a list of arguments used in each call to JetDropsExtractorMock.Stop.
+// The list is in the same order as the calls were made (i.e. recent calls have a higher index)
+func (mmStop *mJetDropsExtractorMockStop) Calls() []*JetDropsExtractorMockStopParams {
+	mmStop.mutex.RLock()
+
+	argCopy := make([]*JetDropsExtractorMockStopParams, len(mmStop.callArgs))
+	copy(argCopy, mmStop.callArgs)
+
+	mmStop.mutex.RUnlock()
+
+	return argCopy
+}
+
+// MinimockStopDone returns true if the count of the Stop invocations corresponds
+// the number of defined expectations
+func (m *JetDropsExtractorMock) MinimockStopDone() bool {
+	for _, e := range m.StopMock.expectations {
+		if mm_atomic.LoadUint64(&e.Counter) < 1 {
+			return false
+		}
+	}
+
+	// if default expectation was set then invocations count should be greater than zero
+	if m.StopMock.defaultExpectation != nil && mm_atomic.LoadUint64(&m.afterStopCounter) < 1 {
+		return false
+	}
+	// if func was set then invocations count should be greater than zero
+	if m.funcStop != nil && mm_atomic.LoadUint64(&m.afterStopCounter) < 1 {
+		return false
+	}
+	return true
+}
+
+// MinimockStopInspect logs each unmet expectation
+func (m *JetDropsExtractorMock) MinimockStopInspect() {
+	for _, e := range m.StopMock.expectations {
+		if mm_atomic.LoadUint64(&e.Counter) < 1 {
+			m.t.Errorf("Expected call to JetDropsExtractorMock.Stop with params: %#v", *e.params)
+		}
+	}
+
+	// if default expectation was set then invocations count should be greater than zero
+	if m.StopMock.defaultExpectation != nil && mm_atomic.LoadUint64(&m.afterStopCounter) < 1 {
+		if m.StopMock.defaultExpectation.params == nil {
+			m.t.Error("Expected call to JetDropsExtractorMock.Stop")
+		} else {
+			m.t.Errorf("Expected call to JetDropsExtractorMock.Stop with params: %#v", *m.StopMock.defaultExpectation.params)
+		}
+	}
+	// if func was set then invocations count should be greater than zero
+	if m.funcStop != nil && mm_atomic.LoadUint64(&m.afterStopCounter) < 1 {
+		m.t.Error("Expected call to JetDropsExtractorMock.Stop")
+	}
+}
+
 // MinimockFinish checks that all mocked methods have been called the expected number of times
 func (m *JetDropsExtractorMock) MinimockFinish() {
 	if !m.minimockDone() {
 		m.MinimockGetJetDropsInspect()
 
 		m.MinimockLoadJetDropsInspect()
+
+		m.MinimockStartInspect()
+
+		m.MinimockStopInspect()
 		m.t.FailNow()
 	}
 }
@@ -507,5 +959,7 @@ func (m *JetDropsExtractorMock) minimockDone() bool {
 	done := true
 	return done &&
 		m.MinimockGetJetDropsDone() &&
-		m.MinimockLoadJetDropsDone()
+		m.MinimockLoadJetDropsDone() &&
+		m.MinimockStartDone() &&
+		m.MinimockStopDone()
 }

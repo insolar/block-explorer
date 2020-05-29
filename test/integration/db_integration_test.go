@@ -64,7 +64,9 @@ func (a *dbIntegrationSuite) TestGetRecordsFromDb() {
 
 	ctx := context.Background()
 	extractorMn := extractor.NewMainNetExtractor(100, a.c.ExporterClient)
-
+	err = extractorMn.Start(ctx)
+	require.NoError(a.T(), err)
+	defer extractorMn.Stop(ctx)
 	jetDrops := extractorMn.GetJetDrops(ctx)
 	refs := make([]types.Reference, 0)
 	for i := 0; i < 2; i++ {

@@ -42,6 +42,9 @@ func TestExporterIsWorking(t *testing.T) {
 
 	g := &gclient{}
 	extractor := NewMainNetExtractor(uint32(localBatchSize), g)
+	err = extractor.Start(ctx)
+	require.NoError(t, err)
+	defer extractor.Stop(ctx)
 	jetDrops := extractor.GetJetDrops(ctx)
 
 	for i := 0; i < 2; i++ {

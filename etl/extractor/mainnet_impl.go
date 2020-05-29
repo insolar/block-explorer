@@ -8,6 +8,7 @@ package extractor
 import (
 	"context"
 	"io"
+	"sync"
 
 	"github.com/insolar/block-explorer/etl/types"
 	"github.com/insolar/block-explorer/instrumentation/belogger"
@@ -18,6 +19,7 @@ import (
 
 type MainNetExtractor struct {
 	stopSignal chan bool
+	hasStarted bool
 
 	client           exporter.RecordExporterClient
 	request          *exporter.GetRecords
@@ -35,81 +37,6 @@ func NewMainNetExtractor(batchSize uint32, exporterClient exporter.RecordExporte
 }
 
 func (m *MainNetExtractor) GetJetDrops(ctx context.Context) <-chan *types.PlatformJetDrops {
-	// from pulse, 0 means start to get from pulse number 0
-	//todo: add pulse fetcher
-	m.request.PulseNumber = 0
-	m.request.RecordNumber = 0
-	client := m.client
-
-	//todo: register event in some monitoring service
-	errorChan := make(chan error)
-	lastPulseNumber := uint32(0)
-	receivedPulseNumber := uint32(0)
-
-	go func() {
-		//todo: enable logger
-		logger := belogger.FromContext(ctx)
-		for {
-			if m.needStop() {
-				return
-			}
-			log := logger.WithField("request_pulse_number", m.request.PulseNumber)
-			log.Debug("Data request: ", m.request)
-			stream, err := client.Export(ctx, m.request)
-
-			if err != nil {
-				log.Debug("Data request failed: ", err)
-				errorChan <- errors.Wrapf(err, "failed to get gRPC stream from exporter.Export method")
-				continue
-			}
-			// need to collect all records from pulse
-			jetDrops := new(types.PlatformJetDrops)
-
-			// Get records from the stream
-			for {
-				if m.needStop() {
-					return
-				}
-				resp, err := stream.Recv()
-				if err == io.EOF {
-					log.Debug("EOF received, quit")
-					streamError := stream.CloseSend()
-					if streamError != nil {
-						log.Warn("Error closing stream: ", streamError)
-					}
-					break
-				}
-				if err != nil {
-					log.Debug("received error value from records gRPC stream %v", m.request)
-					errorChan <- errors.Wrapf(err, "received error value from records gRPC stream %v", m.request)
-				}
-
-				if resp.ShouldIterateFrom != nil {
-					m.request.PulseNumber = *resp.ShouldIterateFrom
-					receivedPulseNumber = m.request.PulseNumber.AsUint32()
-					break
-				}
-
-				// save the last pulse for future requests
-				m.request.RecordNumber = resp.RecordNumber
-				m.request.PulseNumber = resp.Record.ID.Pulse()
-				receivedPulseNumber = m.request.PulseNumber.AsUint32()
-
-				// collect all records by PulseNumber
-				if receivedPulseNumber == lastPulseNumber {
-					jetDrops.Records = append(jetDrops.Records, resp)
-					continue
-				}
-
-				lastPulseNumber = receivedPulseNumber
-
-				m.mainJetDropsChan <- jetDrops
-				// zeroing variable which collecting jetDrops
-				jetDrops = new(types.PlatformJetDrops)
-			}
-		}
-	}()
-
 	return m.mainJetDropsChan
 }
 
@@ -210,6 +137,83 @@ func (m *MainNetExtractor) LoadJetDrops(ctx context.Context, fromPulseNumber int
 	return nil
 }
 
+func (m *MainNetExtractor) getJetDropsContinuously(ctx context.Context) {
+	// from pulse, 0 means start to get from pulse number 0
+	//todo: add pulse fetcher
+	m.request.PulseNumber = 0
+	m.request.RecordNumber = 0
+	client := m.client
+
+	//todo: register event in some monitoring service
+	errorChan := make(chan error)
+	lastPulseNumber := uint32(0)
+	receivedPulseNumber := uint32(0)
+
+	go func() {
+		//todo: enable logger
+		logger := belogger.FromContext(ctx)
+		for {
+			if m.needStop() {
+				return
+			}
+			log := logger.WithField("request_pulse_number", m.request.PulseNumber)
+			log.Debug("Data request: ", m.request)
+			stream, err := client.Export(ctx, m.request)
+
+			if err != nil {
+				log.Debug("Data request failed: ", err)
+				errorChan <- errors.Wrapf(err, "failed to get gRPC stream from exporter.Export method")
+				continue
+			}
+			// need to collect all records from pulse
+			jetDrops := new(types.PlatformJetDrops)
+
+			// Get records from the stream
+			for {
+				if m.needStop() {
+					return
+				}
+				resp, err := stream.Recv()
+				if err == io.EOF {
+					log.Debug("EOF received, quit")
+					streamError := stream.CloseSend()
+					if streamError != nil {
+						log.Warn("Error closing stream: ", streamError)
+					}
+					break
+				}
+				if err != nil {
+					log.Debug("received error value from records gRPC stream %v", m.request)
+					errorChan <- errors.Wrapf(err, "received error value from records gRPC stream %v", m.request)
+				}
+
+				if resp.ShouldIterateFrom != nil {
+					m.request.PulseNumber = *resp.ShouldIterateFrom
+					receivedPulseNumber = m.request.PulseNumber.AsUint32()
+					break
+				}
+
+				// save the last pulse for future requests
+				m.request.RecordNumber = resp.RecordNumber
+				m.request.PulseNumber = resp.Record.ID.Pulse()
+				receivedPulseNumber = m.request.PulseNumber.AsUint32()
+
+				// collect all records by PulseNumber
+				if receivedPulseNumber == lastPulseNumber {
+					jetDrops.Records = append(jetDrops.Records, resp)
+					continue
+				}
+
+				lastPulseNumber = receivedPulseNumber
+
+				m.mainJetDropsChan <- jetDrops
+				// zeroing variable which collecting jetDrops
+				jetDrops = new(types.PlatformJetDrops)
+			}
+		}
+	}()
+}
+
 func closeStream(stream exporter.RecordExporter_ExportClient, ctx context.Context) {
 	streamError := stream.CloseSend()
 	if streamError != nil {
@@ -217,8 +221,17 @@ func closeStream(stream exporter.RecordExporter_ExportClient, ctx context.Contex
 	}
 }
 
-func (m *MainNetExtractor) Stop() {
-	m.stopSignal <- true
+var startStopMutes = &sync.Mutex{}
+
+func (m *MainNetExtractor) Stop(ctx context.Context) error {
+	startStopMutes.Lock()
+	defer startStopMutes.Unlock()
+	if m.hasStarted {
+		belogger.FromContext(ctx).Info("Stopping MainNet extractor...")
+		m.stopSignal <- true
+		m.hasStarted = false
+	}
+	return nil
 }
 
 func (m *MainNetExtractor) needStop() bool {
@@ -229,4 +242,15 @@ func (m *MainNetExtractor) needStop() bool {
 		// continue
 	}
 	return false
+}
+
+func (m *MainNetExtractor) Start(ctx context.Context) error {
+	startStopMutes.Lock()
+	defer startStopMutes.Unlock()
+	if !m.hasStarted {
+		belogger.FromContext(ctx).Info("Starting MainNet extractor...")
+		m.getJetDropsContinuously(ctx)
+		m.hasStarted = false
+	}
+	return nil
 }
