@@ -118,7 +118,7 @@ func (m *MainNetExtractor) LoadJetDrops(ctx context.Context, fromPulseNumber int
 		return errors.New("fromPulseNumber cannot be negative")
 	}
 	if toPulseNumber < 1 {
-		return errors.New("fromPulseNumber cannot be greater than 1")
+		return errors.New("toPulseNumber cannot be less than 1")
 	}
 	if fromPulseNumber > toPulseNumber {
 		return errors.New("fromPulseNumber cannot be greater than toPulseNumber")
@@ -165,7 +165,6 @@ func (m *MainNetExtractor) LoadJetDrops(ctx context.Context, fromPulseNumber int
 				resp, err := stream.Recv()
 				if err == io.EOF {
 					log.Debug("EOF received, quit")
-					closeStream(stream, ctx)
 					break
 				}
 				if err != nil {
@@ -184,10 +183,6 @@ func (m *MainNetExtractor) LoadJetDrops(ctx context.Context, fromPulseNumber int
 				request.PulseNumber = resp.Record.ID.Pulse()
 
 				receivedPulseNumber = request.PulseNumber.AsUint32()
-				if receivedPulseNumber > unsignedToPulseNumber {
-					// now we have received all needed data
-					return
-				}
 
 				// collect all records by PulseNumber
 				if receivedPulseNumber == lastPulseNumber {
@@ -197,9 +192,17 @@ func (m *MainNetExtractor) LoadJetDrops(ctx context.Context, fromPulseNumber int
 
 				lastPulseNumber = receivedPulseNumber
 
+				// sending data to channel
 				m.mainJetDropsChan <- jetDrops
 				// zeroing variable which collecting jetDrops
 				jetDrops = new(types.PlatformJetDrops)
+				// don't forget to save the last data
+				jetDrops.Records = append(jetDrops.Records, resp)
+
+				if receivedPulseNumber > unsignedToPulseNumber {
+					// now we have received all needed data
+					return
+				}
 			}
 		}
 	}()

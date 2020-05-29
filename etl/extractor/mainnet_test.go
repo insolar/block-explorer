@@ -58,6 +58,74 @@ func TestGetJetDrops(t *testing.T) {
 	}
 }
 
+func TestLoadJetDrops_returnsRecordByPulses(t *testing.T) {
+	ctx := context.Background()
+	batchSize := 1
+	mc := minimock.NewController(t)
+	recordClient := mock.NewRecordExporterClientMock(mc)
+
+	f := testutils.GenerateRecords(batchSize)
+	expectedRecord, err := f()
+	require.NoError(t, err)
+	startPulseNumber := int(expectedRecord.Record.ID.Pulse().AsUint32())
+	withDifferencePulses := testutils.GenerateRecordsWithDifferencePulses(batchSize, expectedRecord)
+
+	stream := recordStream{
+		recv: withDifferencePulses,
+	}
+	recordClient.ExportMock.Set(
+		func(ctx context.Context, in *exporter.GetRecords, opts ...grpc.CallOption) (
+			r1 exporter.RecordExporter_ExportClient, err error) {
+			return stream, nil
+		})
+
+	extractor := NewMainNetExtractor(uint32(batchSize), recordClient)
+	err = extractor.LoadJetDrops(ctx, startPulseNumber, startPulseNumber+10)
+	require.NoError(t, err)
+	// we are waiting only 2 times, because of 2 different pulses
+	for i := 0; i < 2; {
+		select {
+		case jd := <-extractor.mainJetDropsChan:
+			require.NotNil(t, jd)
+			// two in each pulses from generator
+			require.Len(t, jd.Records, 2, "no records received")
+			i++
+		case <-time.After(time.Millisecond * 100):
+			t.Fatal("chan receive timeout ")
+		}
+	}
+}
+
+func TestLoadJetDrops_fromPulseNumberCannotBeNegative(t *testing.T) {
+	ctx := context.Background()
+	mc := minimock.NewController(t)
+	recordClient := mock.NewRecordExporterClientMock(mc)
+
+	extractor := NewMainNetExtractor(1, recordClient)
+	err := extractor.LoadJetDrops(ctx, -1, 10)
+	require.EqualError(t, err, "fromPulseNumber cannot be negative")
+}
+
+func TestLoadJetDrops_toPulseNumberCannotBeLess1(t *testing.T) {
+	ctx := context.Background()
+	mc := minimock.NewController(t)
+	recordClient := mock.NewRecordExporterClientMock(mc)
+
+	extractor := NewMainNetExtractor(1, recordClient)
+	err := extractor.LoadJetDrops(ctx, 1, 0)
+	require.EqualError(t, err, "toPulseNumber cannot be less than 1")
+}
+
+func TestLoadJetDrops_toPulseNumberShouldBeGreater(t *testing.T) {
+	ctx := context.Background()
+	mc := minimock.NewController(t)
+	recordClient := mock.NewRecordExporterClientMock(mc)
+
+	extractor := NewMainNetExtractor(1, recordClient)
+	err := extractor.LoadJetDrops(ctx, 10, 9)
+	require.EqualError(t, err, "fromPulseNumber cannot be greater than toPulseNumber")
+}
+
 type recordStream struct {
 	grpc.ClientStream
 	recv func() (*exporter.Record, error)

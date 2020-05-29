@@ -62,19 +62,33 @@ func GenerateRecords(batchSize int) func() (record *exporter.Record, e error) {
 }
 
 func GenerateRecordsWithDifferencePulses(batchSize int, expectedRecord *exporter.Record) func() (record *exporter.Record, e error) {
+	var mu = &sync.Mutex{}
+
 	count := 0
+	var r *exporter.Record
 	fn := func() (record *exporter.Record, e error) {
+		mu.Lock()
+		defer mu.Unlock()
 		// we need to emulate pulse changing
 		switch count {
 		case 0, 1:
 			count++
 			expectedRecord.ShouldIterateFrom = nil
 			return expectedRecord, nil
+		case 2, 3:
+			count++
+			r, e = GenerateRecords(batchSize)()
+			r.ShouldIterateFrom = nil
+			r.Record.ID = gen.IDWithPulse(expectedRecord.Record.ID.Pulse() + 10)
+			return r, e
+		case 4, 5:
+			count++
+			tmp, e := GenerateRecords(batchSize)()
+			tmp.ShouldIterateFrom = nil
+			tmp.Record.ID = gen.IDWithPulse(r.Record.ID.Pulse() + 10)
+			return tmp, e
 		default:
-			retRecord, e := GenerateRecords(batchSize)()
-			retRecord.ShouldIterateFrom = nil
-			retRecord.Record.ID = gen.IDWithPulse(expectedRecord.Record.ID.Pulse() + 10)
-			return retRecord, e
+			return nil, io.EOF
 		}
 	}
 	return fn
