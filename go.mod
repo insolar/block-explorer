@@ -6,18 +6,24 @@ require (
 	github.com/gogo/protobuf v1.3.1
 	github.com/gojuno/minimock/v3 v3.0.6
 	github.com/google/gofuzz v1.0.0
+	github.com/gotestyourself/gotestyourself v2.2.0+incompatible // indirect
 	github.com/insolar/assured-ledger/ledger-core/v2 v2.0.0-20200512113104-4973d6ba44e9
 	github.com/insolar/insconfig v0.0.0-20200430133349-77f6f1624abf
 	github.com/insolar/insolar v1.5.2
 	github.com/jinzhu/gorm v1.9.12
 	github.com/ory/dockertest/v3 v3.5.2
-	github.com/ory/go-acc v0.2.1 // indirect
 	github.com/pkg/errors v0.9.1
 	github.com/rs/zerolog v1.15.0
 	github.com/stretchr/testify v1.4.0
+	github.com/ugorji/go/codec v0.0.0-20181204163529-d75b2dcb6bc8
 	go.opencensus.io v0.22.1
+	golang.org/x/crypto v0.0.0-20191206172530-e9b2fee46413
+	golang.org/x/exp v0.0.0-20190510132918-efd6b22b2522 // indirect
+	golang.org/x/sys v0.0.0-20191105231009-c1f44814a5cd // indirect
+	google.golang.org/appengine v1.6.1 // indirect
 	google.golang.org/grpc v1.22.0
 	gopkg.in/gormigrate.v1 v1.6.0
+	gotest.tools v2.2.0+incompatible // indirect
 )
 
 replace github.com/ugorji/go v1.1.4 => github.com/ugorji/go/codec v0.0.0-20190204201341-e444a5086c43

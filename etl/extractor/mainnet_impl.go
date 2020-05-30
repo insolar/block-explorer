@@ -7,12 +7,12 @@ package extractor
 
 import (
 	"context"
-	"fmt"
 	"io"
 
 	"github.com/insolar/block-explorer/etl/types"
+	"github.com/insolar/block-explorer/instrumentation/belogger"
+
 	"github.com/insolar/insolar/ledger/heavy/exporter"
-	"github.com/pkg/errors"
 )
 
 type MainNetExtractor struct {
@@ -40,27 +40,22 @@ func (m *MainNetExtractor) GetJetDrops(ctx context.Context) <-chan *types.Platfo
 	m.request.RecordNumber = 0
 	client := m.client
 
-	//todo: register event in some monitoring service
-	errorChan := make(chan error)
+	// todo: register event in some monitoring service
+	// errorChan := make(chan error)
 
 	go func() {
-		//todo: enable logger
-
-		// logger := belogger.FromContext(ctx)
+		logger := belogger.FromContext(ctx)
 		for {
 			if m.needStop() {
 				return
 			}
-			// log := logger.WithField("request_pulse_number", m.request.PulseNumber)
-			// m.log.Debug("Data request: ", m.request)
-			fmt.Println("Data request")
+			log := logger.WithField("request_pulse_number", m.request.PulseNumber)
+			log.Debug("Data request: ", m.request)
 			stream, err := client.Export(ctx, m.request)
 
 			if err != nil {
-				// log.Debug("Data request failed: ", err)
-				println("Data request failed")
-				println(err.Error())
-				errorChan <- errors.Wrapf(err, "failed to get gRPC stream from exporter.Export method")
+				log.Error("Data request failed: ", err)
+				// errorChan <- errors.Wrapf(err, "failed to get gRPC stream from exporter.Export method")
 				continue
 			}
 
@@ -71,14 +66,20 @@ func (m *MainNetExtractor) GetJetDrops(ctx context.Context) <-chan *types.Platfo
 				}
 				resp, err := stream.Recv()
 				if err == io.EOF {
-					// log.Debug("EOF received, quit")
-					println("EOF received, quit")
+					log.Debug("EOF received, quit")
 					break
 				}
 				if err != nil {
-					// log.Debug("received error value from records gRPC stream %v", m.request)
-					println("received error value from records gRPC stream %v", m.request)
-					errorChan <- errors.Wrapf(err, "received error value from records gRPC stream %v", m.request)
+					log.Errorf("received error value from records gRPC stream %v", m.request, err)
+					// errorChan <- errors.Wrapf(err, "received error value from records gRPC stream %v", m.request)
+					continue // break?
+				}
+
+				// There is no records at all
+				if resp.ShouldIterateFrom != nil {
+					log.Debug("Received Should iterate from ", resp.ShouldIterateFrom.String())
+					m.request.PulseNumber = *resp.ShouldIterateFrom
+					break
 				}
 
 				// save the last pulse for future requests

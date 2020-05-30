@@ -6,15 +6,20 @@
 package transformer
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 
-	"github.com/insolar/block-explorer/etl/types"
-	"github.com/insolar/block-explorer/utils"
+	"github.com/ugorji/go/codec"
+	"golang.org/x/crypto/sha3"
+
 	"github.com/insolar/insolar/insolar"
 	ins_record "github.com/insolar/insolar/insolar/record"
 	"github.com/insolar/insolar/ledger/heavy/exporter"
 	"github.com/pkg/errors"
+
+	"github.com/insolar/block-explorer/etl/types"
+	"github.com/insolar/block-explorer/instrumentation/belogger"
 )
 
 const (
@@ -41,29 +46,12 @@ func Transform(ctx context.Context, jd *types.PlatformJetDrops) ([]*types.JetDro
 
 	result := make([]*types.JetDrop, 0)
 	for jetID, records := range m {
-		sections := make([]types.Section, 0)
-		var prefix []byte
-		if jetID.IsValid() {
-			prefix = jetID.Prefix()
-		}
-		mainSection := &types.MainSection{
-			Start: types.DropStart{
-				PulseData:           pulseData,
-				JetDropPrefix:       prefix,
-				JetDropPrefixLength: uint(len(prefix)),
-			},
-			DropContinue: types.DropContinue{},
-			Records:      records,
-		}
-
-		hash, err := hash(records)
+		localJetDrop, err := getJetDrop(ctx, jetID, records, pulseData)
 		if err != nil {
-			return nil, errors.Wrapf(err, "cannot calculate JetDrop hash")
+			return nil, errors.Wrapf(err, "cannot create jet drop for jetID %s", jetID.DebugString())
 		}
-		localJetDrop := &types.JetDrop{
-			MainSection: mainSection,
-			Sections:    sections,
-			RawData:     hash,
+		if localJetDrop == nil {
+			continue
 		}
 		result = append(result, localJetDrop)
 	}
@@ -71,14 +59,125 @@ func Transform(ctx context.Context, jd *types.PlatformJetDrops) ([]*types.JetDro
 	return result, nil
 }
 
-// hash calculate hash from record's hash
-func hash(r []types.Record) ([]byte, error) {
-	l := len(r)
-	data := make([][]byte, l)
-	for i, record := range r {
-		data[i] = record.Hash
+func getJetDrop(ctx context.Context, jetID insolar.JetID, records []types.Record, pulseData types.Pulse) (*types.JetDrop, error) {
+	sections := make([]types.Section, 0)
+	var prefix []byte
+	if jetID.IsValid() {
+		prefix = jetID.Prefix()
 	}
-	return utils.Hash(data)
+
+	records, err := sortRecords(records)
+	if err != nil {
+		belogger.FromContext(ctx).Errorf("cannot sort records in JetDrop %s, error: %s", jetID.DebugString(), err.Error())
+		return nil, nil
+	}
+
+	mainSection := &types.MainSection{
+		Start: types.DropStart{
+			PulseData:           pulseData,
+			JetDropPrefix:       prefix,
+			JetDropPrefixLength: uint(len(prefix)),
+		},
+		DropContinue: types.DropContinue{},
+		Records:      records,
+	}
+
+	localJetDrop := types.JetDrop{
+		MainSection: mainSection,
+		Sections:    sections,
+	}
+
+	rawData, err := serialize(localJetDrop.MainSection)
+	if err != nil {
+		return nil, errors.Wrapf(err, "cannot calculate JetDrop hash")
+	}
+	localJetDrop.RawData = rawData
+	hash := sha3.Sum224(rawData)
+	localJetDrop.Hash = hash[:]
+	return &localJetDrop, nil
+}
+
+func serialize(o interface{}) ([]byte, error) {
+	ch := new(codec.CborHandle)
+	var data []byte
+	err := codec.NewEncoderBytes(&data, ch).Encode(o)
+	return data, errors.Wrap(err, "[ Serialize ]")
+}
+
+func sortRecords(records []types.Record) ([]types.Record, error) {
+	lenBefore := len(records)
+	fmt.Println(records)
+	recordsByObjAndPrevRef, recordsByObjAndRef, sortedRecords := initRecordsMapsByObj(records)
+	for objRef, recordsByRef := range recordsByObjAndRef {
+		// if there is only one record, we don't need to sort
+		if len(recordsByRef) == 1 {
+			for _, r := range recordsByRef {
+				sortedRecords = append(sortedRecords, r)
+			}
+			continue
+		}
+		var headRecord *types.Record
+		// finding first record (head), it doesn't refer to any other record
+		recordsByPrevRef := recordsByObjAndPrevRef[objRef]
+		for _, r := range recordsByPrevRef {
+			_, ok := recordsByRef[restoreInsolarID(r.PrevRecordReference)]
+			if !ok {
+				headRecord = &r
+				break
+			}
+		}
+		if headRecord == nil {
+			return nil, errors.Errorf("cannot find head record for object %s", objRef)
+		}
+		// add records to result array in correct order
+		key := restoreInsolarID(headRecord.Ref)
+		sortedRecords = append(sortedRecords, *headRecord)
+		for i := 1; len(recordsByPrevRef) != i; i++ {
+			r, ok := recordsByPrevRef[key]
+			if !ok {
+				return nil, errors.Errorf("cannot find record with prev record %s, object %s", key, objRef)
+			}
+			sortedRecords = append(sortedRecords, r)
+			key = restoreInsolarID(r.Ref)
+		}
+	}
+	lenAfter := len(sortedRecords)
+	if lenBefore != lenAfter {
+		return nil, errors.Errorf("Number of records before sorting (%d) changes after (%d)", lenAfter, lenBefore)
+	}
+
+	return sortedRecords, nil
+}
+
+func initRecordsMapsByObj(records []types.Record) (
+	byPrevRef map[string]map[string]types.Record,
+	byRef map[string]map[string]types.Record,
+	notState []types.Record,
+) {
+	var notStateRecords []types.Record
+	recordsByObjAndPrevRef := map[string]map[string]types.Record{}
+	recordsByObjAndRef := map[string]map[string]types.Record{}
+	for _, r := range records {
+		if r.Type != types.STATE {
+			notStateRecords = append(notStateRecords, r)
+			continue
+		}
+		if recordsByObjAndRef[restoreInsolarID(r.ObjectReference)] == nil {
+			recordsByObjAndRef[restoreInsolarID(r.ObjectReference)] = map[string]types.Record{}
+			if !bytes.Equal(r.PrevRecordReference, []byte{}) {
+				recordsByObjAndPrevRef[restoreInsolarID(r.ObjectReference)] = map[string]types.Record{}
+			}
+		}
+		recordsByObjAndRef[restoreInsolarID(r.ObjectReference)][restoreInsolarID(r.Ref)] = r
+		if !bytes.Equal(r.PrevRecordReference, []byte{}) {
+			recordsByObjAndPrevRef[restoreInsolarID(r.ObjectReference)][restoreInsolarID(r.PrevRecordReference)] = r
+		}
+	}
+	return recordsByObjAndPrevRef, recordsByObjAndRef, notStateRecords
+}
+
+func restoreInsolarID(b []byte) string {
+	return insolar.NewIDFromBytes(b).String()
 }
 
 func getPulseData(rec *exporter.Record) (types.Pulse, error) {
@@ -86,12 +185,11 @@ func getPulseData(rec *exporter.Record) (types.Pulse, error) {
 	pulse := r.ID.Pulse()
 	time, err := pulse.AsApproximateTime()
 	if err != nil {
-		// return types.Pulse{}, errors.Wrapf(err, "could not get pulse ApproximateTime. pulse: %v", pulse.String())
-		fmt.Printf("could not get pulse ApproximateTime. pulse: %v", pulse.String())
+		return types.Pulse{}, errors.Wrapf(err, "could not get pulse ApproximateTime. pulse: %v", pulse.String())
 	}
 	return types.Pulse{
-		PulseNo: int(pulse.AsUint32()),
-		// EpochPulseNo:   int(pulse.AsEpoch()),
+		PulseNo:        int(pulse.AsUint32()),
+		EpochPulseNo:   int(pulse.AsEpoch()),
 		PulseTimestamp: time.Unix(),
 		NextPulseDelta: int(pulseDelta),
 		PrevPulseDelta: int(pulseDelta),
