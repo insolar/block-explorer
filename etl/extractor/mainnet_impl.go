@@ -55,7 +55,7 @@ func (m *MainNetExtractor) LoadJetDrops(ctx context.Context, fromPulseNumber int
 	unsignedToPulseNumber := uint32(toPulseNumber)
 
 	lastPulseNumber := uint32(fromPulseNumber)
-	receivedPulseNumber := uint32(toPulseNumber)
+	receivedPulseNumber := uint32(0)
 
 	client := m.client
 	request := &exporter.GetRecords{
