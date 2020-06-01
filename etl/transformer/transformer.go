@@ -8,7 +8,6 @@ package transformer
 import (
 	"bytes"
 	"context"
-	"fmt"
 
 	"github.com/ugorji/go/codec"
 	"golang.org/x/crypto/sha3"
@@ -106,7 +105,6 @@ func serialize(o interface{}) ([]byte, error) {
 
 func sortRecords(records []types.Record) ([]types.Record, error) {
 	lenBefore := len(records)
-	fmt.Println(records)
 	recordsByObjAndPrevRef, recordsByObjAndRef, sortedRecords := initRecordsMapsByObj(records)
 	for objRef, recordsByRef := range recordsByObjAndRef {
 		// if there is only one record, we don't need to sort
