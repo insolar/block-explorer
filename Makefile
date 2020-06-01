@@ -48,7 +48,7 @@ generate: ## generate mocks
 
 .PHONY: unit
 unit:  ## run unit tests
-	go test -v ./... -count 10 -race
+	go test -v ./... -tags unit -count 10 -race
 
 .PHONY: test
 test: unit integration test-heavy-mock-integration ## run all tests
@@ -59,7 +59,7 @@ integration: ## run integrations tests with race
 
 .PHONY: test-with-coverage
 test-with-coverage: ## run tests with coverage mode
-	go-acc --covermode=count --output=coverage.tmp.out ./... -- -tags "integration heavy_mock_integration" -count=1
+	go-acc --covermode=count --output=coverage.tmp.out ./... -- -tags "unit integration heavy_mock_integration" -count=1
 	cat coverage.tmp.out | grep -v _mock.go > ${COVERPROFILE}
 	go tool cover -html=${COVERPROFILE} -o coverage.html
 
