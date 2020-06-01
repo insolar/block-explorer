@@ -120,7 +120,7 @@ func sortRecords(records []types.Record) ([]types.Record, error) {
 		for _, r := range recordsByPrevRef {
 			_, ok := recordsByRef[restoreInsolarID(r.PrevRecordReference)]
 			if !ok {
-				headRecord = &r
+				headRecord = &r // nolint
 				break
 			}
 		}

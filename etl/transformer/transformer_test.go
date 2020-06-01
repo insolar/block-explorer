@@ -12,6 +12,7 @@ import (
 	"testing"
 
 	"github.com/insolar/insolar/insolar/gen"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/insolar/block-explorer/etl/types"
@@ -66,11 +67,16 @@ func TestTransform_sortRecords(t *testing.T) {
 	record1.PrevRecordReference = record6.Ref
 	record6.PrevRecordReference = record3.Ref
 	record3.PrevRecordReference = record5.Ref
-	expectedResult := []types.Record{record4RequestType, record5, record3, record6, record1, record2}
+
+	// result can be (4, 5, 3, 6, 1, 2) or (4, 2, 5, 3, 6, 1)
+	expectedResult1 := []types.Record{record4RequestType, record5, record3, record6, record1, record2}
+	expectedResult2 := []types.Record{record4RequestType, record2, record5, record3, record6, record1}
 
 	result, err := sortRecords([]types.Record{record1, record2, record3, record4RequestType, record5, record6})
 	require.NoError(t, err)
-	require.Equal(t, expectedResult, result)
+
+	// result can be (4, 5, 3, 6, 1, 2) or (4, 2, 5, 3, 6, 1)
+	require.True(t, assert.ObjectsAreEqual(expectedResult1, result) || assert.ObjectsAreEqual(expectedResult2, result))
 }
 
 func TestTransform_sortRecords_ErrorNoHead(t *testing.T) {
