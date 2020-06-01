@@ -165,6 +165,7 @@ func (m *MainNetExtractor) getJetDropsContinuously(ctx context.Context) {
 			// Get records from the stream
 			for {
 				if m.needStop() {
+					closeStream(ctx, stream)
 					return
 				}
 				resp, err := stream.Recv()

@@ -95,12 +95,13 @@ func GenerateRecordsWithDifferencePulses(differentPulseSize int, recordCount int
 func GenerateRecordsSilence(count int) []*exporter.Record {
 	res := make([]*exporter.Record, count)
 	f := GenerateRecords(count)
-	for i := 0; i < count; i++ {
+	for i := 0; i < count; {
 		record, err := f()
 		if err != nil {
 			continue
 		}
 		res[i] = record
+		i++
 	}
 	return res
 }
