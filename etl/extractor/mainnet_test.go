@@ -64,7 +64,7 @@ func TestGetJetDrops(t *testing.T) {
 				expectedRecord.Record.ID.String(),
 				jd.Records[0].Record.ID.String(),
 				"record reference should be different")
-		case <-time.After(time.Second * 1):
+		case <-time.After(time.Millisecond * 100):
 			t.Fatal("chan receive timeout ")
 		}
 	}
@@ -102,7 +102,7 @@ func TestLoadJetDrops_returnsRecordByPulses(t *testing.T) {
 			startPulseNumber := int(expectedRecord.Record.ID.Pulse().AsUint32())
 
 			stream := recordStream{
-				recv: withDifferencePulses,
+				recvFunc: withDifferencePulses,
 			}
 			recordClient.ExportMock.Set(
 				func(ctx context.Context, in *exporter.GetRecords, opts ...grpc.CallOption) (
@@ -127,7 +127,7 @@ func TestLoadJetDrops_returnsRecordByPulses(t *testing.T) {
 						require.Len(t, jd.Records, test.recordCount, "no records received")
 					}
 					i++
-				case <-time.After(time.Millisecond * 100000000):
+				case <-time.After(time.Millisecond * 100):
 					t.Fatal("chan receive timeout ")
 				}
 			}

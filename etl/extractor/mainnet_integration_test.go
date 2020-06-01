@@ -59,7 +59,7 @@ func TestExporterIsWorking(t *testing.T) {
 
 			t.Logf("i=%d, r=%v", i, jd)
 			require.NotEmpty(t, jd.Records)
-		case <-time.After(time.Second * 100):
+		case <-time.After(time.Millisecond * 100):
 			t.Fatal("chan receive timeout ")
 		}
 	}
