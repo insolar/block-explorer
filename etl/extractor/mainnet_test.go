@@ -3,6 +3,8 @@
 // This material is licensed under the Insolar License version 1.0,
 // available at https://github.com/insolar/block-explorer/blob/master/LICENSE.md.
 
+// +build unit
+
 package extractor
 
 import (
@@ -30,7 +32,7 @@ func TestGetJetDrops(t *testing.T) {
 	require.NoError(t, err)
 
 	stream := recordStream{
-		recv: withDifferencePulses,
+		recvFunc: withDifferencePulses,
 	}
 	recordClient.ExportMock.Set(
 		func(ctx context.Context, in *exporter.GetRecords, opts ...grpc.CallOption) (
@@ -162,17 +164,4 @@ func TestLoadJetDrops_toPulseNumberShouldBeGreater(t *testing.T) {
 	extractor := NewMainNetExtractor(1, recordClient)
 	err := extractor.LoadJetDrops(ctx, 10, 9)
 	require.EqualError(t, err, "fromPulseNumber cannot be greater than toPulseNumber")
-}
-
-type recordStream struct {
-	grpc.ClientStream
-	recv func() (*exporter.Record, error)
-}
-
-func (s recordStream) Recv() (*exporter.Record, error) {
-	return s.recv()
-}
-
-func (c recordStream) CloseSend() error {
-	return nil
 }

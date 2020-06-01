@@ -77,7 +77,7 @@ type gclient struct {
 func (c *gclient) Export(ctx context.Context, in *exporter.GetRecords, opts ...grpc.CallOption) (exporter.RecordExporter_ExportClient, error) {
 	withDifferencePulses := testutils.GenerateRecordsWithDifferencePulses(localPulseSize, localBatchSize)
 	stream := recordStream{
-		recv: withDifferencePulses,
+		recvFunc: withDifferencePulses,
 	}
 	return stream, nil
 }
