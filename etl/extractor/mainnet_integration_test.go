@@ -66,7 +66,7 @@ type gclient struct {
 
 func (c *gclient) Export(ctx context.Context, in *exporter.GetRecords, opts ...grpc.CallOption) (exporter.RecordExporter_ExportClient, error) {
 	stream := recordStream{
-		recv: testutils.GenerateRecords(localBatchSize),
+		recvFunc: testutils.GenerateRecords(localBatchSize),
 	}
 	return stream, nil
 }

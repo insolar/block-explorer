@@ -3,6 +3,8 @@
 // This material is licensed under the Insolar License version 1.0,
 // available at https://github.com/insolar/block-explorer/blob/master/LICENSE.md.
 
+// +build unit
+
 package extractor
 
 import (
@@ -30,7 +32,7 @@ func TestGetJetDrops(t *testing.T) {
 	}
 
 	stream := recordStream{
-		recv: fn,
+		recvFunc: fn,
 	}
 	recordClient.ExportMock.Set(func(ctx context.Context, in *exporter.GetRecords, opts ...grpc.CallOption) (r1 exporter.RecordExporter_ExportClient, err error) {
 		return stream, nil
@@ -45,13 +47,4 @@ func TestGetJetDrops(t *testing.T) {
 		require.Len(t, jd.Records, 1, "no records received")
 		require.True(t, expectedRecord.Equal(jd.Records[0]), "jetDrops are not equal")
 	}
-}
-
-type recordStream struct {
-	grpc.ClientStream
-	recv func() (*exporter.Record, error)
-}
-
-func (s recordStream) Recv() (*exporter.Record, error) {
-	return s.recv()
 }
