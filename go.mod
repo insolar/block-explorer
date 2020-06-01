@@ -12,6 +12,7 @@ require (
 	github.com/insolar/insolar v1.5.2
 	github.com/jinzhu/gorm v1.9.12
 	github.com/ory/dockertest/v3 v3.5.2
+	github.com/ory/go-acc v0.2.1 // indirect
 	github.com/pkg/errors v0.9.1
 	github.com/rs/zerolog v1.15.0
 	github.com/stretchr/testify v1.4.0
