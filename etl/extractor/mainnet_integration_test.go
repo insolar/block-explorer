@@ -21,6 +21,7 @@ import (
 )
 
 var localBatchSize = 2
+var localPulseSize = 2
 
 func TestExporterIsWorking(t *testing.T) {
 	ctx := context.Background()
@@ -47,7 +48,7 @@ func TestExporterIsWorking(t *testing.T) {
 	defer extractor.Stop(ctx)
 	jetDrops := extractor.GetJetDrops(ctx)
 
-	for i := 0; i < 2; i++ {
+	for i := 0; i < localPulseSize*localBatchSize; i++ {
 		select {
 		case jd := <-jetDrops:
 			// when i ∈ [0,1) we received records with some pulse
@@ -55,8 +56,10 @@ func TestExporterIsWorking(t *testing.T) {
 			if i < 1 {
 				continue
 			}
+
+			t.Logf("i=%d, r=%v", i, jd)
 			require.NotEmpty(t, jd.Records)
-		case <-time.After(time.Second * 1):
+		case <-time.After(time.Second * 100):
 			t.Fatal("chan receive timeout ")
 		}
 	}
@@ -72,8 +75,7 @@ type gclient struct {
 }
 
 func (c *gclient) Export(ctx context.Context, in *exporter.GetRecords, opts ...grpc.CallOption) (exporter.RecordExporter_ExportClient, error) {
-	records, _ := testutils.GenerateRecords(localBatchSize)()
-	withDifferencePulses := testutils.GenerateRecordsWithDifferencePulses(localBatchSize, records)
+	withDifferencePulses := testutils.GenerateRecordsWithDifferencePulses(localPulseSize, localBatchSize)
 	stream := recordStream{
 		recv: withDifferencePulses,
 	}

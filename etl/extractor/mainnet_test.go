@@ -7,6 +7,7 @@ package extractor
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -20,14 +21,13 @@ import (
 
 func TestGetJetDrops(t *testing.T) {
 	ctx := context.Background()
-	batchSize := 1
+	pulseCount := 1
 	mc := minimock.NewController(t)
 	recordClient := mock.NewRecordExporterClientMock(mc)
 
-	f := testutils.GenerateRecords(batchSize)
-	expectedRecord, err := f()
+	withDifferencePulses := testutils.GenerateRecordsWithDifferencePulses(pulseCount, 2)
+	expectedRecord, err := withDifferencePulses()
 	require.NoError(t, err)
-	withDifferencePulses := testutils.GenerateRecordsWithDifferencePulses(batchSize, expectedRecord)
 
 	stream := recordStream{
 		recv: withDifferencePulses,
@@ -38,13 +38,13 @@ func TestGetJetDrops(t *testing.T) {
 			return stream, nil
 		})
 
-	extractor := NewMainNetExtractor(uint32(batchSize), recordClient)
+	extractor := NewMainNetExtractor(uint32(pulseCount), recordClient)
 	err = extractor.Start(ctx)
 	require.NoError(t, err)
 	defer extractor.Stop(ctx)
 	jetDrops := extractor.GetJetDrops(ctx)
 
-	for i := 0; i < 2; i++ {
+	for i := 0; i < pulseCount; i++ {
 		select {
 		case jd := <-jetDrops:
 			if i < 1 {
@@ -54,7 +54,14 @@ func TestGetJetDrops(t *testing.T) {
 			}
 			require.NotNil(t, jd)
 			require.Len(t, jd.Records, 1, "no records received")
-			require.True(t, expectedRecord.Equal(jd.Records[0]), "jetDrops are not equal")
+			require.Equal(t,
+				expectedRecord.Record.ID.Pulse().String(),
+				jd.Records[0].Record.ID.Pulse().String(),
+				"jetDrops are not equal")
+			require.NotEqual(t,
+				expectedRecord.Record.ID.String(),
+				jd.Records[0].Record.ID.String(),
+				"record reference should be different")
 		case <-time.After(time.Second * 1):
 			t.Fatal("chan receive timeout ")
 		}
@@ -62,41 +69,69 @@ func TestGetJetDrops(t *testing.T) {
 }
 
 func TestLoadJetDrops_returnsRecordByPulses(t *testing.T) {
+	tests := []struct {
+		differentPulseCount int
+		recordCount         int
+	}{
+		{
+			differentPulseCount: 1,
+			recordCount:         1,
+		}, {
+			differentPulseCount: 1,
+			recordCount:         2,
+		}, {
+			differentPulseCount: 2,
+			recordCount:         1,
+		}, {
+			differentPulseCount: 2,
+			recordCount:         2,
+		},
+	}
+
 	ctx := context.Background()
-	batchSize := 1
 	mc := minimock.NewController(t)
 	recordClient := mock.NewRecordExporterClientMock(mc)
 
-	f := testutils.GenerateRecords(batchSize)
-	expectedRecord, err := f()
-	require.NoError(t, err)
-	startPulseNumber := int(expectedRecord.Record.ID.Pulse().AsUint32())
-	withDifferencePulses := testutils.GenerateRecordsWithDifferencePulses(batchSize, expectedRecord)
+	for _, test := range tests {
+		t.Run(fmt.Sprintf("pulse-count=%d,record-count=%d", test.differentPulseCount, test.recordCount), func(t *testing.T) {
+			withDifferencePulses := testutils.GenerateRecordsWithDifferencePulses(test.differentPulseCount+1, test.recordCount)
+			expectedRecord, err := withDifferencePulses()
+			require.NoError(t, err)
+			startPulseNumber := int(expectedRecord.Record.ID.Pulse().AsUint32())
 
-	stream := recordStream{
-		recv: withDifferencePulses,
-	}
-	recordClient.ExportMock.Set(
-		func(ctx context.Context, in *exporter.GetRecords, opts ...grpc.CallOption) (
-			r1 exporter.RecordExporter_ExportClient, err error) {
-			return stream, nil
+			stream := recordStream{
+				recv: withDifferencePulses,
+			}
+			recordClient.ExportMock.Set(
+				func(ctx context.Context, in *exporter.GetRecords, opts ...grpc.CallOption) (
+					r1 exporter.RecordExporter_ExportClient, err error) {
+					return stream, nil
+				})
+
+			extractor := NewMainNetExtractor(uint32(test.recordCount), recordClient)
+			err = extractor.LoadJetDrops(ctx, startPulseNumber, startPulseNumber+10*test.differentPulseCount)
+			require.NoError(t, err)
+			// we are waiting only 2 times, because of 2 different pulses
+			for i := 0; i < test.differentPulseCount; {
+				select {
+				case jd := <-extractor.GetJetDrops(ctx):
+					require.NotNil(t, jd)
+					if i == 0 {
+						// test.recordCount-1 because we have already received the  first record from fist pulse.
+						// see expectedRecord, err := withDifferencePulses()
+						require.Len(t, jd.Records, test.recordCount-1, "no records received")
+					} else {
+						// two in each pulses from generator
+						require.Len(t, jd.Records, test.recordCount, "no records received")
+					}
+					i++
+				case <-time.After(time.Millisecond * 100000000):
+					t.Fatal("chan receive timeout ")
+				}
+			}
 		})
-
-	extractor := NewMainNetExtractor(uint32(batchSize), recordClient)
-	err = extractor.LoadJetDrops(ctx, startPulseNumber, startPulseNumber+10)
-	require.NoError(t, err)
-	// we are waiting only 2 times, because of 2 different pulses
-	for i := 0; i < 2; {
-		select {
-		case jd := <-extractor.mainJetDropsChan:
-			require.NotNil(t, jd)
-			// two in each pulses from generator
-			require.Len(t, jd.Records, 2, "no records received")
-			i++
-		case <-time.After(time.Millisecond * 100):
-			t.Fatal("chan receive timeout ")
-		}
 	}
+
 }
 
 func TestLoadJetDrops_fromPulseNumberCannotBeNegative(t *testing.T) {
@@ -136,4 +171,8 @@ type recordStream struct {
 
 func (s recordStream) Recv() (*exporter.Record, error) {
 	return s.recv()
+}
+
+func (c recordStream) CloseSend() error {
+	return nil
 }

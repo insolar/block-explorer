@@ -41,13 +41,12 @@ func (a *dbIntegrationSuite) TearDownSuite() {
 }
 
 func (a *dbIntegrationSuite) TestGetRecordsFromDb() {
-	recordsCount := 1
-	expRecords, _ := testutils.GenerateRecords(recordsCount)()
-	recordsWithDifferencePulses := testutils.GenerateRecordsWithDifferencePulses(recordsCount, expRecords)
+	recordsCount := 10
+	recordsWithDifferencePulses := testutils.GenerateRecordsWithDifferencePulses(recordsCount, 1)
 	stream, err := a.c.ImporterClient.Import(context.Background())
 	require.NoError(a.T(), err)
 
-	for i := 0; i < 3; i++ {
+	for i := 0; i < recordsCount; i++ {
 		record, _ := recordsWithDifferencePulses()
 		if err := stream.Send(record); err != nil {
 			if err == io.EOF {
@@ -60,33 +59,34 @@ func (a *dbIntegrationSuite) TestGetRecordsFromDb() {
 	require.NoError(a.T(), err)
 	require.True(a.T(), reply.Ok)
 
-	require.Len(a.T(), a.c.Importer.GetSavedRecords(), 3) // because recordsWithDifferencePulses generates 3 records
+	require.Len(a.T(), a.c.Importer.GetSavedRecords(), recordsCount) // because recordsWithDifferencePulses generates 3 records
 
 	ctx := context.Background()
 	extractorMn := extractor.NewMainNetExtractor(100, a.c.ExporterClient)
 	err = extractorMn.Start(ctx)
 	require.NoError(a.T(), err)
 	defer extractorMn.Stop(ctx)
-	jetDrops := extractorMn.GetJetDrops(ctx)
-	refs := make([]types.Reference, 0)
-	for i := 0; i < 2; i++ {
-		select {
-		case jd := <-jetDrops:
-			transform, err := transformer.Transform(ctx, jd)
-			if err != nil {
-				a.T().Logf("error transforming record: %v", err)
-				return
-			}
-			for _, t := range transform {
-				refs = append(refs, t.MainSection.Records[0].Ref)
-			}
-		}
-	}
 
-	transformerMn := transformer.NewMainNetTransformer(jetDrops)
+	transformerJdChan := make(chan *types.PlatformJetDrops)
+	transformerMn := transformer.NewMainNetTransformer(transformerJdChan)
 	err = transformerMn.Start(ctx)
 	require.NoError(a.T(), err)
 	defer transformerMn.Stop(ctx)
+
+	jetDrops := extractorMn.GetJetDrops(ctx)
+	refs := make([]types.Reference, 0)
+	for i := 0; i < recordsCount; i++ {
+		jd := <-jetDrops
+		transformerJdChan <- jd
+		transform, err := transformer.Transform(ctx, jd)
+		if err != nil {
+			a.T().Logf("error transforming record: %v", err)
+			return
+		}
+		for _, t := range transform {
+			refs = append(refs, t.MainSection.Records[0].Ref)
+		}
+	}
 
 	s := storage.NewStorage(a.c.DB)
 	contr, err := controller.NewController(extractorMn, s)
@@ -95,7 +95,7 @@ func (a *dbIntegrationSuite) TestGetRecordsFromDb() {
 	proc.Start(ctx)
 	defer proc.Stop(ctx)
 
-	a.waitRecordsCount(recordsCount)
+	a.waitRecordsCount(recordsCount - 1)
 
 	for _, ref := range refs {
 		modelRef := models.ReferenceFromTypes(ref)
