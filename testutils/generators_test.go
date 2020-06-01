@@ -76,10 +76,13 @@ func TestGenerateRecordsWithDifferencePulses(t *testing.T) {
 	for _, test := range tests {
 		t.Run(fmt.Sprintf("pulse-size=%d,record-count=%d", test.differentPulseSize, test.recordCount), func(t *testing.T) {
 			fn := GenerateRecordsWithDifferencePulses(test.differentPulseSize, test.recordCount)
-
+			lastPn := uint32(0)
 			for i := 0; i < test.differentPulseSize*test.recordCount+1; i++ {
 				record, _ := fn()
 				require.NotNil(t, record)
+				pn := record.Record.ID.Pulse().AsUint32()
+				require.GreaterOrEqual(t, pn, lastPn)
+				lastPn = pn
 			}
 
 			_, err := fn()
