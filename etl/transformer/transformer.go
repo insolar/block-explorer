@@ -163,9 +163,7 @@ func initRecordsMapsByObj(records []types.Record) (
 		}
 		if recordsByObjAndRef[restoreInsolarID(r.ObjectReference)] == nil {
 			recordsByObjAndRef[restoreInsolarID(r.ObjectReference)] = map[string]types.Record{}
-			if !bytes.Equal(r.PrevRecordReference, []byte{}) {
-				recordsByObjAndPrevRef[restoreInsolarID(r.ObjectReference)] = map[string]types.Record{}
-			}
+			recordsByObjAndPrevRef[restoreInsolarID(r.ObjectReference)] = map[string]types.Record{}
 		}
 		recordsByObjAndRef[restoreInsolarID(r.ObjectReference)][restoreInsolarID(r.Ref)] = r
 		recordsByObjAndPrevRef[restoreInsolarID(r.ObjectReference)][restoreInsolarID(r.PrevRecordReference)] = r

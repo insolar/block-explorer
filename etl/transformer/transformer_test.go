@@ -40,7 +40,7 @@ func TestInitRecordsMapsByObj(t *testing.T) {
 	byPrevRef, byRef, notState := initRecordsMapsByObj(input)
 	require.Equal(t, []types.Record{expectedNotState}, notState)
 	require.Len(t, byRef, 4)
-	require.Len(t, byPrevRef, 3)
+	require.Len(t, byPrevRef, 4)
 }
 
 func TestTransform_sortRecords(t *testing.T) {
