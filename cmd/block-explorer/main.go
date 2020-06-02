@@ -8,13 +8,13 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
 	"os"
 	"os/signal"
 	"syscall"
 
 	"github.com/insolar/insconfig"
 	"github.com/insolar/insolar/ledger/heavy/exporter"
-	"github.com/jinzhu/gorm"
 	"github.com/pkg/errors"
 
 	"github.com/insolar/block-explorer/etl/connection"
@@ -67,7 +67,7 @@ func main() {
 	trn := transformer.NewMainNetTransformer(extractor.GetJetDrops(ctx))
 	err = trn.Start(ctx)
 	if err != nil {
-		logger.Fatal("cannot connect to GRPC server", err)
+		logger.Fatal("cannot start transformer", err)
 	}
 	defer func() {
 		err := trn.Stop(ctx)
@@ -79,8 +79,13 @@ func main() {
 	db, err := dbconn.Connect(cfg.DB)
 	if err != nil {
 		logger.Fatalf("Error while connecting to database: %s", err.Error())
-		return
 	}
+	defer func() {
+		err := db.DB().Close()
+		if err != nil {
+			logger.Error(errors.Wrapf(err, "failed to close database"))
+		}
+	}()
 
 	s := storage.NewStorage(db)
 
@@ -111,23 +116,12 @@ func main() {
 		}
 	}()
 
-	graceful(ctx, makeStopper(ctx, db))
+	graceful(ctx)
 }
 
-func graceful(ctx context.Context, that func()) {
+func graceful(ctx context.Context) {
 	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)
 	<-stop
 	logger := belogger.FromContext(ctx)
 	logger.Infof("gracefully stopping...")
-	that()
-}
-
-func makeStopper(ctx context.Context, db *gorm.DB) func() {
-	logger := belogger.FromContext(ctx)
-	return func() {
-		err := db.DB().Close()
-		if err != nil {
-			logger.Error(errors.Wrapf(err, "failed to close database"))
-		}
-	}
 }

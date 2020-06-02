@@ -7,9 +7,9 @@ package transformer
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/insolar/block-explorer/etl/types"
+	"github.com/insolar/block-explorer/instrumentation/belogger"
 )
 
 type MainNetTransformer struct {
@@ -27,7 +27,7 @@ func NewMainNetTransformer(ch <-chan *types.PlatformJetDrops) *MainNetTransforme
 }
 
 func (m *MainNetTransformer) Start(ctx context.Context) error {
-	// belogger.FromContext(ctx).Info("MainNetTransformer is starting")
+	belogger.FromContext(ctx).Info("MainNetTransformer is starting")
 	go func() {
 		for {
 			m.run(ctx)
@@ -65,12 +65,11 @@ func (m *MainNetTransformer) run(ctx context.Context) {
 	case jd := <-m.extractorChan:
 		transform, err := Transform(ctx, jd)
 		if err != nil {
-			//todo: add logging here
-			fmt.Print(err.Error())
+			belogger.FromContext(ctx).Errorf("cannot transform jet drop %v, error: %s", jd, err.Error())
 			return
 		}
 		go func() {
-			//todo: add logging here
+			belogger.FromContext(ctx).Infof("transformed jet drop to canonical: %v", transform)
 			for _, t := range transform {
 				m.transformerChan <- t
 			}
