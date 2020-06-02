@@ -3,6 +3,8 @@
 // This material is licensed under the Insolar License version 1.0,
 // available at https://github.com/insolar/block-explorer/blob/master/LICENSE.md.
 
+// +build unit
+
 package controller
 
 import (
@@ -35,13 +37,13 @@ func TestNewController_OneNotCompletePulse(t *testing.T) {
 	extractor := mock.NewJetDropsExtractorMock(t)
 
 	pulseNumber := 1
-	firstJetID := []byte{1,2,3}
-	secondJetID := []byte{3,4,5}
-	expectedData := map[types.Pulse][][]byte{{PulseNo: pulseNumber}:{firstJetID,secondJetID}}
+	firstJetID := []byte{1, 2, 3}
+	secondJetID := []byte{3, 4, 5}
+	expectedData := map[types.Pulse][][]byte{{PulseNo: pulseNumber}: {firstJetID, secondJetID}}
 
 	sm := mock.NewStorageMock(t)
 	sm.GetIncompletePulsesMock.Return([]models.Pulse{{PulseNumber: pulseNumber}}, nil)
-	sm.GetJetDropsMock.Return([]models.JetDrop{{JetID:firstJetID}, {JetID:secondJetID}}, nil)
+	sm.GetJetDropsMock.Return([]models.JetDrop{{JetID: firstJetID}, {JetID: secondJetID}}, nil)
 
 	c, err := NewController(extractor, sm)
 	require.NoError(t, err)
@@ -59,20 +61,20 @@ func TestNewController_SeveralNotCompletePulses(t *testing.T) {
 
 	firstPulseNumber := 1
 	secondPulseNumber := 2
-	firstJetID := []byte{1,2,3}
-	secondJetID := []byte{3,4,5}
-	firstPulse := types.Pulse{PulseNo:firstPulseNumber}
-	secondPulse := types.Pulse{PulseNo:secondPulseNumber}
-	expectedData := map[types.Pulse][][]byte{firstPulse:{firstJetID}, secondPulse:{secondJetID}}
+	firstJetID := []byte{1, 2, 3}
+	secondJetID := []byte{3, 4, 5}
+	firstPulse := types.Pulse{PulseNo: firstPulseNumber}
+	secondPulse := types.Pulse{PulseNo: secondPulseNumber}
+	expectedData := map[types.Pulse][][]byte{firstPulse: {firstJetID}, secondPulse: {secondJetID}}
 
 	sm := mock.NewStorageMock(t)
 	getJetDrops := func(pulse models.Pulse) (ja1 []models.JetDrop, err error) {
 		jd := make([]models.JetDrop, 0)
 		switch pulse.PulseNumber {
 		case 1:
-			jd = append(jd, models.JetDrop{JetID:firstJetID})
+			jd = append(jd, models.JetDrop{JetID: firstJetID})
 		case 2:
-			jd = append(jd, models.JetDrop{JetID:secondJetID})
+			jd = append(jd, models.JetDrop{JetID: secondJetID})
 		}
 		return jd, nil
 	}
@@ -125,9 +127,9 @@ func TestController_SetJetDropData(t *testing.T) {
 		jetDropRegister: make(map[types.Pulse][][]byte),
 	}
 
-	pulse := types.Pulse{PulseNo:12345}
-	jetID := []byte{1,1,1,1,2,2,2,2}
-	expectedData := map[types.Pulse][][]byte{pulse:{jetID}}
+	pulse := types.Pulse{PulseNo: 12345}
+	jetID := []byte{1, 1, 1, 1, 2, 2, 2, 2}
+	expectedData := map[types.Pulse][][]byte{pulse: {jetID}}
 
 	c.SetJetDropData(pulse, jetID)
 
@@ -139,9 +141,9 @@ func TestController_SetJetDropData_Multiple(t *testing.T) {
 		jetDropRegister: make(map[types.Pulse][][]byte),
 	}
 
-	pulse := types.Pulse{PulseNo:12345}
-	firstJetID := []byte{1,2,3}
-	secondJetID := []byte{3,4,5}
+	pulse := types.Pulse{PulseNo: 12345}
+	firstJetID := []byte{1, 2, 3}
+	secondJetID := []byte{3, 4, 5}
 
 	wg := sync.WaitGroup{}
 	wg.Add(2)
