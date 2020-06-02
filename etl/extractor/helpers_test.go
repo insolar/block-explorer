@@ -19,6 +19,6 @@ func (s recordStream) Recv() (*exporter.Record, error) {
 	return s.recvFunc()
 }
 
-func (r recordStream) CloseSend() error {
+func (s recordStream) CloseSend() error {
 	return nil
 }
