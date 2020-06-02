@@ -8,6 +8,7 @@ package extractor
 import (
 	"context"
 	"io"
+	"math"
 	"sync"
 
 	"github.com/insolar/block-explorer/etl/types"
@@ -52,17 +53,22 @@ func (m *MainNetExtractor) LoadJetDrops(ctx context.Context, fromPulseNumber int
 	if fromPulseNumber > toPulseNumber {
 		return errors.New("fromPulseNumber cannot be greater than toPulseNumber")
 	}
-	unsignedToPulseNumber := uint32(toPulseNumber)
 
-	lastPulseNumber := uint32(fromPulseNumber)
-	receivedPulseNumber := uint32(0)
-
-	client := m.client
 	request := &exporter.GetRecords{
 		Count:        100,
 		PulseNumber:  insolar.PulseNumber(fromPulseNumber),
 		RecordNumber: 0,
 	}
+	m.getJetDrops(ctx, request, fromPulseNumber, toPulseNumber, true)
+	return nil
+}
+
+func (m *MainNetExtractor) getJetDrops(ctx context.Context, request *exporter.GetRecords, fromPulseNumber int, toPulseNumber int, shouldReload bool) {
+	unsignedToPulseNumber := uint32(toPulseNumber)
+
+	client := m.client
+	lastPulseNumber := uint32(fromPulseNumber)
+	receivedPulseNumber := uint32(0)
 
 	go func() {
 		logger := belogger.FromContext(ctx)
@@ -124,15 +130,13 @@ func (m *MainNetExtractor) LoadJetDrops(ctx context.Context, fromPulseNumber int
 				// don't forget to save the last data
 				jetDrops.Records = append(jetDrops.Records, resp)
 
-				if receivedPulseNumber > unsignedToPulseNumber {
+				if shouldReload && receivedPulseNumber > unsignedToPulseNumber {
 					// now we have received all needed data
 					return
 				}
 			}
 		}
 	}()
-
-	return nil
 }
 
 func (m *MainNetExtractor) getJetDropsContinuously(ctx context.Context) {
@@ -140,70 +144,7 @@ func (m *MainNetExtractor) getJetDropsContinuously(ctx context.Context) {
 	//todo: add pulse fetcher
 	m.request.PulseNumber = 0
 	m.request.RecordNumber = 0
-	client := m.client
-
-	lastPulseNumber := uint32(0)
-	receivedPulseNumber := uint32(0)
-
-	go func() {
-		logger := belogger.FromContext(ctx)
-		for {
-			if m.needStop() {
-				return
-			}
-			log := logger.WithField("request_pulse_number", m.request.PulseNumber)
-			log.Debug("Data request: ", m.request)
-			stream, err := client.Export(ctx, m.request)
-
-			if err != nil {
-				logGRPCError(ctx, err)
-				continue
-			}
-			// need to collect all records from pulse
-			jetDrops := new(types.PlatformJetDrops)
-
-			// Get records from the stream
-			for {
-				if m.needStop() {
-					closeStream(ctx, stream)
-					return
-				}
-				resp, err := stream.Recv()
-
-				if yes := isEOF(ctx, err, stream); yes {
-					//todo: batchSize
-					m.mainJetDropsChan <- jetDrops
-					break
-				}
-				logIfErrorReceived(ctx, err, m.request)
-
-				if resp.ShouldIterateFrom != nil {
-					m.request.PulseNumber = *resp.ShouldIterateFrom
-					receivedPulseNumber = m.request.PulseNumber.AsUint32()
-					break
-				}
-
-				// save the last pulse for future requests
-				m.request.RecordNumber = resp.RecordNumber
-				m.request.PulseNumber = resp.Record.ID.Pulse()
-				receivedPulseNumber = m.request.PulseNumber.AsUint32()
-
-				// collect all records by PulseNumber
-				if receivedPulseNumber == lastPulseNumber {
-					jetDrops.Records = append(jetDrops.Records, resp)
-					continue
-				}
-
-				lastPulseNumber = receivedPulseNumber
-
-				m.mainJetDropsChan <- jetDrops
-				// zeroing variable which collecting jetDrops
-				jetDrops = new(types.PlatformJetDrops)
-				// don't forget to save the last data
-				jetDrops.Records = append(jetDrops.Records, resp)
-			}
-		}
-	}()
+	m.getJetDrops(ctx, m.request, 0, math.MaxUint32, false)
 }
 
 func logGRPCError(ctx context.Context, err error) {
