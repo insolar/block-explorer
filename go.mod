@@ -10,6 +10,7 @@ require (
 	github.com/insolar/assured-ledger/ledger-core/v2 v2.0.0-20200512113104-4973d6ba44e9
 	github.com/insolar/insconfig v0.0.0-20200430133349-77f6f1624abf
 	github.com/insolar/insolar v1.5.2
+	github.com/insolar/spec-insolar-block-explorer-api v0.0.0-20200529093144-0dd18625b49a
 	github.com/jinzhu/gorm v1.9.12
 	github.com/ory/dockertest/v3 v3.5.2
 	github.com/ory/go-acc v0.2.1 // indirect
