@@ -32,7 +32,7 @@ func CreateJetDropCanonical(records []types.Record) types.JetDrop {
 // CreateRecordCanonical returns generated record
 func CreateRecordCanonical() types.Record {
 	return types.Record{
-		Type:                0,
+		Type:                types.STATE,
 		Ref:                 gen.Reference().Bytes(),
 		ObjectReference:     gen.Reference().Bytes(),
 		PrototypeReference:  gen.Reference().Bytes(),
