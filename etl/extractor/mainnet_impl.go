@@ -10,6 +10,7 @@ import (
 	"io"
 	"math"
 	"sync"
+	"time"
 
 	"github.com/insolar/block-explorer/etl/types"
 	"github.com/insolar/block-explorer/instrumentation/belogger"
@@ -17,6 +18,8 @@ import (
 	"github.com/insolar/insolar/ledger/heavy/exporter"
 	"github.com/pkg/errors"
 )
+
+const pulseDelta = 10
 
 type MainNetExtractor struct {
 	stopSignal     chan bool
@@ -55,7 +58,7 @@ func (m *MainNetExtractor) LoadJetDrops(ctx context.Context, fromPulseNumber int
 	}
 
 	request := &exporter.GetRecords{
-		Count:        100,
+		Count:        m.request.Count,
 		PulseNumber:  insolar.PulseNumber(fromPulseNumber),
 		RecordNumber: 0,
 	}
@@ -72,13 +75,14 @@ func (m *MainNetExtractor) getJetDrops(ctx context.Context, request *exporter.Ge
 
 	go func() {
 		logger := belogger.FromContext(ctx)
+		// need to collect all records from pulse
+		jetDrops := new(types.PlatformJetDrops)
 		for {
 			if m.needStop() {
 				return
 			}
 
-			log := logger.WithField("request_pulse_number", request.PulseNumber)
-			log.Debug("Data request: ", request)
+			var log = logger.WithField("request_pulse_number", request.PulseNumber)
 			stream, err := client.Export(ctx, request)
 
 			if err != nil {
@@ -86,8 +90,6 @@ func (m *MainNetExtractor) getJetDrops(ctx context.Context, request *exporter.Ge
 				continue
 			}
 
-			// need to collect all records from pulse
-			jetDrops := new(types.PlatformJetDrops)
 			// Get records from the stream
 			for {
 				if m.needStop() {
@@ -96,16 +98,21 @@ func (m *MainNetExtractor) getJetDrops(ctx context.Context, request *exporter.Ge
 				}
 
 				resp, err := stream.Recv()
-				if yes := isEOF(ctx, err, stream); yes {
-					//todo: batchSize
-					m.mainJetDropsChan <- jetDrops
+				if yes := isEOF(ctx, err); yes {
+					// that means we have received all records in the batchSize
 					break
 				}
 				logIfErrorReceived(ctx, err, request)
 
 				if resp.ShouldIterateFrom != nil {
+					if receivedPulseNumber == resp.ShouldIterateFrom.AsUint32() {
+						log.Warnf("no data in the pulse. waiting for pulse will be changed. sleep %v", pulseDelta)
+						time.Sleep(time.Second * pulseDelta)
+					}
 					request.PulseNumber = *resp.ShouldIterateFrom
+					request.RecordNumber = 0
 					receivedPulseNumber = request.PulseNumber.AsUint32()
+					log.Debugf("jump to pulse number: %v", receivedPulseNumber)
 					break
 				}
 
@@ -161,10 +168,9 @@ func logIfErrorReceived(ctx context.Context, err error, request interface{}) {
 	}
 }
 
-func isEOF(ctx context.Context, err error, stream exporter.RecordExporter_ExportClient) bool {
+func isEOF(ctx context.Context, err error) bool {
 	if err == io.EOF {
 		belogger.FromContext(ctx).Debug("EOF received, quit")
-		closeStream(ctx, stream)
 		return true
 	}
 	return false
