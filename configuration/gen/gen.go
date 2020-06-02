@@ -20,6 +20,7 @@ func main() {
 	configs := map[string]interface{}{
 		".artifacts/block-explorer.yaml": configuration.BlockExplorer{},
 		".artifacts/migrate.yaml":        configuration.DB{},
+		".artifacts/api.yaml":            configuration.API{},
 	}
 
 	log := belogger.FromContext(context.Background())
