@@ -103,6 +103,7 @@ func serialize(o interface{}) ([]byte, error) {
 	return data, errors.Wrap(err, "[ Serialize ]")
 }
 
+// sortRecords sorts state records for every object in order of change
 func sortRecords(records []types.Record) ([]types.Record, error) {
 	lenBefore := len(records)
 	recordsByObjAndPrevRef, recordsByObjAndRef, sortedRecords := initRecordsMapsByObj(records)
@@ -141,7 +142,7 @@ func sortRecords(records []types.Record) ([]types.Record, error) {
 	}
 	lenAfter := len(sortedRecords)
 	if lenBefore != lenAfter {
-		return nil, errors.Errorf("Number of records before sorting (%d) changes after (%d)", lenAfter, lenBefore)
+		return nil, errors.Errorf("Number of records before sorting (%d) changes after (%d)", lenBefore, lenAfter)
 	}
 
 	return sortedRecords, nil
@@ -167,14 +168,15 @@ func initRecordsMapsByObj(records []types.Record) (
 			}
 		}
 		recordsByObjAndRef[restoreInsolarID(r.ObjectReference)][restoreInsolarID(r.Ref)] = r
-		if !bytes.Equal(r.PrevRecordReference, []byte{}) {
-			recordsByObjAndPrevRef[restoreInsolarID(r.ObjectReference)][restoreInsolarID(r.PrevRecordReference)] = r
-		}
+		recordsByObjAndPrevRef[restoreInsolarID(r.ObjectReference)][restoreInsolarID(r.PrevRecordReference)] = r
 	}
 	return recordsByObjAndPrevRef, recordsByObjAndRef, notStateRecords
 }
 
 func restoreInsolarID(b []byte) string {
+	if bytes.Equal(b, []byte{}) {
+		b = nil
+	}
 	return insolar.NewIDFromBytes(b).String()
 }
 

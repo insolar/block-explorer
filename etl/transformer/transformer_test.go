@@ -79,6 +79,33 @@ func TestTransform_sortRecords(t *testing.T) {
 	require.True(t, assert.ObjectsAreEqual(expectedResult1, result) || assert.ObjectsAreEqual(expectedResult2, result))
 }
 
+func TestTransform_sortRecords_HeadPrevIsEmpty(t *testing.T) {
+	firstObj := gen.Reference().Bytes()
+	record1 := testutils.CreateRecordCanonical()
+	record1.ObjectReference = firstObj
+	record3 := testutils.CreateRecordCanonical()
+	record3.ObjectReference = firstObj
+	record4RequestType := testutils.CreateRecordCanonical()
+	record4RequestType.Type = types.REQUEST
+	record4RequestType.ObjectReference = firstObj
+	record5 := testutils.CreateRecordCanonical()
+	record5.ObjectReference = firstObj
+	record6 := testutils.CreateRecordCanonical()
+	record6.ObjectReference = firstObj
+
+	// make lifeline: 5 <- 3 <- 6 <- 1
+	record5.PrevRecordReference = make([]byte, 0)
+	record1.PrevRecordReference = record6.Ref
+	record6.PrevRecordReference = record3.Ref
+	record3.PrevRecordReference = record5.Ref
+
+	expectedResult := []types.Record{record4RequestType, record5, record3, record6, record1}
+
+	result, err := sortRecords([]types.Record{record1, record3, record4RequestType, record5, record6})
+	require.NoError(t, err)
+	require.Equal(t, expectedResult, result)
+}
+
 func TestTransform_sortRecords_ErrorNoHead(t *testing.T) {
 	firstObj := gen.Reference().Bytes()
 	record1 := testutils.CreateRecordCanonical()
