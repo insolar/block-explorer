@@ -8,7 +8,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"log"
 	"os"
 	"os/signal"
 	"syscall"
@@ -43,18 +42,26 @@ func main() {
 		panic(err)
 	}
 	fmt.Println("Starts with configuration:\n", insConfigurator.ToYaml(cfg))
-	ctx := context.Background()
-	ctx, logger := belogger.InitLogger(ctx, cfg.Log, "block_explorer")
+	ctx, logger := belogger.InitLogger(context.Background(), cfg.Log, "block_explorer")
 	logger.Info("Config and logger were initialized")
 
 	client, err := connection.NewGrpcClientConnection(ctx, cfg.Replicator)
 	if err != nil {
-		// TODO: change to logger after PENV-279
-		log.Fatal("cannot connect to GRPC server", err)
+		logger.Fatal("cannot connect to GRPC server", err)
 	}
 	defer client.GetGRPCConn().Close()
 
-	extractor := extractor.NewMainNetExtractor(100, exporter.NewRecordExporterClient(client.GetGRPCConn()))
+	extractor := extractor.NewPlatformExtractor(100, exporter.NewRecordExporterClient(client.GetGRPCConn()))
+	err = extractor.Start(ctx)
+	if err != nil {
+		logger.Fatal("cannot start extractor", err)
+	}
+	defer func() {
+		err := extractor.Stop(ctx)
+		if err != nil {
+			logger.Fatal("cannot stop extractor", err)
+		}
+	}()
 
 	trn := transformer.NewMainNetTransformer(extractor.GetJetDrops(ctx))
 	err = trn.Start(ctx)

@@ -18,3 +18,7 @@ type recordStream struct {
 func (s recordStream) Recv() (*exporter.Record, error) {
 	return s.recvFunc()
 }
+
+func (s recordStream) CloseSend() error {
+	return nil
+}
