@@ -17,17 +17,22 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-
-  gbe:
-    container_name: gbe
+  base:
     build:
       context: ./
       dockerfile: Dockerfile
-    image: generic-block-explorer
+    image: generic-block-explorer:latest
+    command:
+      - /bin/bash
+      - -c
+      - |
+        echo ok
+  gbe:
+    container_name: gbe
+    image: generic-block-explorer:latest
     depends_on:
       - postgres
-    ports:
-      - 8080:8080
+      - base
     environment:
       BLOCK_EXPLORER_REPLICATOR_ADDR: 'docker.for.mac.localhost:5678'
       BLOCK_EXPLORER_DB_URL: 'postgres://postgres:secret@postgres:5432/postgres?sslmode=disable'
@@ -46,5 +51,29 @@ services:
         printenv
         ls -al
         ./migrate --config=/opt/app/config/migrate.yaml
-        ./block-explorer     --config=/opt/app/config/block-explorer.yaml
+        ./block-explorer --config=/opt/app/config/block-explorer.yaml
 
+  api:
+    container_name: api
+    image: generic-block-explorer:latest
+    depends_on:
+      - postgres
+      - base
+    ports:
+      - 8080:8080
+    environment:
+      BLOCK_EXPLORER_API_DB_URL: 'postgres://postgres:secret@postgres:5432/postgres?sslmode=disable'
+      BLOCK_EXPLORER_API_LISTEN: ':8080'
+    network_mode: "bridge"
+    links:
+      - postgres
+    volumes:
+      - .artifacts/api.yaml:/opt/app/config/api.yaml
+    command:
+      - /bin/bash
+      - -c
+      - |
+        sleep 15
+        printenv
+        ls -al
+        ./api --config=/opt/app/config/api.yaml
