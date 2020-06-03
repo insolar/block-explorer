@@ -19,7 +19,6 @@ import (
 	"github.com/insolar/block-explorer/testutils"
 	betest "github.com/insolar/block-explorer/testutils/betestsetup"
 	"github.com/insolar/block-explorer/testutils/connectionmanager"
-	"github.com/insolar/insolar/ledger/heavy/exporter"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
@@ -96,47 +95,6 @@ func (a *dbIntegrationSuite) TestIntegrationWithDb_GetRecords() {
 		require.NotEmpty(a.T(), record, "Record is empty")
 		require.Equal(a.T(), modelRef, record.Reference, "Reference not equal")
 	}
-}
-
-func (a *dbIntegrationSuite) TestIntegrationWithDb_GetJetDrops() {
-	a.T().Skip()
-	recordsCount := 10
-	f := testutils.GenerateRecordsWithDifferencePulses(2, recordsCount)
-	totalCount := recordsCount * 2
-	expRecords := make([]*exporter.Record, 0)
-	for i := 0; i < totalCount; i++ {
-		r, _ := f()
-		expRecords = append(expRecords, r)
-	}
-
-	stream, err := a.c.ImporterClient.Import(context.Background())
-	require.NoError(a.T(), err)
-	for _, record := range expRecords {
-		if err := stream.Send(record); err != nil {
-			if err == io.EOF {
-				break
-			}
-			a.T().Fatal("Error sending to stream", err)
-		}
-	}
-	reply, err := stream.CloseAndRecv()
-	require.NoError(a.T(), err)
-	require.True(a.T(), reply.Ok)
-	require.Len(a.T(), a.c.Importer.GetSavedRecords(), totalCount)
-
-	a.waitRecordsCount(totalCount)
-
-	// TODO: change it to '{PulseNumber: int(pulse)}' at PENV-212
-	jetDropsDB, err := a.be.Storage().GetJetDrops(models.Pulse{PulseNumber: 1})
-	require.NoError(a.T(), err)
-	require.Len(a.T(), jetDropsDB, 2, "jetDrops count in db not as expected")
-
-	// TODO idx 2 or what
-	prefixFirst := expRecords[0].Record.JetID.Prefix()
-	prefixSecond := expRecords[2].Record.JetID.Prefix()
-	jds := [][]byte{jetDropsDB[0].JetID, jetDropsDB[1].JetID}
-	require.Contains(a.T(), jds, prefixFirst)
-	require.Contains(a.T(), jds, prefixSecond)
 }
 
 func (a *dbIntegrationSuite) waitRecordsCount(expCount int) {
