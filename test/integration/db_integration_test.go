@@ -16,9 +16,11 @@ import (
 	"github.com/insolar/block-explorer/etl/models"
 	"github.com/insolar/block-explorer/etl/transformer"
 	"github.com/insolar/block-explorer/etl/types"
+	"github.com/insolar/block-explorer/test/heavymock"
 	"github.com/insolar/block-explorer/testutils"
 	betest "github.com/insolar/block-explorer/testutils/betestsetup"
 	"github.com/insolar/block-explorer/testutils/connectionmanager"
+	"github.com/insolar/insolar/ledger/heavy/exporter"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
@@ -95,6 +97,32 @@ func (a *dbIntegrationSuite) TestIntegrationWithDb_GetRecords() {
 		require.NotEmpty(a.T(), record, "Record is empty")
 		require.Equal(a.T(), modelRef, record.Reference, "Reference not equal")
 	}
+}
+
+func (a *dbIntegrationSuite) TestIntegrationWithDb_GetJetDrops() {
+	recordsCount := 2
+	pulses := 2
+	expRecordsJet1 := testutils.GenerateRecordsFromOneJetSilence(pulses, recordsCount)
+	expRecordsJet2 := testutils.GenerateRecordsFromOneJetSilence(pulses, recordsCount)
+	expRecords := make([]*exporter.Record, 0)
+	expRecords = append(expRecords, expRecordsJet1...)
+	expRecords = append(expRecords, expRecordsJet2...)
+
+	err := heavymock.ImportRecords(a.c.ImporterClient, expRecords)
+	require.NoError(a.T(), err)
+
+	a.waitRecordsCount(len(expRecords))
+
+	// TODO: change it to '{PulseNumber: int(pulse)}' at PENV-212
+	jetDropsDB, err := a.be.Storage().GetJetDrops(models.Pulse{PulseNumber: 1})
+	require.NoError(a.T(), err)
+	require.Len(a.T(), jetDropsDB, 2, "jetDrops count in db not as expected")
+
+	prefixFirst := expRecordsJet1[0].Record.JetID.Prefix()
+	prefixSecond := expRecordsJet1[0].Record.JetID.Prefix()
+	jds := [][]byte{jetDropsDB[0].JetID, jetDropsDB[1].JetID}
+	require.Contains(a.T(), jds, prefixFirst)
+	require.Contains(a.T(), jds, prefixSecond)
 }
 
 func (a *dbIntegrationSuite) waitRecordsCount(expCount int) {

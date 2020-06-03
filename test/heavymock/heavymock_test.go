@@ -53,6 +53,5 @@ func TestConnect(t *testing.T) {
 		}
 		require.NoError(t, err, "Err listening stream")
 		require.True(t, SimpleRecord.Equal(record), "Incorrect response message")
-		t.Logf("received record: %v", record)
 	}
 }

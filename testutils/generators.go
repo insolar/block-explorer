@@ -61,8 +61,31 @@ func GenerateRecords(batchSize int) func() (record *exporter.Record, e error) {
 	return generateRecords
 }
 
+func GenerateRecordsWithDifferencePulsesSilence(differentPulseSize, recordCount int) []*exporter.Record {
+	record := GenerateRecordsWithDifferencePulses(differentPulseSize, recordCount)
+	result := make([]*exporter.Record, 0)
+	for i := 0; i < differentPulseSize*recordCount; i++ {
+		r, err := record()
+		if err != nil {
+			continue
+		}
+		result = append(result, r)
+	}
+	return result
+}
+
+// GenerateRecordsFromPulseSilence returns new generated records without errors
+func GenerateRecordsFromOneJetSilence(differentPulseSize, recordCount int) []*exporter.Record {
+	records := GenerateRecordsWithDifferencePulsesSilence(differentPulseSize, recordCount)
+	jetID := GenerateUniqueJetID()
+	for _, r := range records {
+		r.Record.JetID = jetID
+	}
+	return records
+}
+
 // GenerateRecordsWithDifferencePulses generates records with recordCount for each pulse
-func GenerateRecordsWithDifferencePulses(differentPulseSize int, recordCount int) func() (record *exporter.Record, e error) {
+func GenerateRecordsWithDifferencePulses(differentPulseSize, recordCount int) func() (record *exporter.Record, e error) {
 	var mu = &sync.Mutex{}
 	i := 0
 	localRecordCount := 0
