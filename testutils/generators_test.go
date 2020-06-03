@@ -8,6 +8,7 @@
 package testutils
 
 import (
+	"fmt"
 	"io"
 	"testing"
 
@@ -51,4 +52,41 @@ func TestGenerateUniqueJetIDFunction(t *testing.T) {
 	require.NotEqual(t, idFirst, idSecond)
 	require.NotEmpty(t, idSecond)
 	require.Len(t, uniqueJetID, ids+2)
+}
+
+func TestGenerateRecordsWithDifferencePulses(t *testing.T) {
+	tests := []struct {
+		differentPulseSize int
+		recordCount        int
+	}{
+		{
+			differentPulseSize: 1,
+			recordCount:        1,
+		}, {
+			differentPulseSize: 1,
+			recordCount:        2,
+		}, {
+			differentPulseSize: 2,
+			recordCount:        1,
+		}, {
+			differentPulseSize: 2,
+			recordCount:        2,
+		},
+	}
+	for _, test := range tests {
+		t.Run(fmt.Sprintf("pulse-size=%d,record-count=%d", test.differentPulseSize, test.recordCount), func(t *testing.T) {
+			fn := GenerateRecordsWithDifferencePulses(test.differentPulseSize, test.recordCount)
+			lastPn := uint32(0)
+			for i := 0; i < test.differentPulseSize*test.recordCount+1; i++ {
+				record, _ := fn()
+				require.NotNil(t, record)
+				pn := record.Record.ID.Pulse().AsUint32()
+				require.GreaterOrEqual(t, pn, lastPn)
+				lastPn = pn
+			}
+
+			_, err := fn()
+			require.EqualError(t, err, io.EOF.Error())
+		})
+	}
 }

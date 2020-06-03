@@ -31,7 +31,7 @@ func TestConnect(t *testing.T) {
 		MaxTransportMsg: 100500,
 	}
 
-	// initialization MainNet connection
+	// initialization Platform connection
 	ctx := context.Background()
 	client, err := connection.NewGrpcClientConnection(ctx, cfg)
 	require.NoError(t, err)

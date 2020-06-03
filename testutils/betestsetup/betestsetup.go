@@ -23,7 +23,7 @@ type BlockExplorerTestSetUp struct {
 	ExporterClient exporter.RecordExporterClient
 	DB             *gorm.DB
 
-	extr *extractor.MainNetExtractor
+	extr *extractor.PlatformExtractor
 	cont *controller.Controller
 	proc *processor.Processor
 	trsf *transformer.MainNetTransformer
@@ -41,10 +41,16 @@ func NewBlockExplorer(exporterClient exporter.RecordExporterClient, db *gorm.DB)
 // start Extractor, Transformer, Controller and Processor
 func (b *BlockExplorerTestSetUp) Start() error {
 	b.ctx = context.Background()
-	b.extr = extractor.NewMainNetExtractor(100, b.ExporterClient)
 
+	b.extr = extractor.NewPlatformExtractor(100, b.ExporterClient)
+	err := b.extr.Start(b.ctx)
+	if err != nil {
+		return err
+	}
+
+	// transformerJdChan := make(chan *types.PlatformJetDrops)
 	b.trsf = transformer.NewMainNetTransformer(b.extr.GetJetDrops(b.ctx))
-	err := b.trsf.Start(b.ctx)
+	err = b.trsf.Start(b.ctx)
 	if err != nil {
 		return err
 	}
@@ -65,6 +71,9 @@ func (b *BlockExplorerTestSetUp) Start() error {
 
 // Stop Transformer and Processor
 func (b *BlockExplorerTestSetUp) Stop() error {
+	if err := b.extr.Stop(b.ctx); err != nil {
+		return err
+	}
 	if err := b.trsf.Stop(b.ctx); err != nil {
 		return err
 	}
@@ -74,7 +83,7 @@ func (b *BlockExplorerTestSetUp) Stop() error {
 	return nil
 }
 
-func (b *BlockExplorerTestSetUp) Extractor() *extractor.MainNetExtractor {
+func (b *BlockExplorerTestSetUp) Extractor() *extractor.PlatformExtractor {
 	return b.extr
 }
 

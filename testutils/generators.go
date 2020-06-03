@@ -26,11 +26,6 @@ func init() {
 // GenerateRecords returns a function for generating record with error
 func GenerateRecords(batchSize int) func() (record *exporter.Record, e error) {
 	pn := gen.PulseNumber()
-	return GenerateRecordsFromPulse(batchSize, pn)
-}
-
-// GenerateRecordsFromPulse returns a function for generating record with error
-func GenerateRecordsFromPulse(batchSize int, pulse insolar.PulseNumber) func() (record *exporter.Record, e error) {
 	cnt := 0
 	eof := true
 	randNum := func() int64 {
@@ -53,12 +48,12 @@ func GenerateRecordsFromPulse(batchSize int, pulse insolar.PulseNumber) func() (
 					Union:     nil,
 					Signature: []byte{0, 1, 2},
 				},
-				ID:        gen.IDWithPulse(pulse),
+				ID:        gen.IDWithPulse(pn),
 				ObjectID:  gen.ID(),
 				JetID:     GenerateUniqueJetID(),
 				Signature: []byte{0, 1, 2},
 			},
-			ShouldIterateFrom: &pulse,
+			ShouldIterateFrom: &pn,
 			Polymorph:         uint32(randNum()),
 		}, nil
 	}
@@ -66,33 +61,47 @@ func GenerateRecordsFromPulse(batchSize int, pulse insolar.PulseNumber) func() (
 	return generateRecords
 }
 
+// GenerateRecordsWithDifferencePulses generates records with recordCount for each pulse
+func GenerateRecordsWithDifferencePulses(differentPulseSize int, recordCount int) func() (record *exporter.Record, e error) {
+	var mu = &sync.Mutex{}
+	i := 0
+	localRecordCount := 0
+	var prevRecord *exporter.Record = GenerateRecordsSilence(1)[0]
+	fn := func() (*exporter.Record, error) {
+		mu.Lock()
+		defer mu.Unlock()
+		if i < differentPulseSize {
+
+			record := GenerateRecordsSilence(1)[0]
+			record.ShouldIterateFrom = nil
+			if localRecordCount < recordCount {
+				localRecordCount++
+				record.Record.ID = gen.IDWithPulse(prevRecord.Record.ID.Pulse())
+				prevRecord = record
+			} else {
+				i++
+				localRecordCount = 1
+				record.Record.ID = gen.IDWithPulse(prevRecord.Record.ID.Pulse() + 10)
+				prevRecord = record
+			}
+			return record, nil
+		}
+		return nil, io.EOF
+	}
+	return fn
+}
+
 // GenerateRecordsSilence returns new generated records without errors
 func GenerateRecordsSilence(count int) []*exporter.Record {
-	pulse := gen.PulseNumber()
-	return GenerateRecordsFromPulseSilence(count, pulse)
-}
-
-// GenerateRecordsFromPulseSilence returns new generated records without errors
-func GenerateRecordsFromOneJetSilence(count int, pulse insolar.PulseNumber) []*exporter.Record {
-	records := GenerateRecordsFromPulseSilence(count, pulse)
-	jetID := GenerateUniqueJetID()
-	for _, r := range records {
-		r.Record.JetID = jetID
-	}
-	return records
-}
-
-// GenerateRecordsFromPulseSilence returns new generated records without errors
-func GenerateRecordsFromPulseSilence(count int, pulse insolar.PulseNumber) []*exporter.Record {
-	res := make([]*exporter.Record, 0)
-	f := GenerateRecordsFromPulse(count, pulse)
-	for count > 0 {
+	res := make([]*exporter.Record, count)
+	f := GenerateRecords(count)
+	for i := 0; i < count; {
 		record, err := f()
 		if err != nil {
 			continue
 		}
-		res = append(res, record)
-		count--
+		res[i] = record
+		i++
 	}
 	return res
 }

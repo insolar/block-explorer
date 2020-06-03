@@ -9,8 +9,8 @@ package extractor
 
 import (
 	"context"
-	"fmt"
 	"testing"
+	"time"
 
 	"github.com/insolar/block-explorer/configuration"
 	"github.com/insolar/block-explorer/etl/connection"
@@ -21,6 +21,7 @@ import (
 )
 
 var localBatchSize = 2
+var localPulseSize = 2
 
 func TestExporterIsWorking(t *testing.T) {
 	ctx := context.Background()
@@ -35,22 +36,31 @@ func TestExporterIsWorking(t *testing.T) {
 		MaxTransportMsg: 100500,
 	}
 
-	// initialization MainNet connection
+	// initialization Platform connection
 	client, err := connection.NewGrpcClientConnection(ctx, cfg)
 	require.NoError(t, err)
 	defer client.GetGRPCConn().Close()
 
 	g := &gclient{}
-	extractor := NewMainNetExtractor(uint32(localBatchSize), g)
+	extractor := NewPlatformExtractor(uint32(localBatchSize), g)
+	err = extractor.Start(ctx)
+	require.NoError(t, err)
+	defer extractor.Stop(ctx)
 	jetDrops := extractor.GetJetDrops(ctx)
 
-	for i := 0; i < localBatchSize; i++ {
+	for i := 0; i < localPulseSize*localBatchSize; i++ {
 		select {
 		case jd := <-jetDrops:
+			// when i ∈ [0,1) we received records with some pulse
+			// when i ≥ 2 we received records with different pulse, now records from i ∈ [0,1) should be returned
+			if i < 1 {
+				continue
+			}
+
+			t.Logf("i=%d, r=%v", i, jd)
 			require.NotEmpty(t, jd.Records)
-			t.Log(fmt.Sprintf("RecordNumber=%d, Pn=%d\n\n", jd.Records[0].RecordNumber, jd.Records[0].GetRecord().ID))
-			//todo: replace to logger
-			// logger.Debug("RecordNumber=%d, Pn=%d\n\n", jd.Records[0].RecordNumber, jd.Records[0].GetRecord().ID)
+		case <-time.After(time.Millisecond * 100):
+			t.Fatal("chan receive timeout ")
 		}
 	}
 }
@@ -65,8 +75,9 @@ type gclient struct {
 }
 
 func (c *gclient) Export(ctx context.Context, in *exporter.GetRecords, opts ...grpc.CallOption) (exporter.RecordExporter_ExportClient, error) {
+	withDifferencePulses := testutils.GenerateRecordsWithDifferencePulses(localPulseSize, localBatchSize)
 	stream := recordStream{
-		recvFunc: testutils.GenerateRecords(localBatchSize),
+		recvFunc: withDifferencePulses,
 	}
 	return stream, nil
 }
