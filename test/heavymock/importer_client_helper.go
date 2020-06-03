@@ -19,8 +19,7 @@ func ImportRecords(client HeavymockImporterClient, records []*exporter.Record) e
 		return err
 	}
 
-	for i, record := range records {
-		print(i)
+	for _, record := range records {
 		if err := stream.Send(record); err != nil {
 			if err == io.EOF {
 				break
