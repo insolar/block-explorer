@@ -102,9 +102,7 @@ func (a *receiveRecordsSuite) TestReceiveRecords_sendAndReceiveWithImporter() {
 	require.NoError(a.T(), err)
 	require.True(a.T(), reply.Ok)
 
-	request := &exporter.GetRecords{
-		Polymorph: heavymock.MagicPolymorphExport,
-	}
+	request := &exporter.GetRecords{}
 
 	expStream, err := a.c.ExporterClient.Export(context.Background(), request)
 	require.NoError(a.T(), err, "Error when sending export request")

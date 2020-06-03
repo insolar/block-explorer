@@ -43,3 +43,9 @@ func (s *ImporterServer) GetSavedRecords() []exporter.Record {
 	defer s.mux.Unlock()
 	return s.savedRecords
 }
+
+func (s *ImporterServer) Cleanup() {
+	s.mux.Lock()
+	defer s.mux.Unlock()
+	s.savedRecords = make([]exporter.Record, 0)
+}
