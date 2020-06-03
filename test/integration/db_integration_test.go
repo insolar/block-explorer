@@ -62,7 +62,7 @@ func (a *dbIntegrationSuite) TestGetRecordsFromDb() {
 	require.Len(a.T(), a.c.Importer.GetSavedRecords(), recordsCount) // because recordsWithDifferencePulses generates 3 records
 
 	ctx := context.Background()
-	extractorMn := extractor.NewMainNetExtractor(100, a.c.ExporterClient)
+	extractorMn := extractor.NewPlatformExtractor(100, a.c.ExporterClient)
 	err = extractorMn.Start(ctx)
 	require.NoError(a.T(), err)
 	defer extractorMn.Stop(ctx)

@@ -36,13 +36,13 @@ func TestExporterIsWorking(t *testing.T) {
 		MaxTransportMsg: 100500,
 	}
 
-	// initialization MainNet connection
+	// initialization Platform connection
 	client, err := connection.NewGrpcClientConnection(ctx, cfg)
 	require.NoError(t, err)
 	defer client.GetGRPCConn().Close()
 
 	g := &gclient{}
-	extractor := NewMainNetExtractor(uint32(localBatchSize), g)
+	extractor := NewPlatformExtractor(uint32(localBatchSize), g)
 	err = extractor.Start(ctx)
 	require.NoError(t, err)
 	defer extractor.Stop(ctx)

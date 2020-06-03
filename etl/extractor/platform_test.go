@@ -40,7 +40,7 @@ func TestGetJetDrops(t *testing.T) {
 			return stream, nil
 		})
 
-	extractor := NewMainNetExtractor(uint32(pulseCount), recordClient)
+	extractor := NewPlatformExtractor(uint32(pulseCount), recordClient)
 	err = extractor.Start(ctx)
 	require.NoError(t, err)
 	defer extractor.Stop(ctx)
@@ -110,7 +110,7 @@ func TestLoadJetDrops_returnsRecordByPulses(t *testing.T) {
 					return stream, nil
 				})
 
-			extractor := NewMainNetExtractor(uint32(test.recordCount), recordClient)
+			extractor := NewPlatformExtractor(uint32(test.recordCount), recordClient)
 			err = extractor.LoadJetDrops(ctx, startPulseNumber, startPulseNumber+10*test.differentPulseCount)
 			require.NoError(t, err)
 			// we are waiting only 2 times, because of 2 different pulses
@@ -141,7 +141,7 @@ func TestLoadJetDrops_fromPulseNumberCannotBeNegative(t *testing.T) {
 	mc := minimock.NewController(t)
 	recordClient := mock.NewRecordExporterClientMock(mc)
 
-	extractor := NewMainNetExtractor(1, recordClient)
+	extractor := NewPlatformExtractor(1, recordClient)
 	err := extractor.LoadJetDrops(ctx, -1, 10)
 	require.EqualError(t, err, "fromPulseNumber cannot be negative")
 }
@@ -151,7 +151,7 @@ func TestLoadJetDrops_toPulseNumberCannotBeLess1(t *testing.T) {
 	mc := minimock.NewController(t)
 	recordClient := mock.NewRecordExporterClientMock(mc)
 
-	extractor := NewMainNetExtractor(1, recordClient)
+	extractor := NewPlatformExtractor(1, recordClient)
 	err := extractor.LoadJetDrops(ctx, 1, 0)
 	require.EqualError(t, err, "toPulseNumber cannot be less than 1")
 }
@@ -161,7 +161,7 @@ func TestLoadJetDrops_toPulseNumberShouldBeGreater(t *testing.T) {
 	mc := minimock.NewController(t)
 	recordClient := mock.NewRecordExporterClientMock(mc)
 
-	extractor := NewMainNetExtractor(1, recordClient)
+	extractor := NewPlatformExtractor(1, recordClient)
 	err := extractor.LoadJetDrops(ctx, 10, 9)
 	require.EqualError(t, err, "fromPulseNumber cannot be greater than toPulseNumber")
 }

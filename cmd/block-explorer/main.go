@@ -51,7 +51,7 @@ func main() {
 	}
 	defer client.GetGRPCConn().Close()
 
-	extractor := extractor.NewMainNetExtractor(100, exporter.NewRecordExporterClient(client.GetGRPCConn()))
+	extractor := extractor.NewPlatformExtractor(100, exporter.NewRecordExporterClient(client.GetGRPCConn()))
 	err = extractor.Start(ctx)
 	if err != nil {
 		logger.Fatal("cannot start extractor", err)

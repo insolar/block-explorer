@@ -21,7 +21,7 @@ import (
 
 const pulseDelta = 10
 
-type MainNetExtractor struct {
+type PlatformExtractor struct {
 	stopSignal     chan bool
 	hasStarted     bool
 	startStopMutes *sync.Mutex
@@ -31,9 +31,9 @@ type MainNetExtractor struct {
 	mainJetDropsChan chan *types.PlatformJetDrops
 }
 
-func NewMainNetExtractor(batchSize uint32, exporterClient exporter.RecordExporterClient) *MainNetExtractor {
+func NewPlatformExtractor(batchSize uint32, exporterClient exporter.RecordExporterClient) *PlatformExtractor {
 	request := &exporter.GetRecords{Count: batchSize}
-	return &MainNetExtractor{
+	return &PlatformExtractor{
 		stopSignal:       make(chan bool, 1),
 		startStopMutes:   &sync.Mutex{},
 		client:           exporterClient,
@@ -42,11 +42,11 @@ func NewMainNetExtractor(batchSize uint32, exporterClient exporter.RecordExporte
 	}
 }
 
-func (m *MainNetExtractor) GetJetDrops(ctx context.Context) <-chan *types.PlatformJetDrops {
+func (m *PlatformExtractor) GetJetDrops(ctx context.Context) <-chan *types.PlatformJetDrops {
 	return m.mainJetDropsChan
 }
 
-func (m *MainNetExtractor) LoadJetDrops(ctx context.Context, fromPulseNumber int, toPulseNumber int) error {
+func (m *PlatformExtractor) LoadJetDrops(ctx context.Context, fromPulseNumber int, toPulseNumber int) error {
 	if fromPulseNumber < 0 {
 		return errors.New("fromPulseNumber cannot be negative")
 	}
@@ -66,7 +66,7 @@ func (m *MainNetExtractor) LoadJetDrops(ctx context.Context, fromPulseNumber int
 	return nil
 }
 
-func (m *MainNetExtractor) getJetDrops(ctx context.Context, request *exporter.GetRecords, fromPulseNumber int, toPulseNumber int, shouldReload bool) {
+func (m *PlatformExtractor) getJetDrops(ctx context.Context, request *exporter.GetRecords, fromPulseNumber int, toPulseNumber int, shouldReload bool) {
 	unsignedToPulseNumber := uint32(toPulseNumber)
 
 	client := m.client
@@ -146,7 +146,7 @@ func (m *MainNetExtractor) getJetDrops(ctx context.Context, request *exporter.Ge
 	}()
 }
 
-func (m *MainNetExtractor) getJetDropsContinuously(ctx context.Context) {
+func (m *PlatformExtractor) getJetDropsContinuously(ctx context.Context) {
 	// from pulse, 0 means start to get from pulse number 0
 	//todo: add pulse fetcher
 	m.request.PulseNumber = 0
@@ -185,18 +185,18 @@ func closeStream(ctx context.Context, stream exporter.RecordExporter_ExportClien
 	}
 }
 
-func (m *MainNetExtractor) Stop(ctx context.Context) error {
+func (m *PlatformExtractor) Stop(ctx context.Context) error {
 	m.startStopMutes.Lock()
 	defer m.startStopMutes.Unlock()
 	if m.hasStarted {
-		belogger.FromContext(ctx).Info("Stopping MainNet extractor...")
+		belogger.FromContext(ctx).Info("Stopping platform extractor...")
 		m.stopSignal <- true
 		m.hasStarted = false
 	}
 	return nil
 }
 
-func (m *MainNetExtractor) needStop() bool {
+func (m *PlatformExtractor) needStop() bool {
 	select {
 	case <-m.stopSignal:
 		return true
@@ -206,11 +206,11 @@ func (m *MainNetExtractor) needStop() bool {
 	return false
 }
 
-func (m *MainNetExtractor) Start(ctx context.Context) error {
+func (m *PlatformExtractor) Start(ctx context.Context) error {
 	m.startStopMutes.Lock()
 	defer m.startStopMutes.Unlock()
 	if !m.hasStarted {
-		belogger.FromContext(ctx).Info("Starting MainNet extractor...")
+		belogger.FromContext(ctx).Info("Starting platform extractor...")
 		m.getJetDropsContinuously(ctx)
 		m.hasStarted = true
 	}
