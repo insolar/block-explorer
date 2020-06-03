@@ -39,6 +39,5 @@ func (r *RecordExporter) Export(records *exporter.GetRecords, stream exporter.Re
 			return err
 		}
 	}
-	// r.importerServer.Cleanup()
 	return nil
 }

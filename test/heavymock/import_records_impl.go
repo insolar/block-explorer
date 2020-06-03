@@ -22,9 +22,13 @@ func NewHeavymockImporter() *ImporterServer {
 }
 
 func (s *ImporterServer) Import(stream HeavymockImporter_ImportServer) error {
+	s.mux.Lock()
+	defer s.mux.Unlock()
+	received := make([]exporter.Record, 0)
 	for {
 		record, err := stream.Recv()
 		if err == io.EOF {
+			s.savedRecords = received
 			return stream.SendAndClose(&Ok{
 				Ok: true,
 			})
@@ -32,9 +36,7 @@ func (s *ImporterServer) Import(stream HeavymockImporter_ImportServer) error {
 		if err != nil {
 			return err
 		}
-		s.mux.Lock()
-		s.savedRecords = append(s.savedRecords, *record)
-		s.mux.Unlock()
+		received = append(received, *record)
 	}
 }
 

@@ -65,10 +65,10 @@ func (a *dbIntegrationSuite) TestIntegrationWithDb_GetRecords() {
 	require.Len(a.T(), a.c.Importer.GetSavedRecords(), recordsCount)
 
 	ctx := context.Background()
-
 	jetDrops := a.be.Extractor().MainJetDropsChan
 	refs := make([]types.Reference, 0)
-	for i := 0; i < recordsCount; i++ {
+	counter := 0
+	for counter < recordsCount {
 		select {
 		case jd := <-jetDrops:
 			transform, err := transformer.Transform(ctx, jd)
@@ -79,6 +79,10 @@ func (a *dbIntegrationSuite) TestIntegrationWithDb_GetRecords() {
 			for _, t := range transform {
 				refs = append(refs, t.MainSection.Records[0].Ref)
 			}
+			counter++
+		case <-time.After(100 * time.Millisecond):
+			a.T().Fatalf("Timeout waiting for records: expected %v, got %v, saved in importer %v",
+				recordsCount, counter, a.c.Importer.GetSavedRecords())
 		}
 	}
 
