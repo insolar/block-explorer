@@ -48,7 +48,6 @@ func (b *BlockExplorerTestSetUp) Start() error {
 		return err
 	}
 
-	// transformerJdChan := make(chan *types.PlatformJetDrops)
 	b.trsf = transformer.NewMainNetTransformer(b.extr.GetJetDrops(b.ctx))
 	err = b.trsf.Start(b.ctx)
 	if err != nil {
