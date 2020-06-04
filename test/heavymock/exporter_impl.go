@@ -29,15 +29,16 @@ func NewRecordExporter(importerServer *ImporterServer) *RecordExporter {
 	}
 }
 
-func (r *RecordExporter) Export(records *exporter.GetRecords, stream exporter.RecordExporter_ExportServer) error {
+func (r *RecordExporter) Export(request *exporter.GetRecords, stream exporter.RecordExporter_ExportServer) error {
 	r.mux.Lock()
 	defer r.mux.Unlock()
-	savedRecords := r.importerServer.GetSavedRecords()
-	for _, r := range savedRecords {
+	records := r.importerServer.GetUnsentRecords()
+	for _, r := range records {
 		time.Sleep(recordSendingIntervalTimeout)
-		if err := stream.Send(&r); err != nil {
+		if err := stream.Send(r); err != nil {
 			return err
 		}
 	}
+	r.importerServer.MarkAsSent(records)
 	return nil
 }

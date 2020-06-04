@@ -43,17 +43,22 @@ func (a *dbIntegrationSuite) SetupTest() {
 func (a *dbIntegrationSuite) TearDownTest() {
 	err := a.be.Stop()
 	require.NoError(a.T(), err)
+	// TODO remove sleep after resolving https://insolar.atlassian.net/browse/PENV-343
+	time.Sleep(time.Second * 1)
 	a.c.Stop()
 }
 
 func (a *dbIntegrationSuite) TestIntegrationWithDb_GetRecords() {
-	recordsCount := 10
-	recordsWithDifferencePulses := testutils.GenerateRecordsWithDifferencePulses(recordsCount, 1)
+	pulsesNumber := 10
+	recordsInPulse := 1
+	recordsWithDifferencePulses := testutils.GenerateRecordsWithDifferencePulses(pulsesNumber, recordsInPulse)
 	stream, err := a.c.ImporterClient.Import(context.Background())
 	require.NoError(a.T(), err)
 
-	for i := 0; i < recordsCount; i++ {
+	records := make([]*exporter.Record, 0)
+	for i := 0; i < pulsesNumber; i++ {
 		record, _ := recordsWithDifferencePulses()
+		records = append(records, record)
 		if err := stream.Send(record); err != nil {
 			if err == io.EOF {
 				break
@@ -64,33 +69,38 @@ func (a *dbIntegrationSuite) TestIntegrationWithDb_GetRecords() {
 	reply, err := stream.CloseAndRecv()
 	require.NoError(a.T(), err)
 	require.True(a.T(), reply.Ok)
-	require.Len(a.T(), a.c.Importer.GetSavedRecords(), recordsCount) // because recordsWithDifferencePulses generates 3 records
+	require.Len(a.T(), records, pulsesNumber)
 
-	ctx := context.Background()
-	jetDrops := a.be.Extractor().GetJetDrops(ctx)
+	jetDrops := make([]types.PlatformJetDrops, 0)
+	for _, r := range records {
+		jetDrop := types.PlatformJetDrops{Records: []*exporter.Record{r}}
+		jetDrops = append(jetDrops, jetDrop)
+	}
+	require.Len(a.T(), jetDrops, pulsesNumber)
+
 	refs := make([]types.Reference, 0)
-	counter := 0
-	for counter < recordsCount {
-		select {
-		case jd := <-jetDrops:
-			transform, err := transformer.Transform(ctx, jd)
-			if err != nil {
-				a.T().Logf("error transforming record: %v", err)
-				return
-			}
-			for _, t := range transform {
-				refs = append(refs, t.MainSection.Records[0].Ref)
-			}
-			counter++
-		case <-time.After(1000 * time.Millisecond):
-			a.T().Fatalf("Timeout waiting for records: expected %v, got %v, saved in importer %v",
-				recordsCount, counter, len(a.c.Importer.GetSavedRecords()))
+	ctx := context.Background()
+	for _, jd := range jetDrops {
+		transform, err := transformer.Transform(ctx, &jd)
+		if err != nil {
+			a.T().Logf("error transforming record: %v", err)
+			return
+		}
+		for _, t := range transform {
+			r := t.MainSection.Records
+			require.NotEmpty(a.T(), r)
+			ref := r[0].Ref
+			require.NotEmpty(a.T(), ref)
+			refs = append(refs, ref)
 		}
 	}
+	require.Len(a.T(), refs, pulsesNumber)
 
-	a.waitRecordsCount(recordsCount)
+	// last record with the biggest pulse number won't be processed, so we do not expect this record in DB
+	expRecordsCount := recordsInPulse * (pulsesNumber - 1)
+	a.waitRecordsCount(expRecordsCount)
 
-	for _, ref := range refs {
+	for _, ref := range refs[:expRecordsCount] {
 		modelRef := models.ReferenceFromTypes(ref)
 		record, err := a.be.Storage().GetRecord(modelRef)
 		require.NoError(a.T(), err, "Error executing GetRecord from db")
@@ -111,7 +121,8 @@ func (a *dbIntegrationSuite) TestIntegrationWithDb_GetJetDrops() {
 	err := heavymock.ImportRecords(a.c.ImporterClient, expRecords)
 	require.NoError(a.T(), err)
 
-	a.waitRecordsCount(len(expRecords))
+	// last records with the biggest pulse number won't be processed, so we do not expect this record in DB
+	a.waitRecordsCount(len(expRecords) - recordsCount)
 
 	// TODO: change it to '{PulseNumber: int(pulse)}' at PENV-212
 	jetDropsDB, err := a.be.Storage().GetJetDrops(models.Pulse{PulseNumber: 1})
