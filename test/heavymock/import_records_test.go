@@ -51,6 +51,6 @@ func TestHeavymockImporter_import(t *testing.T) {
 	reply, err := stream.CloseAndRecv()
 	require.NoError(t, err)
 	require.True(t, reply.Ok)
-	require.Len(t, importer.savedRecords, len(records))
-	require.Equal(t, importer.savedRecords, expectedRecords)
+	require.Len(t, importer.GetUnsentRecords(), len(records))
+	require.Equal(t, importer.GetUnsentRecords(), expectedRecords)
 }
