@@ -37,6 +37,7 @@ install_deps: golangci go-acc ## install necessary dependencies
 build:  ## build all applications
 	go build -ldflags "$(LDFLAGS)" -o $(BIN_DIR)/block-explorer cmd/block-explorer/*.go
 	go build -ldflags "$(LDFLAGS)" -o $(BIN_DIR)/migrate cmd/migrate/*.go
+	go build -ldflags "$(LDFLAGS)" -o $(BIN_DIR)/api cmd/api/*.go
 
 .PHONY: vendor
 vendor:  ## update vendor dependencies

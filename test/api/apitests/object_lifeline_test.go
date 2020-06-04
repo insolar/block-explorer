@@ -8,13 +8,13 @@ package apitests
 import (
 	"testing"
 
-	"github.com/insolar/block-explorer/testutils/connection_manager"
+	"github.com/insolar/block-explorer/testutils/connectionmanager"
 	"github.com/stretchr/testify/suite"
 )
 
 type dbIntegrationSuite struct {
 	suite.Suite
-	c connection_manager.ConnectionManager
+	c connectionmanager.ConnectionManager
 }
 
 func (a *dbIntegrationSuite) BeforeTest() {

@@ -36,13 +36,11 @@ func TestHeavymockImporter_import(t *testing.T) {
 	stream, err := client.Import(context.Background())
 	require.NoError(t, err)
 
+	records := testutils.GenerateRecordsSilence(5)
 	var expectedRecords []exporter.Record
-	recordsCount := 5
-	for i := 0; i < recordsCount; i++ {
-		expectedRecords = append(expectedRecords, *SimpleRecord)
-	}
-	for _, record := range expectedRecords {
-		if err := stream.Send(&record); err != nil {
+	for _, record := range records {
+		expectedRecords = append(expectedRecords, *record)
+		if err := stream.Send(record); err != nil {
 			if err == io.EOF {
 				break
 			}
@@ -53,6 +51,6 @@ func TestHeavymockImporter_import(t *testing.T) {
 	reply, err := stream.CloseAndRecv()
 	require.NoError(t, err)
 	require.True(t, reply.Ok)
-	require.Len(t, importer.savedRecords, recordsCount)
+	require.Len(t, importer.savedRecords, len(records))
 	require.Equal(t, importer.savedRecords, expectedRecords)
 }

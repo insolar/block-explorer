@@ -13,7 +13,7 @@ import (
 	"testing"
 
 	"github.com/insolar/block-explorer/test/heavymock"
-	"github.com/insolar/block-explorer/testutils/connection_manager"
+	"github.com/insolar/block-explorer/testutils/connectionmanager"
 	"github.com/insolar/insolar/insolar/gen"
 	"github.com/insolar/insolar/ledger/heavy/exporter"
 	"github.com/stretchr/testify/require"
@@ -22,7 +22,7 @@ import (
 
 type receiveRecordsSuite struct {
 	suite.Suite
-	c connection_manager.ConnectionManager
+	c connectionmanager.ConnectionManager
 }
 
 func (a *receiveRecordsSuite) SetupSuite() {
@@ -50,7 +50,6 @@ func (a *receiveRecordsSuite) TestGetRecords_simpleRecord() {
 		}
 		require.NoError(a.T(), err, "Err listening stream")
 		require.True(a.T(), heavymock.SimpleRecord.Equal(record), "Incorrect response message")
-		a.T().Logf("received record: %v", record)
 		res = append(res, *record)
 	}
 	require.Len(a.T(), res, int(request.Count))
@@ -74,7 +73,6 @@ func (a *receiveRecordsSuite) TestGetRecords_pulseRecords() {
 			break
 		}
 		require.NoError(a.T(), err, "Err listening stream")
-		a.T().Logf("received record: %v", record)
 		require.Equal(a.T(), &expPulse, record.ShouldIterateFrom, "Incorrect record pulse number")
 		res = append(res, *record)
 	}
@@ -102,9 +100,7 @@ func (a *receiveRecordsSuite) TestReceiveRecords_sendAndReceiveWithImporter() {
 	require.NoError(a.T(), err)
 	require.True(a.T(), reply.Ok)
 
-	request := &exporter.GetRecords{
-		Polymorph: heavymock.MagicPolymorphExport,
-	}
+	request := &exporter.GetRecords{}
 
 	expStream, err := a.c.ExporterClient.Export(context.Background(), request)
 	require.NoError(a.T(), err, "Error when sending export request")
@@ -117,7 +113,6 @@ func (a *receiveRecordsSuite) TestReceiveRecords_sendAndReceiveWithImporter() {
 		}
 		c++
 		require.NoError(a.T(), err, "Err listening stream")
-		a.T().Logf("received record: %v", record)
 		require.True(a.T(), heavymock.SimpleRecord.Equal(record), "Incorrect record pulse number")
 	}
 	require.Equal(a.T(), recordsCount, c)

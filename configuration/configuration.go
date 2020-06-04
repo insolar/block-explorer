@@ -5,10 +5,24 @@
 
 package configuration
 
+import (
+	"go.opencensus.io/stats/view"
+)
+
+func init() {
+	view.Unregister(&view.View{Name: "log_write_delays"})
+}
+
 type BlockExplorer struct {
 	Log        Log
 	DB         DB
 	Replicator Replicator
+}
+
+type API struct {
+	Listen string `insconfig:":0| API starts on this address"`
+	DB     DB
+	Log    Log
 }
 
 type DB struct {

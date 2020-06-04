@@ -31,7 +31,7 @@ func TestConnect(t *testing.T) {
 		MaxTransportMsg: 100500,
 	}
 
-	// initialization MainNet connection
+	// initialization Platform connection
 	ctx := context.Background()
 	client, err := connection.NewGrpcClientConnection(ctx, cfg)
 	require.NoError(t, err)
@@ -53,6 +53,5 @@ func TestConnect(t *testing.T) {
 		}
 		require.NoError(t, err, "Err listening stream")
 		require.True(t, SimpleRecord.Equal(record), "Incorrect response message")
-		t.Logf("received record: %v", record)
 	}
 }

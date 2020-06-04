@@ -47,7 +47,7 @@ func TestClient_GetGRPCConnIsWorking(t *testing.T) {
 		MaxTransportMsg: 100500,
 	}
 
-	// initialization MainNet connection
+	// initialization Platform connection
 	client, err := NewGrpcClientConnection(context.Background(), cfg)
 	require.NoError(t, err)
 	defer client.GetGRPCConn().Close()
