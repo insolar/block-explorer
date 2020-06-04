@@ -43,6 +43,7 @@ func (a *dbIntegrationSuite) SetupTest() {
 func (a *dbIntegrationSuite) TearDownTest() {
 	err := a.be.Stop()
 	require.NoError(a.T(), err)
+	time.Sleep(time.Second * 1)
 	a.c.Stop()
 }
 
