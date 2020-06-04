@@ -54,8 +54,10 @@ func (a *dbIntegrationSuite) TestIntegrationWithDb_GetRecords() {
 	stream, err := a.c.ImporterClient.Import(context.Background())
 	require.NoError(a.T(), err)
 
+	records := make([]*exporter.Record, 0)
 	for i := 0; i < pulsesNumber; i++ {
 		record, _ := recordsWithDifferencePulses()
+		records = append(records, record)
 		if err := stream.Send(record); err != nil {
 			if err == io.EOF {
 				break
@@ -66,7 +68,6 @@ func (a *dbIntegrationSuite) TestIntegrationWithDb_GetRecords() {
 	reply, err := stream.CloseAndRecv()
 	require.NoError(a.T(), err)
 	require.True(a.T(), reply.Ok)
-	records := a.c.Importer.GetUnsentRecords()
 	require.Len(a.T(), records, pulsesNumber)
 
 	jetDrops := make([]types.PlatformJetDrops, 0)
