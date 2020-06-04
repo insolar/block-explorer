@@ -6,6 +6,7 @@
 package heavymock
 
 import (
+	"sync"
 	"time"
 
 	"github.com/insolar/insolar/ledger/heavy/exporter"
@@ -14,23 +15,23 @@ import (
 const (
 	// timeout to wait between sending records to the stream
 	recordSendingIntervalTimeout = 10 * time.Microsecond
-	// this constant is used to be set in the field exporter.GetRecords.Polymorph when
-	// sending request to heavymock. Response stream must contain saved records in heavymock, which
-	// were previously imported using heavymock.ImporterClient.
-	MagicPolymorphExport = 101010
 )
 
 type RecordExporter struct {
 	importerServer *ImporterServer
+	mux            sync.Mutex
 }
 
 func NewRecordExporter(importerServer *ImporterServer) *RecordExporter {
 	return &RecordExporter{
 		importerServer,
+		sync.Mutex{},
 	}
 }
 
 func (r *RecordExporter) Export(records *exporter.GetRecords, stream exporter.RecordExporter_ExportServer) error {
+	r.mux.Lock()
+	defer r.mux.Unlock()
 	savedRecords := r.importerServer.GetSavedRecords()
 	for _, r := range savedRecords {
 		time.Sleep(recordSendingIntervalTimeout)

@@ -7,12 +7,14 @@ package heavymock
 
 import (
 	"io"
+	"sync"
 
 	"github.com/insolar/insolar/ledger/heavy/exporter"
 )
 
 type ImporterServer struct {
 	savedRecords []exporter.Record
+	mux          sync.Mutex
 }
 
 func NewHeavymockImporter() *ImporterServer {
@@ -20,9 +22,13 @@ func NewHeavymockImporter() *ImporterServer {
 }
 
 func (s *ImporterServer) Import(stream HeavymockImporter_ImportServer) error {
+	s.mux.Lock()
+	defer s.mux.Unlock()
+	received := make([]exporter.Record, 0)
 	for {
 		record, err := stream.Recv()
 		if err == io.EOF {
+			s.savedRecords = received
 			return stream.SendAndClose(&Ok{
 				Ok: true,
 			})
@@ -30,10 +36,18 @@ func (s *ImporterServer) Import(stream HeavymockImporter_ImportServer) error {
 		if err != nil {
 			return err
 		}
-		s.savedRecords = append(s.savedRecords, *record)
+		received = append(received, *record)
 	}
 }
 
 func (s *ImporterServer) GetSavedRecords() []exporter.Record {
+	s.mux.Lock()
+	defer s.mux.Unlock()
 	return s.savedRecords
+}
+
+func (s *ImporterServer) Cleanup() {
+	s.mux.Lock()
+	defer s.mux.Unlock()
+	s.savedRecords = make([]exporter.Record, 0)
 }
