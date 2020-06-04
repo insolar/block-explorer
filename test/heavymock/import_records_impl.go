@@ -33,7 +33,7 @@ func (s *ImporterServer) Import(stream HeavymockImporter_ImportServer) error {
 	for {
 		record, err := stream.Recv()
 		if err == io.EOF {
-			s.appendNewRecords(received)
+			s.collectRecords(received)
 			return stream.SendAndClose(&Ok{
 				Ok: true,
 			})
@@ -66,12 +66,13 @@ func (s *ImporterServer) MarkAsSent(records []*exporter.Record) {
 		for _, s := range s.records {
 			if r.Equal(s.record) {
 				s.isSent = true
+				break
 			}
 		}
 	}
 }
 
-func (s *ImporterServer) appendNewRecords(records []*exporter.Record) {
+func (s *ImporterServer) collectRecords(records []*exporter.Record) {
 	slice := make([]*savedRecord, 0)
 	for _, r := range records {
 		slice = append(slice, &savedRecord{r, false})
