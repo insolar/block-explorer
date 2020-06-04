@@ -73,9 +73,10 @@ func (s *ImporterServer) MarkAsSent(records []*exporter.Record) {
 }
 
 func (s *ImporterServer) collectRecords(records []*exporter.Record) {
-	slice := make([]*savedRecord, 0)
-	for _, r := range records {
-		slice = append(slice, &savedRecord{r, false})
+	l := len(records)
+	slice := make([]*savedRecord, l)
+	for i := 0; i < l; i++ {
+		slice[i] = &savedRecord{records[i], false}
 	}
 	s.records = append(s.records, slice...)
 }

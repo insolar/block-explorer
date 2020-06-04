@@ -43,6 +43,7 @@ func (a *dbIntegrationSuite) SetupTest() {
 func (a *dbIntegrationSuite) TearDownTest() {
 	err := a.be.Stop()
 	require.NoError(a.T(), err)
+	// TODO remove sleep after resolving https://insolar.atlassian.net/browse/PENV-343
 	time.Sleep(time.Second * 1)
 	a.c.Stop()
 }
@@ -96,7 +97,7 @@ func (a *dbIntegrationSuite) TestIntegrationWithDb_GetRecords() {
 	require.Len(a.T(), refs, pulsesNumber)
 
 	// last record with the biggest pulse number won't be processed, so we do not expect this record in DB
-	expRecordsCount := pulsesNumber - recordsInPulse
+	expRecordsCount := recordsInPulse * (pulsesNumber - 1)
 	a.waitRecordsCount(expRecordsCount)
 
 	for _, ref := range refs[:expRecordsCount] {
