@@ -48,7 +48,7 @@ func TestClient_GetGRPCConnIsWorking(t *testing.T) {
 	}
 
 	// initialization Platform connection
-	client, err := NewGrpcClientConnection(context.Background(), cfg)
+	client, err := NewGRPCClientConnection(context.Background(), cfg)
 	require.NoError(t, err)
 	defer client.GetGRPCConn().Close()
 

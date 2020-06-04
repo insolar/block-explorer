@@ -11,6 +11,7 @@ import (
 )
 
 func init() {
+	// todo fix problem with importing two loggers PENV-344
 	view.Unregister(&view.View{Name: "log_write_delays"})
 }
 
