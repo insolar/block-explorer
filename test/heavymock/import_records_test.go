@@ -55,7 +55,7 @@ func TestHeavymockImporter_import(t *testing.T) {
 	require.Len(t, unsentRecords, len(records))
 	var c int
 	for _, u := range unsentRecords {
-		for _, e := range unsentRecords {
+		for _, e := range expectedRecords {
 			if e.Equal(u) {
 				c++
 				break
