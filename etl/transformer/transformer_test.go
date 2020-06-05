@@ -12,6 +12,8 @@ import (
 	"testing"
 
 	"github.com/insolar/insolar/insolar/gen"
+	ins_record "github.com/insolar/insolar/insolar/record"
+	"github.com/insolar/insolar/ledger/heavy/exporter"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -143,4 +145,21 @@ func TestTransform_sortRecords_ErrorNoPrevRecord(t *testing.T) {
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "cannot find record with prev record")
 	require.Nil(t, result)
+}
+
+func TestTransform_transferToCanonicalRecord_SkipUnsortedRecord(t *testing.T) {
+	unsupportedRecord := &exporter.Record{
+		Record: ins_record.Material{
+			Virtual: ins_record.Virtual{
+				Union: &ins_record.Virtual_Genesis{
+					Genesis: new(ins_record.Genesis),
+				},
+			},
+			ID:       gen.IDWithPulse(gen.PulseNumber()),
+			ObjectID: gen.ID(),
+		},
+	}
+	r, err := transferToCanonicalRecord(unsupportedRecord)
+	require.True(t, err == UnsupportedRecordTypeError, "record should be an unsupported")
+	require.Empty(t, r)
 }

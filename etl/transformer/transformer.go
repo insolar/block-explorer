@@ -200,6 +200,10 @@ func getRecords(records []*exporter.Record) (map[insolar.JetID][]types.Record, e
 	for _, r := range records {
 		record, err := transferToCanonicalRecord(r)
 		if err != nil {
+			if err == UnsupportedRecordTypeError {
+				// just skip this records
+				continue
+			}
 			return res, err
 		}
 		// collect records with some jetID
@@ -269,6 +273,9 @@ func transferToCanonicalRecord(r *exporter.Record) (types.Record, error) {
 		if object != nil && object.IsObjectReference() {
 			objectReference = object.Bytes()
 		}
+	default:
+		// skip unnecessary record
+		return types.Record{}, UnsupportedRecordTypeError
 	}
 
 	retRecord := types.Record{
