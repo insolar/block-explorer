@@ -1,5 +1,9 @@
 name: Bench
-on: [push, pull_request]
+on:
+  push:
+    branches:
+      - master
+  pull_request:
 
 env:
   GO_VERSION: 1.14
