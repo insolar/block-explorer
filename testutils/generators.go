@@ -23,6 +23,40 @@ func init() {
 	rand.Seed(time.Now().UnixNano())
 }
 
+func GenerateRequestRecord(pulse insolar.PulseNumber, objectID insolar.ID) *exporter.Record {
+	r := GenerateRecordsSilence(1)[0]
+	id := gen.IDWithPulse(pulse)
+	r.Record.ID = id
+	r.Record.ObjectID = objectID
+	reference := insolar.NewRecordReference(id)
+	r.Record.Virtual.Union = &insrecord.Virtual_IncomingRequest{
+		IncomingRequest: &insrecord.IncomingRequest{
+			Object: reference,
+		},
+	}
+	return r
+}
+
+func GenerateObjectLifeline(pulsesNumber, recordsInPulse int) map[insolar.PulseNumber][]*exporter.Record {
+	objectID := gen.ID()
+	lifeline := make(map[insolar.PulseNumber][]*exporter.Record, pulsesNumber+1)
+	for i := 0; i < pulsesNumber; i++ {
+		pn := gen.PulseNumber()
+		records := GenerateRecordsSilence(recordsInPulse)
+		for _, r := range records {
+			id := gen.IDWithPulse(pn)
+			r.Record.ID = id
+			r.Record.ObjectID = objectID
+		}
+		if i == 0 {
+			request := GenerateRequestRecord(pn, objectID)
+			records = append(records, request)
+		}
+		lifeline[pn] = records
+	}
+	return lifeline
+}
+
 // GenerateRecords returns a function for generating record with error
 func GenerateRecords(batchSize int) func() (record *exporter.Record, e error) {
 	pn := gen.PulseNumber()
@@ -45,7 +79,11 @@ func GenerateRecords(batchSize int) func() (record *exporter.Record, e error) {
 				Polymorph: int32(randNum()),
 				Virtual: insrecord.Virtual{
 					Polymorph: int32(randNum()),
-					Union:     nil,
+					Union: &insrecord.Virtual_IncomingRequest{
+						IncomingRequest: &insrecord.IncomingRequest{
+							Object: nil,
+						},
+					},
 					Signature: []byte{0, 1, 2},
 				},
 				ID:        gen.IDWithPulse(pn),
