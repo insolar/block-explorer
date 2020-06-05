@@ -15,6 +15,7 @@ import (
 	"github.com/insolar/assured-ledger/ledger-core/v2/log"
 	"github.com/insolar/assured-ledger/ledger-core/v2/log/global"
 	"github.com/insolar/assured-ledger/ledger-core/v2/log/logfmt"
+	"go.opencensus.io/stats/view"
 
 	"github.com/insolar/block-explorer/configuration"
 )
@@ -25,6 +26,8 @@ const bePrefix = "github.com/insolar/block-explorer/"
 const skipFrameBaselineAdjustment = 0
 
 func init() {
+	// todo fix problem with importing two loggers PENV-344
+	view.Unregister(&view.View{Name: "log_write_delays"})
 	initBilog()
 	initZlog()
 

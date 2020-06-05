@@ -37,7 +37,7 @@ func TestExporterIsWorking(t *testing.T) {
 	}
 
 	// initialization Platform connection
-	client, err := connection.NewGrpcClientConnection(ctx, cfg)
+	client, err := connection.NewGRPCClientConnection(ctx, cfg)
 	require.NoError(t, err)
 	defer client.GetGRPCConn().Close()
 

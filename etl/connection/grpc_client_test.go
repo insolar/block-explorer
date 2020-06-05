@@ -17,7 +17,7 @@ import (
 
 func TestNewClient_readyToConnect(t *testing.T) {
 	config := testConfig()
-	client, err := NewGrpcClientConnection(context.Background(), config)
+	client, err := NewGRPCClientConnection(context.Background(), config)
 	require.NoError(t, err)
 	defer client.GetGRPCConn().Close()
 	require.NotNil(t, client.GetGRPCConn())
