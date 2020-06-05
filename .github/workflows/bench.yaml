@@ -1,0 +1,32 @@
+name: Bench
+on: [push, pull_request]
+
+env:
+  GO_VERSION: 1.14
+  CI_GOMAXPROCS: 0
+
+jobs:
+  bench:
+    name: Run all benchmarks
+    runs-on: ubuntu-latest
+    env:
+      GOPATH: /home/runner/work/block-explorer/block-explorer/go
+    steps:
+      - name: set up go ${{env.GO_VERSION}}
+        uses: actions/setup-go@v1
+        id: go
+        with:
+          go-version: ${{env.GO_VERSION}}
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@master
+        with:
+          path: go/src/github.com/insolar/block-explorer
+          fetch-depth: 0
+      - name: Install cob
+        run: |
+           curl -sfL https://raw.githubusercontent.com/knqyf263/cob/master/install.sh | sudo sh -s -- -b /usr/local/bin
+           go mod vendor
+        working-directory: ${{env.GOPATH}}/src/github.com/insolar/block-explorer
+      - name: Run Benchmark
+        run: cob -bench-cmd make -bench-args bench -threshold 0.7
+        working-directory: ${{env.GOPATH}}/src/github.com/insolar/block-explorer

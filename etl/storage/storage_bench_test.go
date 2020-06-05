@@ -3,7 +3,7 @@
 // This material is licensed under the Insolar License version 1.0,
 // available at https://github.com/insolar/block-explorer/blob/master/LICENSE.md.
 
-// +build integration
+// +build integration bench
 
 package storage
 
@@ -14,8 +14,8 @@ import (
 	"testing"
 )
 
-func BenchmarkStoreJetDrop(b *testing.B) {
-	//b.N = 1
+func BenchmarkSaveJetDropData(b *testing.B) {
+	b.N = 1
 	s := NewStorage(testDB)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {

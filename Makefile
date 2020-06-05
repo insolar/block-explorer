@@ -72,6 +72,10 @@ test-heavy-mock-integration:
 lint: ## run linter
 	${BIN_DIR}/golangci-lint --color=always run ./... -v --timeout 5m
 
+.PHONY: bench
+bench: ## run bench
+	go test -v ./... -tags bench -bench=. -benchmem -benchtime=1000x
+
 .PHONY: config
 config: ## generate config
 	mkdir -p $(ARTIFACTS_DIR)
