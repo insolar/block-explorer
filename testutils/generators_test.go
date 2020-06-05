@@ -10,8 +10,11 @@ package testutils
 import (
 	"fmt"
 	"io"
+	"sort"
 	"testing"
 
+	"github.com/insolar/insolar/insolar"
+	ins_record "github.com/insolar/insolar/insolar/record"
 	"github.com/insolar/insolar/ledger/heavy/exporter"
 	"github.com/stretchr/testify/require"
 )
@@ -89,4 +92,59 @@ func TestGenerateRecordsWithDifferencePulses(t *testing.T) {
 			require.EqualError(t, err, io.EOF.Error())
 		})
 	}
+}
+
+func TestGenerateObjectLifeline(t *testing.T) {
+	pulsesNumber := 5
+	recordsNumber := 10
+	lifeline := GenerateObjectLifeline(pulsesNumber, recordsNumber)
+	require.Len(t, lifeline, pulsesNumber)
+
+	pulses := make([]insolar.PulseNumber, pulsesNumber)
+	i := 0
+	for p := range lifeline {
+		pulses[i] = p
+		i++
+	}
+	sort.Slice(pulses, func(i, j int) bool { return pulses[i] < pulses[j] })
+	objID := lifeline[pulses[1]][0].Record.ObjectID
+
+	allRecords := make([]*exporter.Record, 0)
+	for i := 0; i < pulsesNumber; i++ {
+		records := lifeline[pulses[i]]
+		if i == 0 {
+			// first pulse also contains Request and Activate records
+			require.Len(t, records, recordsNumber+2)
+		} else if i == pulsesNumber {
+			// last pulse contains Deactivate record
+			require.Len(t, records, recordsNumber+1)
+		} else {
+			require.Len(t, records, recordsNumber)
+		}
+		allRecords = append(allRecords, records...)
+	}
+
+	var activateCount int
+	var amendCount int
+	var incomingCount int
+	var unknown int
+	for _, r := range allRecords {
+		require.Equal(t, objID, r.Record.ObjectID)
+
+		virtual := r.Record.Virtual
+		switch virtual.Union.(type) {
+		case *ins_record.Virtual_Activate:
+			activateCount++
+		case *ins_record.Virtual_Amend:
+			amendCount++
+		case *ins_record.Virtual_IncomingRequest:
+			incomingCount++
+		default:
+			unknown++
+		}
+	}
+	require.Equal(t, 0, unknown)
+	require.Equal(t, 1, activateCount)
+	require.Equal(t, 1, incomingCount)
+	require.Equal(t, pulsesNumber*recordsNumber, amendCount)
 }

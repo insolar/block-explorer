@@ -28,7 +28,7 @@ func GenerateRequestRecord(pulse insolar.PulseNumber, objectID insolar.ID) *expo
 	id := gen.IDWithPulse(pulse)
 	r.Record.ID = id
 	r.Record.ObjectID = objectID
-	reference := insolar.NewRecordReference(id)
+	reference := insolar.NewReference(id)
 	r.Record.Virtual.Union = &insrecord.Virtual_IncomingRequest{
 		IncomingRequest: &insrecord.IncomingRequest{
 			Object: reference,
@@ -37,21 +37,86 @@ func GenerateRequestRecord(pulse insolar.PulseNumber, objectID insolar.ID) *expo
 	return r
 }
 
+func GenerateVirtualActivateRecord(pulse insolar.PulseNumber, objectID, requestID insolar.ID) (record *exporter.Record) {
+	r := GenerateRecordsSilence(1)[0]
+	id := gen.IDWithPulse(pulse)
+	r.Record.ID = id
+	r.Record.ObjectID = objectID
+	requestRerence := insolar.NewReference(requestID)
+	r.Record.Virtual.Union = &insrecord.Virtual_Activate{
+		Activate: &insrecord.Activate{
+			Image:   gen.Reference(),
+			Request: *requestRerence,
+		},
+	}
+	return r
+}
+
+func GenerateVirtualAmendRecordsLinkedArray(pulse insolar.PulseNumber, objectID, prevStateID insolar.ID, recordsCount int) []*exporter.Record {
+	result := make([]*exporter.Record, recordsCount)
+	for i := 0; i < recordsCount; i++ {
+		r := GenerateVirtualAmendRecord(pulse, objectID, prevStateID)
+		result[i] = r
+		prevStateID = r.Record.Virtual.GetAmend().PrevState
+	}
+	return result
+}
+
+func GenerateVirtualAmendRecord(pulse insolar.PulseNumber, objectID, prevStateID insolar.ID) *exporter.Record {
+	r := GenerateRecordsSilence(1)[0]
+	id := gen.IDWithPulse(pulse)
+	r.Record.ID = id
+	r.Record.ObjectID = objectID
+	r.Record.Virtual.Union = &insrecord.Virtual_Amend{
+		Amend: &insrecord.Amend{
+			Image:     gen.Reference(),
+			PrevState: prevStateID,
+		},
+	}
+	return r
+}
+
+func GenerateVirtualDeactivateRecord(pulse insolar.PulseNumber, objectID, prevStateID insolar.ID) *exporter.Record {
+	r := GenerateRecordsSilence(1)[0]
+	id := gen.IDWithPulse(pulse)
+	r.Record.ID = id
+	r.Record.ObjectID = objectID
+	r.Record.Virtual.Union = &insrecord.Virtual_Deactivate{
+		Deactivate: &insrecord.Deactivate{
+			PrevState: prevStateID,
+		},
+	}
+	return r
+}
+
 func GenerateObjectLifeline(pulsesNumber, recordsInPulse int) map[insolar.PulseNumber][]*exporter.Record {
 	objectID := gen.ID()
+	var prevState insolar.ID
+	activate := new(exporter.Record)
 	lifeline := make(map[insolar.PulseNumber][]*exporter.Record, pulsesNumber+1)
+	pn := gen.PulseNumber()
 	for i := 0; i < pulsesNumber; i++ {
-		pn := gen.PulseNumber()
-		records := GenerateRecordsSilence(recordsInPulse)
-		for _, r := range records {
-			id := gen.IDWithPulse(pn)
-			r.Record.ID = id
-			r.Record.ObjectID = objectID
-		}
+		pn = pn + 10
+		records := make([]*exporter.Record, recordsInPulse)
 		if i == 0 {
+			records = make([]*exporter.Record, recordsInPulse+2)
 			request := GenerateRequestRecord(pn, objectID)
-			records = append(records, request)
+			records[len(records)-1] = request
+
+			activate = GenerateVirtualActivateRecord(pn, objectID, request.Record.ID)
+			records[len(records)-2] = activate
+			prevState = activate.Record.ID
 		}
+		amends := GenerateVirtualAmendRecordsLinkedArray(pn, objectID, prevState, recordsInPulse)
+		for ii, r := range amends {
+			records[ii] = r
+		}
+		prevState = amends[len(amends)-1].Record.ID
+		if i == pulsesNumber {
+			deactivate := GenerateVirtualDeactivateRecord(pn, objectID, prevState)
+			records = append(records, deactivate)
+		}
+
 		lifeline[pn] = records
 	}
 	return lifeline
