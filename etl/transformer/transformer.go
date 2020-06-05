@@ -18,7 +18,6 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/insolar/block-explorer/etl/types"
-	"github.com/insolar/block-explorer/instrumentation/belogger"
 )
 
 const (
@@ -65,11 +64,11 @@ func getJetDrop(ctx context.Context, jetID insolar.JetID, records []types.Record
 		prefix = jetID.Prefix()
 	}
 
-	records, err := sortRecords(records)
-	if err != nil {
-		belogger.FromContext(ctx).Errorf("cannot sort records in JetDrop %s, error: %s", jetID.DebugString(), err.Error())
-		return nil, nil
-	}
+	// records, err := sortRecords(records)
+	// if err != nil {
+	// 	belogger.FromContext(ctx).Errorf("cannot sort records in JetDrop %s, error: %s", jetID.DebugString(), err.Error())
+	// 	return nil, nil
+	// }
 
 	mainSection := &types.MainSection{
 		Start: types.DropStart{
