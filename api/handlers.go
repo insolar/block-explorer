@@ -7,6 +7,7 @@ package api
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"net/url"
 	"strings"
@@ -33,23 +34,12 @@ func NewServer(ctx context.Context, storage interfaces.StorageFetcher, config co
 }
 
 func (s Server) ObjectLifeline(ctx echo.Context, objectReference string, params ObjectLifelineParams) error {
-	limit := 20
-	if params.Limit != nil {
-		limit = *params.Limit
-	}
-	if limit <= 0 || limit > 100 {
-		return ctx.JSON(http.StatusBadRequest, NewSingleMessageError("`limit` should be in range [1, 100]"))
+	limit, offset, err := checkLimitOffset(params.Limit, params.Offset)
+	if err != nil {
+		return ctx.JSON(http.StatusBadRequest, NewSingleMessageError(err.Error()))
 	}
 
-	offset := 0
-	if params.Offset != nil {
-		offset = *params.Offset
-	}
-	if offset < 0 {
-		return ctx.JSON(http.StatusBadRequest, NewSingleMessageError("`offset` should not be negative"))
-	}
-
-	ref, errMsg := s.checkReference(objectReference)
+	ref, errMsg := checkReference(objectReference)
 	if errMsg != nil {
 		return ctx.JSON(http.StatusBadRequest, *errMsg)
 	}
@@ -58,7 +48,7 @@ func (s Server) ObjectLifeline(ctx echo.Context, objectReference string, params 
 	if params.Sort != nil {
 		s := *params.Sort
 		if s != "desc" && s != "asc" {
-			return ctx.JSON(http.StatusBadRequest, NewSingleMessageError("'sort' should be 'desc' or 'asc'"))
+			return ctx.JSON(http.StatusBadRequest, NewSingleMessageError("query parameter 'sort' should be 'desc' or 'asc'"))
 		}
 		sort = s
 	}
@@ -71,6 +61,11 @@ func (s Server) ObjectLifeline(ctx echo.Context, objectReference string, params 
 		sort,
 	)
 	if err != nil {
+		errMsg := err.Error()
+		if strings.Contains(errMsg, "query parameter") {
+			return ctx.JSON(http.StatusBadRequest, NewSingleMessageError(errMsg))
+
+		}
 		s.logger.Error(err)
 		return ctx.JSON(http.StatusInternalServerError, struct{}{})
 	}
@@ -85,7 +80,7 @@ func (s Server) ObjectLifeline(ctx echo.Context, objectReference string, params 
 	})
 }
 
-func (s *Server) checkReference(referenceRow string) (*insolar.ID, *ErrorMessage) {
+func checkReference(referenceRow string) (*insolar.ID, *ErrorMessage) {
 	referenceRow = strings.TrimSpace(referenceRow)
 	var errMsg ErrorMessage
 
@@ -102,9 +97,29 @@ func (s *Server) checkReference(referenceRow string) (*insolar.ID, *ErrorMessage
 
 	ref, err := insolar.NewReferenceFromString(reference)
 	if err != nil {
-		errMsg = NewSingleMessageError("reference wrong format")
+		errMsg = NewSingleMessageError("path parameter object reference wrong format")
 		return nil, &errMsg
 	}
 
 	return ref.GetLocal(), nil
+}
+
+func checkLimitOffset(l, o *int) (int, int, error) {
+	limit := 20
+	if l != nil {
+		limit = *l
+	}
+	if limit <= 0 || limit > 100 {
+		return 0, 0, errors.New("query parameter 'limit' should be in range [1, 100]")
+	}
+
+	offset := 0
+	if o != nil {
+		offset = *o
+	}
+	if offset < 0 {
+		return 0, 0, errors.New("query parameter 'offset' should not be negative")
+	}
+
+	return limit, offset, nil
 }

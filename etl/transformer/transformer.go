@@ -18,6 +18,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/insolar/block-explorer/etl/types"
+	"github.com/insolar/block-explorer/instrumentation/belogger"
 )
 
 const (
@@ -64,11 +65,11 @@ func getJetDrop(ctx context.Context, jetID insolar.JetID, records []types.Record
 		prefix = jetID.Prefix()
 	}
 
-	// records, err := sortRecords(records)
-	// if err != nil {
-	// 	belogger.FromContext(ctx).Errorf("cannot sort records in JetDrop %s, error: %s", jetID.DebugString(), err.Error())
-	// 	return nil, nil
-	// }
+	records, err := sortRecords(records)
+	if err != nil {
+		belogger.FromContext(ctx).Errorf("cannot sort records in JetDrop %s, error: %s", jetID.DebugString(), err.Error())
+		return nil, nil
+	}
 
 	mainSection := &types.MainSection{
 		Start: types.DropStart{
@@ -242,6 +243,7 @@ func transferToCanonicalRecord(r *exporter.Record) (types.Record, error) {
 		activate := virtual.GetActivate()
 		prototypeReference = activate.Image.Bytes()
 		recordPayload = activate.Memory
+		objectReference = activate.Request.GetLocal().Bytes()
 
 	case *ins_record.Virtual_Amend:
 		recordType = types.STATE
@@ -249,6 +251,9 @@ func transferToCanonicalRecord(r *exporter.Record) (types.Record, error) {
 		prototypeReference = amend.Image.Bytes()
 		recordPayload = amend.Memory
 		prevRecordReference = amend.PrevStateID().Bytes()
+		if bytes.Equal(objectReference, insolar.NewEmptyID().Bytes()) {
+			objectReference = amend.Request.GetLocal().Bytes()
+		}
 
 	case *ins_record.Virtual_Deactivate:
 		recordType = types.STATE
@@ -264,13 +269,13 @@ func transferToCanonicalRecord(r *exporter.Record) (types.Record, error) {
 		recordType = types.REQUEST
 		object := virtual.GetIncomingRequest().GetObject()
 		if object != nil && object.IsObjectReference() {
-			objectReference = object.Bytes()
+			objectReference = object.GetLocal().Bytes()
 		}
 	case *ins_record.Virtual_OutgoingRequest:
 		recordType = types.REQUEST
 		object := virtual.GetOutgoingRequest().GetObject()
 		if object != nil && object.IsObjectReference() {
-			objectReference = object.Bytes()
+			objectReference = object.GetLocal().Bytes()
 		}
 	default:
 		// skip unnecessary record

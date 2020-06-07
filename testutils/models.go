@@ -6,9 +6,13 @@
 package testutils
 
 import (
+	"testing"
+
+	"github.com/insolar/insolar/insolar"
 	"github.com/insolar/insolar/insolar/gen"
 	"github.com/jinzhu/gorm"
 	"github.com/pkg/errors"
+	"github.com/stretchr/testify/require"
 
 	"github.com/insolar/block-explorer/etl/models"
 )
@@ -19,7 +23,7 @@ var pulseDelta = uint16(10)
 func InitRecordDB(jetDrop models.JetDrop) models.Record {
 	return models.Record{
 		Reference:           gen.Reference().Bytes(),
-		Type:                "",
+		Type:                models.State,
 		ObjectReference:     gen.Reference().Bytes(),
 		PrototypeReference:  gen.Reference().Bytes(),
 		Payload:             GenerateRandBytes(),
@@ -62,6 +66,14 @@ func InitPulseDB() (models.Pulse, error) {
 	}, nil
 }
 
+// CreateRecord creates provided record at db
+func CreateRecord(db *gorm.DB, record models.Record) error {
+	if err := db.Create(&record).Error; err != nil {
+		return errors.Wrap(err, "error while saving record")
+	}
+	return nil
+}
+
 // CreatePulse creates provided jet drop at db
 func CreateJetDrop(db *gorm.DB, jetDrop models.JetDrop) error {
 	if err := db.Create(&jetDrop).Error; err != nil {
@@ -76,4 +88,17 @@ func CreatePulse(db *gorm.DB, pulse models.Pulse) error {
 		return errors.Wrap(err, "error while saving pulse")
 	}
 	return nil
+}
+
+func OrderedRecords(t *testing.T, db *gorm.DB, jetDrop models.JetDrop, objRef insolar.ID, amount int) []models.Record {
+	var result []models.Record
+	for i := 1; i <= amount; i++ {
+		record := InitRecordDB(jetDrop)
+		record.ObjectReference = objRef.Bytes()
+		record.Order = i
+		err := CreateRecord(db, record)
+		require.NoError(t, err)
+		result = append(result, record)
+	}
+	return result
 }

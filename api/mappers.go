@@ -36,7 +36,7 @@ func RecordToAPI(record models.Record) ResponsesRecordYaml {
 		Type:        NullableString(string(record.Type)),
 	}
 	if !bytes.Equal([]byte{}, record.ObjectReference) {
-		objectID := insolar.NewIDFromBytes(nil)
+		objectID := insolar.NewIDFromBytes(record.ObjectReference)
 		if objectID != nil {
 			response.ObjectReference = NullableString(insolar.NewReference(*objectID).String())
 		}

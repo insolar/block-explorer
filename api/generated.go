@@ -12,7 +12,7 @@ import (
 )
 
 type ResponsesLifelineYaml struct {
-	Total  int64                  `json:"accountReference"`
+	Total  int64                  `json:"total"`
 	Result *[]ResponsesRecordYaml `json:"result,omitempty"`
 }
 
