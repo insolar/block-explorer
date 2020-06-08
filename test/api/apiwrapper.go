@@ -6,27 +6,21 @@
 package api
 
 import (
+	"net/http"
 	"testing"
 
 	"github.com/insolar/spec-insolar-block-explorer-api/v1/client"
-	"github.com/stretchr/testify/require"
 )
 
 type BEApiClient struct {
-	t *testing.T
+	t      *testing.T
 	client client.APIClient
 }
 
 func NewBeApiClient(t *testing.T, basePath string) *BEApiClient {
 	cfg := client.Configuration{
-		BasePath:      basePath,
-		Host:          "",
-		Scheme:        "",
-		DefaultHeader: nil,
-		UserAgent:     "",
-		Debug:         false,
-		Servers:       nil,
-		HTTPClient:    nil,
+		BasePath:   basePath,
+		HTTPClient: http.DefaultClient,
 	}
 	return &BEApiClient{
 		t:      t,
@@ -34,10 +28,9 @@ func NewBeApiClient(t *testing.T, basePath string) *BEApiClient {
 	}
 }
 
-func (c *BEApiClient) ObjectLifeline(objectRef string, localVarOptionals *client.ObjectLifelineOpts) client.JetDropRecordsResponse200 {
+func (c *BEApiClient) ObjectLifeline(objectRef string, localVarOptionals *client.ObjectLifelineOpts) (response client.JetDropRecordsResponse200, err error) {
 	response, rawResponse, err := c.client.RecordApi.ObjectLifeline(nil, objectRef, localVarOptionals)
 	LogHttp(c.t, rawResponse, nil, response)
-	require.NoError(c.t, err, "Error after executing http request")
-	validateResponse(c.t, rawResponse)
-	return response
+	// validateResponse(c.t, rawResponse)
+	return response, err
 }

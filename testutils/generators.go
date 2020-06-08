@@ -28,6 +28,7 @@ func GenerateRequestRecord(pulse insolar.PulseNumber, objectID insolar.ID) *expo
 	id := gen.IDWithPulse(pulse)
 	r.Record.ID = id
 	r.Record.ObjectID = objectID
+	r.ShouldIterateFrom = nil
 	reference := insolar.NewReference(id)
 	r.Record.Virtual.Union = &insrecord.Virtual_IncomingRequest{
 		IncomingRequest: &insrecord.IncomingRequest{
@@ -42,6 +43,7 @@ func GenerateVirtualActivateRecord(pulse insolar.PulseNumber, objectID, requestI
 	id := gen.IDWithPulse(pulse)
 	r.Record.ID = id
 	r.Record.ObjectID = objectID
+	r.ShouldIterateFrom = nil
 	requestRerence := insolar.NewReference(requestID)
 	r.Record.Virtual.Union = &insrecord.Virtual_Activate{
 		Activate: &insrecord.Activate{
@@ -68,6 +70,7 @@ func GenerateVirtualAmendRecord(pulse insolar.PulseNumber, objectID, prevStateID
 	id := gen.IDWithPulse(pulse)
 	r.Record.ID = id
 	r.Record.ObjectID = objectID
+	r.ShouldIterateFrom = nil
 	r.Record.Virtual.Union = &insrecord.Virtual_Amend{
 		Amend: &insrecord.Amend{
 			Image:     gen.Reference(),
@@ -82,6 +85,7 @@ func GenerateVirtualDeactivateRecord(pulse insolar.PulseNumber, objectID, prevSt
 	id := gen.IDWithPulse(pulse)
 	r.Record.ID = id
 	r.Record.ObjectID = objectID
+	r.ShouldIterateFrom = nil
 	r.Record.Virtual.Union = &insrecord.Virtual_Deactivate{
 		Deactivate: &insrecord.Deactivate{
 			PrevState: prevStateID,
@@ -123,11 +127,12 @@ func GenerateObjectLifeline(pulsesNumber, recordsInPulse int) ObjectLifeline {
 			records[ii] = r
 		}
 		prevState = amends[len(amends)-1].Record.ID
-		if i == pulsesNumber-1 {
-			deactivate := GenerateVirtualDeactivateRecord(pn, objectID, prevState)
-			deactivate.Record.JetID = jetID
-			records = append(records, deactivate)
-		}
+		// TODO uncomment after resolving https://insolar.atlassian.net/browse/PENV-368
+		// if i == pulsesNumber-1 {
+		// 	deactivate := GenerateVirtualDeactivateRecord(pn, objectID, prevState)
+		// 	deactivate.Record.JetID = jetID
+		// 	records = append(records, deactivate)
+		// }
 
 		states[i] = StateByPulse{
 			Pn:      pn,
