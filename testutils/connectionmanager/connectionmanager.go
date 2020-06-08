@@ -20,7 +20,7 @@ import (
 // struct that represents all connections that can be used throughout integration tests
 type ConnectionManager struct {
 	grpcServer     *testutils.TestGRPCServer
-	grpcClientConn *connection.GrpcClientConnection
+	grpcClientConn *connection.GRPCClientConnection
 	ExporterClient exporter.RecordExporterClient
 	ImporterClient heavymock.HeavymockImporterClient
 	Importer       *heavymock.ImporterServer
@@ -40,7 +40,7 @@ func (c *ConnectionManager) Start(t *testing.T) {
 	ctx := context.Background()
 	cfg := connection.GetClientConfiguration(c.grpcServer.Address)
 
-	c.grpcClientConn, err = connection.NewGrpcClientConnection(ctx, cfg)
+	c.grpcClientConn, err = connection.NewGRPCClientConnection(ctx, cfg)
 	require.NoError(t, err)
 
 	c.ExporterClient = exporter.NewRecordExporterClient(c.grpcClientConn.GetGRPCConn())

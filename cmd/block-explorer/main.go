@@ -45,31 +45,31 @@ func main() {
 	ctx, logger := belogger.InitLogger(context.Background(), cfg.Log, "block_explorer")
 	logger.Info("Config and logger were initialized")
 
-	client, err := connection.NewGrpcClientConnection(ctx, cfg.Replicator)
+	client, err := connection.NewGRPCClientConnection(ctx, cfg.Replicator)
 	if err != nil {
 		logger.Fatal("cannot connect to GRPC server", err)
 	}
 	defer client.GetGRPCConn().Close()
 
-	extractor := extractor.NewPlatformExtractor(100, exporter.NewRecordExporterClient(client.GetGRPCConn()))
-	err = extractor.Start(ctx)
+	platformExtractor := extractor.NewPlatformExtractor(100, exporter.NewRecordExporterClient(client.GetGRPCConn()))
+	err = platformExtractor.Start(ctx)
 	if err != nil {
-		logger.Fatal("cannot start extractor", err)
+		logger.Fatal("cannot start platformExtractor", err)
 	}
 	defer func() {
-		err := extractor.Stop(ctx)
+		err := platformExtractor.Stop(ctx)
 		if err != nil {
-			logger.Fatal("cannot stop extractor", err)
+			logger.Fatal("cannot stop platformExtractor", err)
 		}
 	}()
 
-	trn := transformer.NewMainNetTransformer(extractor.GetJetDrops(ctx))
-	err = trn.Start(ctx)
+	mainNetTransformer := transformer.NewMainNetTransformer(platformExtractor.GetJetDrops(ctx))
+	err = mainNetTransformer.Start(ctx)
 	if err != nil {
 		logger.Fatal("cannot start transformer", err)
 	}
 	defer func() {
-		err := trn.Stop(ctx)
+		err := mainNetTransformer.Stop(ctx)
 		if err != nil {
 			logger.Fatal("cannot stop transformer", err)
 		}
@@ -86,24 +86,24 @@ func main() {
 		}
 	}()
 
-	s := storage.NewStorage(db)
+	storage := storage.NewStorage(db)
 
-	contr, err := controller.NewController(extractor, s)
+	controller, err := controller.NewController(cfg.Controller, platformExtractor, storage)
 	if err != nil {
 		logger.Fatal("cannot initialize controller", err)
 	}
-	err = contr.Start(ctx)
+	err = controller.Start(ctx)
 	if err != nil {
 		logger.Fatal("cannot start controller", err)
 	}
 	defer func() {
-		err := contr.Stop(ctx)
+		err := controller.Stop(ctx)
 		if err != nil {
 			logger.Fatal("cannot stop controller", err)
 		}
 	}()
 
-	proc := processor.NewProcessor(trn, s, contr, 1)
+	proc := processor.NewProcessor(mainNetTransformer, storage, controller, 1)
 	err = proc.Start(ctx)
 	if err != nil {
 		logger.Fatal("cannot start processor", err)

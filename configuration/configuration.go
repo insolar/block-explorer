@@ -10,6 +10,7 @@ import (
 )
 
 func init() {
+	// todo fix problem with importing two loggers PENV-344
 	view.Unregister(&view.View{Name: "log_write_delays"})
 }
 
@@ -17,6 +18,7 @@ type BlockExplorer struct {
 	Log        Log
 	DB         DB
 	Replicator Replicator
+	Controller Controller
 }
 
 type API struct {
@@ -54,6 +56,10 @@ type Log struct {
 	BufferSize int `insconfig:"0| Number of regular log events that can be buffered, =0 to disable"`
 	// Number of low-latency log events that can be buffered, =-1 to disable, =0 - default size
 	LLBufferSize int `insconfig:"0| Number of low-latency log events that can be buffered, =-1 to disable, =0 - default size"`
+}
+
+type Controller struct {
+	PulsePeriod int `insconfig:":10| Seconds between pulse completion tries"`
 }
 
 // NewLog creates new default configuration for logging

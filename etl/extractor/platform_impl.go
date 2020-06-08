@@ -24,7 +24,7 @@ const pulseDelta = 10
 type PlatformExtractor struct {
 	stopSignal     chan bool
 	hasStarted     bool
-	startStopMutes *sync.Mutex
+	startStopMutex *sync.Mutex
 
 	client           exporter.RecordExporterClient
 	request          *exporter.GetRecords
@@ -35,7 +35,7 @@ func NewPlatformExtractor(batchSize uint32, exporterClient exporter.RecordExport
 	request := &exporter.GetRecords{Count: batchSize}
 	return &PlatformExtractor{
 		stopSignal:       make(chan bool, 1),
-		startStopMutes:   &sync.Mutex{},
+		startStopMutex:   &sync.Mutex{},
 		client:           exporterClient,
 		request:          request,
 		mainJetDropsChan: make(chan *types.PlatformJetDrops),
@@ -186,8 +186,8 @@ func closeStream(ctx context.Context, stream exporter.RecordExporter_ExportClien
 }
 
 func (m *PlatformExtractor) Stop(ctx context.Context) error {
-	m.startStopMutes.Lock()
-	defer m.startStopMutes.Unlock()
+	m.startStopMutex.Lock()
+	defer m.startStopMutex.Unlock()
 	if m.hasStarted {
 		belogger.FromContext(ctx).Info("Stopping platform extractor...")
 		m.stopSignal <- true
@@ -207,8 +207,8 @@ func (m *PlatformExtractor) needStop() bool {
 }
 
 func (m *PlatformExtractor) Start(ctx context.Context) error {
-	m.startStopMutes.Lock()
-	defer m.startStopMutes.Unlock()
+	m.startStopMutex.Lock()
+	defer m.startStopMutex.Unlock()
 	if !m.hasStarted {
 		belogger.FromContext(ctx).Info("Starting platform extractor...")
 		m.getJetDropsContinuously(ctx)

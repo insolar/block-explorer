@@ -8,6 +8,8 @@ package betestsetup
 import (
 	"context"
 
+	"github.com/insolar/block-explorer/configuration"
+
 	"github.com/insolar/block-explorer/etl/controller"
 	"github.com/insolar/block-explorer/etl/extractor"
 	"github.com/insolar/block-explorer/etl/interfaces"
@@ -38,6 +40,8 @@ func NewBlockExplorer(exporterClient exporter.RecordExporterClient, db *gorm.DB)
 	}
 }
 
+var cfg = configuration.Controller{PulsePeriod: 10}
+
 // start Extractor, Transformer, Controller and Processor
 func (b *BlockExplorerTestSetUp) Start() error {
 	b.ctx = context.Background()
@@ -55,7 +59,7 @@ func (b *BlockExplorerTestSetUp) Start() error {
 	}
 
 	b.strg = storage.NewStorage(b.DB)
-	b.cont, err = controller.NewController(b.extr, b.strg)
+	b.cont, err = controller.NewController(cfg, b.extr, b.strg)
 	if err != nil {
 		return err
 	}

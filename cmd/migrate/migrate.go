@@ -6,6 +6,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/insolar/insconfig"
@@ -15,6 +16,7 @@ import (
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 
 	"github.com/insolar/block-explorer/configuration"
+	"github.com/insolar/block-explorer/instrumentation/belogger"
 	"github.com/insolar/block-explorer/migrations"
 )
 
@@ -30,32 +32,24 @@ func main() {
 	}
 	fmt.Println("Starts with configuration:\n", insConfigurator.ToYaml(cfg))
 
-	// TODO: enable logger after PENV-279
-	// ctx := context.Background()
-	// log := belogger.FromContext(ctx)
+	ctx := context.Background()
+	log := belogger.FromContext(ctx)
 
 	db, err := gorm.Open("postgres", cfg.URL)
 	if err != nil {
-		// TODO: change to logger after PENV-279
-		// logger.Fatalf("Error while connecting to database: %s", err.Error())
-		fmt.Printf("Error while connecting to database: %s\n", err.Error())
+		log.Fatalf("Error while connecting to database: %s", err.Error())
 		return
 	}
 	defer db.Close()
 
 	db = db.LogMode(true)
-	// TODO: enable logger after PENV-279
-	// db.SetLogger(belogger.NewGORMLogAdapter(log))
+	db.SetLogger(belogger.NewGORMLogAdapter(log))
 
 	m := gormigrate.New(db, gormigrate.DefaultOptions, migrations.Migrations())
 
 	if err = m.Migrate(); err != nil {
-		// TODO: change to logger after PENV-279
-		// log.Fatalf("Could not migrate: %v", err)
-		fmt.Printf("Could not migrate: %v\n", err)
+		log.Fatalf("Could not migrate: %v", err)
 		return
 	}
-	// TODO: change to logger after PENV-279
-	// log.Info("migrated successfully!")
-	fmt.Println("migrated successfully!")
+	log.Info("migrated successfully!")
 }
