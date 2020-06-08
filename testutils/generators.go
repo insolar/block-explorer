@@ -52,12 +52,13 @@ func GenerateVirtualActivateRecord(pulse insolar.PulseNumber, objectID, requestI
 	return r
 }
 
-func GenerateVirtualAmendRecordsLinkedArray(pulse insolar.PulseNumber, objectID, prevStateID insolar.ID, recordsCount int) []*exporter.Record {
+func GenerateVirtualAmendRecordsLinkedArray(pulse insolar.PulseNumber, jetID insolar.JetID, objectID, prevStateID insolar.ID, recordsCount int) []*exporter.Record {
 	result := make([]*exporter.Record, recordsCount)
 	for i := 0; i < recordsCount; i++ {
 		r := GenerateVirtualAmendRecord(pulse, objectID, prevStateID)
+		r.Record.JetID = jetID
 		result[i] = r
-		prevStateID = r.Record.Virtual.GetAmend().PrevState
+		prevStateID = r.Record.ID
 	}
 	return result
 }
@@ -89,13 +90,23 @@ func GenerateVirtualDeactivateRecord(pulse insolar.PulseNumber, objectID, prevSt
 	return r
 }
 
-func GenerateObjectLifeline(pulsesNumber, recordsInPulse int) map[insolar.PulseNumber][]*exporter.Record {
+type ObjectLifeline struct {
+	States []StateByPulse
+	ObjID  insolar.ID
+}
+
+type StateByPulse struct {
+	Pn      insolar.PulseNumber
+	Records []*exporter.Record
+}
+
+func GenerateObjectLifeline(pulsesNumber, recordsInPulse int) ObjectLifeline {
 	objectID := gen.ID()
 	var prevState insolar.ID
-	activate := new(exporter.Record)
-	lifeline := make(map[insolar.PulseNumber][]*exporter.Record, pulsesNumber+1)
+	states := make([]StateByPulse, pulsesNumber)
 	pn := gen.PulseNumber()
 	for i := 0; i < pulsesNumber; i++ {
+		jetID := GenerateUniqueJetID()
 		pn = pn + 10
 		records := make([]*exporter.Record, recordsInPulse)
 		if i == 0 {
@@ -103,23 +114,32 @@ func GenerateObjectLifeline(pulsesNumber, recordsInPulse int) map[insolar.PulseN
 			request := GenerateRequestRecord(pn, objectID)
 			records[len(records)-1] = request
 
-			activate = GenerateVirtualActivateRecord(pn, objectID, request.Record.ID)
+			activate := GenerateVirtualActivateRecord(pn, objectID, request.Record.ID)
 			records[len(records)-2] = activate
 			prevState = activate.Record.ID
 		}
-		amends := GenerateVirtualAmendRecordsLinkedArray(pn, objectID, prevState, recordsInPulse)
+		amends := GenerateVirtualAmendRecordsLinkedArray(pn, jetID, objectID, prevState, recordsInPulse)
 		for ii, r := range amends {
 			records[ii] = r
 		}
 		prevState = amends[len(amends)-1].Record.ID
-		if i == pulsesNumber {
+		if i == pulsesNumber-1 {
 			deactivate := GenerateVirtualDeactivateRecord(pn, objectID, prevState)
+			deactivate.Record.JetID = jetID
 			records = append(records, deactivate)
 		}
 
-		lifeline[pn] = records
+		states[i] = StateByPulse{
+			Pn:      pn,
+			Records: records,
+		}
 	}
-	return lifeline
+
+	return ObjectLifeline{
+		States: states,
+		ObjID:  objectID,
+	}
+
 }
 
 // GenerateRecords returns a function for generating record with error

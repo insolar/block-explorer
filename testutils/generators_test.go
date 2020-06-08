@@ -10,7 +10,6 @@ package testutils
 import (
 	"fmt"
 	"io"
-	"sort"
 	"testing"
 
 	"github.com/insolar/insolar/insolar"
@@ -98,24 +97,22 @@ func TestGenerateObjectLifeline(t *testing.T) {
 	pulsesNumber := 5
 	recordsNumber := 10
 	lifeline := GenerateObjectLifeline(pulsesNumber, recordsNumber)
-	require.Len(t, lifeline, pulsesNumber)
+	require.Len(t, lifeline.States, pulsesNumber)
 
-	pulses := make([]insolar.PulseNumber, pulsesNumber)
-	i := 0
-	for p := range lifeline {
-		pulses[i] = p
-		i++
-	}
-	sort.Slice(pulses, func(i, j int) bool { return pulses[i] < pulses[j] })
-	objID := lifeline[pulses[1]][0].Record.ObjectID
-
+	objID := lifeline.ObjID
 	allRecords := make([]*exporter.Record, 0)
+	var prevPn insolar.PulseNumber
+	prevPn = 0
 	for i := 0; i < pulsesNumber; i++ {
-		records := lifeline[pulses[i]]
+		pn := lifeline.States[i].Pn
+		require.Greater(t, pn.AsUint32(), prevPn.AsUint32())
+		prevPn = pn
+
+		records := lifeline.States[i].Records
 		if i == 0 {
 			// first pulse also contains Request and Activate records
 			require.Len(t, records, recordsNumber+2)
-		} else if i == pulsesNumber {
+		} else if i == pulsesNumber-1 {
 			// last pulse contains Deactivate record
 			require.Len(t, records, recordsNumber+1)
 		} else {
@@ -127,6 +124,7 @@ func TestGenerateObjectLifeline(t *testing.T) {
 	var activateCount int
 	var amendCount int
 	var incomingCount int
+	var deactivateCount int
 	var unknown int
 	for _, r := range allRecords {
 		require.Equal(t, objID, r.Record.ObjectID)
@@ -139,6 +137,8 @@ func TestGenerateObjectLifeline(t *testing.T) {
 			amendCount++
 		case *ins_record.Virtual_IncomingRequest:
 			incomingCount++
+		case *ins_record.Virtual_Deactivate:
+			deactivateCount++
 		default:
 			unknown++
 		}
@@ -146,5 +146,6 @@ func TestGenerateObjectLifeline(t *testing.T) {
 	require.Equal(t, 0, unknown)
 	require.Equal(t, 1, activateCount)
 	require.Equal(t, 1, incomingCount)
+	require.Equal(t, 1, deactivateCount)
 	require.Equal(t, pulsesNumber*recordsNumber, amendCount)
 }
