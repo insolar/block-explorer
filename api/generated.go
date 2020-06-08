@@ -92,6 +92,12 @@ func (w *ServerInterfaceWrapper) ObjectLifeline(ctx echo.Context) error {
 
 	// ------------- Optional query parameter "pulse_number_lt" -------------
 
+	err = runtime.BindQueryParameter("form", true, false, "pulse_number_lt", ctx.QueryParams(), &params.PulseNumberLt)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter pulse_number_lt: %s", err))
+	}
+
+	// ------------- Optional query parameter "pulse_number_gt" -------------
 	err = runtime.BindQueryParameter("form", true, false, "pulse_number_gt", ctx.QueryParams(), &params.PulseNumberGt)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter pulse_number_gt: %s", err))
