@@ -13,6 +13,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/insolar/insolar/ledger/heavy/exporter"
+	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/suite"
+
 	"github.com/insolar/block-explorer/etl/models"
 	"github.com/insolar/block-explorer/etl/transformer"
 	"github.com/insolar/block-explorer/etl/types"
@@ -20,9 +24,6 @@ import (
 	"github.com/insolar/block-explorer/testutils"
 	betest "github.com/insolar/block-explorer/testutils/betestsetup"
 	"github.com/insolar/block-explorer/testutils/connectionmanager"
-	"github.com/insolar/insolar/ledger/heavy/exporter"
-	"github.com/stretchr/testify/require"
-	"github.com/stretchr/testify/suite"
 )
 
 type dbIntegrationSuite struct {
@@ -134,6 +135,8 @@ func (a *dbIntegrationSuite) TestIntegrationWithDb_GetJetDrops() {
 	jds := [][]byte{jetDropsDB[0].JetID, jetDropsDB[1].JetID}
 	require.Contains(a.T(), jds, prefixFirst)
 	require.Contains(a.T(), jds, prefixSecond)
+	require.Equal(a.T(), recordsCount, jetDropsDB[0].RecordAmount)
+	require.Equal(a.T(), recordsCount, jetDropsDB[1].RecordAmount)
 }
 
 func (a *dbIntegrationSuite) waitRecordsCount(expCount int) {
