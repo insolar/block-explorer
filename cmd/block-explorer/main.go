@@ -88,7 +88,7 @@ func main() {
 
 	storage := storage.NewStorage(db)
 
-	controller, err := controller.NewController(platformExtractor, storage)
+	controller, err := controller.NewController(cfg.Controller, platformExtractor, storage)
 	if err != nil {
 		logger.Fatal("cannot initialize controller", err)
 	}

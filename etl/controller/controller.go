@@ -9,6 +9,8 @@ import (
 	"context"
 	"sync"
 
+	"github.com/insolar/block-explorer/configuration"
+
 	"github.com/pkg/errors"
 
 	"github.com/insolar/block-explorer/etl/interfaces"
@@ -18,19 +20,23 @@ import (
 // Controller checks pulses completeness
 // and sends signal to reload missing data from platform
 type Controller struct {
+	cfg       configuration.Controller
 	extractor interfaces.JetDropsExtractor
 	storage   interfaces.Storage
 
+	cancelFunc context.CancelFunc
+
 	// jetDropRegister stores processed jetDrops for not complete pulses
-	jetDropRegister         map[types.Pulse][][]byte
-	jetDropRegisterLock     sync.RWMutex
+	jetDropRegister     map[types.Pulse][][]byte
+	jetDropRegisterLock sync.RWMutex
 	// missedDataRequestsQueue stores pulses, that were reloaded
 	missedDataRequestsQueue map[types.Pulse]bool
 }
 
 // NewController returns implementation of interfaces.Controller
-func NewController(extractor interfaces.JetDropsExtractor, storage interfaces.Storage) (*Controller, error) {
+func NewController(cfg configuration.Controller, extractor interfaces.JetDropsExtractor, storage interfaces.Storage) (*Controller, error) {
 	c := &Controller{
+		cfg:                     cfg,
 		extractor:               extractor,
 		storage:                 storage,
 		jetDropRegister:         make(map[types.Pulse][][]byte),
@@ -55,11 +61,14 @@ func NewController(extractor interfaces.JetDropsExtractor, storage interfaces.St
 
 // Start implements interfaces.Starter
 func (c *Controller) Start(ctx context.Context) error {
+	ctx, c.cancelFunc = context.WithCancel(ctx)
+	go c.pulseMaintainer(ctx)
 	return nil
 }
 
 // Stop implements interfaces.Stopper
 func (c *Controller) Stop(ctx context.Context) error {
+	c.cancelFunc()
 	return nil
 }
 
