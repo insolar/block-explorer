@@ -6,6 +6,9 @@
 package storage
 
 import (
+	"strconv"
+	"strings"
+
 	"github.com/jinzhu/gorm"
 	"github.com/pkg/errors"
 
@@ -80,6 +83,105 @@ func (s *storage) GetRecord(ref models.Reference) (models.Record, error) {
 	record := models.Record{}
 	err := s.db.Where("reference = ?", []byte(ref)).First(&record).Error
 	return record, err
+}
+
+func checkIndex(i string) (int, int, error) {
+	index := strings.Split(i, ":")
+	if len(index) != 2 {
+		return 0, 0, errors.New("query parameter 'index' should have the '<pulse_number>:<order>' format")
+	}
+	var err error
+	var pulseNumber, order int64
+	pulseNumber, err = strconv.ParseInt(index[0], 10, 64)
+	if err != nil {
+		return 0, 0, errors.New("query parameter 'index' should have the '<pulse_number>:<order>' format")
+	}
+	order, err = strconv.ParseInt(index[1], 10, 64)
+	if err != nil {
+		return 0, 0, errors.New("query parameter 'index' should have the '<pulse_number>:<order>' format")
+	}
+	return int(pulseNumber), int(order), nil
+}
+
+func filterByPulse(query *gorm.DB, pulseNumberLt, pulseNumberGt *int) *gorm.DB {
+	if pulseNumberGt != nil {
+		query = query.Where("pulse_number > ?", *pulseNumberGt)
+	}
+	if pulseNumberLt != nil {
+		query = query.Where("pulse_number < ?", *pulseNumberLt)
+	}
+	return query
+}
+
+func filterRecordsByIndex(query *gorm.DB, fromIndex string, sort string) (*gorm.DB, error) {
+	pulseNumber, order, err := checkIndex(fromIndex)
+	if err != nil {
+		return nil, err
+	}
+	switch sort {
+	case "asc":
+		query = query.Where("(pulse_number > ?", pulseNumber)
+		query = query.Or("pulse_number = ? AND \"order\" >= ?)", pulseNumber, order)
+	case "desc":
+		query = query.Where("(pulse_number < ?", pulseNumber)
+		query = query.Or("pulse_number = ? AND \"order\" <= ?)", pulseNumber, order)
+
+	default:
+		return nil, errors.New("query parameter 'sort' should be 'asc'' or 'desc'")
+	}
+	return query, nil
+}
+
+func sortRecordsByDirection(query *gorm.DB, sort string) (*gorm.DB, error) {
+	switch sort {
+	case "asc":
+		query = query.Order("pulse_number asc").Order("\"order\" asc")
+	case "desc":
+		query = query.Order("pulse_number desc").Order("\"order\" desc")
+	default:
+		return nil, errors.New("query parameter 'sort' should be 'asc'' or 'desc'")
+	}
+	return query, nil
+}
+
+func getRecords(query *gorm.DB, limit, offset int) ([]models.Record, int, error) {
+	records := []models.Record{}
+	var total int
+	err := query.Limit(limit).Offset(offset).Find(&records).Error
+	if err != nil {
+		return nil, 0, err
+	}
+	err = query.Count(&total).Error
+	if err != nil {
+		return nil, 0, err
+	}
+	return records, total, nil
+}
+
+// GetLifeline returns records for provided object reference, ordered by pulse number and order fields.
+func (s *storage) GetLifeline(objRef []byte, fromIndex *string, pulseNumberLt, pulseNumberGt *int, limit, offset int, sort string) ([]models.Record, int, error) {
+	query := s.db.Model(&models.Record{}).Where("object_reference = ?", objRef).Where("type = ?", models.State)
+
+	query = filterByPulse(query, pulseNumberLt, pulseNumberGt)
+
+	var err error
+	if fromIndex != nil {
+		query, err = filterRecordsByIndex(query, *fromIndex, sort)
+		if err != nil {
+			return nil, 0, err
+		}
+	}
+
+	query, err = sortRecordsByDirection(query, sort)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	records, total, err := getRecords(query, limit, offset)
+	if err != nil {
+		return nil, 0, errors.Wrapf(err, "error while select records for object %v from db", objRef)
+	}
+	return records, total, nil
 }
 
 // GetIncompletePulses returns pulses that are not complete from db.

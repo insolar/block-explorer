@@ -94,6 +94,8 @@ type StorageFetcher interface {
 	GetIncompletePulses() ([]models.Pulse, error)
 	// GetJetDrops returns jetDrops for provided pulse from db.
 	GetJetDrops(pulse models.Pulse) ([]models.JetDrop, error)
+	// GetLifeline returns records for provided object reference, ordered by desc by pulse number and order fields.
+	GetLifeline(objRef []byte, fromIndex *string, pulseNumberLt, pulseNumberGt *int, limit, offset int, sort string) ([]models.Record, int, error)
 }
 
 //go:generate minimock -i github.com/insolar/block-explorer/etl/interfaces.Storage -o ./mock -s _mock.go -g
