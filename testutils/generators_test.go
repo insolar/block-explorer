@@ -112,9 +112,6 @@ func TestGenerateObjectLifeline(t *testing.T) {
 		if i == 0 {
 			// first pulse also contains Request and Activate records
 			require.Len(t, records, recordsNumber+2)
-		} else if i == pulsesNumber-1 {
-			// last pulse contains Deactivate record
-			require.Len(t, records, recordsNumber+1)
 		} else {
 			require.Len(t, records, recordsNumber)
 		}
@@ -124,7 +121,6 @@ func TestGenerateObjectLifeline(t *testing.T) {
 	var activateCount int
 	var amendCount int
 	var incomingCount int
-	var deactivateCount int
 	var unknown int
 	for _, r := range allRecords {
 		require.Equal(t, objID, r.Record.ObjectID)
@@ -137,8 +133,6 @@ func TestGenerateObjectLifeline(t *testing.T) {
 			amendCount++
 		case *ins_record.Virtual_IncomingRequest:
 			incomingCount++
-		case *ins_record.Virtual_Deactivate:
-			deactivateCount++
 		default:
 			unknown++
 		}
@@ -146,6 +140,5 @@ func TestGenerateObjectLifeline(t *testing.T) {
 	require.Equal(t, 0, unknown)
 	require.Equal(t, 1, activateCount)
 	require.Equal(t, 1, incomingCount)
-	require.Equal(t, 1, deactivateCount)
 	require.Equal(t, pulsesNumber*recordsNumber, amendCount)
 }
