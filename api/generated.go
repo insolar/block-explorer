@@ -77,9 +77,6 @@ func (w *ServerInterfaceWrapper) ObjectLifeline(ctx echo.Context) error {
 	// Parameter object where we will unmarshal all parameters from the context
 	var params ObjectLifelineParams
 	// ------------- Optional query parameter "limit" -------------
-	if paramValue := ctx.QueryParam("limit"); paramValue != "" {
-
-	}
 
 	err = runtime.BindQueryParameter("form", true, false, "limit", ctx.QueryParams(), &params.Limit)
 	if err != nil {
@@ -87,9 +84,6 @@ func (w *ServerInterfaceWrapper) ObjectLifeline(ctx echo.Context) error {
 	}
 
 	// ------------- Optional query parameter "offset" -------------
-	if paramValue := ctx.QueryParam("offset"); paramValue != "" {
-
-	}
 
 	err = runtime.BindQueryParameter("form", true, false, "offset", ctx.QueryParams(), &params.Offset)
 	if err != nil {
@@ -97,19 +91,6 @@ func (w *ServerInterfaceWrapper) ObjectLifeline(ctx echo.Context) error {
 	}
 
 	// ------------- Optional query parameter "pulse_number_lt" -------------
-	if paramValue := ctx.QueryParam("pulse_number_lt"); paramValue != "" {
-
-	}
-
-	err = runtime.BindQueryParameter("form", true, false, "pulse_number_lt", ctx.QueryParams(), &params.PulseNumberLt)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter pulse_number_lt: %s", err))
-	}
-
-	// ------------- Optional query parameter "pulse_number_gt" -------------
-	if paramValue := ctx.QueryParam("pulse_number_gt"); paramValue != "" {
-
-	}
 
 	err = runtime.BindQueryParameter("form", true, false, "pulse_number_gt", ctx.QueryParams(), &params.PulseNumberGt)
 	if err != nil {
@@ -117,9 +98,6 @@ func (w *ServerInterfaceWrapper) ObjectLifeline(ctx echo.Context) error {
 	}
 
 	// ------------- Optional query parameter "from_index" -------------
-	if paramValue := ctx.QueryParam("from_index"); paramValue != "" {
-
-	}
 
 	err = runtime.BindQueryParameter("form", true, false, "from_index", ctx.QueryParams(), &params.FromIndex)
 	if err != nil {
@@ -127,9 +105,6 @@ func (w *ServerInterfaceWrapper) ObjectLifeline(ctx echo.Context) error {
 	}
 
 	// ------------- Optional query parameter "sort" -------------
-	if paramValue := ctx.QueryParam("sort"); paramValue != "" {
-
-	}
 
 	err = runtime.BindQueryParameter("form", true, false, "sort", ctx.QueryParams(), &params.Sort)
 	if err != nil {
@@ -137,9 +112,6 @@ func (w *ServerInterfaceWrapper) ObjectLifeline(ctx echo.Context) error {
 	}
 
 	// ------------- Optional query parameter "type" -------------
-	if paramValue := ctx.QueryParam("type"); paramValue != "" {
-
-	}
 
 	err = runtime.BindQueryParameter("form", true, false, "type", ctx.QueryParams(), &params.Type)
 	if err != nil {
@@ -151,8 +123,23 @@ func (w *ServerInterfaceWrapper) ObjectLifeline(ctx echo.Context) error {
 	return err
 }
 
+// This is a simple interface which specifies echo.Route addition functions which
+// are present on both echo.Echo and echo.Group, since we want to allow using
+// either of them for path registration
+type EchoRouter interface {
+	CONNECT(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
+	DELETE(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
+	GET(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
+	HEAD(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
+	OPTIONS(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
+	PATCH(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
+	POST(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
+	PUT(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
+	TRACE(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
+}
+
 // RegisterHandlers adds each server route to the EchoRouter.
-func RegisterHandlers(router runtime.EchoRouter, si ServerInterface) {
+func RegisterHandlers(router EchoRouter, si ServerInterface) {
 
 	wrapper := ServerInterfaceWrapper{
 		Handler: si,
