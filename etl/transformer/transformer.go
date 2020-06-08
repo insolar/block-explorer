@@ -200,6 +200,10 @@ func getRecords(records []*exporter.Record) (map[insolar.JetID][]types.Record, e
 	for _, r := range records {
 		record, err := transferToCanonicalRecord(r)
 		if err != nil {
+			if err == UnsupportedRecordTypeError {
+				// just skip this records
+				continue
+			}
 			return res, err
 		}
 		// collect records with some jetID
@@ -239,6 +243,7 @@ func transferToCanonicalRecord(r *exporter.Record) (types.Record, error) {
 		activate := virtual.GetActivate()
 		prototypeReference = activate.Image.Bytes()
 		recordPayload = activate.Memory
+		objectReference = activate.Request.GetLocal().Bytes()
 
 	case *ins_record.Virtual_Amend:
 		recordType = types.STATE
@@ -246,6 +251,9 @@ func transferToCanonicalRecord(r *exporter.Record) (types.Record, error) {
 		prototypeReference = amend.Image.Bytes()
 		recordPayload = amend.Memory
 		prevRecordReference = amend.PrevStateID().Bytes()
+		if bytes.Equal(objectReference, insolar.NewEmptyID().Bytes()) {
+			objectReference = amend.Request.GetLocal().Bytes()
+		}
 
 	case *ins_record.Virtual_Deactivate:
 		recordType = types.STATE
@@ -261,14 +269,17 @@ func transferToCanonicalRecord(r *exporter.Record) (types.Record, error) {
 		recordType = types.REQUEST
 		object := virtual.GetIncomingRequest().GetObject()
 		if object != nil && object.IsObjectReference() {
-			objectReference = object.Bytes()
+			objectReference = object.GetLocal().Bytes()
 		}
 	case *ins_record.Virtual_OutgoingRequest:
 		recordType = types.REQUEST
 		object := virtual.GetOutgoingRequest().GetObject()
 		if object != nil && object.IsObjectReference() {
-			objectReference = object.Bytes()
+			objectReference = object.GetLocal().Bytes()
 		}
+	default:
+		// skip unnecessary record
+		return types.Record{}, UnsupportedRecordTypeError
 	}
 
 	retRecord := types.Record{

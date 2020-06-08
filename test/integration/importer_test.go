@@ -27,14 +27,13 @@ func TestHeavymockImporter_cleanAfterSend(t *testing.T) {
 
 	err := heavymock.ImportRecords(cm.ImporterClient, expRecords)
 	require.NoError(t, err)
-	require.Len(t, cm.Importer.GetSavedRecords(), recordsCount)
+	require.Len(t, cm.Importer.GetUnsentRecords(), recordsCount)
 
 	records, err := heavymock.ReceiveRecords(cm.ExporterClient, &exporter.GetRecords{})
 	require.NoError(t, err)
 	require.Len(t, records, recordsCount)
 
-	cm.Importer.Cleanup()
-	require.Len(t, cm.Importer.GetSavedRecords(), 0)
+	require.Len(t, cm.Importer.GetUnsentRecords(), 0)
 
 	records, err = heavymock.ReceiveRecords(cm.ExporterClient, &exporter.GetRecords{})
 	require.NoError(t, err)

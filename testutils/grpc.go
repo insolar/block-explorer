@@ -22,7 +22,7 @@ type TestGRPCServer struct {
 }
 
 func CreateTestGRPCServer(t *testing.T) *TestGRPCServer {
-	listener, err := net.Listen("tcp", ":0")
+	listener, err := net.Listen("tcp", "127.0.0.1:0")
 	require.NoError(t, err, "failed to listen")
 	grpcServer := grpc.NewServer()
 
@@ -47,6 +47,5 @@ func (s *TestGRPCServer) Serve(t *testing.T) {
 			}
 		}
 		require.Error(t, err, "server exited with error")
-		return
 	}()
 }

@@ -9,23 +9,25 @@ import (
 	"context"
 
 	"github.com/insolar/block-explorer/configuration"
+	"github.com/insolar/block-explorer/instrumentation/belogger"
+
 	"github.com/pkg/errors"
 	"google.golang.org/grpc"
 )
 
-type GrpcClientConnection struct {
+type GRPCClientConnection struct {
 	grpc *grpc.ClientConn
 }
 
-// NewGrpcClientConnection returns implementation
-func NewGrpcClientConnection(ctx context.Context, cfg configuration.Replicator) (*GrpcClientConnection, error) {
+// NewGRPCClientConnection returns implementation
+func NewGRPCClientConnection(ctx context.Context, cfg configuration.Replicator) (*GRPCClientConnection, error) {
+	log := belogger.FromContext(ctx)
 	c, e := func() (*grpc.ClientConn, error) {
 		options := grpc.WithDefaultCallOptions(
 			grpc.MaxCallRecvMsgSize(cfg.MaxTransportMsg),
 			grpc.MaxCallSendMsgSize(cfg.MaxTransportMsg),
 		)
-		//todo: change to logger
-		println("trying connect to %s...", cfg.Addr)
+		log.Infof("trying connect to %s...", cfg.Addr)
 
 		// We omit error here because connect happens in background.
 		conn, err := grpc.Dial(cfg.Addr, options, grpc.WithInsecure())
@@ -36,13 +38,13 @@ func NewGrpcClientConnection(ctx context.Context, cfg configuration.Replicator) 
 	}()
 
 	if e != nil {
-		return &GrpcClientConnection{}, e
+		return &GRPCClientConnection{}, e
 	}
 
-	return &GrpcClientConnection{c}, nil
+	return &GRPCClientConnection{c}, nil
 }
 
-func (c *GrpcClientConnection) GetGRPCConn() *grpc.ClientConn {
+func (c *GRPCClientConnection) GetGRPCConn() *grpc.ClientConn {
 	return c.grpc
 }
 

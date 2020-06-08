@@ -13,8 +13,13 @@ import (
 )
 
 type ImporterServer struct {
-	savedRecords []exporter.Record
-	mux          sync.Mutex
+	records []*savedRecord
+	mux     sync.Mutex
+}
+
+type savedRecord struct {
+	record *exporter.Record
+	isSent bool
 }
 
 func NewHeavymockImporter() *ImporterServer {
@@ -24,11 +29,11 @@ func NewHeavymockImporter() *ImporterServer {
 func (s *ImporterServer) Import(stream HeavymockImporter_ImportServer) error {
 	s.mux.Lock()
 	defer s.mux.Unlock()
-	received := make([]exporter.Record, 0)
+	received := make([]*exporter.Record, 0)
 	for {
 		record, err := stream.Recv()
 		if err == io.EOF {
-			s.savedRecords = received
+			s.collectRecords(received)
 			return stream.SendAndClose(&Ok{
 				Ok: true,
 			})
@@ -36,18 +41,42 @@ func (s *ImporterServer) Import(stream HeavymockImporter_ImportServer) error {
 		if err != nil {
 			return err
 		}
-		received = append(received, *record)
+		received = append(received, record)
 	}
 }
 
-func (s *ImporterServer) GetSavedRecords() []exporter.Record {
+func (s *ImporterServer) GetUnsentRecords() []*exporter.Record {
 	s.mux.Lock()
 	defer s.mux.Unlock()
-	return s.savedRecords
+	res := make([]*exporter.Record, 0)
+	for _, r := range s.records {
+		if !r.isSent {
+			res = append(res, r.record)
+		}
+	}
+
+	return res
 }
 
-func (s *ImporterServer) Cleanup() {
+func (s *ImporterServer) MarkAsSent(records []*exporter.Record) {
 	s.mux.Lock()
 	defer s.mux.Unlock()
-	s.savedRecords = make([]exporter.Record, 0)
+
+	for _, r := range records {
+		for _, s := range s.records {
+			if r.Equal(s.record) {
+				s.isSent = true
+				break
+			}
+		}
+	}
+}
+
+func (s *ImporterServer) collectRecords(records []*exporter.Record) {
+	l := len(records)
+	slice := make([]*savedRecord, l)
+	for i := 0; i < l; i++ {
+		slice[i] = &savedRecord{records[i], false}
+	}
+	s.records = append(s.records, slice...)
 }

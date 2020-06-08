@@ -11,6 +11,8 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/insolar/block-explorer/configuration"
+
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 
@@ -19,13 +21,15 @@ import (
 	"github.com/insolar/block-explorer/etl/types"
 )
 
+var cfg = configuration.Controller{PulsePeriod: 10}
+
 func TestNewController_NoPulses(t *testing.T) {
 	extractor := mock.NewJetDropsExtractorMock(t)
 
 	sm := mock.NewStorageMock(t)
 	sm.GetIncompletePulsesMock.Return(nil, nil)
 
-	c, err := NewController(extractor, sm)
+	c, err := NewController(cfg, extractor, sm)
 	require.NoError(t, err)
 	require.NotNil(t, c)
 	require.Empty(t, c.jetDropRegister)
@@ -45,7 +49,7 @@ func TestNewController_OneNotCompletePulse(t *testing.T) {
 	sm.GetIncompletePulsesMock.Return([]models.Pulse{{PulseNumber: pulseNumber}}, nil)
 	sm.GetJetDropsMock.Return([]models.JetDrop{{JetID: firstJetID}, {JetID: secondJetID}}, nil)
 
-	c, err := NewController(extractor, sm)
+	c, err := NewController(cfg, extractor, sm)
 	require.NoError(t, err)
 	require.NotNil(t, c)
 	require.Empty(t, c.missedDataRequestsQueue)
@@ -81,7 +85,7 @@ func TestNewController_SeveralNotCompletePulses(t *testing.T) {
 	sm.GetIncompletePulsesMock.Return([]models.Pulse{{PulseNumber: firstPulseNumber}, {PulseNumber: secondPulseNumber}}, nil)
 	sm.GetJetDropsMock.Set(getJetDrops)
 
-	c, err := NewController(extractor, sm)
+	c, err := NewController(cfg, extractor, sm)
 	require.NoError(t, err)
 	require.NotNil(t, c)
 	require.Empty(t, c.missedDataRequestsQueue)
@@ -98,7 +102,7 @@ func TestNewController_ErrorGetPulses(t *testing.T) {
 	sm := mock.NewStorageMock(t)
 	sm.GetIncompletePulsesMock.Return(nil, errors.New("test error"))
 
-	c, err := NewController(extractor, sm)
+	c, err := NewController(cfg, extractor, sm)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "test error")
 	require.Nil(t, c)
@@ -114,7 +118,7 @@ func TestNewController_ErrorGetJetDrops(t *testing.T) {
 	sm.GetIncompletePulsesMock.Return([]models.Pulse{{PulseNumber: pulseNumber}}, nil)
 	sm.GetJetDropsMock.Return(nil, errors.New("test error"))
 
-	c, err := NewController(extractor, sm)
+	c, err := NewController(cfg, extractor, sm)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "test error")
 	require.Nil(t, c)

@@ -26,7 +26,7 @@ func TestHeavymockImporter_import(t *testing.T) {
 	defer server.Server.Stop()
 
 	cfg := connection.GetClientConfiguration(server.Address)
-	importerConn, err := connection.NewGrpcClientConnection(context.Background(), cfg)
+	importerConn, err := connection.NewGRPCClientConnection(context.Background(), cfg)
 	require.NoError(t, err)
 
 	defer importerConn.GetGRPCConn().Close()
@@ -37,9 +37,9 @@ func TestHeavymockImporter_import(t *testing.T) {
 	require.NoError(t, err)
 
 	records := testutils.GenerateRecordsSilence(5)
-	var expectedRecords []exporter.Record
+	var expectedRecords []*exporter.Record
 	for _, record := range records {
-		expectedRecords = append(expectedRecords, *record)
+		expectedRecords = append(expectedRecords, record)
 		if err := stream.Send(record); err != nil {
 			if err == io.EOF {
 				break
@@ -51,6 +51,16 @@ func TestHeavymockImporter_import(t *testing.T) {
 	reply, err := stream.CloseAndRecv()
 	require.NoError(t, err)
 	require.True(t, reply.Ok)
-	require.Len(t, importer.savedRecords, len(records))
-	require.Equal(t, importer.savedRecords, expectedRecords)
+	unsentRecords := importer.GetUnsentRecords()
+	require.Len(t, unsentRecords, len(records))
+	var c int
+	for _, u := range unsentRecords {
+		for _, e := range expectedRecords {
+			if e.Equal(u) {
+				c++
+				break
+			}
+		}
+	}
+	require.Equal(t, len(expectedRecords), c)
 }

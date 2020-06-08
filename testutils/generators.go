@@ -164,9 +164,9 @@ func GenerateRecords(batchSize int) func() (record *exporter.Record, e error) {
 				Polymorph: int32(randNum()),
 				Virtual: insrecord.Virtual{
 					Polymorph: int32(randNum()),
-					Union: &insrecord.Virtual_IncomingRequest{
-						IncomingRequest: &insrecord.IncomingRequest{
-							Object: nil,
+					Union: &insrecord.Virtual_Activate{
+						Activate: &insrecord.Activate{
+							Request: gen.Reference(),
 						},
 					},
 					Signature: []byte{0, 1, 2},
