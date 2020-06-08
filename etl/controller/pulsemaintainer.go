@@ -9,12 +9,12 @@ import (
 	"context"
 	"time"
 
-	"github.com/insolar/insolar/log"
-
 	"github.com/insolar/block-explorer/etl/types"
+	"github.com/insolar/block-explorer/instrumentation/belogger"
 )
 
 func (c *Controller) pulseMaintainer(ctx context.Context) {
+	log := belogger.FromContext(ctx)
 	for {
 		select {
 		case <-ctx.Done():
@@ -24,17 +24,21 @@ func (c *Controller) pulseMaintainer(ctx context.Context) {
 		}
 		for p, d := range c.jetDropRegister {
 			if pulseIsComplete(p, d) {
-				c.jetDropRegisterLock.Lock()
+				if func() bool {
+					c.jetDropRegisterLock.Lock()
+					defer c.jetDropRegisterLock.Unlock()
 
-				if err := c.storage.CompletePulse(p.PulseNo); err != nil {
-					log.Error(err)
-					c.jetDropRegisterLock.Unlock()
-					continue
+					if err := c.storage.CompletePulse(p.PulseNo); err != nil {
+						log.Errorf("During pulse saving: %s", err.Error())
+						return false
+					}
+
+					delete(c.jetDropRegister, p)
+					return true
+
+				}() {
+					log.Infof("Pulse %d completed and saved", p.PulseNo)
 				}
-
-				delete(c.jetDropRegister, p)
-				c.jetDropRegisterLock.Unlock()
-				log.Infof("Pulse %d completed and saved", p.PulseNo)
 			}
 		}
 	}
