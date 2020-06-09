@@ -59,7 +59,7 @@ type Log struct {
 }
 
 type Controller struct {
-	PulsePeriod int `insconfig:":10| Seconds between pulse completion tries"`
+	PulsePeriod int `insconfig:"10| Seconds between pulse completion tries"`
 }
 
 // NewLog creates new default configuration for logging
