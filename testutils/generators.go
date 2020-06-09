@@ -104,12 +104,12 @@ type StateByPulse struct {
 	Records []*exporter.Record
 }
 
-func GenerateObjectLifeline(pulsesNumber, recordsInPulse int) ObjectLifeline {
+func GenerateObjectLifeline(pulseCount, recordsInPulse int) ObjectLifeline {
 	objectID := gen.ID()
 	var prevState insolar.ID
-	states := make([]StateByPulse, pulsesNumber)
+	states := make([]StateByPulse, pulseCount)
 	pn := gen.PulseNumber()
-	for i := 0; i < pulsesNumber; i++ {
+	for i := 0; i < pulseCount; i++ {
 		jetID := GenerateUniqueJetID()
 		pn = pn + 10
 		records := make([]*exporter.Record, recordsInPulse)
@@ -128,7 +128,7 @@ func GenerateObjectLifeline(pulsesNumber, recordsInPulse int) ObjectLifeline {
 		}
 		prevState = amends[len(amends)-1].Record.ID
 		// TODO uncomment after resolving https://insolar.atlassian.net/browse/PENV-368
-		// if i == pulsesNumber-1 {
+		// if i == pulseCount-1 {
 		// 	deactivate := GenerateVirtualDeactivateRecord(pn, objectID, prevState)
 		// 	deactivate.Record.JetID = jetID
 		// 	records = append(records, deactivate)

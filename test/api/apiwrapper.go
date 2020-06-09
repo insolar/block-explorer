@@ -31,6 +31,5 @@ func NewBeApiClient(t *testing.T, basePath string) *BEApiClient {
 func (c *BEApiClient) ObjectLifeline(objectRef string, localVarOptionals *client.ObjectLifelineOpts) (response client.JetDropRecordsResponse200, err error) {
 	response, rawResponse, err := c.client.RecordApi.ObjectLifeline(nil, objectRef, localVarOptionals)
 	LogHttp(c.t, rawResponse, nil, response)
-	// validateResponse(c.t, rawResponse)
 	return response, err
 }
