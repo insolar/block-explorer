@@ -77,7 +77,7 @@ lint: ## run linter
 
 .PHONY: bench
 bench: ## run bench
-	go test -v ./... -tags bench -bench=. -benchmem -benchtime=1000x
+	go test -v ./... -tags bench -bench=. -benchmem -benchtime=100x
 
 .PHONY: config
 config: ## generate config
