@@ -33,6 +33,12 @@ type StorageMock struct {
 	beforeGetJetDropsCounter uint64
 	GetJetDropsMock          mStorageMockGetJetDrops
 
+	funcGetLifeline          func(objRef []byte, fromIndex *string, pulseNumberLt *int, pulseNumberGt *int, limit int, offset int, sort string) (ra1 []models.Record, i1 int, err error)
+	inspectFuncGetLifeline   func(objRef []byte, fromIndex *string, pulseNumberLt *int, pulseNumberGt *int, limit int, offset int, sort string)
+	afterGetLifelineCounter  uint64
+	beforeGetLifelineCounter uint64
+	GetLifelineMock          mStorageMockGetLifeline
+
 	funcGetRecord          func(ref models.Reference) (r1 models.Record, err error)
 	inspectFuncGetRecord   func(ref models.Reference)
 	afterGetRecordCounter  uint64
@@ -66,6 +72,9 @@ func NewStorageMock(t minimock.Tester) *StorageMock {
 
 	m.GetJetDropsMock = mStorageMockGetJetDrops{mock: m}
 	m.GetJetDropsMock.callArgs = []*StorageMockGetJetDropsParams{}
+
+	m.GetLifelineMock = mStorageMockGetLifeline{mock: m}
+	m.GetLifelineMock.callArgs = []*StorageMockGetLifelineParams{}
 
 	m.GetRecordMock = mStorageMockGetRecord{mock: m}
 	m.GetRecordMock.callArgs = []*StorageMockGetRecordParams{}
@@ -651,6 +660,229 @@ func (m *StorageMock) MinimockGetJetDropsInspect() {
 	// if func was set then invocations count should be greater than zero
 	if m.funcGetJetDrops != nil && mm_atomic.LoadUint64(&m.afterGetJetDropsCounter) < 1 {
 		m.t.Error("Expected call to StorageMock.GetJetDrops")
+	}
+}
+
+type mStorageMockGetLifeline struct {
+	mock               *StorageMock
+	defaultExpectation *StorageMockGetLifelineExpectation
+	expectations       []*StorageMockGetLifelineExpectation
+
+	callArgs []*StorageMockGetLifelineParams
+	mutex    sync.RWMutex
+}
+
+// StorageMockGetLifelineExpectation specifies expectation struct of the Storage.GetLifeline
+type StorageMockGetLifelineExpectation struct {
+	mock    *StorageMock
+	params  *StorageMockGetLifelineParams
+	results *StorageMockGetLifelineResults
+	Counter uint64
+}
+
+// StorageMockGetLifelineParams contains parameters of the Storage.GetLifeline
+type StorageMockGetLifelineParams struct {
+	objRef        []byte
+	fromIndex     *string
+	pulseNumberLt *int
+	pulseNumberGt *int
+	limit         int
+	offset        int
+	sort          string
+}
+
+// StorageMockGetLifelineResults contains results of the Storage.GetLifeline
+type StorageMockGetLifelineResults struct {
+	ra1 []models.Record
+	i1  int
+	err error
+}
+
+// Expect sets up expected params for Storage.GetLifeline
+func (mmGetLifeline *mStorageMockGetLifeline) Expect(objRef []byte, fromIndex *string, pulseNumberLt *int, pulseNumberGt *int, limit int, offset int, sort string) *mStorageMockGetLifeline {
+	if mmGetLifeline.mock.funcGetLifeline != nil {
+		mmGetLifeline.mock.t.Fatalf("StorageMock.GetLifeline mock is already set by Set")
+	}
+
+	if mmGetLifeline.defaultExpectation == nil {
+		mmGetLifeline.defaultExpectation = &StorageMockGetLifelineExpectation{}
+	}
+
+	mmGetLifeline.defaultExpectation.params = &StorageMockGetLifelineParams{objRef, fromIndex, pulseNumberLt, pulseNumberGt, limit, offset, sort}
+	for _, e := range mmGetLifeline.expectations {
+		if minimock.Equal(e.params, mmGetLifeline.defaultExpectation.params) {
+			mmGetLifeline.mock.t.Fatalf("Expectation set by When has same params: %#v", *mmGetLifeline.defaultExpectation.params)
+		}
+	}
+
+	return mmGetLifeline
+}
+
+// Inspect accepts an inspector function that has same arguments as the Storage.GetLifeline
+func (mmGetLifeline *mStorageMockGetLifeline) Inspect(f func(objRef []byte, fromIndex *string, pulseNumberLt *int, pulseNumberGt *int, limit int, offset int, sort string)) *mStorageMockGetLifeline {
+	if mmGetLifeline.mock.inspectFuncGetLifeline != nil {
+		mmGetLifeline.mock.t.Fatalf("Inspect function is already set for StorageMock.GetLifeline")
+	}
+
+	mmGetLifeline.mock.inspectFuncGetLifeline = f
+
+	return mmGetLifeline
+}
+
+// Return sets up results that will be returned by Storage.GetLifeline
+func (mmGetLifeline *mStorageMockGetLifeline) Return(ra1 []models.Record, i1 int, err error) *StorageMock {
+	if mmGetLifeline.mock.funcGetLifeline != nil {
+		mmGetLifeline.mock.t.Fatalf("StorageMock.GetLifeline mock is already set by Set")
+	}
+
+	if mmGetLifeline.defaultExpectation == nil {
+		mmGetLifeline.defaultExpectation = &StorageMockGetLifelineExpectation{mock: mmGetLifeline.mock}
+	}
+	mmGetLifeline.defaultExpectation.results = &StorageMockGetLifelineResults{ra1, i1, err}
+	return mmGetLifeline.mock
+}
+
+//Set uses given function f to mock the Storage.GetLifeline method
+func (mmGetLifeline *mStorageMockGetLifeline) Set(f func(objRef []byte, fromIndex *string, pulseNumberLt *int, pulseNumberGt *int, limit int, offset int, sort string) (ra1 []models.Record, i1 int, err error)) *StorageMock {
+	if mmGetLifeline.defaultExpectation != nil {
+		mmGetLifeline.mock.t.Fatalf("Default expectation is already set for the Storage.GetLifeline method")
+	}
+
+	if len(mmGetLifeline.expectations) > 0 {
+		mmGetLifeline.mock.t.Fatalf("Some expectations are already set for the Storage.GetLifeline method")
+	}
+
+	mmGetLifeline.mock.funcGetLifeline = f
+	return mmGetLifeline.mock
+}
+
+// When sets expectation for the Storage.GetLifeline which will trigger the result defined by the following
+// Then helper
+func (mmGetLifeline *mStorageMockGetLifeline) When(objRef []byte, fromIndex *string, pulseNumberLt *int, pulseNumberGt *int, limit int, offset int, sort string) *StorageMockGetLifelineExpectation {
+	if mmGetLifeline.mock.funcGetLifeline != nil {
+		mmGetLifeline.mock.t.Fatalf("StorageMock.GetLifeline mock is already set by Set")
+	}
+
+	expectation := &StorageMockGetLifelineExpectation{
+		mock:   mmGetLifeline.mock,
+		params: &StorageMockGetLifelineParams{objRef, fromIndex, pulseNumberLt, pulseNumberGt, limit, offset, sort},
+	}
+	mmGetLifeline.expectations = append(mmGetLifeline.expectations, expectation)
+	return expectation
+}
+
+// Then sets up Storage.GetLifeline return parameters for the expectation previously defined by the When method
+func (e *StorageMockGetLifelineExpectation) Then(ra1 []models.Record, i1 int, err error) *StorageMock {
+	e.results = &StorageMockGetLifelineResults{ra1, i1, err}
+	return e.mock
+}
+
+// GetLifeline implements interfaces.Storage
+func (mmGetLifeline *StorageMock) GetLifeline(objRef []byte, fromIndex *string, pulseNumberLt *int, pulseNumberGt *int, limit int, offset int, sort string) (ra1 []models.Record, i1 int, err error) {
+	mm_atomic.AddUint64(&mmGetLifeline.beforeGetLifelineCounter, 1)
+	defer mm_atomic.AddUint64(&mmGetLifeline.afterGetLifelineCounter, 1)
+
+	if mmGetLifeline.inspectFuncGetLifeline != nil {
+		mmGetLifeline.inspectFuncGetLifeline(objRef, fromIndex, pulseNumberLt, pulseNumberGt, limit, offset, sort)
+	}
+
+	mm_params := &StorageMockGetLifelineParams{objRef, fromIndex, pulseNumberLt, pulseNumberGt, limit, offset, sort}
+
+	// Record call args
+	mmGetLifeline.GetLifelineMock.mutex.Lock()
+	mmGetLifeline.GetLifelineMock.callArgs = append(mmGetLifeline.GetLifelineMock.callArgs, mm_params)
+	mmGetLifeline.GetLifelineMock.mutex.Unlock()
+
+	for _, e := range mmGetLifeline.GetLifelineMock.expectations {
+		if minimock.Equal(e.params, mm_params) {
+			mm_atomic.AddUint64(&e.Counter, 1)
+			return e.results.ra1, e.results.i1, e.results.err
+		}
+	}
+
+	if mmGetLifeline.GetLifelineMock.defaultExpectation != nil {
+		mm_atomic.AddUint64(&mmGetLifeline.GetLifelineMock.defaultExpectation.Counter, 1)
+		mm_want := mmGetLifeline.GetLifelineMock.defaultExpectation.params
+		mm_got := StorageMockGetLifelineParams{objRef, fromIndex, pulseNumberLt, pulseNumberGt, limit, offset, sort}
+		if mm_want != nil && !minimock.Equal(*mm_want, mm_got) {
+			mmGetLifeline.t.Errorf("StorageMock.GetLifeline got unexpected parameters, want: %#v, got: %#v%s\n", *mm_want, mm_got, minimock.Diff(*mm_want, mm_got))
+		}
+
+		mm_results := mmGetLifeline.GetLifelineMock.defaultExpectation.results
+		if mm_results == nil {
+			mmGetLifeline.t.Fatal("No results are set for the StorageMock.GetLifeline")
+		}
+		return (*mm_results).ra1, (*mm_results).i1, (*mm_results).err
+	}
+	if mmGetLifeline.funcGetLifeline != nil {
+		return mmGetLifeline.funcGetLifeline(objRef, fromIndex, pulseNumberLt, pulseNumberGt, limit, offset, sort)
+	}
+	mmGetLifeline.t.Fatalf("Unexpected call to StorageMock.GetLifeline. %v %v %v %v %v %v %v", objRef, fromIndex, pulseNumberLt, pulseNumberGt, limit, offset, sort)
+	return
+}
+
+// GetLifelineAfterCounter returns a count of finished StorageMock.GetLifeline invocations
+func (mmGetLifeline *StorageMock) GetLifelineAfterCounter() uint64 {
+	return mm_atomic.LoadUint64(&mmGetLifeline.afterGetLifelineCounter)
+}
+
+// GetLifelineBeforeCounter returns a count of StorageMock.GetLifeline invocations
+func (mmGetLifeline *StorageMock) GetLifelineBeforeCounter() uint64 {
+	return mm_atomic.LoadUint64(&mmGetLifeline.beforeGetLifelineCounter)
+}
+
+// Calls returns a list of arguments used in each call to StorageMock.GetLifeline.
+// The list is in the same order as the calls were made (i.e. recent calls have a higher index)
+func (mmGetLifeline *mStorageMockGetLifeline) Calls() []*StorageMockGetLifelineParams {
+	mmGetLifeline.mutex.RLock()
+
+	argCopy := make([]*StorageMockGetLifelineParams, len(mmGetLifeline.callArgs))
+	copy(argCopy, mmGetLifeline.callArgs)
+
+	mmGetLifeline.mutex.RUnlock()
+
+	return argCopy
+}
+
+// MinimockGetLifelineDone returns true if the count of the GetLifeline invocations corresponds
+// the number of defined expectations
+func (m *StorageMock) MinimockGetLifelineDone() bool {
+	for _, e := range m.GetLifelineMock.expectations {
+		if mm_atomic.LoadUint64(&e.Counter) < 1 {
+			return false
+		}
+	}
+
+	// if default expectation was set then invocations count should be greater than zero
+	if m.GetLifelineMock.defaultExpectation != nil && mm_atomic.LoadUint64(&m.afterGetLifelineCounter) < 1 {
+		return false
+	}
+	// if func was set then invocations count should be greater than zero
+	if m.funcGetLifeline != nil && mm_atomic.LoadUint64(&m.afterGetLifelineCounter) < 1 {
+		return false
+	}
+	return true
+}
+
+// MinimockGetLifelineInspect logs each unmet expectation
+func (m *StorageMock) MinimockGetLifelineInspect() {
+	for _, e := range m.GetLifelineMock.expectations {
+		if mm_atomic.LoadUint64(&e.Counter) < 1 {
+			m.t.Errorf("Expected call to StorageMock.GetLifeline with params: %#v", *e.params)
+		}
+	}
+
+	// if default expectation was set then invocations count should be greater than zero
+	if m.GetLifelineMock.defaultExpectation != nil && mm_atomic.LoadUint64(&m.afterGetLifelineCounter) < 1 {
+		if m.GetLifelineMock.defaultExpectation.params == nil {
+			m.t.Error("Expected call to StorageMock.GetLifeline")
+		} else {
+			m.t.Errorf("Expected call to StorageMock.GetLifeline with params: %#v", *m.GetLifelineMock.defaultExpectation.params)
+		}
+	}
+	// if func was set then invocations count should be greater than zero
+	if m.funcGetLifeline != nil && mm_atomic.LoadUint64(&m.afterGetLifelineCounter) < 1 {
+		m.t.Error("Expected call to StorageMock.GetLifeline")
 	}
 }
 
@@ -1310,6 +1542,8 @@ func (m *StorageMock) MinimockFinish() {
 
 		m.MinimockGetJetDropsInspect()
 
+		m.MinimockGetLifelineInspect()
+
 		m.MinimockGetRecordInspect()
 
 		m.MinimockSaveJetDropDataInspect()
@@ -1341,6 +1575,7 @@ func (m *StorageMock) minimockDone() bool {
 		m.MinimockCompletePulseDone() &&
 		m.MinimockGetIncompletePulsesDone() &&
 		m.MinimockGetJetDropsDone() &&
+		m.MinimockGetLifelineDone() &&
 		m.MinimockGetRecordDone() &&
 		m.MinimockSaveJetDropDataDone() &&
 		m.MinimockSavePulseDone()

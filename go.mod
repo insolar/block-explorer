@@ -3,7 +3,8 @@ module github.com/insolar/block-explorer
 go 1.14
 
 require (
-	github.com/deepmap/oapi-codegen v1.3.0
+	github.com/deepmap/oapi-codegen v1.3.8
+	github.com/fortytw2/leaktest v1.3.0
 	github.com/gogo/protobuf v1.3.1
 	github.com/gojuno/minimock/v3 v3.0.6
 	github.com/google/gofuzz v1.0.0
