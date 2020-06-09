@@ -11,6 +11,8 @@ import (
 	"sync"
 	"sync/atomic"
 
+	"github.com/insolar/insolar/pulse"
+
 	"github.com/insolar/block-explorer/etl/interfaces"
 	"github.com/insolar/block-explorer/etl/models"
 	"github.com/insolar/block-explorer/etl/types"
@@ -107,6 +109,20 @@ func (p *Processor) process(ctx context.Context, jd *types.JetDrop) {
 	logger := belogger.FromContext(ctx)
 	logger.Infof("pulse = %d, jetDrop = %v, record amount = %d", pd.PulseNo, ms.Start.JetDropPrefix, len(jd.MainSection.Records))
 
+	pn := pulse.Number(pd.PulseNo)
+	mp := models.Pulse{
+		PulseNumber:     pd.PulseNo,
+		PrevPulseNumber: int(pn.Prev(uint16(pd.PrevPulseDelta))),
+		NextPulseNumber: int(pn.Next(uint16(pd.NextPulseDelta))),
+		IsComplete:      false,
+		Timestamp:       pd.PulseTimestamp,
+	}
+	err := p.storage.SavePulse(mp)
+	if err != nil {
+		logger.Errorf("cannot save pulse data: %s. pulse = %v", err.Error(), mp)
+		return
+	}
+
 	var firstPrevHash []byte
 	var secondPrevHash []byte
 	if len(ms.DropContinue.PrevDropHash) > 0 {
@@ -143,7 +159,7 @@ func (p *Processor) process(ctx context.Context, jd *types.JetDrop) {
 			Timestamp:           mjd.Timestamp,
 		})
 	}
-	err := p.storage.SaveJetDropData(mjd, mrs)
+	err = p.storage.SaveJetDropData(mjd, mrs)
 	if err != nil {
 		logger.Errorf("cannot save jetDrop data: %s. jetDrop = %v, records = %v", err.Error(), mjd, mrs)
 		return

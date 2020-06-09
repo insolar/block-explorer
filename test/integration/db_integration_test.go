@@ -13,6 +13,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/insolar/insolar/insolar/gen"
+	"github.com/insolar/insolar/ledger/heavy/exporter"
+	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/suite"
+
 	"github.com/insolar/block-explorer/etl/models"
 	"github.com/insolar/block-explorer/etl/transformer"
 	"github.com/insolar/block-explorer/etl/types"
@@ -20,9 +25,6 @@ import (
 	"github.com/insolar/block-explorer/testutils"
 	betest "github.com/insolar/block-explorer/testutils/betestsetup"
 	"github.com/insolar/block-explorer/testutils/connectionmanager"
-	"github.com/insolar/insolar/ledger/heavy/exporter"
-	"github.com/stretchr/testify/require"
-	"github.com/stretchr/testify/suite"
 )
 
 type dbIntegrationSuite struct {
@@ -110,22 +112,28 @@ func (a *dbIntegrationSuite) TestIntegrationWithDb_GetRecords() {
 }
 
 func (a *dbIntegrationSuite) TestIntegrationWithDb_GetJetDrops() {
+	pulse := gen.PulseNumber()
 	recordsCount := 2
 	pulses := 2
 	expRecordsJet1 := testutils.GenerateRecordsFromOneJetSilence(pulses, recordsCount)
+	for _, r := range expRecordsJet1[:len(expRecordsJet1)-1] {
+		r.Record.ID = gen.IDWithPulse(pulse)
+	}
 	expRecordsJet2 := testutils.GenerateRecordsFromOneJetSilence(pulses, recordsCount)
+	for _, r := range expRecordsJet2[:len(expRecordsJet2)-1] {
+		r.Record.ID = gen.IDWithPulse(pulse)
+	}
 	expRecords := make([]*exporter.Record, 0)
-	expRecords = append(expRecords, expRecordsJet1...)
+	expRecords = append(expRecords, expRecordsJet1[:len(expRecordsJet1)-1]...)
 	expRecords = append(expRecords, expRecordsJet2...)
 
 	err := heavymock.ImportRecords(a.c.ImporterClient, expRecords)
 	require.NoError(a.T(), err)
 
 	// last records with the biggest pulse number won't be processed, so we do not expect this record in DB
-	a.waitRecordsCount(len(expRecords) - recordsCount)
+	a.waitRecordsCount(len(expRecords) - 1)
 
-	// TODO: change it to '{PulseNumber: int(pulse)}' at PENV-212
-	jetDropsDB, err := a.be.Storage().GetJetDrops(models.Pulse{PulseNumber: 1})
+	jetDropsDB, err := a.be.Storage().GetJetDrops(models.Pulse{PulseNumber: int(pulse)})
 	require.NoError(a.T(), err)
 	require.Len(a.T(), jetDropsDB, 2, "jetDrops count in db not as expected")
 
