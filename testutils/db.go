@@ -91,7 +91,7 @@ func SetupDB() (*gorm.DB, func(), error) {
 	return db, cleaner, nil
 }
 
-func TruncateTables(t *testing.T, db *gorm.DB, models []interface{}) {
+func TruncateTables(t testing.TB, db *gorm.DB, models []interface{}) {
 	for _, m := range models {
 		err := db.Delete(m).Error
 		require.NoError(t, err)

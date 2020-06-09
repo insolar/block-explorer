@@ -20,9 +20,10 @@ func BenchmarkSaveJetDropData(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		b.StopTimer()
-		testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+		testutils.TruncateTables(b, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
 		pulse, err := testutils.InitPulseDB()
-		pulse.PulseNumber = 1
+		require.NoError(b, err)
+		err = testutils.CreatePulse(testDB, pulse)
 		require.NoError(b, err)
 		jetDrop := testutils.InitJetDropDB(pulse)
 		firstRecord := testutils.InitRecordDB(jetDrop)
