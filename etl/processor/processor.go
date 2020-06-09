@@ -110,10 +110,18 @@ func (p *Processor) process(ctx context.Context, jd *types.JetDrop) {
 	logger.Infof("pulse = %d, jetDrop = %v, record amount = %d", pd.PulseNo, ms.Start.JetDropPrefix, len(jd.MainSection.Records))
 
 	pn := pulse.Number(pd.PulseNo)
+	prevPN, ok := pn.TryPrev(uint16(pd.PrevPulseDelta))
+	if !ok {
+		prevPN = 0
+	}
+	nextPN, ok := pn.TryNext(uint16(pd.NextPulseDelta))
+	if !ok {
+		nextPN = 0
+	}
 	mp := models.Pulse{
 		PulseNumber:     pd.PulseNo,
-		PrevPulseNumber: int(pn.Prev(uint16(pd.PrevPulseDelta))),
-		NextPulseNumber: int(pn.Next(uint16(pd.NextPulseDelta))),
+		PrevPulseNumber: int(prevPN),
+		NextPulseNumber: int(nextPN),
 		IsComplete:      false,
 		Timestamp:       pd.PulseTimestamp,
 	}

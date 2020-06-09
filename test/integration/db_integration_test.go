@@ -13,7 +13,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/insolar/insolar/insolar/gen"
 	"github.com/insolar/insolar/ledger/heavy/exporter"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -112,36 +111,41 @@ func (a *dbIntegrationSuite) TestIntegrationWithDb_GetRecords() {
 }
 
 func (a *dbIntegrationSuite) TestIntegrationWithDb_GetJetDrops() {
-	pulse := gen.PulseNumber()
 	recordsCount := 2
 	pulses := 2
 	expRecordsJet1 := testutils.GenerateRecordsFromOneJetSilence(pulses, recordsCount)
-	for _, r := range expRecordsJet1[:len(expRecordsJet1)-1] {
-		r.Record.ID = gen.IDWithPulse(pulse)
-	}
 	expRecordsJet2 := testutils.GenerateRecordsFromOneJetSilence(pulses, recordsCount)
-	for _, r := range expRecordsJet2[:len(expRecordsJet2)-1] {
-		r.Record.ID = gen.IDWithPulse(pulse)
-	}
 	expRecords := make([]*exporter.Record, 0)
-	expRecords = append(expRecords, expRecordsJet1[:len(expRecordsJet1)-1]...)
+	expRecords = append(expRecords, expRecordsJet1...)
 	expRecords = append(expRecords, expRecordsJet2...)
+
+	pulseNumbers := map[int]bool{}
+	for _, r := range expRecords {
+		pulseNumbers[int(r.Record.ID.Pulse())] = true
+	}
 
 	err := heavymock.ImportRecords(a.c.ImporterClient, expRecords)
 	require.NoError(a.T(), err)
 
 	// last records with the biggest pulse number won't be processed, so we do not expect this record in DB
-	a.waitRecordsCount(len(expRecords) - 1)
+	a.waitRecordsCount(len(expRecords) - recordsCount)
 
-	jetDropsDB, err := a.be.Storage().GetJetDrops(models.Pulse{PulseNumber: int(pulse)})
-	require.NoError(a.T(), err)
-	require.Len(a.T(), jetDropsDB, 2, "jetDrops count in db not as expected")
+	var jetDropsDB []models.JetDrop
+	for pulse, _ := range pulseNumbers {
+		jd, err := a.be.Storage().GetJetDrops(models.Pulse{PulseNumber: pulse})
+		require.NoError(a.T(), err)
+		jetDropsDB = append(jetDropsDB, jd...)
+	}
+
+	require.Len(a.T(), jetDropsDB, 3, "jetDrops count in db not as expected")
 
 	prefixFirst := expRecordsJet1[0].Record.JetID.Prefix()
-	prefixSecond := expRecordsJet1[0].Record.JetID.Prefix()
-	jds := [][]byte{jetDropsDB[0].JetID, jetDropsDB[1].JetID}
+	prefixSecond := expRecordsJet1[1].Record.JetID.Prefix()
+	prefixThird := expRecordsJet2[0].Record.JetID.Prefix()
+	jds := [][]byte{jetDropsDB[0].JetID, jetDropsDB[1].JetID, jetDropsDB[2].JetID}
 	require.Contains(a.T(), jds, prefixFirst)
 	require.Contains(a.T(), jds, prefixSecond)
+	require.Contains(a.T(), jds, prefixThird)
 }
 
 func (a *dbIntegrationSuite) waitRecordsCount(expCount int) {
