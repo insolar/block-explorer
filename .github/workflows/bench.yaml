@@ -27,6 +27,9 @@ jobs:
            curl -sfL https://raw.githubusercontent.com/knqyf263/cob/master/install.sh | sudo sh -s -- -b /usr/local/bin
            go mod vendor
         working-directory: ${{env.GOPATH}}/src/github.com/insolar/block-explorer
-      - name: Run Benchmark
+      - name: Run benchmarks
         run: cob -bench-cmd make -bench-args bench -threshold 0.7
+        working-directory: ${{env.GOPATH}}/src/github.com/insolar/block-explorer
+      - name: Run integration benchmarks
+        run: cob -bench-cmd make -bench-args bench-integration -threshold 0.7
         working-directory: ${{env.GOPATH}}/src/github.com/insolar/block-explorer

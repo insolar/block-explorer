@@ -76,8 +76,12 @@ lint: ## run linter
 	${BIN_DIR}/golangci-lint --color=always run ./... -v --timeout 5m
 
 .PHONY: bench
-bench: ## run bench
-	go test -v ./... -tags bench -bench=. -benchmem -benchtime=100x
+bench: ## run benchmarks
+	go test -v ./... -tags bench -bench=. -benchmem -benchtime=1000x
+
+.PHONY: bench
+bench-integration: ## run integration benchmarks
+	go test -v ./... -tags bench_integration -bench=. -benchmem -benchtime=10x
 
 .PHONY: config
 config: ## generate config
