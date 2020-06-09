@@ -61,12 +61,3 @@ func (c *pulseClient) Export(ctx context.Context, in *exporter.GetPulses, opts .
 func (c *pulseClient) TopSyncPulse(ctx context.Context, in *exporter.GetTopSyncPulse, opts ...grpc.CallOption) (*exporter.TopSyncPulseResponse, error) {
 	return c.topSyncPulse(ctx, in, opts...)
 }
-
-type pulseStream struct {
-	grpc.ClientStream
-	recv func() (*exporter.Pulse, error)
-}
-
-func (s *pulseStream) Recv() (*exporter.Pulse, error) {
-	return s.recv()
-}
