@@ -16,7 +16,11 @@ func CreateJetDropCanonical(records []types.Record) types.JetDrop {
 	return types.JetDrop{
 		MainSection: &types.MainSection{
 			Start: types.DropStart{
-				PulseData:           types.Pulse{},
+				PulseData: types.Pulse{
+					PulseNo:        int(gen.PulseNumber()),
+					PrevPulseDelta: 10,
+					NextPulseDelta: 10,
+				},
 				JetDropPrefix:       gen.JetID().Prefix(),
 				JetDropPrefixLength: uint(gen.JetID().Depth()),
 			},
