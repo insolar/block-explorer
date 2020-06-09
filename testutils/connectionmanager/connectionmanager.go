@@ -79,7 +79,6 @@ func (c *ConnectionManager) StartAPIServer(t *testing.T) {
 	}
 	apiServer := api.NewServer(c.ctx, s, cfg)
 	api.RegisterHandlers(e, apiServer)
-	println("OK api!")
 
 	go func() {
 		err := c.echo.Start(cfg.Listen)
