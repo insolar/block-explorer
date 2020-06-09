@@ -28,7 +28,7 @@ golangci: ## install golangci-linter
 	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b ${BIN_DIR} v1.27.0
 
 go-acc: ## install coverage tool
-	go get github.com/ory/go-acc
+	go get github.com/ory/go-acc@v0.2.3
 
 .PHONY: install_deps
 install_deps: golangci go-acc ## install necessary dependencies
