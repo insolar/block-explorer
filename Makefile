@@ -9,6 +9,9 @@ LDFLAGS ?=
 COVERPROFILE ?= coverage.out
 ARTIFACTS_DIR = .artifacts
 
+TEST_COUNT ?= 1
+TEST_ARGS ?=
+
 #.DEFAULT_GOAL := all
 
 .PHONY: all
@@ -49,14 +52,14 @@ generate: ## generate mocks
 
 .PHONY: unit
 unit:  ## run unit tests
-	go test -v ./... -tags unit -count 10 -race
+	go test -v ./... -tags unit -count $(TEST_COUNT) -race $(TEST_ARGS)
 
 .PHONY: test
 test: unit integration test-heavy-mock-integration ## run all tests
 
 .PHONY: integration
 integration: ## run integrations tests with race
-	go test -v ./... -tags integration -count 10 -race
+	go test -v ./... -tags integration -count $(TEST_COUNT) -race $(TEST_ARGS)
 
 .PHONY: test-with-coverage
 test-with-coverage: ## run tests with coverage mode
@@ -66,7 +69,7 @@ test-with-coverage: ## run tests with coverage mode
 
 .PHONY: test-heavy-mock-integration
 test-heavy-mock-integration:
-	go test -v ./test/integration/... -tags heavy_mock_integration -count 10 -race -failfast
+	go test -v ./... -tags heavy_mock_integration -count $(TEST_COUNT) -race $(TEST_ARGS)
 
 .PHONY: lint
 lint: ## run linter
