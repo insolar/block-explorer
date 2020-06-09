@@ -221,7 +221,10 @@ func TestStorage_GetJetDrops(t *testing.T) {
 
 	jetDrops, err := s.GetJetDrops(firstPulse)
 	require.NoError(t, err)
-	require.Equal(t, []models.JetDrop{jetDropForFirstPulse1, jetDropForFirstPulse2}, jetDrops)
+	expected := []models.JetDrop{jetDropForFirstPulse1, jetDropForFirstPulse2}
+	require.Len(t, jetDrops, 2)
+	require.Contains(t, expected, jetDrops[0])
+	require.Contains(t, expected, jetDrops[1])
 }
 
 func TestStorage_CompletePulse(t *testing.T) {
