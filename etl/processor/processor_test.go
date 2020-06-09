@@ -13,6 +13,8 @@ import (
 	"sync/atomic"
 	"testing"
 
+	"github.com/insolar/insolar/insolar/gen"
+
 	"github.com/insolar/block-explorer/etl/models"
 	"github.com/insolar/block-explorer/instrumentation/belogger"
 	"github.com/insolar/block-explorer/testutils"
@@ -33,10 +35,15 @@ func TestNewProcessor(t *testing.T) {
 	})
 
 	wgStorage := sync.WaitGroup{}
-	saves := int32(0)
+	pulseSaves := int32(0)
+	jetDropSaves := int32(0)
 	sm := mock.NewStorageSetterMock(t)
+	sm.SavePulseMock.Set(func(pulse models.Pulse) (err error) {
+		atomic.AddInt32(&pulseSaves, 1)
+		return nil
+	})
 	sm.SaveJetDropDataMock.Set(func(jetDrop models.JetDrop, records []models.Record) (err error) {
-		atomic.AddInt32(&saves, 1)
+		atomic.AddInt32(&jetDropSaves, 1)
 		wgStorage.Done()
 		return nil
 	})
@@ -60,7 +67,11 @@ func TestNewProcessor(t *testing.T) {
 		JDC <- &types.JetDrop{
 			MainSection: &types.MainSection{
 				Start: types.DropStart{
-					PulseData:           types.Pulse{},
+					PulseData: types.Pulse{
+						PulseNo:        int(gen.PulseNumber()),
+						NextPulseDelta: 10,
+						PrevPulseDelta: 10,
+					},
 					JetDropPrefix:       nil,
 					JetDropPrefixLength: 0,
 				},
@@ -75,7 +86,8 @@ func TestNewProcessor(t *testing.T) {
 	wgStorage.Wait()
 	wgController.Wait()
 	require.NoError(t, p.Stop(ctx))
-	require.Equal(t, int32(5), atomic.LoadInt32(&saves))
+	require.Equal(t, int32(5), atomic.LoadInt32(&pulseSaves))
+	require.Equal(t, int32(5), atomic.LoadInt32(&jetDropSaves))
 	require.Equal(t, int32(5), atomic.LoadInt32(&controllerCalls))
 }
 
@@ -90,6 +102,12 @@ func TestProcessor_process_EmptyPrev(t *testing.T) {
 	trm.GetJetDropsChannelMock.Return(nil)
 
 	sm := mock.NewStorageSetterMock(t)
+	sm.SavePulseMock.Set(func(pulse models.Pulse) (err error) {
+		require.Equal(t, jd.MainSection.Start.PulseData.PulseNo, pulse.PulseNumber)
+		require.Equal(t, jd.MainSection.Start.PulseData.PrevPulseDelta, pulse.PulseNumber-pulse.PrevPulseNumber)
+		require.Equal(t, jd.MainSection.Start.PulseData.NextPulseDelta, pulse.NextPulseNumber-pulse.PulseNumber)
+		return nil
+	})
 	sm.SaveJetDropDataMock.Set(func(jetDrop models.JetDrop, records []models.Record) (err error) {
 		require.Equal(t, jd.MainSection.Start.JetDropPrefix, jetDrop.JetID)
 		require.Len(t, records, len(jd.MainSection.Records))
@@ -124,6 +142,12 @@ func TestProcessor_process_SeveralPrev(t *testing.T) {
 	trm.GetJetDropsChannelMock.Return(nil)
 
 	sm := mock.NewStorageSetterMock(t)
+	sm.SavePulseMock.Set(func(pulse models.Pulse) (err error) {
+		require.Equal(t, jd.MainSection.Start.PulseData.PulseNo, pulse.PulseNumber)
+		require.Equal(t, jd.MainSection.Start.PulseData.PrevPulseDelta, pulse.PulseNumber-pulse.PrevPulseNumber)
+		require.Equal(t, jd.MainSection.Start.PulseData.NextPulseDelta, pulse.NextPulseNumber-pulse.PulseNumber)
+		return nil
+	})
 	sm.SaveJetDropDataMock.Set(func(jetDrop models.JetDrop, records []models.Record) (err error) {
 		require.Equal(t, jd.MainSection.Start.JetDropPrefix, jetDrop.JetID)
 		require.Equal(t, jd.MainSection.DropContinue.PrevDropHash[0], jetDrop.FirstPrevHash)
@@ -147,7 +171,7 @@ func TestProcessor_process_SeveralPrev(t *testing.T) {
 	require.Equal(t, uint64(1), contr.SetJetDropDataAfterCounter())
 }
 
-func TestProcessor_process_StorageErr(t *testing.T) {
+func TestProcessor_process_StorageSaveJetDropErr(t *testing.T) {
 	ctx := belogger.TestContext(t)
 	jd := testutils.CreateJetDropCanonical(
 		[]types.Record{
@@ -160,6 +184,9 @@ func TestProcessor_process_StorageErr(t *testing.T) {
 	trm.GetJetDropsChannelMock.Return(nil)
 
 	sm := mock.NewStorageSetterMock(t)
+	sm.SavePulseMock.Set(func(pulse models.Pulse) (err error) {
+		return nil
+	})
 	sm.SaveJetDropDataMock.Set(func(jetDrop models.JetDrop, records []models.Record) (err error) {
 		return errors.New("test error")
 	})
@@ -172,4 +199,31 @@ func TestProcessor_process_StorageErr(t *testing.T) {
 	p.process(ctx, &jd)
 
 	require.Equal(t, uint64(1), sm.SaveJetDropDataAfterCounter())
+}
+
+func TestProcessor_process_StorageSavePulseErr(t *testing.T) {
+	ctx := belogger.TestContext(t)
+	jd := testutils.CreateJetDropCanonical(
+		[]types.Record{
+			testutils.CreateRecordCanonical(), testutils.CreateRecordCanonical(), testutils.CreateRecordCanonical(),
+		},
+	)
+	jd.MainSection.DropContinue.PrevDropHash = [][]byte{testutils.GenerateRandBytes(), testutils.GenerateRandBytes()}
+
+	trm := mock.NewTransformerMock(t)
+	trm.GetJetDropsChannelMock.Return(nil)
+
+	sm := mock.NewStorageSetterMock(t)
+	sm.SavePulseMock.Set(func(pulse models.Pulse) (err error) {
+		return errors.New("test error")
+	})
+
+	contr := mock.NewControllerMock(t)
+
+	p := NewProcessor(trm, sm, contr, 3)
+	require.NotNil(t, p)
+
+	p.process(ctx, &jd)
+
+	require.Equal(t, uint64(1), sm.SavePulseAfterCounter())
 }
