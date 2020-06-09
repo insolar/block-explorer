@@ -81,7 +81,7 @@ bench: ## run benchmarks
 
 .PHONY: bench
 bench-integration: ## run integration benchmarks
-	go test -v ./... -tags bench_integration -bench=. -benchmem -benchtime=10x
+	go test -v ./... -tags bench_integration -bench=. -benchmem -benchtime=1x
 
 .PHONY: config
 config: ## generate config
