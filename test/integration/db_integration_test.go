@@ -99,7 +99,7 @@ func (a *dbIntegrationSuite) TestIntegrationWithDb_GetRecords() {
 
 	// last record with the biggest pulse number won't be processed, so we do not expect this record in DB
 	expRecordsCount := recordsInPulse * (pulsesNumber - 1)
-	a.waitRecordsCount(expRecordsCount)
+	waitRecordsCount(a.T(), a.c.DB, expRecordsCount)
 
 	for _, ref := range refs[:expRecordsCount] {
 		modelRef := models.ReferenceFromTypes(ref)
@@ -128,7 +128,7 @@ func (a *dbIntegrationSuite) TestIntegrationWithDb_GetJetDrops() {
 	require.NoError(a.T(), err)
 
 	// last records with the biggest pulse number won't be processed, so we do not expect this record in DB
-	a.waitRecordsCount(len(expRecords) - recordsCount)
+	waitRecordsCount(a.T(), a.c.DB, len(expRecords)-recordsCount)
 
 	var jetDropsDB []models.JetDrop
 	for pulse, _ := range pulseNumbers {
@@ -146,21 +146,6 @@ func (a *dbIntegrationSuite) TestIntegrationWithDb_GetJetDrops() {
 	require.Contains(a.T(), jds, prefixFirst)
 	require.Contains(a.T(), jds, prefixSecond)
 	require.Contains(a.T(), jds, prefixThird)
-}
-
-func (a *dbIntegrationSuite) waitRecordsCount(expCount int) {
-	var c int
-	for i := 0; i < 60; i++ {
-		record := models.Record{}
-		a.c.DB.Model(&record).Count(&c)
-		a.T().Logf("Select from record, expected rows count=%v, actual=%v, attempt: %v", expCount, c, i)
-		if c >= expCount {
-			break
-		}
-		time.Sleep(100 * time.Millisecond)
-	}
-	a.T().Logf("Found %v rows", c)
-	require.Equal(a.T(), expCount, c, "Records count in DB not as expected")
 }
 
 func TestAll(t *testing.T) {

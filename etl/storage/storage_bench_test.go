@@ -15,7 +15,6 @@ import (
 )
 
 func BenchmarkSaveJetDropData(b *testing.B) {
-	b.N = 1
 	s := NewStorage(testDB)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
