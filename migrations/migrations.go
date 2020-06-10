@@ -39,6 +39,7 @@ func Migrations() []*gormigrate.Migration {
 					Hash           []byte
 					RawData        []byte
 					Timestamp      int64
+					RecordAmount   int
 				}
 				if err := tx.CreateTable(&JetDrop{}).Error; err != nil {
 					return err

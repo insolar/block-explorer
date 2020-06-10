@@ -148,6 +148,7 @@ func (p *Processor) process(ctx context.Context, jd *types.JetDrop) {
 		Hash:           jd.Hash,
 		RawData:        jd.RawData,
 		Timestamp:      pd.PulseTimestamp,
+		RecordAmount:   len(ms.Records),
 	}
 
 	mrs := []models.Record{}

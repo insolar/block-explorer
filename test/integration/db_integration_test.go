@@ -146,6 +146,9 @@ func (a *dbIntegrationSuite) TestIntegrationWithDb_GetJetDrops() {
 	require.Contains(a.T(), jds, prefixFirst)
 	require.Contains(a.T(), jds, prefixSecond)
 	require.Contains(a.T(), jds, prefixThird)
+	require.Equal(a.T(), recordsCount, jetDropsDB[0].RecordAmount)
+	require.Equal(a.T(), recordsCount, jetDropsDB[1].RecordAmount)
+	require.Equal(a.T(), recordsCount, jetDropsDB[2].RecordAmount)
 }
 
 func (a *dbIntegrationSuite) waitRecordsCount(expCount int) {
