@@ -116,13 +116,13 @@ jobs:
         run: make test-heavy-mock-integration
         working-directory: ${{env.GOPATH}}/src/github.com/insolar/block-explorer
       - name: Install testrail-cli
-        if: github.event_name == 'push' || github.event_name == 'schedule'
+        if: github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'pull_request'
         run: |
           go get -v -u github.com/insolar/testrail-cli
           cd testrail-cli && go install cmd/testrail-cli/testrail-cli.go
         working-directory: ${{env.GOPATH}}/src/github.com/insolar
       - name: Publish tests results to testrail
-        if: github.event_name == 'push' || github.event_name == 'schedule'
+        if: github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'pull_request'
         env:
           TR_USER: ${{ secrets.TR_USER }}
           TR_PASSWORD: ${{ secrets.TR_PASSWORD }}
