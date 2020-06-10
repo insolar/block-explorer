@@ -1,3 +1,5 @@
+// +build integration bench_integration
+
 package integration
 
 import (
