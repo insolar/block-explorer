@@ -9,12 +9,13 @@ package transformer
 
 import (
 	"bytes"
+	"testing"
+
 	"github.com/insolar/block-explorer/etl/types"
 	"github.com/insolar/block-explorer/testutils"
 	"github.com/insolar/insolar/insolar/gen"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func BenchmarkTransformSort(b *testing.B) {

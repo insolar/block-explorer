@@ -1,8 +1,16 @@
+// Copyright 2020 Insolar Network Ltd.
+// All rights reserved.
+// This material is licensed under the Insolar License version 1.0,
+// available at https://github.com/insolar/block-explorer/blob/master/LICENSE.md.
+
 // +build heavy_mock_integration bench_integration
 
 package integration
 
 import (
+	"testing"
+	"time"
+
 	"github.com/insolar/block-explorer/etl/models"
 	"github.com/insolar/block-explorer/test/heavymock"
 	"github.com/insolar/block-explorer/testutils"
@@ -10,8 +18,6 @@ import (
 	"github.com/insolar/block-explorer/testutils/connectionmanager"
 	"github.com/insolar/insolar/ledger/heavy/exporter"
 	"github.com/stretchr/testify/require"
-	"testing"
-	"time"
 )
 
 type BlockExplorerTestSuite struct {

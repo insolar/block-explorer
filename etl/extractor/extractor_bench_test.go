@@ -9,13 +9,14 @@ package extractor
 
 import (
 	"context"
+	"testing"
+	"time"
+
 	"github.com/insolar/block-explorer/configuration"
 	"github.com/insolar/block-explorer/etl/connection"
 	"github.com/insolar/block-explorer/testutils"
 	"github.com/insolar/insolar/ledger/heavy/exporter"
 	"github.com/stretchr/testify/require"
-	"testing"
-	"time"
 )
 
 func BenchmarkPlatformExtractorGetJetDrops(b *testing.B) {
