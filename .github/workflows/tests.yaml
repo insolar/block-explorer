@@ -93,11 +93,12 @@ jobs:
         if: github.event_name == 'pull_request'
         run: |
           echo "::set-env name=TEST_COUNT::10"
+          echo "::set-env name=TEST_ARGS::-json"
       - name: set scheduled run params
         if: github.event_name == 'schedule'
         run: |
           echo "::set-env name=TEST_COUNT::100"
-          echo "::set-env name=TEST_ARGS::-timeout 240m"
+          echo "::set-env name=TEST_ARGS::-timeout 240m -json"
       - name: set up go ${{env.GO_VERSION}}
         uses: actions/setup-go@v1
         id: go
@@ -108,8 +109,24 @@ jobs:
         with:
           path: go/src/github.com/insolar/block-explorer
           fetch-depth: 1
-      - name: Test
-        run: make vendor test-heavy-mock-integration
+      - name: vendor
+        run: make vendor
+        working-directory: ${{env.GOPATH}}/src/github.com/insolar/block-explorer
+      - name: test
+        run: make test-heavy-mock-integration
+        working-directory: ${{env.GOPATH}}/src/github.com/insolar/block-explorer
+      - name: Install testrail-cli
+        if: github.event_name == 'push' || github.event_name == 'schedule'
+        run: |
+          go get -v -u github.com/insolar/testrail-cli
+          cd testrail-cli && go install cmd/testrail-cli/testrail-cli.go
+        working-directory: ${{env.GOPATH}}/src/github.com/insolar
+      - name: Publish tests results to testrail
+        if: github.event_name == 'push' || github.event_name == 'schedule'
+        env:
+          TR_USER: ${{ secrets.TR_USER }}
+          TR_PASSWORD: ${{ secrets.TR_PASSWORD }}
+        run: make publish_tests
         working-directory: ${{env.GOPATH}}/src/github.com/insolar/block-explorer
   test-with-coverage:
     name: tests with coverage

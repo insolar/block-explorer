@@ -50,6 +50,7 @@ func (a *dbIntegrationSuite) TearDownTest() {
 }
 
 func (a *dbIntegrationSuite) TestIntegrationWithDb_GetRecords() {
+	a.T().Log("C4991 Process records and get saved records by pulse number from database")
 	pulsesNumber := 10
 	recordsInPulse := 1
 	recordsWithDifferencePulses := testutils.GenerateRecordsWithDifferencePulses(pulsesNumber, recordsInPulse)
@@ -111,6 +112,7 @@ func (a *dbIntegrationSuite) TestIntegrationWithDb_GetRecords() {
 }
 
 func (a *dbIntegrationSuite) TestIntegrationWithDb_GetJetDrops() {
+	a.T().Log("C4992 Process records and get saved jetDrops by pulse number from database")
 	recordsCount := 2
 	pulses := 2
 	expRecordsJet1 := testutils.GenerateRecordsFromOneJetSilence(pulses, recordsCount)
