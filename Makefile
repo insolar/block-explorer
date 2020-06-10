@@ -79,7 +79,7 @@ lint: ## run linter
 bench: ## run benchmarks
 	go test -v ./... -tags bench -bench=. -benchmem -benchtime=1000x
 
-.PHONY: bench
+.PHONY: bench-integration
 bench-integration: ## run integration benchmarks
 	go test -v ./... -tags bench_integration -bench=. -benchmem -benchtime=1x
 

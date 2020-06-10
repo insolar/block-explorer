@@ -49,16 +49,17 @@ func (a *BlockExplorerTestSuite) Stop(t testing.TB) {
 	a.c.Stop()
 }
 
-func (a *BlockExplorerTestSuite) waitRecordsCount(t testing.TB, expCount int) {
+func (a *BlockExplorerTestSuite) waitRecordsCount(t testing.TB, expCount int, timeoutMs int) {
 	var c int
-	for i := 0; i < 600; i++ {
+	interval := 100
+	for i := 0; i < timeoutMs/interval; i++ {
 		record := models.Record{}
 		a.be.DB.Model(&record).Count(&c)
 		t.Logf("Select from record, expected rows count=%v, actual=%v, attempt: %v", expCount, c, i)
 		if c >= expCount {
 			break
 		}
-		time.Sleep(100 * time.Millisecond)
+		time.Sleep(time.Duration(interval) * time.Millisecond)
 	}
 	t.Logf("Found %v rows", c)
 	require.Equal(t, expCount, c, "Records count in DB not as expected")
