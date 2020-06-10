@@ -1,4 +1,4 @@
-// +build integration bench_integration
+// +build integration heavy_mock_integration bench_integration
 
 package integration
 
