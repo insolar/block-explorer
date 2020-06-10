@@ -50,6 +50,7 @@ type JetDrop struct {
 	Hash           []byte
 	RawData        []byte
 	Timestamp      int64
+	RecordAmount   int
 }
 
 type Pulse struct {
