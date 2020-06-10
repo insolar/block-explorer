@@ -25,7 +25,7 @@ func BenchmarkPlatformExtractorGetJetDrops(b *testing.B) {
 
 		ctx := context.Background()
 		server := testutils.CreateTestGRPCServer(b)
-		exporter.RegisterRecordExporterServer(server.Server, &Gserver{})
+		exporter.RegisterRecordExporterServer(server.Server, &RecordExporterServer{})
 		server.Serve(b)
 
 		// prepare config with listening address
@@ -38,7 +38,7 @@ func BenchmarkPlatformExtractorGetJetDrops(b *testing.B) {
 		client, err := connection.NewGRPCClientConnection(ctx, cfg)
 		require.NoError(b, err)
 
-		g := &Gclient{}
+		g := &RecordExporterClient{}
 		extractor := NewPlatformExtractor(uint32(defaultLocalBatchSize), g)
 		err = extractor.Start(ctx)
 		require.NoError(b, err)

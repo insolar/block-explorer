@@ -30,16 +30,16 @@ func (s recordStream) CloseSend() error {
 	return nil
 }
 
-type Gserver struct {
+type RecordExporterServer struct {
 	exporter.RecordExporterServer
 }
 
-type Gclient struct {
+type RecordExporterClient struct {
 	exporter.RecordExporterClient
 	grpc.ClientStream
 }
 
-func (c *Gclient) Export(ctx context.Context, in *exporter.GetRecords, opts ...grpc.CallOption) (exporter.RecordExporter_ExportClient, error) {
+func (c *RecordExporterClient) Export(ctx context.Context, in *exporter.GetRecords, opts ...grpc.CallOption) (exporter.RecordExporter_ExportClient, error) {
 	withDifferencePulses := testutils.GenerateRecordsWithDifferencePulses(defaultLocalPulseSize, defaultLocalBatchSize)
 	stream := recordStream{
 		recvFunc: withDifferencePulses,

@@ -22,7 +22,7 @@ import (
 func TestExporterIsWorking(t *testing.T) {
 	ctx := context.Background()
 	server := testutils.CreateTestGRPCServer(t)
-	exporter.RegisterRecordExporterServer(server.Server, &Gserver{})
+	exporter.RegisterRecordExporterServer(server.Server, &RecordExporterServer{})
 	server.Serve(t)
 	defer server.Server.Stop()
 
@@ -37,7 +37,7 @@ func TestExporterIsWorking(t *testing.T) {
 	require.NoError(t, err)
 	defer client.GetGRPCConn().Close()
 
-	g := &Gclient{}
+	g := &RecordExporterClient{}
 	extractor := NewPlatformExtractor(uint32(defaultLocalBatchSize), g)
 	err = extractor.Start(ctx)
 	require.NoError(t, err)
