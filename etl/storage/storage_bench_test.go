@@ -1,7 +1,5 @@
 // Copyright 2020 Insolar Network Ltd.
 // All rights reserved.
-// Copyright 2020 Insolar Network Ltd.
-// All rights reserved.
 // This material is licensed under the Insolar License version 1.0,
 // available at https://github.com/insolar/block-explorer/blob/master/LICENSE.md.
 
@@ -10,10 +8,11 @@
 package storage
 
 import (
+	"testing"
+
 	"github.com/insolar/block-explorer/etl/models"
 	"github.com/insolar/block-explorer/testutils"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func BenchmarkSaveJetDropData(b *testing.B) {

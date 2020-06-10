@@ -9,6 +9,7 @@ package extractor
 
 import (
 	"context"
+
 	"github.com/insolar/block-explorer/testutils"
 	"github.com/insolar/insolar/ledger/heavy/exporter"
 	"google.golang.org/grpc"
