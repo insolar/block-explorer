@@ -4,40 +4,102 @@ package integration
 
 import (
 	"github.com/insolar/block-explorer/etl/models"
-	"github.com/insolar/block-explorer/test/heavymock"
 	"github.com/insolar/block-explorer/testutils"
-	betest "github.com/insolar/block-explorer/testutils/betestsetup"
-	"github.com/insolar/block-explorer/testutils/connectionmanager"
-	"github.com/insolar/insolar/ledger/heavy/exporter"
-	"github.com/stretchr/testify/require"
 	"testing"
 )
 
-func BenchmarkFetchPulse2kRecords(b *testing.B) {
+func BenchmarkFetchPulse500RecordsSingleJet(b *testing.B) {
+	records := 500
+	jetDrops := 1
 	b.ResetTimer()
-	c := new(connectionmanager.ConnectionManager)
-	c.Start(b)
-	c.StartDB(b)
-	be := betest.NewBlockExplorer(c.ExporterClient, c.DB)
-	err := be.Start()
-	require.NoError(b, err)
+	ts := NewBlockExplorerTestSetup(b)
+	defer ts.Stop(b)
 	for i := 0; i < b.N; i++ {
 		b.StopTimer()
-		// generating 2 pulses, previous will be fetched, current is not finalized for now
-		recordsCount := 2000
-		pulses := 2
-		// current pulse is not finalized
-		expRecordsJet1 := testutils.GenerateRecordsFromOneJetSilence(pulses, 1)
-		expRecordsJet2 := testutils.GenerateRecordsFromOneJetSilence(pulses, recordsCount)
-		expRecords := make([]*exporter.Record, 0)
-		expRecords = append(expRecords, expRecordsJet1...)
-		expRecords = append(expRecords, expRecordsJet2...)
-		err := heavymock.ImportRecords(c.ImporterClient, expRecords)
-		require.NoError(b, err)
-
+		ts.importRecordsMultipleJetDrops(b, jetDrops, records)
 		b.StartTimer()
-		// last records with the biggest pulse number won't be processed, so we do not expect this record in DB
-		waitRecordsCount(b, be.DB, len(expRecords)-recordsCount)
-		testutils.TruncateTables(b, be.DB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+		ts.waitRecordsCount(b, jetDrops*records)
+		b.StopTimer()
+		testutils.TruncateTables(b, ts.be.DB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+	}
+}
+
+func BenchmarkFetchPulse1kRecordsSingleJet(b *testing.B) {
+	records := 1000
+	jetDrops := 1
+	b.ResetTimer()
+	ts := NewBlockExplorerTestSetup(b)
+	defer ts.Stop(b)
+	for i := 0; i < b.N; i++ {
+		b.StopTimer()
+		ts.importRecordsMultipleJetDrops(b, jetDrops, records)
+		b.StartTimer()
+		ts.waitRecordsCount(b, jetDrops*records)
+		b.StopTimer()
+		testutils.TruncateTables(b, ts.be.DB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+	}
+}
+
+func BenchmarkFetchPulse2kRecordsSingleJet(b *testing.B) {
+	records := 2000
+	jetDrops := 1
+	b.ResetTimer()
+	ts := NewBlockExplorerTestSetup(b)
+	defer ts.Stop(b)
+	for i := 0; i < b.N; i++ {
+		b.StopTimer()
+		ts.importRecordsMultipleJetDrops(b, jetDrops, records)
+		b.StartTimer()
+		ts.waitRecordsCount(b, jetDrops*records)
+		b.StopTimer()
+		testutils.TruncateTables(b, ts.be.DB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+	}
+}
+
+func BenchmarkFetchPulse500Records5Jets(b *testing.B) {
+	records := 100
+	jetDrops := 5
+	b.ResetTimer()
+	ts := NewBlockExplorerTestSetup(b)
+	defer ts.Stop(b)
+	for i := 0; i < b.N; i++ {
+		b.StopTimer()
+		ts.importRecordsMultipleJetDrops(b, jetDrops, records)
+		b.StartTimer()
+		ts.waitRecordsCount(b, jetDrops*records)
+		b.StopTimer()
+		testutils.TruncateTables(b, ts.be.DB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+	}
+}
+
+func BenchmarkFetchPulse500Records10Jets(b *testing.B) {
+	records := 50
+	jetDrops := 10
+	b.ResetTimer()
+	ts := NewBlockExplorerTestSetup(b)
+	defer ts.Stop(b)
+	for i := 0; i < b.N; i++ {
+		b.StopTimer()
+		ts.importRecordsMultipleJetDrops(b, jetDrops, records)
+		b.StartTimer()
+		ts.waitRecordsCount(b, jetDrops*records)
+		b.StopTimer()
+		testutils.TruncateTables(b, ts.be.DB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+	}
+}
+
+func BenchmarkFetchPulse500Records20Jets(b *testing.B) {
+	records := 25
+	jetDrops := 20
+	b.ResetTimer()
+	ts := NewBlockExplorerTestSetup(b)
+	defer ts.Stop(b)
+	for i := 0; i < b.N; i++ {
+		b.StopTimer()
+		ts.importRecordsMultipleJetDrops(b, jetDrops, records)
+		b.StartTimer()
+		ts.waitRecordsCount(b, jetDrops*records)
+		b.StopTimer()
+		testutils.TruncateTables(b, ts.be.DB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
 	}
 }
