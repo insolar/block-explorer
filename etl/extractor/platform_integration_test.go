@@ -17,16 +17,12 @@ import (
 	"github.com/insolar/block-explorer/testutils"
 	"github.com/insolar/insolar/ledger/heavy/exporter"
 	"github.com/stretchr/testify/require"
-	"google.golang.org/grpc"
 )
-
-var localBatchSize = 2
-var localPulseSize = 2
 
 func TestExporterIsWorking(t *testing.T) {
 	ctx := context.Background()
 	server := testutils.CreateTestGRPCServer(t)
-	exporter.RegisterRecordExporterServer(server.Server, &gserver{})
+	exporter.RegisterRecordExporterServer(server.Server, &RecordExporterServer{})
 	server.Serve(t)
 	defer server.Server.Stop()
 
@@ -41,14 +37,14 @@ func TestExporterIsWorking(t *testing.T) {
 	require.NoError(t, err)
 	defer client.GetGRPCConn().Close()
 
-	g := &gclient{}
-	extractor := NewPlatformExtractor(uint32(localBatchSize), g)
+	g := &RecordExporterClient{}
+	extractor := NewPlatformExtractor(uint32(defaultLocalBatchSize), g)
 	err = extractor.Start(ctx)
 	require.NoError(t, err)
 	defer extractor.Stop(ctx)
 	jetDrops := extractor.GetJetDrops(ctx)
 
-	for i := 0; i < localPulseSize*localBatchSize; i++ {
+	for i := 0; i < defaultLocalPulseSize*defaultLocalBatchSize; i++ {
 		select {
 		case jd := <-jetDrops:
 			// when i ∈ [0,1) we received records with some pulse
@@ -63,21 +59,4 @@ func TestExporterIsWorking(t *testing.T) {
 			t.Fatal("chan receive timeout ")
 		}
 	}
-}
-
-type gserver struct {
-	exporter.RecordExporterServer
-}
-
-type gclient struct {
-	exporter.RecordExporterClient
-	grpc.ClientStream
-}
-
-func (c *gclient) Export(ctx context.Context, in *exporter.GetRecords, opts ...grpc.CallOption) (exporter.RecordExporter_ExportClient, error) {
-	withDifferencePulses := testutils.GenerateRecordsWithDifferencePulses(localPulseSize, localBatchSize)
-	stream := recordStream{
-		recvFunc: withDifferencePulses,
-	}
-	return stream, nil
 }

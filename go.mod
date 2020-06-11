@@ -13,6 +13,7 @@ require (
 	github.com/insolar/insconfig v0.0.0-20200430133349-77f6f1624abf
 	github.com/insolar/insolar v1.5.2
 	github.com/jinzhu/gorm v1.9.12
+	github.com/knqyf263/cob v0.0.6 // indirect
 	github.com/labstack/echo/v4 v4.1.16
 	github.com/ory/dockertest/v3 v3.5.2
 	github.com/ory/go-acc v0.2.3 // indirect

@@ -21,7 +21,7 @@ type TestGRPCServer struct {
 	Address  string
 }
 
-func CreateTestGRPCServer(t *testing.T) *TestGRPCServer {
+func CreateTestGRPCServer(t testing.TB) *TestGRPCServer {
 	listener, err := net.Listen("tcp", "127.0.0.1:0")
 	require.NoError(t, err, "failed to listen")
 	grpcServer := grpc.NewServer()
@@ -35,7 +35,7 @@ func CreateTestGRPCServer(t *testing.T) *TestGRPCServer {
 }
 
 // Serve starts to read gRPC requests
-func (s *TestGRPCServer) Serve(t *testing.T) {
+func (s *TestGRPCServer) Serve(t testing.TB) {
 	// need to run grpcServer.Serve in different goroutine
 	go func() {
 		var err error

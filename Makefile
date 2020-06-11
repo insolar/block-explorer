@@ -80,6 +80,22 @@ publish_tests: ## send results to testrail
 lint: ## run linter
 	${BIN_DIR}/golangci-lint --color=always run ./... -v --timeout 5m
 
+.PHONY: bench
+bench: ## run benchmarks
+	go test -v ./... -tags bench -bench=. -benchmem -benchtime=1000x
+
+.PHONY: bench-compare
+bench-compare: ## run benchmarks compare for last two commits
+	cob -bench-cmd make -bench-args bench -threshold 0.7
+
+.PHONY: bench-integration
+bench-integration: ## run integration benchmarks
+	go test -v ./... -tags bench_integration -bench=. -benchmem -benchtime=1x
+
+.PHONY: bench-compare-integration
+bench-compare-integration: ## run integration benchmarks
+	cob -bench-cmd make -bench-args bench-integration -threshold 0.7
+
 .PHONY: config
 config: ## generate config
 	mkdir -p $(ARTIFACTS_DIR)
