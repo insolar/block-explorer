@@ -6,9 +6,15 @@
 package extractor
 
 import (
+	"context"
+
+	"github.com/insolar/block-explorer/testutils"
 	"github.com/insolar/insolar/ledger/heavy/exporter"
 	"google.golang.org/grpc"
 )
+
+var defaultLocalBatchSize = 2
+var defaultLocalPulseSize = 2
 
 type recordStream struct {
 	grpc.ClientStream
@@ -21,4 +27,21 @@ func (s recordStream) Recv() (*exporter.Record, error) {
 
 func (s recordStream) CloseSend() error {
 	return nil
+}
+
+type RecordExporterServer struct {
+	exporter.RecordExporterServer
+}
+
+type RecordExporterClient struct {
+	exporter.RecordExporterClient
+	grpc.ClientStream
+}
+
+func (c *RecordExporterClient) Export(ctx context.Context, in *exporter.GetRecords, opts ...grpc.CallOption) (exporter.RecordExporter_ExportClient, error) {
+	withDifferencePulses := testutils.GenerateRecordsWithDifferencePulses(defaultLocalPulseSize, defaultLocalBatchSize)
+	stream := recordStream{
+		recvFunc: withDifferencePulses,
+	}
+	return stream, nil
 }

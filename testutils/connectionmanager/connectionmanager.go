@@ -37,7 +37,7 @@ type ConnectionManager struct {
 }
 
 // Starts GRPC server and initializes connection from GRPC clients
-func (c *ConnectionManager) Start(t *testing.T) {
+func (c *ConnectionManager) Start(t testing.TB) {
 	var err error
 	c.grpcServer = testutils.CreateTestGRPCServer(t)
 	c.Importer = heavymock.NewHeavymockImporter()
@@ -57,7 +57,7 @@ func (c *ConnectionManager) Start(t *testing.T) {
 }
 
 // run postgres in docker and perform migrations
-func (c *ConnectionManager) StartDB(t *testing.T) {
+func (c *ConnectionManager) StartDB(t testing.TB) {
 	db, poolCleaner, err := testutils.SetupDB()
 	require.NoError(t, err)
 	c.DB = db

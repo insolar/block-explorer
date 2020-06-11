@@ -3,7 +3,7 @@
 // This material is licensed under the Insolar License version 1.0,
 // available at https://github.com/insolar/block-explorer/blob/master/LICENSE.md.
 
-// +build integration
+// +build integration bench
 
 package storage
 
@@ -41,8 +41,10 @@ func TestStorage_SaveJetDropData(t *testing.T) {
 	s := NewStorage(testDB)
 
 	pulse, err := testutils.InitPulseDB()
-	pulse.PulseNumber = 1
 	require.NoError(t, err)
+	err = testutils.CreatePulse(testDB, pulse)
+	require.NoError(t, err)
+
 	jetDrop := testutils.InitJetDropDB(pulse)
 	firstRecord := testutils.InitRecordDB(jetDrop)
 	secondRecord := testutils.InitRecordDB(jetDrop)
@@ -69,8 +71,10 @@ func TestStorage_SaveJetDropData_UpdateExistedRecord(t *testing.T) {
 	s := NewStorage(testDB)
 
 	pulse, err := testutils.InitPulseDB()
-	pulse.PulseNumber = 1
 	require.NoError(t, err)
+	err = testutils.CreatePulse(testDB, pulse)
+	require.NoError(t, err)
+
 	jetDrop := testutils.InitJetDropDB(pulse)
 	record := testutils.InitRecordDB(jetDrop)
 	err = s.SaveJetDropData(jetDrop, []models.Record{record})
@@ -95,8 +99,10 @@ func TestStorage_SaveJetDropData_UpdateExistedJetDrop(t *testing.T) {
 	s := NewStorage(testDB)
 
 	pulse, err := testutils.InitPulseDB()
-	pulse.PulseNumber = 1
 	require.NoError(t, err)
+	err = testutils.CreatePulse(testDB, pulse)
+	require.NoError(t, err)
+
 	jetDrop := testutils.InitJetDropDB(pulse)
 	record := testutils.InitRecordDB(jetDrop)
 	err = s.SaveJetDropData(jetDrop, []models.Record{record})
@@ -120,8 +126,10 @@ func TestStorage_SaveJetDropData_RecordError_NilPK(t *testing.T) {
 	s := NewStorage(testDB)
 
 	pulse, err := testutils.InitPulseDB()
-	pulse.PulseNumber = 1
 	require.NoError(t, err)
+	err = testutils.CreatePulse(testDB, pulse)
+	require.NoError(t, err)
+
 	jetDrop := testutils.InitJetDropDB(pulse)
 	record := testutils.InitRecordDB(jetDrop)
 	record.Reference = nil
@@ -137,8 +145,10 @@ func TestStorage_SaveJetDropData_JetDropError_NilPK(t *testing.T) {
 	s := NewStorage(testDB)
 
 	pulse, err := testutils.InitPulseDB()
-	pulse.PulseNumber = 1
 	require.NoError(t, err)
+	err = testutils.CreatePulse(testDB, pulse)
+	require.NoError(t, err)
+
 	jetDrop := testutils.InitJetDropDB(pulse)
 	jetDrop.JetID = nil
 	record := testutils.InitRecordDB(jetDrop)
@@ -154,8 +164,10 @@ func TestStorage_SaveJetDropData_ErrorAtTransaction(t *testing.T) {
 	s := NewStorage(testDB)
 
 	pulse, err := testutils.InitPulseDB()
-	pulse.PulseNumber = 1
 	require.NoError(t, err)
+	err = testutils.CreatePulse(testDB, pulse)
+	require.NoError(t, err)
+
 	jetDrop := testutils.InitJetDropDB(pulse)
 	firstRecord := testutils.InitRecordDB(jetDrop)
 	secondRecord := testutils.InitRecordDB(jetDrop)
@@ -163,6 +175,7 @@ func TestStorage_SaveJetDropData_ErrorAtTransaction(t *testing.T) {
 
 	err = s.SaveJetDropData(jetDrop, []models.Record{firstRecord, secondRecord})
 	require.Error(t, err)
+	require.Contains(t, err.Error(), "error while saving record")
 
 	jetDropInDB := []models.JetDrop{}
 	err = testDB.Find(&jetDropInDB).Error
@@ -221,7 +234,10 @@ func TestStorage_GetJetDrops(t *testing.T) {
 
 	jetDrops, err := s.GetJetDrops(firstPulse)
 	require.NoError(t, err)
-	require.Equal(t, []models.JetDrop{jetDropForFirstPulse1, jetDropForFirstPulse2}, jetDrops)
+	expected := []models.JetDrop{jetDropForFirstPulse1, jetDropForFirstPulse2}
+	require.Len(t, jetDrops, 2)
+	require.Contains(t, expected, jetDrops[0])
+	require.Contains(t, expected, jetDrops[1])
 }
 
 func TestStorage_CompletePulse(t *testing.T) {

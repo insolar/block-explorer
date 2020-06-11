@@ -7,7 +7,11 @@ export GOPROXY=https://proxy.golang.org,https://goproxy.io,direct
 BIN_DIR = bin
 LDFLAGS ?=
 COVERPROFILE ?= coverage.out
+TEST_LOG_FILENAME ?= autotest.log
 ARTIFACTS_DIR = .artifacts
+
+TEST_COUNT ?= 1
+TEST_ARGS ?=
 
 #.DEFAULT_GOAL := all
 
@@ -28,7 +32,7 @@ golangci: ## install golangci-linter
 	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b ${BIN_DIR} v1.27.0
 
 go-acc: ## install coverage tool
-	go get github.com/ory/go-acc
+	go get github.com/ory/go-acc@v0.2.3
 
 .PHONY: install_deps
 install_deps: golangci go-acc ## install necessary dependencies
@@ -49,14 +53,14 @@ generate: ## generate mocks
 
 .PHONY: unit
 unit:  ## run unit tests
-	go test -v ./... -tags unit -count 10 -race
+	go test -v ./... -tags unit -count $(TEST_COUNT) -race $(TEST_ARGS)
 
 .PHONY: test
 test: unit integration test-heavy-mock-integration ## run all tests
 
 .PHONY: integration
 integration: ## run integrations tests with race
-	go test -v ./... -tags integration -count 10 -race
+	go test -v ./... -tags integration -count $(TEST_COUNT) -race $(TEST_ARGS)
 
 .PHONY: test-with-coverage
 test-with-coverage: ## run tests with coverage mode
@@ -66,11 +70,31 @@ test-with-coverage: ## run tests with coverage mode
 
 .PHONY: test-heavy-mock-integration
 test-heavy-mock-integration:
-	go test -v ./test/integration/... -tags heavy_mock_integration -count 10 -race -failfast
+	go test -v ./... -tags heavy_mock_integration -count $(TEST_COUNT) -race $(TEST_ARGS) | tee $(TEST_LOG_FILENAME)
+
+.PHONY: publish_tests
+publish_tests: ## send results to testrail
+	${GOPATH}/bin/testrail-cli --URL=https://insolar.testrail.io/ --USER=$(TR_USER) --PASSWORD=$(TR_PASSWORD) --RUN_ID=108 --FILE=$(TEST_LOG_FILENAME)
 
 .PHONY: lint
 lint: ## run linter
 	${BIN_DIR}/golangci-lint --color=always run ./... -v --timeout 5m
+
+.PHONY: bench
+bench: ## run benchmarks
+	go test -v ./... -tags bench -bench=. -benchmem -benchtime=1000x
+
+.PHONY: bench-compare
+bench-compare: ## run benchmarks compare for last two commits
+	cob -bench-cmd make -bench-args bench -threshold 0.7
+
+.PHONY: bench-integration
+bench-integration: ## run integration benchmarks
+	go test -v ./... -tags bench_integration -bench=. -benchmem -benchtime=1x
+
+.PHONY: bench-compare-integration
+bench-compare-integration: ## run integration benchmarks
+	cob -bench-cmd make -bench-args bench-integration -threshold 0.7
 
 .PHONY: config
 config: ## generate config
