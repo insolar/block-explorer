@@ -92,7 +92,7 @@ bench-compare: ## run benchmarks compare for last two commits
 bench-integration: ## run integration benchmarks
 	go test -v ./... -tags bench_integration -bench=. -benchmem -benchtime=1x
 
-.PHONY: bench-integration
+.PHONY: bench-compare-integration
 bench-compare-integration: ## run integration benchmarks
 	cob -bench-cmd make -bench-args bench-integration -threshold 0.7
 

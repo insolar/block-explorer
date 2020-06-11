@@ -3,8 +3,6 @@
 // This material is licensed under the Insolar License version 1.0,
 // available at https://github.com/insolar/block-explorer/blob/master/LICENSE.md.
 
-// +build unit
-
 package belogger
 
 import (

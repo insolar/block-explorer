@@ -11,19 +11,15 @@ import (
 	"context"
 	"io"
 	"testing"
-	"time"
 
 	"github.com/insolar/insolar/ledger/heavy/exporter"
 	"github.com/stretchr/testify/require"
-	"github.com/stretchr/testify/suite"
 
 	"github.com/insolar/block-explorer/etl/models"
 	"github.com/insolar/block-explorer/etl/transformer"
 	"github.com/insolar/block-explorer/etl/types"
 	"github.com/insolar/block-explorer/test/heavymock"
 	"github.com/insolar/block-explorer/testutils"
-	betest "github.com/insolar/block-explorer/testutils/betestsetup"
-	"github.com/insolar/block-explorer/testutils/connectionmanager"
 )
 
 func TestIntegrationWithDb_GetRecords(t *testing.T) {
