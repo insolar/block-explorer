@@ -9,19 +9,25 @@ package integration
 
 import (
 	"context"
-	"github.com/insolar/insolar/ledger/heavy/exporter"
-	"github.com/stretchr/testify/require"
 	"io"
 	"testing"
+	"time"
+
+	"github.com/insolar/insolar/ledger/heavy/exporter"
+	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/suite"
 
 	"github.com/insolar/block-explorer/etl/models"
 	"github.com/insolar/block-explorer/etl/transformer"
 	"github.com/insolar/block-explorer/etl/types"
 	"github.com/insolar/block-explorer/test/heavymock"
 	"github.com/insolar/block-explorer/testutils"
+	betest "github.com/insolar/block-explorer/testutils/betestsetup"
+	"github.com/insolar/block-explorer/testutils/connectionmanager"
 )
 
 func TestIntegrationWithDb_GetRecords(t *testing.T) {
+	t.Log("C4991 Process records and get saved records by pulse number from database")
 	ts := NewBlockExplorerTestSetup(t)
 	defer ts.Stop(t)
 
@@ -86,6 +92,8 @@ func TestIntegrationWithDb_GetRecords(t *testing.T) {
 }
 
 func TestIntegrationWithDb_GetJetDrops(t *testing.T) {
+	t.Log("C4992 Process records and get saved jetDrops by pulse number from database")
+
 	ts := NewBlockExplorerTestSetup(t)
 	defer ts.Stop(t)
 
@@ -124,4 +132,7 @@ func TestIntegrationWithDb_GetJetDrops(t *testing.T) {
 	require.Contains(t, jds, prefixFirst)
 	require.Contains(t, jds, prefixSecond)
 	require.Contains(t, jds, prefixThird)
+	require.Equal(t, recordsCount, jetDropsDB[0].RecordAmount)
+	require.Equal(t, recordsCount, jetDropsDB[1].RecordAmount)
+	require.Equal(t, recordsCount, jetDropsDB[2].RecordAmount)
 }
