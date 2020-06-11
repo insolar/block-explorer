@@ -53,6 +53,7 @@ func (a *BlockExplorerTestSuite) Stop(t testing.TB) {
 	a.c.Stop()
 }
 
+// nolint
 func (a *BlockExplorerTestSuite) waitRecordsCount(t testing.TB, expCount int, timeoutMs int) {
 	var c int
 	interval := 100
@@ -69,6 +70,7 @@ func (a *BlockExplorerTestSuite) waitRecordsCount(t testing.TB, expCount int, ti
 	require.Equal(t, expCount, c, "Records count in DB not as expected")
 }
 
+// nolint
 func (a *BlockExplorerTestSuite) importRecordsMultipleJetDrops(t testing.TB, jetDrops int, records int) {
 	d := make([]*exporter.Record, 0)
 	for i := 0; i < jetDrops; i++ {
