@@ -103,10 +103,13 @@ func (a *apiLifelineSuite) TestLifeline_severalPulses() {
 	response, err := c.ObjectLifeline(lifeline.ObjID.String(), &client.ObjectLifelineOpts{Limit: optional.NewInt32(100)})
 	require.NoError(a.T(), err)
 	require.Len(a.T(), response.Result, stateRecordsCount)
+	pulses := make([]int64, pulsesNumber)
+	for i, s := range lifeline.States {
+		pulses[i] = int64(s.Pn)
+	}
 	for _, res := range response.Result {
 		require.Contains(a.T(), lifeline.ObjID.String(), res.ObjectReference)
-		// TODO: change it to 'lifeline.States[0].Pn' at PENV-212
-		require.Equal(a.T(), int64(1), res.PulseNumber)
+		require.Contains(a.T(), pulses, res.PulseNumber)
 	}
 }
 
