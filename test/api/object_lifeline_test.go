@@ -44,8 +44,8 @@ func TestLifeline_onePulse(t *testing.T) {
 	totalRecords := stateRecordsCount + 2
 	ts.WaitRecordsCount(t, totalRecords, 600)
 
-	c := NewBeApiClient(t, fmt.Sprintf("http://localhost%v", connectionmanager.DefaultApiPort))
-	response, err := c.ObjectLifeline(lifeline.ObjID.String(), nil)
+	c := NewBeApiClient(fmt.Sprintf("http://localhost%v", connectionmanager.DefaultApiPort))
+	response, err := c.ObjectLifeline(t, lifeline.ObjID.String(), nil)
 	require.NoError(t, err)
 	require.Len(t, response.Result, stateRecordsCount)
 	for _, res := range response.Result {
@@ -79,8 +79,8 @@ func TestLifeline_severalPulses(t *testing.T) {
 	totalRecords := stateRecordsCount + 2
 	ts.WaitRecordsCount(t, totalRecords, 600)
 
-	c := NewBeApiClient(t, fmt.Sprintf("http://localhost%v", connectionmanager.DefaultApiPort))
-	response, err := c.ObjectLifeline(lifeline.ObjID.String(), &client.ObjectLifelineOpts{Limit: optional.NewInt32(100)})
+	c := NewBeApiClient(fmt.Sprintf("http://localhost%v", connectionmanager.DefaultApiPort))
+	response, err := c.ObjectLifeline(t, lifeline.ObjID.String(), &client.ObjectLifelineOpts{Limit: optional.NewInt32(100)})
 	require.NoError(t, err)
 	require.Len(t, response.Result, stateRecordsCount)
 	pulses := make([]int64, pulsesNumber)

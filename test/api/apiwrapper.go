@@ -13,23 +13,21 @@ import (
 )
 
 type BEApiClient struct {
-	t      *testing.T
 	client client.APIClient
 }
 
-func NewBeApiClient(t *testing.T, basePath string) *BEApiClient {
+func NewBeApiClient(basePath string) *BEApiClient {
 	cfg := client.Configuration{
 		BasePath:   basePath,
 		HTTPClient: http.DefaultClient,
 	}
 	return &BEApiClient{
-		t:      t,
 		client: *client.NewAPIClient(&cfg),
 	}
 }
 
-func (c *BEApiClient) ObjectLifeline(objectRef string, localVarOptionals *client.ObjectLifelineOpts) (response client.JetDropRecordsResponse200, err error) {
+func (c *BEApiClient) ObjectLifeline(t *testing.T, objectRef string, localVarOptionals *client.ObjectLifelineOpts) (response client.JetDropRecordsResponse200, err error) {
 	response, rawResponse, err := c.client.RecordApi.ObjectLifeline(nil, objectRef, localVarOptionals)
-	LogHttp(c.t, rawResponse, nil, response)
+	LogHttp(t, rawResponse, nil, response)
 	return response, err
 }
