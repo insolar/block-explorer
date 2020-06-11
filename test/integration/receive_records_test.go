@@ -14,7 +14,6 @@ import (
 
 	"github.com/insolar/block-explorer/test/heavymock"
 	"github.com/insolar/block-explorer/testutils/connectionmanager"
-	"github.com/insolar/insolar/insolar/gen"
 	"github.com/insolar/insolar/ledger/heavy/exporter"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -31,52 +30,6 @@ func (a *receiveRecordsSuite) SetupSuite() {
 
 func (a *receiveRecordsSuite) TearDownSuite() {
 	a.c.Stop()
-}
-
-func (a *receiveRecordsSuite) TestGetRecords_simpleRecord() {
-	a.T().Skip("https://insolar.atlassian.net/browse/PENV-295")
-	request := &exporter.GetRecords{
-		Count: uint32(5),
-	}
-
-	stream, err := a.c.ExporterClient.Export(context.Background(), request)
-	require.NoError(a.T(), err, "Error when sending client request")
-
-	var res []exporter.Record
-	for {
-		record, err := stream.Recv()
-		if err == io.EOF {
-			break
-		}
-		require.NoError(a.T(), err, "Err listening stream")
-		require.True(a.T(), heavymock.SimpleRecord.Equal(record), "Incorrect response message")
-		res = append(res, *record)
-	}
-	require.Len(a.T(), res, int(request.Count))
-}
-
-func (a *receiveRecordsSuite) TestGetRecords_pulseRecords() {
-	a.T().Skip("https://insolar.atlassian.net/browse/PENV-295")
-	expPulse := gen.PulseNumber()
-	request := &exporter.GetRecords{
-		Count:       uint32(5),
-		PulseNumber: expPulse,
-	}
-
-	stream, err := a.c.ExporterClient.Export(context.Background(), request)
-	require.NoError(a.T(), err, "Error when sending client request")
-
-	var res []exporter.Record
-	for {
-		record, err := stream.Recv()
-		if err == io.EOF {
-			break
-		}
-		require.NoError(a.T(), err, "Err listening stream")
-		require.Equal(a.T(), &expPulse, record.ShouldIterateFrom, "Incorrect record pulse number")
-		res = append(res, *record)
-	}
-	require.Len(a.T(), res, int(request.Count))
 }
 
 func (a *receiveRecordsSuite) TestReceiveRecords_sendAndReceiveWithImporter() {

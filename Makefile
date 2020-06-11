@@ -7,6 +7,7 @@ export GOPROXY=https://proxy.golang.org,https://goproxy.io,direct
 BIN_DIR = bin
 LDFLAGS ?=
 COVERPROFILE ?= coverage.out
+TEST_LOG_FILENAME ?= autotest.log
 ARTIFACTS_DIR = .artifacts
 
 TEST_COUNT ?= 1
@@ -69,7 +70,11 @@ test-with-coverage: ## run tests with coverage mode
 
 .PHONY: test-heavy-mock-integration
 test-heavy-mock-integration:
-	go test -v ./... -tags heavy_mock_integration -count $(TEST_COUNT) -race $(TEST_ARGS)
+	go test -v ./... -tags heavy_mock_integration -count $(TEST_COUNT) -race $(TEST_ARGS) | tee $(TEST_LOG_FILENAME)
+
+.PHONY: publish_tests
+publish_tests: ## send results to testrail
+	${GOPATH}/bin/testrail-cli --URL=https://insolar.testrail.io/ --USER=$(TR_USER) --PASSWORD=$(TR_PASSWORD) --RUN_ID=108 --FILE=$(TEST_LOG_FILENAME)
 
 .PHONY: lint
 lint: ## run linter
