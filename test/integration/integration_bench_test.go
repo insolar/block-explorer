@@ -21,11 +21,11 @@ func BenchmarkFetchPulse500RecordsSingleJet(b *testing.B) {
 	defer ts.Stop(b)
 	for i := 0; i < b.N; i++ {
 		b.StopTimer()
-		ts.importRecordsMultipleJetDrops(b, jetDrops, records)
+		ts.ImportRecordsMultipleJetDrops(b, jetDrops, records)
 		b.StartTimer()
-		ts.waitRecordsCount(b, jetDrops*records, 60000)
+		ts.WaitRecordsCount(b, jetDrops*records, 60000)
 		b.StopTimer()
-		testutils.TruncateTables(b, ts.be.DB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+		testutils.TruncateTables(b, ts.BE.DB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
 	}
 }
 
@@ -37,11 +37,11 @@ func BenchmarkFetchPulse1kRecordsSingleJet(b *testing.B) {
 	defer ts.Stop(b)
 	for i := 0; i < b.N; i++ {
 		b.StopTimer()
-		ts.importRecordsMultipleJetDrops(b, jetDrops, records)
+		ts.ImportRecordsMultipleJetDrops(b, jetDrops, records)
 		b.StartTimer()
-		ts.waitRecordsCount(b, jetDrops*records, 60000)
+		ts.WaitRecordsCount(b, jetDrops*records, 60000)
 		b.StopTimer()
-		testutils.TruncateTables(b, ts.be.DB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+		testutils.TruncateTables(b, ts.BE.DB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
 	}
 }
 
@@ -53,11 +53,11 @@ func BenchmarkFetchPulse2kRecordsSingleJet(b *testing.B) {
 	defer ts.Stop(b)
 	for i := 0; i < b.N; i++ {
 		b.StopTimer()
-		ts.importRecordsMultipleJetDrops(b, jetDrops, records)
+		ts.ImportRecordsMultipleJetDrops(b, jetDrops, records)
 		b.StartTimer()
-		ts.waitRecordsCount(b, jetDrops*records, 60000)
+		ts.WaitRecordsCount(b, jetDrops*records, 60000)
 		b.StopTimer()
-		testutils.TruncateTables(b, ts.be.DB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+		testutils.TruncateTables(b, ts.BE.DB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
 	}
 }
 
@@ -69,11 +69,11 @@ func BenchmarkFetchPulse500Records5Jets(b *testing.B) {
 	defer ts.Stop(b)
 	for i := 0; i < b.N; i++ {
 		b.StopTimer()
-		ts.importRecordsMultipleJetDrops(b, jetDrops, records)
+		ts.ImportRecordsMultipleJetDrops(b, jetDrops, records)
 		b.StartTimer()
-		ts.waitRecordsCount(b, jetDrops*records, 60000)
+		ts.WaitRecordsCount(b, jetDrops*records, 60000)
 		b.StopTimer()
-		testutils.TruncateTables(b, ts.be.DB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+		testutils.TruncateTables(b, ts.BE.DB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
 	}
 }
 
@@ -85,11 +85,11 @@ func BenchmarkFetchPulse500Records10Jets(b *testing.B) {
 	defer ts.Stop(b)
 	for i := 0; i < b.N; i++ {
 		b.StopTimer()
-		ts.importRecordsMultipleJetDrops(b, jetDrops, records)
+		ts.ImportRecordsMultipleJetDrops(b, jetDrops, records)
 		b.StartTimer()
-		ts.waitRecordsCount(b, jetDrops*records, 60000)
+		ts.WaitRecordsCount(b, jetDrops*records, 60000)
 		b.StopTimer()
-		testutils.TruncateTables(b, ts.be.DB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+		testutils.TruncateTables(b, ts.BE.DB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
 	}
 }
 
@@ -101,10 +101,10 @@ func BenchmarkFetchPulse500Records20Jets(b *testing.B) {
 	defer ts.Stop(b)
 	for i := 0; i < b.N; i++ {
 		b.StopTimer()
-		ts.importRecordsMultipleJetDrops(b, jetDrops, records)
+		ts.ImportRecordsMultipleJetDrops(b, jetDrops, records)
 		b.StartTimer()
-		ts.waitRecordsCount(b, jetDrops*records, 60000)
+		ts.WaitRecordsCount(b, jetDrops*records, 60000)
 		b.StopTimer()
-		testutils.TruncateTables(b, ts.be.DB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+		testutils.TruncateTables(b, ts.BE.DB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
 	}
 }

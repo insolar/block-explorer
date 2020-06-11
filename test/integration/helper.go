@@ -19,8 +19,8 @@ import (
 )
 
 type BlockExplorerTestSuite struct {
-	c  connectionmanager.ConnectionManager
-	be betest.BlockExplorerTestSetUp
+	C  connectionmanager.ConnectionManager
+	BE betest.BlockExplorerTestSetUp
 }
 
 func NewBlockExplorerTestSetup(t testing.TB) *BlockExplorerTestSuite {
@@ -37,29 +37,29 @@ func NewBlockExplorerTestSetup(t testing.TB) *BlockExplorerTestSuite {
 }
 
 func (a *BlockExplorerTestSuite) Start(t testing.TB) {
-	a.c.Start(t)
-	a.c.StartDB(t)
+	a.C.Start(t)
+	a.C.StartDB(t)
 
-	a.be = betest.NewBlockExplorer(a.c.ExporterClient, a.c.DB)
-	err := a.be.Start()
+	a.BE = betest.NewBlockExplorer(a.C.ExporterClient, a.C.DB)
+	err := a.BE.Start()
 	require.NoError(t, err)
 }
 
 func (a *BlockExplorerTestSuite) Stop(t testing.TB) {
-	err := a.be.Stop()
+	err := a.BE.Stop()
 	require.NoError(t, err)
 	// TODO remove sleep after resolving https://insolar.atlassian.net/browse/PENV-343
 	time.Sleep(time.Second * 1)
-	a.c.Stop()
+	a.C.Stop()
 }
 
 // nolint
-func (a *BlockExplorerTestSuite) waitRecordsCount(t testing.TB, expCount int, timeoutMs int) {
+func (a *BlockExplorerTestSuite) WaitRecordsCount(t testing.TB, expCount int, timeoutMs int) {
 	var c int
 	interval := 100
 	for i := 0; i < timeoutMs/interval; i++ {
 		record := models.Record{}
-		a.be.DB.Model(&record).Count(&c)
+		a.BE.DB.Model(&record).Count(&c)
 		t.Logf("Select from record, expected rows count=%v, actual=%v, attempt: %v", expCount, c, i)
 		if c >= expCount {
 			break
@@ -71,7 +71,7 @@ func (a *BlockExplorerTestSuite) waitRecordsCount(t testing.TB, expCount int, ti
 }
 
 // nolint
-func (a *BlockExplorerTestSuite) importRecordsMultipleJetDrops(t testing.TB, jetDrops int, records int) {
+func (a *BlockExplorerTestSuite) ImportRecordsMultipleJetDrops(t testing.TB, jetDrops int, records int) {
 	d := make([]*exporter.Record, 0)
 	for i := 0; i < jetDrops; i++ {
 		recs := testutils.GenerateRecordsFromOneJetSilence(1, records)
@@ -80,6 +80,6 @@ func (a *BlockExplorerTestSuite) importRecordsMultipleJetDrops(t testing.TB, jet
 	notFinalizedRecords := testutils.GenerateRecordsFromOneJetSilence(1, 1)
 	d = append(d, notFinalizedRecords...)
 	t.Logf("total records: %d", len(d))
-	err := heavymock.ImportRecords(a.c.ImporterClient, d)
+	err := heavymock.ImportRecords(a.C.ImporterClient, d)
 	require.NoError(t, err)
 }
