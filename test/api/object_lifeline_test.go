@@ -92,3 +92,26 @@ func TestLifeline_severalPulses(t *testing.T) {
 		require.Contains(t, pulses, res.PulseNumber)
 	}
 }
+
+func TestLifeline_(t *testing.T) {
+	t.Log("C4999 Receive object lifeline, only linked amend records")
+	ts := integration.NewBlockExplorerTestSetup(t)
+	defer ts.Stop(t)
+
+	pn := gen.PulseNumber()
+	jID := testutils.GenerateUniqueJetID()
+	prevState := gen.ID()
+	objID := gen.ID()
+	count := 10
+	records := testutils.GenerateVirtualAmendRecordsLinkedArray(pn, jID, objID, prevState, count)
+
+	err := heavymock.ImportRecords(ts.C.ImporterClient, records)
+	require.NoError(t, err)
+
+	ts.WaitRecordsCount(t, count, 600)
+
+	c := NewBeApiClient(fmt.Sprintf("http://localhost%v", connectionmanager.DefaultApiPort))
+	response, err := c.ObjectLifeline(t, objID.String(), &client.ObjectLifelineOpts{Limit: optional.NewInt32(100)})
+	require.NoError(t, err)
+	require.Len(t, response.Result, count)
+}
