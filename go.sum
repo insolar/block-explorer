@@ -399,6 +399,8 @@ github.com/insolar/spec-insolar-block-explorer-api v0.0.0-20200604152131-0870e49
 github.com/insolar/spec-insolar-block-explorer-api v0.0.0-20200604152131-0870e49c6470/go.mod h1:LRzOC+8aTBbmiieCOaGhz1l8IDEx1QB5xScdSK8x+j8=
 github.com/insolar/spec-insolar-block-explorer-api v0.0.0-20200611152233-14efd36afd7e h1:+rhrOSQ1jvhwOA+sgvb3HqpjYaPn42PT712uRn/jEyA=
 github.com/insolar/spec-insolar-block-explorer-api v0.0.0-20200611152233-14efd36afd7e/go.mod h1:LRzOC+8aTBbmiieCOaGhz1l8IDEx1QB5xScdSK8x+j8=
+github.com/insolar/spec-insolar-block-explorer-api v1.0.0 h1:GfD+97vlMB7rlSQCbQYCpHXAzh+5XtOnUOQXCbQ1LGE=
+github.com/insolar/spec-insolar-block-explorer-api v1.0.0/go.mod h1:LRzOC+8aTBbmiieCOaGhz1l8IDEx1QB5xScdSK8x+j8=
 github.com/insolar/x-crypto v0.0.0-20191031140942-75fab8a325f6/go.mod h1:9mvKFD2wFLEGmK8pNFIowmGRTjfyn3YHtr10s7DHpBY=
 github.com/jackc/chunkreader v1.0.0 h1:4s39bBR8ByfqH+DKm8rQA3E1LHZWB9XWcrz8fqaZbe0=
 github.com/jackc/chunkreader v1.0.0/go.mod h1:RT6O25fNZIuasFJRyZ4R/Y2BbhasbmZXF9QQ7T3kePo=
