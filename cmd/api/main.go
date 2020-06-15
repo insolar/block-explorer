@@ -10,6 +10,7 @@ import (
 	"fmt"
 
 	"github.com/insolar/insconfig"
+	"github.com/insolar/spec-insolar-block-explorer-api/v1/server"
 	"github.com/labstack/echo/v4"
 
 	"github.com/insolar/block-explorer/api"
@@ -44,7 +45,7 @@ func main() {
 	s := storage.NewStorage(db)
 
 	apiServer := api.NewServer(ctx, s, *cfg)
-	api.RegisterHandlers(e, apiServer)
+	server.RegisterHandlers(e, apiServer)
 
 	e.Logger.Fatal(e.Start(cfg.Listen))
 }

@@ -19,6 +19,7 @@ import (
 
 	"github.com/insolar/insolar/insolar"
 	"github.com/insolar/insolar/insolar/gen"
+	"github.com/insolar/spec-insolar-block-explorer-api/v1/server"
 	"github.com/jinzhu/gorm"
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/require"
@@ -50,7 +51,7 @@ func TestMain(t *testing.M) {
 
 	blockExplorerAPI := NewServer(context.Background(), s, configuration.API{})
 
-	RegisterHandlers(e, blockExplorerAPI)
+	server.RegisterHandlers(e, blockExplorerAPI)
 	go func() {
 		err := e.Start(apihost)
 		dbCleaner()
@@ -89,10 +90,10 @@ func TestObjectLifeline_HappyPath(t *testing.T) {
 	bodyBytes, err := ioutil.ReadAll(resp.Body)
 	require.NoError(t, err)
 
-	var received ResponsesLifelineYaml
+	var received server.RecordsResponse
 	err = json.Unmarshal(bodyBytes, &received)
 	require.NoError(t, err)
-	require.EqualValues(t, 3, received.Total)
+	require.EqualValues(t, 3, int(*received.Total))
 	require.Len(t, *received.Result, 3)
 	// check desc order by default
 	require.Equal(t, insolar.NewIDFromBytes(genRecords[0].Reference).String(), *(*received.Result)[2].Reference)
@@ -118,16 +119,16 @@ func TestObjectLifeline_SortAsc(t *testing.T) {
 	testutils.OrderedRecords(t, testDB, jetDrop, gen.ID(), 3)
 
 	// request records for objRef
-	resp, err := http.Get("http://" + apihost + "/api/v1/lifeline/" + objRef.String() + "/records?sort=asc")
+	resp, err := http.Get("http://" + apihost + "/api/v1/lifeline/" + objRef.String() + "/records?sort_by=asc")
 	require.NoError(t, err)
 	require.Equal(t, http.StatusOK, resp.StatusCode)
 	bodyBytes, err := ioutil.ReadAll(resp.Body)
 	require.NoError(t, err)
 
-	var received ResponsesLifelineYaml
+	var received server.RecordsResponse
 	err = json.Unmarshal(bodyBytes, &received)
 	require.NoError(t, err)
-	require.EqualValues(t, 3, received.Total)
+	require.EqualValues(t, 3, int(*received.Total))
 	require.Len(t, *received.Result, 3)
 	// check asc order
 	require.Equal(t, insolar.NewIDFromBytes(genRecords[0].Reference).String(), *(*received.Result)[0].Reference)
@@ -171,7 +172,7 @@ func TestObjectLifeline_Offset_Error(t *testing.T) {
 
 func TestObjectLifeline_Sort_Error(t *testing.T) {
 	// request records with wrong sort param
-	resp, err := http.Get("http://" + apihost + "/api/v1/lifeline/" + gen.Reference().String() + "/records?sort=not_supported_sort")
+	resp, err := http.Get("http://" + apihost + "/api/v1/lifeline/" + gen.Reference().String() + "/records?sort_by=not_supported_sort")
 	require.NoError(t, err)
 	require.Equal(t, http.StatusBadRequest, resp.StatusCode)
 	bodyBytes, err := ioutil.ReadAll(resp.Body)
@@ -194,12 +195,12 @@ func TestObjectLifeline_NoRecords(t *testing.T) {
 	bodyBytes, err := ioutil.ReadAll(resp.Body)
 	require.NoError(t, err)
 
-	var received ResponsesLifelineYaml
+	var received server.RecordsResponse
 	err = json.Unmarshal(bodyBytes, &received)
 	require.NoError(t, err)
 
-	require.EqualValues(t, 0, received.Total)
-	require.Len(t, *received.Result, 0)
+	require.EqualValues(t, 0, int(*received.Total))
+	require.Nil(t, received.Result)
 }
 
 func TestObjectLifeline_ReferenceFormat_Error(t *testing.T) {
