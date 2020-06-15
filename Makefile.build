@@ -1,0 +1,22 @@
+BIN_DIR = bin
+LDFLAGS ?=
+
+
+##@ Building
+.PHONY: build
+build:  ## build all applications
+	go build -ldflags "$(LDFLAGS)" -o $(BIN_DIR)/block-explorer cmd/block-explorer/*.go
+	go build -ldflags "$(LDFLAGS)" -o $(BIN_DIR)/migrate cmd/migrate/*.go
+	go build -ldflags "$(LDFLAGS)" -o $(BIN_DIR)/api cmd/api/*.go
+
+.PHONY: generate
+generate: ## generate mocks
+	GOFLAGS="" go generate ./...
+
+.PHONY: generate-protobuf
+generate-protobuf: ## generate protobuf structs
+	@ if ! which protoc > /dev/null; then \
+		echo "error: protoc not installed" >&2; \
+		exit 1; \
+	fi
+	protoc -I./vendor -I./ --gogoslick_out=plugins=grpc:./ test/heavymock/import_records.proto
