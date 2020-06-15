@@ -53,6 +53,11 @@ func (a *BlockExplorerTestSuite) Stop(t testing.TB) {
 	a.C.Stop()
 }
 
+func (a *BlockExplorerTestSuite) WithHTTPServer(t testing.TB) *BlockExplorerTestSuite {
+	a.C.StartAPIServer(t)
+	return a
+}
+
 // nolint
 func (a *BlockExplorerTestSuite) WaitRecordsCount(t testing.TB, expCount int, timeoutMs int) {
 	var c int

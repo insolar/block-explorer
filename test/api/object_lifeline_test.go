@@ -24,16 +24,14 @@ import (
 
 func TestLifeline_onePulse(t *testing.T) {
 	t.Log("C4993 Receive object lifeline, states belong to one pulse")
-	ts := integration.NewBlockExplorerTestSetup(t)
+	ts := integration.NewBlockExplorerTestSetup(t).WithHTTPServer(t)
 	defer ts.Stop(t)
 
 	pulsesNumber := 1
 	recordsInPulse := 10
 	lifeline := testutils.GenerateObjectLifeline(pulsesNumber, recordsInPulse)
 
-	lastPulseRecord := testutils.GenerateRecordsSilence(1)[0]
-	lastPulseRecord.Record.ID = gen.IDWithPulse(lifeline.States[0].Pn + 10)
-	lastPulseRecord.ShouldIterateFrom = nil
+	lastPulseRecord := testutils.GenerateRecordInNextPulse(lifeline.States[0].Pn + 10)
 
 	lifeline.States[0].Records = append(lifeline.States[0].Records, lastPulseRecord)
 
@@ -42,7 +40,7 @@ func TestLifeline_onePulse(t *testing.T) {
 
 	stateRecordsCount := pulsesNumber * recordsInPulse
 	totalRecords := stateRecordsCount + 2
-	ts.WaitRecordsCount(t, totalRecords, 600)
+	ts.WaitRecordsCount(t, totalRecords, 1000)
 
 	c := NewBeApiClient(fmt.Sprintf("http://localhost%v", connectionmanager.DefaultApiPort))
 	response, err := c.ObjectLifeline(t, lifeline.ObjID.String(), nil)
@@ -56,16 +54,14 @@ func TestLifeline_onePulse(t *testing.T) {
 
 func TestLifeline_severalPulses(t *testing.T) {
 	t.Log("C4994 Receive object lifeline, states belong to several pulses")
-	ts := integration.NewBlockExplorerTestSetup(t)
+	ts := integration.NewBlockExplorerTestSetup(t).WithHTTPServer(t)
 	defer ts.Stop(t)
 
 	pulsesNumber := 4
 	recordsInPulse := 10
 	lifeline := testutils.GenerateObjectLifeline(pulsesNumber, recordsInPulse)
 
-	lastPulseRecord := testutils.GenerateRecordsSilence(1)[0]
-	lastPulseRecord.Record.ID = gen.IDWithPulse(lifeline.States[pulsesNumber-1].Pn + 10)
-	lastPulseRecord.ShouldIterateFrom = nil
+	lastPulseRecord := testutils.GenerateRecordInNextPulse(lifeline.States[0].Pn + 10)
 
 	records := make([]*exporter.Record, 0)
 	for _, state := range lifeline.States {
@@ -77,7 +73,7 @@ func TestLifeline_severalPulses(t *testing.T) {
 
 	stateRecordsCount := pulsesNumber * recordsInPulse
 	totalRecords := stateRecordsCount + 2
-	ts.WaitRecordsCount(t, totalRecords, 600)
+	ts.WaitRecordsCount(t, totalRecords, 1000)
 
 	c := NewBeApiClient(fmt.Sprintf("http://localhost%v", connectionmanager.DefaultApiPort))
 	response, err := c.ObjectLifeline(t, lifeline.ObjID.String(), &client.ObjectLifelineOpts{Limit: optional.NewInt32(100)})
@@ -95,7 +91,7 @@ func TestLifeline_severalPulses(t *testing.T) {
 
 func TestLifeline_(t *testing.T) {
 	t.Log("C4999 Receive object lifeline, only linked amend records")
-	ts := integration.NewBlockExplorerTestSetup(t)
+	ts := integration.NewBlockExplorerTestSetup(t).WithHTTPServer(t)
 	defer ts.Stop(t)
 
 	pn := gen.PulseNumber()
@@ -105,10 +101,13 @@ func TestLifeline_(t *testing.T) {
 	count := 10
 	records := testutils.GenerateVirtualAmendRecordsLinkedArray(pn, jID, objID, prevState, count)
 
+	lastPulseRecord := testutils.GenerateRecordInNextPulse(pn)
+	records = append(records, lastPulseRecord)
+
 	err := heavymock.ImportRecords(ts.C.ImporterClient, records)
 	require.NoError(t, err)
 
-	ts.WaitRecordsCount(t, count, 600)
+	ts.WaitRecordsCount(t, count, 10000)
 
 	c := NewBeApiClient(fmt.Sprintf("http://localhost%v", connectionmanager.DefaultApiPort))
 	response, err := c.ObjectLifeline(t, objID.String(), &client.ObjectLifelineOpts{Limit: optional.NewInt32(100)})

@@ -65,7 +65,7 @@ func (c *ConnectionManager) StartDB(t testing.TB) {
 }
 
 // start API server
-func (c *ConnectionManager) StartAPIServer(t *testing.T) {
+func (c *ConnectionManager) StartAPIServer(t testing.TB) {
 	e := echo.New()
 	c.echo = e
 

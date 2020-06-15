@@ -242,6 +242,15 @@ func GenerateRecordsWithDifferencePulses(differentPulseSize, recordCount int) fu
 	return fn
 }
 
+func GenerateRecordInNextPulse(prevPulse insolar.PulseNumber) *exporter.Record {
+	r := GenerateRecordsSilence(1)[0]
+	nextPn := prevPulse + 10
+	newID := gen.IDWithPulse(nextPn)
+	r.Record.ID = newID
+	r.ShouldIterateFrom = nil
+	return r
+}
+
 // GenerateRecordsSilence returns new generated records without errors
 func GenerateRecordsSilence(count int) []*exporter.Record {
 	res := make([]*exporter.Record, count)
