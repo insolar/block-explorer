@@ -14,6 +14,7 @@ import (
 
 	"github.com/insolar/assured-ledger/ledger-core/v2/log"
 	"github.com/insolar/insolar/insolar"
+	"github.com/insolar/spec-insolar-block-explorer-api/v1/server"
 	"github.com/labstack/echo/v4"
 
 	"github.com/insolar/block-explorer/configuration"
@@ -33,7 +34,35 @@ func NewServer(ctx context.Context, storage interfaces.StorageFetcher, config co
 	return &Server{storage: storage, logger: logger, config: config}
 }
 
-func (s Server) ObjectLifeline(ctx echo.Context, objectReference string, params ObjectLifelineParams) error {
+func (s *Server) JetDropByID(ctx echo.Context, jetDropID server.JetDropIdPathParam) error {
+	panic("implement me")
+}
+
+func (s *Server) JetDropRecords(ctx echo.Context, jetDropID server.JetDropIdPathParam, params server.JetDropRecordsParams) error {
+	panic("implement me")
+}
+
+func (s *Server) JetDropsByJetID(ctx echo.Context, jetID server.JetIdPathParam, params server.JetDropsByJetIDParams) error {
+	panic("implement me")
+}
+
+func (s *Server) Pulses(ctx echo.Context, params server.PulsesParams) error {
+	panic("implement me")
+}
+
+func (s *Server) Pulse(ctx echo.Context, pulseNumber server.PulseNumberPathParam) error {
+	panic("implement me")
+}
+
+func (s *Server) JetDropsByPulseNumber(ctx echo.Context, pulseNumber server.PulseNumberPathParam, params server.JetDropsByPulseNumberParams) error {
+	panic("implement me")
+}
+
+func (s *Server) Search(ctx echo.Context, params server.SearchParams) error {
+	panic("implement me")
+}
+
+func (s *Server) ObjectLifeline(ctx echo.Context, objectReference server.ObjectReferencePathParam, params server.ObjectLifelineParams) error {
 	limit, offset, err := checkLimitOffset(params.Limit, params.Offset)
 	if err != nil {
 		return ctx.JSON(http.StatusBadRequest, NewSingleMessageError(err.Error()))
@@ -45,18 +74,35 @@ func (s Server) ObjectLifeline(ctx echo.Context, objectReference string, params 
 	}
 
 	sort := "desc"
-	if params.Sort != nil {
-		s := *params.Sort
+	if params.SortBy != nil {
+		s := string(*params.SortBy)
 		if s != "desc" && s != "asc" {
 			return ctx.JSON(http.StatusBadRequest, NewSingleMessageError("query parameter 'sort' should be 'desc' or 'asc'"))
 		}
 		sort = s
 	}
 
+	var fromIndexString *string
+	var pulseNumberLtString *int
+	var pulseNumberGtString *int
+
+	if params.FromIndex != nil {
+		str := string(*params.FromIndex)
+		fromIndexString = &str
+	}
+	if params.PulseNumberLt != nil {
+		str := int(*params.PulseNumberLt)
+		pulseNumberLtString = &str
+	}
+	if params.PulseNumberGt != nil {
+		str := int(*params.PulseNumberGt)
+		pulseNumberGtString = &str
+	}
+
 	records, count, err := s.storage.GetLifeline(
 		ref.Bytes(),
-		params.FromIndex,
-		params.PulseNumberLt, params.PulseNumberGt,
+		fromIndexString,
+		pulseNumberLtString, pulseNumberGtString,
 		limit, offset,
 		sort,
 	)
@@ -70,26 +116,27 @@ func (s Server) ObjectLifeline(ctx echo.Context, objectReference string, params 
 		return ctx.JSON(http.StatusInternalServerError, struct{}{})
 	}
 
-	result := []ResponsesRecordYaml{}
+	var result []server.Record
 	for _, r := range records {
 		result = append(result, RecordToAPI(r))
 	}
-	return ctx.JSON(http.StatusOK, ResponsesLifelineYaml{
-		Total:  int64(count),
+	cnt := int64(count)
+	return ctx.JSON(http.StatusOK, server.RecordsResponse{
+		Total:  &cnt,
 		Result: &result,
 	})
 }
 
-func checkReference(referenceRow string) (*insolar.ID, *ErrorMessage) {
-	referenceRow = strings.TrimSpace(referenceRow)
+func checkReference(referenceRow server.ObjectReferencePathParam) (*insolar.ID, *ErrorMessage) {
+	referenceString := strings.TrimSpace(string(referenceRow))
 	var errMsg ErrorMessage
 
-	if len(referenceRow) == 0 {
+	if len(referenceString) == 0 {
 		errMsg = NewSingleMessageError("empty reference")
 		return nil, &errMsg
 	}
 
-	reference, err := url.QueryUnescape(referenceRow)
+	reference, err := url.QueryUnescape(referenceString)
 	if err != nil {
 		errMsg = NewSingleMessageError("error unescaping reference parameter")
 		return nil, &errMsg
@@ -104,10 +151,10 @@ func checkReference(referenceRow string) (*insolar.ID, *ErrorMessage) {
 	return ref.GetLocal(), nil
 }
 
-func checkLimitOffset(l, o *int) (int, int, error) {
+func checkLimitOffset(l *server.LimitParam, o *server.OffsetParam) (int, int, error) {
 	limit := 20
 	if l != nil {
-		limit = *l
+		limit = int(*l)
 	}
 	if limit <= 0 || limit > 100 {
 		return 0, 0, errors.New("query parameter 'limit' should be in range [1, 100]")
@@ -115,7 +162,7 @@ func checkLimitOffset(l, o *int) (int, int, error) {
 
 	offset := 0
 	if o != nil {
-		offset = *o
+		offset = int(*o)
 	}
 	if offset < 0 {
 		return 0, 0, errors.New("query parameter 'offset' should not be negative")
