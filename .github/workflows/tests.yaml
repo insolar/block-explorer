@@ -151,7 +151,7 @@ jobs:
       - name: Add bin to path
         run: echo "::add-path::${{env.GOPATH}}/bin"
       - name: Test
-        run: make all go-acc test-with-coverage
+        run: make go-acc all test-with-coverage
         working-directory: ${{env.GOPATH}}/src/github.com/insolar/block-explorer
       - name: Upload coverage to Codecov
         run: bash <(curl -s https://codecov.io/bash) -f coverage.out -y .codecov.yml -n coverage-report
