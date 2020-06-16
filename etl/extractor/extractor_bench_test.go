@@ -40,9 +40,8 @@ func BenchmarkPlatformExtractorGetJetDrops(b *testing.B) {
 		client, err := connection.NewGRPCClientConnection(ctx, cfg)
 		require.NoError(b, err)
 
-		g := &RecordExporterClient{}
 		pulseClient := clients.GetTestPulseClient(1, nil)
-		extractor := NewPlatformExtractor(uint32(defaultLocalBatchSize), NewPlatformPulseExtractor(pulseClient), g)
+		extractor := NewPlatformExtractor(uint32(defaultLocalBatchSize), NewPlatformPulseExtractor(pulseClient), &RecordExporterClient{})
 		err = extractor.Start(ctx)
 		require.NoError(b, err)
 
