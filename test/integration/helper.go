@@ -75,6 +75,18 @@ func (a *BlockExplorerTestSuite) WaitRecordsCount(t testing.TB, expCount int, ti
 	require.Equal(t, expCount, c, "Records count in DB not as expected")
 }
 
+func (a *BlockExplorerTestSuite) WaitRecordsCountUnchanged(t testing.TB, expCount int, timeoutMs int) {
+	var c int
+	interval := 100
+	for i := 0; i < timeoutMs/interval; i++ {
+		record := models.Record{}
+		a.BE.DB.Model(&record).Count(&c)
+		t.Logf("Wait records in DB count unchanged: expected rows count=%v, actual=%v, attempt: %v", expCount, c, i)
+		require.Equal(t, expCount, c)
+		time.Sleep(time.Duration(interval) * time.Millisecond)
+	}
+}
+
 // nolint
 func (a *BlockExplorerTestSuite) ImportRecordsMultipleJetDrops(t testing.TB, jetDrops int, records int) {
 	d := make([]*exporter.Record, 0)

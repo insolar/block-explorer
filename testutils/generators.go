@@ -95,33 +95,51 @@ func GenerateVirtualDeactivateRecord(pulse insolar.PulseNumber, objectID, prevSt
 }
 
 type ObjectLifeline struct {
-	States []StateByPulse
-	ObjID  insolar.ID
+	StateRecords []RecordsByPulse
+	SideRecords  []RecordsByPulse
+	ObjID        insolar.ID
 }
 
-type StateByPulse struct {
+type RecordsByPulse struct {
 	Pn      insolar.PulseNumber
 	Records []*exporter.Record
+}
+
+func (l *ObjectLifeline) GetAllRecords() []*exporter.Record {
+	r := l.GetStateRecords()
+	r = append(r, l.SideRecords[0].Records...)
+	r = append(r, l.SideRecords[1].Records...)
+	return r
+}
+
+func (l *ObjectLifeline) GetStateRecords() []*exporter.Record {
+	r := make([]*exporter.Record, 0)
+	for i := 0; i < len(l.StateRecords); i++ {
+		r = append(r, l.StateRecords[i].Records...)
+	}
+	return r
 }
 
 func GenerateObjectLifeline(pulseCount, recordsInPulse int) ObjectLifeline {
 	objectID := gen.ID()
 	var prevState insolar.ID
-	states := make([]StateByPulse, pulseCount)
+	stateRecords := make([]RecordsByPulse, pulseCount)
+	sideRecords := make([]RecordsByPulse, 2)
 	pn := gen.PulseNumber()
 	for i := 0; i < pulseCount; i++ {
 		jetID := GenerateUniqueJetID()
 		pn = pn + 10
-		records := make([]*exporter.Record, recordsInPulse)
 		if i == 0 {
-			records = make([]*exporter.Record, recordsInPulse+2)
 			request := GenerateRequestRecord(pn, objectID)
-			records[len(records)-1] = request
-
 			activate := GenerateVirtualActivateRecord(pn, objectID, request.Record.ID)
-			records[len(records)-2] = activate
+			sideRecords[0] = RecordsByPulse{
+				Pn:      pn,
+				Records: []*exporter.Record{request, activate},
+			}
 			prevState = activate.Record.ID
 		}
+
+		records := make([]*exporter.Record, recordsInPulse)
 		amends := GenerateVirtualAmendRecordsLinkedArray(pn, jetID, objectID, prevState, recordsInPulse)
 		for ii, r := range amends {
 			records[ii] = r
@@ -131,18 +149,22 @@ func GenerateObjectLifeline(pulseCount, recordsInPulse int) ObjectLifeline {
 		// if i == pulseCount-1 {
 		// 	deactivate := GenerateVirtualDeactivateRecord(pn, objectID, prevState)
 		// 	deactivate.Record.JetID = jetID
-		// 	records = append(records, deactivate)
+		// 	sideRecords[1] = RecordsByPulse{
+		// 		Pn:      pn,
+		// 		Records: []*exporter.Record{deactivate},
+		// 	}
 		// }
 
-		states[i] = StateByPulse{
+		stateRecords[i] = RecordsByPulse{
 			Pn:      pn,
 			Records: records,
 		}
 	}
 
 	return ObjectLifeline{
-		States: states,
-		ObjID:  objectID,
+		StateRecords: stateRecords,
+		SideRecords:  sideRecords,
+		ObjID:        objectID,
 	}
 
 }

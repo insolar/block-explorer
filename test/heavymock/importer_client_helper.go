@@ -7,6 +7,7 @@ package heavymock
 
 import (
 	"context"
+	"fmt"
 	"io"
 
 	"github.com/insolar/insolar/ledger/heavy/exporter"
@@ -19,10 +20,11 @@ func ImportRecords(client HeavymockImporterClient, records []*exporter.Record) e
 		return err
 	}
 
-	for _, record := range records {
+	for i, record := range records {
 		if record == nil {
 			return errors.New("unable to send nil record")
 		}
+		fmt.Printf("Sending record %v \n", i)
 		if err := stream.Send(record); err != nil {
 			if err == io.EOF {
 				break
