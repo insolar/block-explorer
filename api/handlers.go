@@ -34,15 +34,15 @@ func NewServer(ctx context.Context, storage interfaces.StorageFetcher, config co
 	return &Server{storage: storage, logger: logger, config: config}
 }
 
-func (s *Server) JetDropByID(ctx echo.Context, jetDropId server.JetDropIdPathParam) error {
+func (s *Server) JetDropByID(ctx echo.Context, jetDropID server.JetDropIdPathParam) error {
 	panic("implement me")
 }
 
-func (s *Server) JetDropRecords(ctx echo.Context, jetDropId server.JetDropIdPathParam, params server.JetDropRecordsParams) error {
+func (s *Server) JetDropRecords(ctx echo.Context, jetDropID server.JetDropIdPathParam, params server.JetDropRecordsParams) error {
 	panic("implement me")
 }
 
-func (s *Server) JetDropsByJetID(ctx echo.Context, jetId server.JetIdPathParam, params server.JetDropsByJetIDParams) error {
+func (s *Server) JetDropsByJetID(ctx echo.Context, jetID server.JetIdPathParam, params server.JetDropsByJetIDParams) error {
 	panic("implement me")
 }
 
@@ -125,10 +125,6 @@ func (s *Server) ObjectLifeline(ctx echo.Context, objectReference server.ObjectR
 		Total:  &cnt,
 		Result: &result,
 	})
-}
-
-func (s *Server) test(ctx context.Context) error {
-	return nil
 }
 
 func checkReference(referenceRow server.ObjectReferencePathParam) (*insolar.ID, *ErrorMessage) {
