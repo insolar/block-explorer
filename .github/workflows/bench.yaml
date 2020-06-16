@@ -27,6 +27,9 @@ jobs:
            curl -sfL https://raw.githubusercontent.com/knqyf263/cob/master/install.sh | sudo sh -s -- -b /usr/local/bin
            make vendor
         working-directory: ${{env.GOPATH}}/src/github.com/insolar/block-explorer
+      - name: vendor
+        run: make vendor
+        working-directory: ${{env.GOPATH}}/src/github.com/insolar/block-explorer
       - name: Run comparative benchmarks
         run: make bench-compare
         working-directory: ${{env.GOPATH}}/src/github.com/insolar/block-explorer
