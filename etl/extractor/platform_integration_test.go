@@ -15,6 +15,7 @@ import (
 	"github.com/insolar/block-explorer/configuration"
 	"github.com/insolar/block-explorer/etl/connection"
 	"github.com/insolar/block-explorer/testutils"
+	"github.com/insolar/block-explorer/testutils/clients"
 	"github.com/insolar/insolar/ledger/heavy/exporter"
 	"github.com/stretchr/testify/require"
 )
@@ -38,7 +39,8 @@ func TestExporterIsWorking(t *testing.T) {
 	defer client.GetGRPCConn().Close()
 
 	g := &RecordExporterClient{}
-	extractor := NewPlatformExtractor(uint32(defaultLocalBatchSize), g)
+	pulseClient := clients.GetTestPulseClient(1, nil)
+	extractor := NewPlatformExtractor(uint32(defaultLocalBatchSize), NewPlatformPulseExtractor(pulseClient), g)
 	err = extractor.Start(ctx)
 	require.NoError(t, err)
 	defer extractor.Stop(ctx)
