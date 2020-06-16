@@ -16,6 +16,7 @@ import (
 	"github.com/gojuno/minimock/v3"
 	"github.com/insolar/block-explorer/etl/interfaces/mock"
 	"github.com/insolar/block-explorer/testutils"
+	"github.com/insolar/block-explorer/testutils/clients"
 	"github.com/insolar/insolar/ledger/heavy/exporter"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
@@ -40,7 +41,9 @@ func TestGetJetDrops(t *testing.T) {
 			return stream, nil
 		})
 
-	extractor := NewPlatformExtractor(uint32(pulseCount), recordClient)
+	pulseClient := clients.GetTestPulseClient(1, nil)
+	pulseExtractor := NewPlatformPulseExtractor(pulseClient)
+	extractor := NewPlatformExtractor(uint32(pulseCount), pulseExtractor, recordClient)
 	err = extractor.Start(ctx)
 	require.NoError(t, err)
 	defer extractor.Stop(ctx)
@@ -110,7 +113,9 @@ func TestLoadJetDrops_returnsRecordByPulses(t *testing.T) {
 					return stream, nil
 				})
 
-			extractor := NewPlatformExtractor(uint32(test.recordCount), recordClient)
+			pulseClient := clients.GetTestPulseClient(1, nil)
+			pulseExtractor := NewPlatformPulseExtractor(pulseClient)
+			extractor := NewPlatformExtractor(uint32(test.recordCount), pulseExtractor, recordClient)
 			err = extractor.LoadJetDrops(ctx, startPulseNumber, startPulseNumber+10*test.differentPulseCount)
 			require.NoError(t, err)
 			// we are waiting only 2 times, because of 2 different pulses
@@ -141,7 +146,7 @@ func TestLoadJetDrops_fromPulseNumberCannotBeNegative(t *testing.T) {
 	mc := minimock.NewController(t)
 	recordClient := mock.NewRecordExporterClientMock(mc)
 
-	extractor := NewPlatformExtractor(1, recordClient)
+	extractor := NewPlatformExtractor(1, nil, recordClient)
 	err := extractor.LoadJetDrops(ctx, -1, 10)
 	require.EqualError(t, err, "fromPulseNumber cannot be negative")
 }
@@ -151,7 +156,7 @@ func TestLoadJetDrops_toPulseNumberCannotBeLess1(t *testing.T) {
 	mc := minimock.NewController(t)
 	recordClient := mock.NewRecordExporterClientMock(mc)
 
-	extractor := NewPlatformExtractor(1, recordClient)
+	extractor := NewPlatformExtractor(1, nil, recordClient)
 	err := extractor.LoadJetDrops(ctx, 1, 0)
 	require.EqualError(t, err, "toPulseNumber cannot be less than 1")
 }
@@ -161,7 +166,7 @@ func TestLoadJetDrops_toPulseNumberShouldBeGreater(t *testing.T) {
 	mc := minimock.NewController(t)
 	recordClient := mock.NewRecordExporterClientMock(mc)
 
-	extractor := NewPlatformExtractor(1, recordClient)
+	extractor := NewPlatformExtractor(1, nil, recordClient)
 	err := extractor.LoadJetDrops(ctx, 10, 9)
 	require.EqualError(t, err, "fromPulseNumber cannot be greater than toPulseNumber")
 }

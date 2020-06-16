@@ -51,7 +51,8 @@ func main() {
 	}
 	defer client.GetGRPCConn().Close()
 
-	platformExtractor := extractor.NewPlatformExtractor(100, exporter.NewRecordExporterClient(client.GetGRPCConn()))
+	pulseExtractor := extractor.NewPlatformPulseExtractor(exporter.NewPulseExporterClient(client.GetGRPCConn()))
+	platformExtractor := extractor.NewPlatformExtractor(100, pulseExtractor, exporter.NewRecordExporterClient(client.GetGRPCConn()))
 	err = platformExtractor.Start(ctx)
 	if err != nil {
 		logger.Fatal("cannot start platformExtractor", err)
