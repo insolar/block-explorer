@@ -29,7 +29,7 @@ jobs:
       - name: Install cob
         run: |
            curl -sfL https://raw.githubusercontent.com/knqyf263/cob/master/install.sh | sudo sh -s -- -b /usr/local/bin
-           make vendor
+           make all
         working-directory: ${{env.GOPATH}}/src/github.com/insolar/block-explorer
       - name: vendor
         run: make vendor
