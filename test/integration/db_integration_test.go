@@ -74,7 +74,7 @@ func TestIntegrationWithDb_GetRecords(t *testing.T) {
 	}
 	require.Len(t, refs, pulsesNumber)
 
-	// last record with the biggest pulse number won't BE processed, so we do not expect this record in DB
+	// last record with the biggest pulse number won't be processed, so we do not expect this record in DB
 	expRecordsCount := recordsInPulse * (pulsesNumber - 1)
 	ts.WaitRecordsCount(t, expRecordsCount, 6000)
 
@@ -109,7 +109,7 @@ func TestIntegrationWithDb_GetJetDrops(t *testing.T) {
 	err := heavymock.ImportRecords(ts.C.ImporterClient, expRecords)
 	require.NoError(t, err)
 
-	// last records with the biggest pulse number won't BE processed, so we do not expect this record in DB
+	// last records with the biggest pulse number won't be processed, so we do not expect this record in DB
 	ts.WaitRecordsCount(t, len(expRecords)-recordsCount, 6000)
 
 	var jetDropsDB []models.JetDrop

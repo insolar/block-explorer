@@ -16,6 +16,7 @@ import (
 	"github.com/insolar/block-explorer/test/heavymock"
 	"github.com/insolar/block-explorer/testutils"
 	"github.com/insolar/insolar/ledger/heavy/exporter"
+	"github.com/insolar/spec-insolar-block-explorer-api/v1/server"
 	"github.com/jinzhu/gorm"
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/require"
@@ -78,7 +79,7 @@ func (c *ConnectionManager) StartAPIServer(t testing.TB) {
 		Listen: DefaultApiPort,
 	}
 	apiServer := api.NewServer(c.ctx, s, cfg)
-	api.RegisterHandlers(e, apiServer)
+	server.RegisterHandlers(e, apiServer)
 
 	go func() {
 		err := c.echo.Start(cfg.Listen)
