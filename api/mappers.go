@@ -59,6 +59,22 @@ func RecordToAPI(record models.Record) server.Record {
 	return response
 }
 
+func PulseToAPI(pulse models.Pulse, jetDropAmount, recordAmount int64) server.Pulse {
+	pulseNumber := int64(pulse.PulseNumber)
+	prevPulseNumber := int64(pulse.PrevPulseNumber)
+	nextPulseNumber := int64(pulse.NextPulseNumber)
+	response := server.Pulse{
+		IsComplete:      &pulse.IsComplete,
+		JetDropAmount:   &jetDropAmount,
+		NextPulseNumber: &nextPulseNumber,
+		PrevPulseNumber: &prevPulseNumber,
+		PulseNumber:     &pulseNumber,
+		RecordAmount:    &recordAmount,
+		Timestamp:       &pulse.Timestamp,
+	}
+	return response
+}
+
 func jetIDToString(prefix []byte) string {
 	res := strings.Builder{}
 	for i := 0; i < 5; i++ {
