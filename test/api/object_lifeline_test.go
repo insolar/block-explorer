@@ -149,7 +149,7 @@ func TestLifeline_removedStatesBetweenPulses(t *testing.T) {
 }
 
 func TestLifeline_removedStatesWithinPulses(t *testing.T) {
-	t.Log("C5110	Receive object lifeline, if there are skipped object states within pulses")
+	t.Log("C5110 Receive object lifeline, unable to build lifeline for pulse if there are skipped object states within pulse")
 	ts := integration.NewBlockExplorerTestSetup(t).WithHTTPServer(t)
 	defer ts.Stop(t)
 
@@ -177,7 +177,7 @@ func TestLifeline_removedStatesWithinPulses(t *testing.T) {
 }
 
 func TestLifeline_recordsHaveSamePrevState(t *testing.T) {
-	t.Log("C5004 Receive object lifeline, if several states have the same prev state")
+	t.Log("C5004 Receive object lifeline, unable to build lifeline for pulse if several states have the same prev state")
 	ts := integration.NewBlockExplorerTestSetup(t).WithHTTPServer(t)
 	defer ts.Stop(t)
 
@@ -209,7 +209,7 @@ func TestLifeline_recordsHaveSamePrevState(t *testing.T) {
 }
 
 func TestLifeline_receiveNewObjectStates(t *testing.T) {
-	t.Log("C5082 Receive object lifeline, receive new object states over pulses")
+	t.Log("C5082 Receive object lifeline, receive new object states over incoming pulses")
 	ts := integration.NewBlockExplorerTestSetup(t).WithHTTPServer(t)
 	defer ts.Stop(t)
 
@@ -237,39 +237,37 @@ func TestLifeline_receiveNewObjectStates(t *testing.T) {
 }
 
 func TestLifeline_fillMissedStates(t *testing.T) {
-	t.Log("C5083 Receive object lifeline, fill missed object states between gaps over new records")
+	t.Log("C5083 Receive object lifeline, fill missed object states between gaps over incoming records in one pulse")
 	ts := integration.NewBlockExplorerTestSetup(t).WithHTTPServer(t)
 	defer ts.Stop(t)
 
 	pulsesNumber := 2
-	recordsInPulse := 10
+	recordsInPulse := 5
 	lifeline := testutils.GenerateObjectLifeline(pulsesNumber, recordsInPulse)
 	records := make([]*exporter.Record, 0)
 	recordsPulseOne := lifeline.StateRecords[0].Records
-	one := recordsPulseOne[:4]
-	records = append(records, one...)
-	ptwo := recordsPulseOne[5:]
-	records = append(records, ptwo...)
+	records = append(records, recordsPulseOne[:2]...)
+	records = append(records, recordsPulseOne[3:]...)
 
 	err := heavymock.ImportRecords(ts.C.ImporterClient, records)
 	require.NoError(t, err)
 
-	ts.WaitRecordsCountUnchanged(t, 0, 1000)
+	ts.WaitRecordsCountUnchanged(t, 0, 500)
 
-	err = heavymock.ImportRecords(ts.C.ImporterClient, []*exporter.Record{recordsPulseOne[4], recordsPulseOne[5], recordsPulseOne[6]})
+	err = heavymock.ImportRecords(ts.C.ImporterClient, []*exporter.Record{recordsPulseOne[2]})
 	require.NoError(t, err)
 
-	// ts.WaitRecordsCount(t, recordsInPulse, 1000)
-	ts.WaitRecordsCount(t, 0, 1000)
+	ts.WaitRecordsCountUnchanged(t, 0, 500)
 
-	lastPulseRecord := testutils.GenerateRecordInNextPulse(lifeline.StateRecords[0].Pn)
+	err = heavymock.ImportRecords(ts.C.ImporterClient, lifeline.StateRecords[1].Records)
+	require.NoError(t, err)
+	lastPulseRecord := testutils.GenerateRecordInNextPulse(lifeline.StateRecords[1].Pn)
 	err = heavymock.ImportRecords(ts.C.ImporterClient, []*exporter.Record{lastPulseRecord})
-	ts.WaitRecordsCount(t, 10, 1000)
+	lenExpRecords := recordsInPulse * pulsesNumber
+	ts.WaitRecordsCount(t, lenExpRecords, 1000)
 
-	// c := GetHTTPClient()
-	// c.ObjectLifeline(t, lifeline.ObjID.String(), &client.ObjectLifelineOpts{Limit: optional.NewInt32(100)})
-	// c.ObjectLifeline(t, lastPulseRecord.Record.ObjectID.String(), &client.ObjectLifelineOpts{Limit: optional.NewInt32(100)})
-	// response, err := c.ObjectLifeline(t, lifeline.ObjID.String(), &client.ObjectLifelineOpts{Limit: optional.NewInt32(100)})
-	// require.NoError(t, err)
-	// require.Len(t, response.Result, recordsInPulse*4)
+	c := GetHTTPClient()
+	response, err := c.ObjectLifeline(t, lifeline.ObjID.String(), &client.ObjectLifelineOpts{Limit: optional.NewInt32(100)})
+	require.NoError(t, err)
+	require.Len(t, response.Result, lenExpRecords)
 }

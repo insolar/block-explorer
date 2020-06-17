@@ -7,7 +7,6 @@ package extractor
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"math"
 	"sync"
@@ -74,7 +73,6 @@ func (m *PlatformExtractor) getJetDrops(ctx context.Context, request *exporter.G
 	lastPulseNumber := uint32(fromPulseNumber)
 	receivedPulseNumber := uint32(0)
 
-	i := 0
 	go func() {
 		logger := belogger.FromContext(ctx)
 		// need to collect all records from pulse
@@ -132,9 +130,7 @@ func (m *PlatformExtractor) getJetDrops(ctx context.Context, request *exporter.G
 
 				lastPulseNumber = receivedPulseNumber
 
-				fmt.Printf("received message %v, len %v \n", i, len(jetDrops.Records))
 				// sending data to channel
-				i++
 				m.mainJetDropsChan <- jetDrops
 				// zeroing variable which collecting jetDrops
 				jetDrops = new(types.PlatformJetDrops)
