@@ -13,10 +13,9 @@ import (
 	"testing"
 
 	"github.com/insolar/block-explorer/testutils/connectionmanager"
-	"github.com/stretchr/testify/require"
 )
 
-func LogHttp(t *testing.T, http *http.Response, requestBody interface{}, responseBody interface{}) {
+func LogHTTP(t *testing.T, http *http.Response, requestBody interface{}, responseBody interface{}) {
 	var buf strings.Builder
 	buf.WriteString("\n")
 	buf.WriteString("Request:")
@@ -49,11 +48,6 @@ func LogHttp(t *testing.T, http *http.Response, requestBody interface{}, respons
 	t.Log(buf.String())
 }
 
-func validateResponse(t *testing.T, response *http.Response) {
-	code := response.StatusCode
-	require.True(t, code == http.StatusOK || code == http.StatusNoContent, "Status code not equals")
-}
-
 func GetHTTPClient() *BEApiClient {
-	return NewBeApiClient(fmt.Sprintf("http://localhost%v", connectionmanager.DefaultApiPort))
+	return NewBeAPIClient(fmt.Sprintf("http://localhost%v", connectionmanager.DefaultAPIPort))
 }

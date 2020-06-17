@@ -128,7 +128,7 @@ func GenerateObjectLifeline(pulseCount, recordsInPulse int) ObjectLifeline {
 	pn := gen.PulseNumber()
 	for i := 0; i < pulseCount; i++ {
 		jetID := GenerateUniqueJetID()
-		pn = pn + 10
+		pn += 10
 		if i == 0 {
 			request := GenerateRequestRecord(pn, objectID)
 			activate := GenerateVirtualActivateRecord(pn, objectID, request.Record.ID)
@@ -141,9 +141,7 @@ func GenerateObjectLifeline(pulseCount, recordsInPulse int) ObjectLifeline {
 
 		records := make([]*exporter.Record, recordsInPulse)
 		amends := GenerateVirtualAmendRecordsLinkedArray(pn, jetID, objectID, prevState, recordsInPulse)
-		for ii, r := range amends {
-			records[ii] = r
-		}
+		copy(records, amends)
 		prevState = amends[len(amends)-1].Record.ID
 		// TODO uncomment after resolving https://insolar.atlassian.net/browse/PENV-368
 		// if i == pulseCount-1 {

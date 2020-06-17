@@ -22,7 +22,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const DefaultApiPort = ":8081"
+const DefaultAPIPort = ":8081"
 
 // struct that represents all connections that can be used throughout integration tests
 type ConnectionManager struct {
@@ -76,7 +76,7 @@ func (c *ConnectionManager) StartAPIServer(t testing.TB) {
 	s := storage.NewStorage(c.DB)
 
 	cfg := configuration.API{
-		Listen: DefaultApiPort,
+		Listen: DefaultAPIPort,
 	}
 	apiServer := api.NewServer(c.ctx, s, cfg)
 	server.RegisterHandlers(e, apiServer)
@@ -97,6 +97,6 @@ func (c *ConnectionManager) Stop() {
 		f()
 	}
 	if e := c.echo; e != nil {
-		c.echo.Shutdown(c.ctx)
+		_ = c.echo.Shutdown(c.ctx)
 	}
 }

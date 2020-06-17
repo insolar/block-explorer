@@ -6,6 +6,7 @@
 package api
 
 import (
+	"context"
 	"net/http"
 	"testing"
 
@@ -17,7 +18,7 @@ type BEApiClient struct {
 	client client.APIClient
 }
 
-func NewBeApiClient(basePath string) *BEApiClient {
+func NewBeAPIClient(basePath string) *BEApiClient {
 	cfg := client.Configuration{
 		BasePath:   basePath,
 		HTTPClient: http.DefaultClient,
@@ -28,8 +29,8 @@ func NewBeApiClient(basePath string) *BEApiClient {
 }
 
 func (c *BEApiClient) ObjectLifeline(t *testing.T, objectRef string, localVarOptionals *client.ObjectLifelineOpts) (response client.ObjectLifelineResponse200, err error) {
-	response, rawResponse, err := c.client.RecordApi.ObjectLifeline(nil, objectRef, localVarOptionals)
+	response, rawResponse, err := c.client.RecordApi.ObjectLifeline(context.Background(), objectRef, localVarOptionals)
 	require.NoError(t, err, "Error while executing http request")
-	LogHttp(t, rawResponse, nil, response)
+	LogHTTP(t, rawResponse, nil, response)
 	return response, err
 }
