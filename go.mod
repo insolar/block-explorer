@@ -3,6 +3,8 @@ module github.com/insolar/block-explorer
 go 1.14
 
 require (
+	github.com/antihax/optional v1.0.0
+	github.com/deepmap/oapi-codegen v1.3.8 // indirect
 	github.com/fortytw2/leaktest v1.3.0
 	github.com/fsnotify/fsnotify v1.4.9 // indirect
 	github.com/gogo/protobuf v1.3.1
