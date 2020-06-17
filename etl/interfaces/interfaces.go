@@ -37,6 +37,13 @@ type JetDropsExtractor interface {
 	LoadJetDrops(ctx context.Context, fromPulseNumber int, toPulseNumber int) error
 }
 
+//go:generate minimock -i github.com/insolar/block-explorer/etl/interfaces.PulseExtractor -o ./mock -s _mock.go -g
+// PulseExtractor represents the methods for getting Pulse
+type PulseExtractor interface {
+	// GetCurrentPulse returns the current Pulse number
+	GetCurrentPulse(ctx context.Context) (uint32, error)
+}
+
 //go:generate minimock -i github.com/insolar/block-explorer/etl/interfaces.ConnectionManager -o ./mock -s _mock.go -g
 // ConnectionManager represents management of connection to Platform
 type ConnectionManager interface {

@@ -9,6 +9,7 @@ import (
 	"context"
 
 	"github.com/insolar/block-explorer/configuration"
+	"github.com/insolar/block-explorer/testutils/clients"
 
 	"github.com/insolar/block-explorer/etl/controller"
 	"github.com/insolar/block-explorer/etl/extractor"
@@ -46,7 +47,9 @@ var cfg = configuration.Controller{PulsePeriod: 10}
 func (b *BlockExplorerTestSetUp) Start() error {
 	b.ctx = context.Background()
 
-	b.extr = extractor.NewPlatformExtractor(100, b.ExporterClient)
+	pulseClient := clients.GetTestPulseClient(1, nil)
+	pulseExtractor := extractor.NewPlatformPulseExtractor(pulseClient)
+	b.extr = extractor.NewPlatformExtractor(100, pulseExtractor, b.ExporterClient)
 	err := b.extr.Start(b.ctx)
 	if err != nil {
 		return err
