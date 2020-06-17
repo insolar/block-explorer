@@ -122,16 +122,6 @@ func filterRecordsByIndex(query *gorm.DB, fromIndex string, sort string) (*gorm.
 	return query, nil
 }
 
-func filterByTimestamp(query *gorm.DB, timestampLte, timestampGte *int) *gorm.DB {
-	if timestampGte != nil {
-		query = query.Where("timestamp >= ?", *timestampGte)
-	}
-	if timestampLte != nil {
-		query = query.Where("timestamp <= ?", *timestampLte)
-	}
-	return query
-}
-
 func sortRecordsByDirection(query *gorm.DB, sort string) (*gorm.DB, error) {
 	switch sort {
 	case "asc":
@@ -156,20 +146,6 @@ func getRecords(query *gorm.DB, limit, offset int) ([]models.Record, int, error)
 		return nil, 0, err
 	}
 	return records, total, nil
-}
-
-func getPulses(query *gorm.DB, limit, offset int) ([]models.Pulse, int, error) {
-	pulses := []models.Pulse{}
-	var total int
-	err := query.Limit(limit).Offset(offset).Find(&pulses).Error
-	if err != nil {
-		return nil, 0, err
-	}
-	err = query.Count(&total).Error
-	if err != nil {
-		return nil, 0, err
-	}
-	return pulses, total, nil
 }
 
 // GetLifeline returns records for provided object reference, ordered by pulse number and order fields.
