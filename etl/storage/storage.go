@@ -122,6 +122,16 @@ func filterRecordsByIndex(query *gorm.DB, fromIndex string, sort string) (*gorm.
 	return query, nil
 }
 
+func filterByTimestamp(query *gorm.DB, timestampLte, timestampGte *int) *gorm.DB {
+	if timestampGte != nil {
+		query = query.Where("timestamp >= ?", *timestampGte)
+	}
+	if timestampLte != nil {
+		query = query.Where("timestamp <= ?", *timestampLte)
+	}
+	return query
+}
+
 func sortRecordsByDirection(query *gorm.DB, sort string) (*gorm.DB, error) {
 	switch sort {
 	case "asc":
@@ -148,6 +158,20 @@ func getRecords(query *gorm.DB, limit, offset int) ([]models.Record, int, error)
 	return records, total, nil
 }
 
+func getPulses(query *gorm.DB, limit, offset int) ([]models.Pulse, int, error) {
+	pulses := []models.Pulse{}
+	var total int
+	err := query.Limit(limit).Offset(offset).Find(&pulses).Error
+	if err != nil {
+		return nil, 0, err
+	}
+	err = query.Count(&total).Error
+	if err != nil {
+		return nil, 0, err
+	}
+	return pulses, total, nil
+}
+
 // GetLifeline returns records for provided object reference, ordered by pulse number and order fields.
 func (s *storage) GetLifeline(objRef []byte, fromIndex *string, pulseNumberLt, pulseNumberGt *int, limit, offset int, sort string) ([]models.Record, int, error) {
 	query := s.db.Model(&models.Record{}).Where("object_reference = ?", objRef).Where("type = ?", models.State)
@@ -172,6 +196,48 @@ func (s *storage) GetLifeline(objRef []byte, fromIndex *string, pulseNumberLt, p
 		return nil, 0, errors.Wrapf(err, "error while select records for object %v from db", objRef)
 	}
 	return records, total, nil
+}
+
+// GetPulse returns pulse with provided pulse number from db.
+func (s *storage) GetPulse(pulseNumber int) (models.Pulse, int64, int64, error) {
+	var pulse models.Pulse
+	err := s.db.Where("pulse_number = ?", pulseNumber).First(&pulse).Error
+	if err != nil {
+		return pulse, 0, 0, err
+	}
+
+	pulse = s.updateNextPulse(pulse)
+
+	jetDrops, records, err := s.GetAmounts(pulseNumber)
+	if err != nil {
+		return pulse, 0, 0, errors.Wrapf(err, "error while select count of records from db for pulse number %d", pulseNumber)
+	}
+
+	return pulse, jetDrops, records, err
+}
+
+// GetAmounts return amount of jetDrops and records at provided pulse.
+func (s *storage) GetAmounts(pulseNumber int) (int64, int64, error) {
+	res := struct {
+		JetDrops int
+		Records  int
+	}{}
+	err := s.db.Model(models.JetDrop{}).Select("count(*) as jet_drops, sum(record_amount) as records").Where("pulse_number = ?", pulseNumber).Scan(&res).Error
+	if err != nil {
+		return 0, 0, errors.Wrapf(err, "error while select count of records from db for pulse number %d", pulseNumber)
+	}
+
+	return int64(res.JetDrops), int64(res.Records), err
+}
+
+func (s *storage) updateNextPulse(pulse models.Pulse) models.Pulse {
+	var nextPulse models.Pulse
+	err := s.db.Where("prev_pulse_number = ?", pulse.PulseNumber).First(&nextPulse).Error
+	if err != nil {
+		return pulse
+	}
+	pulse.NextPulseNumber = nextPulse.PulseNumber
+	return pulse
 }
 
 // GetIncompletePulses returns pulses that are not complete from db.
