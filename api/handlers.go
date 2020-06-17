@@ -134,24 +134,6 @@ func (s *Server) JetDropsByPulseNumber(ctx echo.Context, pulseNumber server.Puls
 	})
 }
 
-func checkJetDropID(jetDropID *server.FromJetDropId) (*string, error) {
-	if jetDropID == nil {
-		return nil, nil
-	}
-	str := string(*jetDropID)
-	s := strings.Split(str, ":")
-	if len(s) != 2 {
-		return nil, fmt.Errorf("wrong jet drop id format")
-	}
-	if _, err := strconv.ParseInt(s[0], 2, 64); err != nil {
-		return nil, fmt.Errorf("wrong jet drop id format")
-	}
-	if _, err := strconv.ParseInt(s[1], 10, 64); err != nil {
-		return nil, fmt.Errorf("wrong jet drop id format")
-	}
-	return &str, nil
-}
-
 func (s *Server) Search(ctx echo.Context, params server.SearchParams) error {
 	panic("implement me")
 }
@@ -263,4 +245,22 @@ func checkLimitOffset(l *server.LimitParam, o *server.OffsetParam) (int, int, er
 	}
 
 	return limit, offset, nil
+}
+
+func checkJetDropID(jetDropID *server.FromJetDropId) (*string, error) {
+	if jetDropID == nil {
+		return nil, nil
+	}
+	str := string(*jetDropID)
+	s := strings.Split(str, ":")
+	if len(s) != 2 {
+		return nil, fmt.Errorf("wrong jet drop id format")
+	}
+	if _, err := strconv.ParseInt(s[0], 2, 64); err != nil {
+		return nil, fmt.Errorf("wrong jet drop id format")
+	}
+	if _, err := strconv.ParseInt(s[1], 10, 64); err != nil {
+		return nil, fmt.Errorf("wrong jet drop id format")
+	}
+	return &str, nil
 }
