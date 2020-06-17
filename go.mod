@@ -20,7 +20,6 @@ require (
 	github.com/labstack/echo/v4 v4.1.16
 	github.com/mitchellh/mapstructure v1.3.2 // indirect
 	github.com/ory/dockertest/v3 v3.5.2
-	github.com/ory/go-acc v0.2.3 // indirect
 	github.com/pelletier/go-toml v1.8.0 // indirect
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.1.0 // indirect
