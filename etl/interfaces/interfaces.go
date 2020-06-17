@@ -101,6 +101,10 @@ type StorageFetcher interface {
 	GetIncompletePulses() ([]models.Pulse, error)
 	// GetPulse returns pulse with provided pulse number from db.
 	GetPulse(pulseNumber int) (models.Pulse, int64, int64, error)
+	// GetAmounts return amount of jetDrops and records at provided pulse.
+	GetAmounts(pulseNumber int) (jdAmount int64, rAmount int64, err error)
+	// GetPulse returns pulses from db.
+	GetPulses(fromPulse *int64, timestampLte, timestampGte *int, limit, offset int) ([]models.Pulse, int, error)
 	// GetJetDrops returns jetDrops for provided pulse from db.
 	GetJetDrops(pulse models.Pulse) ([]models.JetDrop, error)
 	// GetLifeline returns records for provided object reference, ordered by desc by pulse number and order fields.

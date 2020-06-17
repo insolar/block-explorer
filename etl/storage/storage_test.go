@@ -776,3 +776,363 @@ func TestStorage_GetPulse_NotExist(t *testing.T) {
 	require.Error(t, err)
 	require.True(t, gorm.IsRecordNotFoundError(err))
 }
+
+func TestStorage_GetPulses(t *testing.T) {
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+	s := NewStorage(testDB)
+
+	firstPulse, err := testutils.InitPulseDB()
+	require.NoError(t, err)
+	err = testutils.CreatePulse(testDB, firstPulse)
+	require.NoError(t, err)
+
+	secondPulse, err := testutils.InitPulseDB()
+	require.NoError(t, err)
+	err = testutils.CreatePulse(testDB, secondPulse)
+	require.NoError(t, err)
+
+	pulses, total, err := s.GetPulses(nil, nil, nil, 100, 0)
+	require.NoError(t, err)
+	require.Len(t, pulses, 2)
+	require.Contains(t, pulses, firstPulse)
+	require.Contains(t, pulses, secondPulse)
+	require.EqualValues(t, 2, total)
+}
+
+func TestStorage_GetPulses_Limit(t *testing.T) {
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+	s := NewStorage(testDB)
+
+	firstPulse := models.Pulse{
+		PulseNumber: 66666666,
+		IsComplete:  false,
+	}
+	err := testutils.CreatePulse(testDB, firstPulse)
+	require.NoError(t, err)
+
+	secondPulse := models.Pulse{
+		PulseNumber: 66666667,
+		IsComplete:  false,
+	}
+	err = testutils.CreatePulse(testDB, secondPulse)
+	require.NoError(t, err)
+
+	thirdPulse := models.Pulse{
+		PulseNumber: 66666668,
+		IsComplete:  false,
+	}
+	err = testutils.CreatePulse(testDB, thirdPulse)
+	require.NoError(t, err)
+
+	pulses, total, err := s.GetPulses(nil, nil, nil, 2, 0)
+	require.NoError(t, err)
+	require.Equal(t, []models.Pulse{thirdPulse, secondPulse}, pulses)
+	require.EqualValues(t, 3, total)
+}
+
+func TestStorage_GetPulses_Offset(t *testing.T) {
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+	s := NewStorage(testDB)
+
+	firstPulse := models.Pulse{
+		PulseNumber: 66666666,
+		IsComplete:  false,
+	}
+	err := testutils.CreatePulse(testDB, firstPulse)
+	require.NoError(t, err)
+
+	secondPulse := models.Pulse{
+		PulseNumber: 66666667,
+		IsComplete:  false,
+	}
+	err = testutils.CreatePulse(testDB, secondPulse)
+	require.NoError(t, err)
+
+	thirdPulse := models.Pulse{
+		PulseNumber: 66666668,
+		IsComplete:  false,
+	}
+	err = testutils.CreatePulse(testDB, thirdPulse)
+	require.NoError(t, err)
+
+	pulses, total, err := s.GetPulses(nil, nil, nil, 100, 1)
+	require.NoError(t, err)
+	require.Equal(t, []models.Pulse{secondPulse, firstPulse}, pulses)
+	require.EqualValues(t, 3, total)
+}
+
+func TestStorage_GetPulses_TimestampRange(t *testing.T) {
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+	s := NewStorage(testDB)
+
+	firstPulse := models.Pulse{
+		PulseNumber: 66666666,
+		IsComplete:  false,
+		Timestamp:   66666666,
+	}
+	err := testutils.CreatePulse(testDB, firstPulse)
+	require.NoError(t, err)
+
+	secondPulse := models.Pulse{
+		PulseNumber: 66666667,
+		IsComplete:  false,
+		Timestamp:   66666667,
+	}
+	err = testutils.CreatePulse(testDB, secondPulse)
+	require.NoError(t, err)
+
+	thirdPulse := models.Pulse{
+		PulseNumber: 66666668,
+		IsComplete:  false,
+		Timestamp:   66666668,
+	}
+	err = testutils.CreatePulse(testDB, thirdPulse)
+	require.NoError(t, err)
+
+	fourthPulse := models.Pulse{
+		PulseNumber: 66666669,
+		IsComplete:  false,
+		Timestamp:   66666669,
+	}
+	err = testutils.CreatePulse(testDB, fourthPulse)
+	require.NoError(t, err)
+
+	pulses, total, err := s.GetPulses(nil, &thirdPulse.PulseNumber, &secondPulse.PulseNumber, 100, 0)
+	require.NoError(t, err)
+	require.Equal(t, []models.Pulse{thirdPulse, secondPulse}, pulses)
+	require.EqualValues(t, 2, total)
+}
+
+func TestStorage_GetPulses_FromPulse(t *testing.T) {
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+	s := NewStorage(testDB)
+
+	firstPulse := models.Pulse{
+		PulseNumber: 66666666,
+		IsComplete:  false,
+		Timestamp:   66666666,
+	}
+	err := testutils.CreatePulse(testDB, firstPulse)
+	require.NoError(t, err)
+
+	secondPulse := models.Pulse{
+		PulseNumber: 66666667,
+		IsComplete:  false,
+		Timestamp:   66666667,
+	}
+	err = testutils.CreatePulse(testDB, secondPulse)
+	require.NoError(t, err)
+
+	thirdPulse := models.Pulse{
+		PulseNumber: 66666668,
+		IsComplete:  false,
+		Timestamp:   66666668,
+	}
+	err = testutils.CreatePulse(testDB, thirdPulse)
+	require.NoError(t, err)
+
+	fromPulse := int64(secondPulse.PulseNumber)
+	pulses, total, err := s.GetPulses(&fromPulse, nil, nil, 100, 0)
+	require.NoError(t, err)
+	require.Equal(t, []models.Pulse{secondPulse, firstPulse}, pulses)
+	require.EqualValues(t, 2, total)
+}
+
+func TestStorage_GetPulses_AllParams(t *testing.T) {
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+	s := NewStorage(testDB)
+
+	firstPulse := models.Pulse{
+		PulseNumber: 66666666,
+		IsComplete:  false,
+		Timestamp:   66666666,
+	}
+	err := testutils.CreatePulse(testDB, firstPulse)
+	require.NoError(t, err)
+
+	secondPulse := models.Pulse{
+		PulseNumber: 66666667,
+		IsComplete:  false,
+		Timestamp:   66666667,
+	}
+	err = testutils.CreatePulse(testDB, secondPulse)
+	require.NoError(t, err)
+
+	thirdPulse := models.Pulse{
+		PulseNumber: 66666668,
+		IsComplete:  false,
+		Timestamp:   66666668,
+	}
+	err = testutils.CreatePulse(testDB, thirdPulse)
+	require.NoError(t, err)
+
+	fourthPulse := models.Pulse{
+		PulseNumber: 66666669,
+		IsComplete:  false,
+		Timestamp:   66666669,
+	}
+	err = testutils.CreatePulse(testDB, fourthPulse)
+	require.NoError(t, err)
+
+	fromPulse := int64(thirdPulse.PulseNumber)
+	pulses, total, err := s.GetPulses(&fromPulse, &fourthPulse.PulseNumber, &secondPulse.PulseNumber, 1, 1)
+	require.NoError(t, err)
+	require.Equal(t, []models.Pulse{secondPulse}, pulses)
+	require.EqualValues(t, 2, total)
+}
+
+func TestStorage_GetPulses_DifferentNextAtLastPulse(t *testing.T) {
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+	s := NewStorage(testDB)
+
+	firstPulse := models.Pulse{
+		PrevPulseNumber: 66666665,
+		PulseNumber:     66666666,
+		NextPulseNumber: 66666667,
+		IsComplete:      false,
+		Timestamp:       66666666,
+	}
+	err := testutils.CreatePulse(testDB, firstPulse)
+	require.NoError(t, err)
+
+	// pulsar was down, next pulse is not as expected
+	secondPulse := models.Pulse{
+		PrevPulseNumber: 66666666,
+		PulseNumber:     66666670,
+		NextPulseNumber: 66666671,
+		IsComplete:      false,
+		Timestamp:       66666670,
+	}
+	err = testutils.CreatePulse(testDB, secondPulse)
+	require.NoError(t, err)
+
+	thirdPulse := models.Pulse{
+		PrevPulseNumber: 66666670,
+		PulseNumber:     66666671,
+		NextPulseNumber: 66666672,
+		IsComplete:      false,
+		Timestamp:       66666671,
+	}
+	err = testutils.CreatePulse(testDB, thirdPulse)
+	require.NoError(t, err)
+
+	pulses, total, err := s.GetPulses(nil, nil, nil, 100, 0)
+	require.NoError(t, err)
+	require.Len(t, pulses, 3)
+
+	// check pulses chain% 3<-2<-1
+	require.Equal(t, thirdPulse.PulseNumber, pulses[0].PulseNumber)
+	require.Equal(t, thirdPulse.NextPulseNumber, pulses[0].NextPulseNumber)
+
+	require.Equal(t, secondPulse.PulseNumber, pulses[1].PulseNumber)
+	require.Equal(t, thirdPulse.PulseNumber, pulses[1].NextPulseNumber)
+	require.Equal(t, firstPulse.PulseNumber, pulses[1].PrevPulseNumber)
+
+	require.Equal(t, firstPulse.PulseNumber, pulses[2].PulseNumber)
+	require.Equal(t, secondPulse.PulseNumber, pulses[2].NextPulseNumber)
+
+	require.EqualValues(t, 3, total)
+}
+
+func TestStorage_GetPulses_MissingData_DifferentNext(t *testing.T) {
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+	s := NewStorage(testDB)
+
+	firstPulse := models.Pulse{
+		PrevPulseNumber: 66666665,
+		PulseNumber:     66666666,
+		NextPulseNumber: 66666667,
+		IsComplete:      false,
+		Timestamp:       66666666,
+	}
+	err := testutils.CreatePulse(testDB, firstPulse)
+	require.NoError(t, err)
+
+	secondPulse := models.Pulse{
+		PrevPulseNumber: 66666666,
+		PulseNumber:     66666667,
+		NextPulseNumber: 66666668,
+		IsComplete:      false,
+		Timestamp:       66666667,
+	}
+	err = testutils.CreatePulse(testDB, secondPulse)
+	require.NoError(t, err)
+
+	// pulsar was down, next pulse is not as expected
+	thirdPulse := models.Pulse{
+		PrevPulseNumber: 66666667,
+		PulseNumber:     66666680,
+		NextPulseNumber: 66666681,
+		IsComplete:      false,
+		Timestamp:       66666680,
+	}
+	err = testutils.CreatePulse(testDB, thirdPulse)
+	require.NoError(t, err)
+
+	pulses, total, err := s.GetPulses(nil, nil, nil, 100, 0)
+	require.NoError(t, err)
+	require.Len(t, pulses, 3)
+
+	// check pulses chain: 3<-2<-1
+	require.Equal(t, thirdPulse.PulseNumber, pulses[0].PulseNumber)
+	require.Equal(t, thirdPulse.NextPulseNumber, pulses[0].NextPulseNumber)
+
+	require.Equal(t, secondPulse.PulseNumber, pulses[1].PulseNumber)
+	require.Equal(t, thirdPulse.PulseNumber, pulses[1].NextPulseNumber)
+	require.Equal(t, firstPulse.PulseNumber, pulses[1].PrevPulseNumber)
+
+	require.Equal(t, firstPulse.PulseNumber, pulses[2].PulseNumber)
+	require.Equal(t, secondPulse.PulseNumber, pulses[2].NextPulseNumber)
+
+	require.EqualValues(t, 3, total)
+}
+
+func TestStorage_GetPulses_MissingData_DifferentNextInTop(t *testing.T) {
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+	s := NewStorage(testDB)
+
+	firstPulse := models.Pulse{
+		PrevPulseNumber: 66666665,
+		PulseNumber:     66666666,
+		NextPulseNumber: 66666667,
+		IsComplete:      false,
+		Timestamp:       66666666,
+	}
+	err := testutils.CreatePulse(testDB, firstPulse)
+	require.NoError(t, err)
+
+	secondPulse := models.Pulse{
+		PrevPulseNumber: 66666666,
+		PulseNumber:     66666667,
+		NextPulseNumber: 66666668,
+		IsComplete:      false,
+		Timestamp:       66666667,
+	}
+	err = testutils.CreatePulse(testDB, secondPulse)
+	require.NoError(t, err)
+
+	// pulsar was down, next pulse is not as expected
+	thirdPulse := models.Pulse{
+		PrevPulseNumber: 66666667,
+		PulseNumber:     66666680,
+		NextPulseNumber: 66666681,
+		IsComplete:      false,
+		Timestamp:       66666680,
+	}
+	err = testutils.CreatePulse(testDB, thirdPulse)
+	require.NoError(t, err)
+
+	pulses, total, err := s.GetPulses(nil, nil, nil, 100, 1)
+	require.NoError(t, err)
+	require.Len(t, pulses, 2)
+
+	// check pulses chain: 3<-2<-1, but we get only 2 and 1 in result
+	require.Equal(t, secondPulse.PulseNumber, pulses[0].PulseNumber)
+	require.Equal(t, thirdPulse.PulseNumber, pulses[0].NextPulseNumber)
+	require.Equal(t, firstPulse.PulseNumber, pulses[0].PrevPulseNumber)
+
+	require.Equal(t, firstPulse.PulseNumber, pulses[1].PulseNumber)
+	require.Equal(t, secondPulse.PulseNumber, pulses[1].NextPulseNumber)
+
+	require.EqualValues(t, 3, total)
+}

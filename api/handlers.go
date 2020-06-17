@@ -48,7 +48,64 @@ func (s *Server) JetDropsByJetID(ctx echo.Context, jetID server.JetIdPathParam, 
 }
 
 func (s *Server) Pulses(ctx echo.Context, params server.PulsesParams) error {
-	panic("implement me")
+	limit, offset, failures := checkLimitOffset(params.Limit, params.Offset)
+	if len(failures) != 0 {
+		apiErr := server.CodeValidationError{
+			Code:               NullableString(http.StatusText(http.StatusBadRequest)),
+			ValidationFailures: &failures,
+		}
+		return ctx.JSON(http.StatusBadRequest, apiErr)
+	}
+
+	var fromPulseString *int64
+	var timestampLte *int
+	var timestampGte *int
+
+	if params.FromPulseNumber != nil {
+		i := int64(*params.FromPulseNumber)
+		fromPulseString = &i
+	}
+	if params.TimestampLte != nil {
+		str := int(*params.TimestampLte)
+		timestampLte = &str
+	}
+	if params.TimestampGte != nil {
+		str := int(*params.TimestampGte)
+		timestampGte = &str
+	}
+
+	pulses, count, err := s.storage.GetPulses(
+		fromPulseString,
+		timestampLte, timestampGte,
+		limit, offset,
+	)
+	if err != nil {
+		s.logger.Error(err)
+		apiErr := server.CodeError{
+			Code:        NullableString(http.StatusText(http.StatusInternalServerError)),
+			Description: NullableString(err.Error()),
+		}
+		return ctx.JSON(http.StatusInternalServerError, apiErr)
+	}
+
+	var result []server.Pulse
+	for _, p := range pulses {
+		jetDrops, records, err := s.storage.GetAmounts(p.PulseNumber)
+		if err != nil {
+			s.logger.Error(err)
+			apiErr := server.CodeError{
+				Code:        NullableString(http.StatusText(http.StatusInternalServerError)),
+				Description: NullableString(errors.Wrapf(err, "error while select count of records from db for pulse number %d", p.PulseNumber).Error()),
+			}
+			return ctx.JSON(http.StatusInternalServerError, apiErr)
+		}
+		result = append(result, PulseToAPI(p, jetDrops, records))
+	}
+	cnt := int64(count)
+	return ctx.JSON(http.StatusOK, server.PulsesResponse{
+		Total:  &cnt,
+		Result: &result,
+	})
 }
 
 func (s *Server) Pulse(ctx echo.Context, pulseNumber server.PulseNumberPathParam) error {
@@ -79,9 +136,13 @@ func (s *Server) Search(ctx echo.Context, params server.SearchParams) error {
 }
 
 func (s *Server) ObjectLifeline(ctx echo.Context, objectReference server.ObjectReferencePathParam, params server.ObjectLifelineParams) error {
-	limit, offset, err := checkLimitOffset(params.Limit, params.Offset)
-	if err != nil {
-		return ctx.JSON(http.StatusBadRequest, NewSingleMessageError(err.Error()))
+	limit, offset, failures := checkLimitOffset(params.Limit, params.Offset)
+	if len(failures) != 0 {
+		apiErr := server.CodeValidationError{
+			Code:               NullableString(http.StatusText(http.StatusInternalServerError)),
+			ValidationFailures: &failures,
+		}
+		return ctx.JSON(http.StatusBadRequest, apiErr)
 	}
 
 	ref, errMsg := checkReference(objectReference)
@@ -167,13 +228,17 @@ func checkReference(referenceRow server.ObjectReferencePathParam) (*insolar.ID, 
 	return ref.GetLocal(), nil
 }
 
-func checkLimitOffset(l *server.LimitParam, o *server.OffsetParam) (int, int, error) {
+func checkLimitOffset(l *server.LimitParam, o *server.OffsetParam) (int, int, []server.CodeValidationFailures) {
+	var failures []server.CodeValidationFailures
 	limit := 20
 	if l != nil {
 		limit = int(*l)
 	}
 	if limit <= 0 || limit > 100 {
-		return 0, 0, errors.New("query parameter 'limit' should be in range [1, 100]")
+		failures = append(failures, server.CodeValidationFailures{
+			FailureReason: NullableString("should be in range [1, 100]"),
+			Property:      NullableString("limit"),
+		})
 	}
 
 	offset := 0
@@ -181,8 +246,11 @@ func checkLimitOffset(l *server.LimitParam, o *server.OffsetParam) (int, int, er
 		offset = int(*o)
 	}
 	if offset < 0 {
-		return 0, 0, errors.New("query parameter 'offset' should not be negative")
+		failures = append(failures, server.CodeValidationFailures{
+			FailureReason: NullableString("should not be negative"),
+			Property:      NullableString("offset"),
+		})
 	}
 
-	return limit, offset, nil
+	return limit, offset, failures
 }

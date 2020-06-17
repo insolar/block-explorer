@@ -122,6 +122,16 @@ func filterRecordsByIndex(query *gorm.DB, fromIndex string, sort string) (*gorm.
 	return query, nil
 }
 
+func filterByTimestamp(query *gorm.DB, timestampLte, timestampGte *int) *gorm.DB {
+	if timestampGte != nil {
+		query = query.Where("timestamp >= ?", *timestampGte)
+	}
+	if timestampLte != nil {
+		query = query.Where("timestamp <= ?", *timestampLte)
+	}
+	return query
+}
+
 func sortRecordsByDirection(query *gorm.DB, sort string) (*gorm.DB, error) {
 	switch sort {
 	case "asc":
@@ -146,6 +156,20 @@ func getRecords(query *gorm.DB, limit, offset int) ([]models.Record, int, error)
 		return nil, 0, err
 	}
 	return records, total, nil
+}
+
+func getPulses(query *gorm.DB, limit, offset int) ([]models.Pulse, int, error) {
+	pulses := []models.Pulse{}
+	var total int
+	err := query.Limit(limit).Offset(offset).Find(&pulses).Error
+	if err != nil {
+		return nil, 0, err
+	}
+	err = query.Count(&total).Error
+	if err != nil {
+		return nil, 0, err
+	}
+	return pulses, total, nil
 }
 
 // GetLifeline returns records for provided object reference, ordered by pulse number and order fields.
@@ -204,6 +228,37 @@ func (s *storage) GetAmounts(pulseNumber int) (int64, int64, error) {
 	}
 
 	return int64(res.JetDrops), int64(res.Records), err
+}
+
+// GetPulses returns pulses from db.
+func (s *storage) GetPulses(fromPulse *int64, timestampLte, timestampGte *int, limit, offset int) ([]models.Pulse, int, error) {
+	query := s.db.Model(&models.Pulse{})
+
+	query = filterByTimestamp(query, timestampLte, timestampGte)
+
+	var err error
+	if fromPulse != nil {
+		query = query.Where("pulse_number <= ?", &fromPulse)
+	}
+
+	query = query.Order("pulse_number desc")
+
+	pulses, total, err := getPulses(query, limit, offset)
+	if err != nil {
+		return nil, 0, errors.Wrap(err, "error while select pulses from db")
+	}
+
+	// set real NextPulseNumber to every pulse (if we know it)
+	for i := 0; i < len(pulses)-1; i++ {
+		if pulses[i].PrevPulseNumber == pulses[i+1].PulseNumber {
+			pulses[i+1].NextPulseNumber = pulses[i].PulseNumber
+		}
+		if i == 0 {
+			pulses[i] = s.updateNextPulse(pulses[i])
+		}
+	}
+
+	return pulses, total, err
 }
 
 func (s *storage) updateNextPulse(pulse models.Pulse) models.Pulse {
