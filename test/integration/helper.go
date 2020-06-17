@@ -19,8 +19,8 @@ import (
 )
 
 type BlockExplorerTestSuite struct {
-	C  connectionmanager.ConnectionManager
-	BE betest.BlockExplorerTestSetUp
+	ConMngr connectionmanager.ConnectionManager
+	BE      betest.BlockExplorerTestSetUp
 }
 
 func NewBlockExplorerTestSetup(t testing.TB) *BlockExplorerTestSuite {
@@ -37,10 +37,10 @@ func NewBlockExplorerTestSetup(t testing.TB) *BlockExplorerTestSuite {
 }
 
 func (a *BlockExplorerTestSuite) Start(t testing.TB) {
-	a.C.Start(t)
-	a.C.StartDB(t)
+	a.ConMngr.Start(t)
+	a.ConMngr.StartDB(t)
 
-	a.BE = betest.NewBlockExplorer(a.C.ExporterClient, a.C.DB)
+	a.BE = betest.NewBlockExplorer(a.ConMngr.ExporterClient, a.ConMngr.DB)
 	err := a.BE.Start()
 	require.NoError(t, err)
 }
@@ -50,11 +50,11 @@ func (a *BlockExplorerTestSuite) Stop(t testing.TB) {
 	require.NoError(t, err)
 	// TODO remove sleep after resolving https://insolar.atlassian.net/browse/PENV-343
 	time.Sleep(time.Second * 1)
-	a.C.Stop()
+	a.ConMngr.Stop()
 }
 
 func (a *BlockExplorerTestSuite) WithHTTPServer(t testing.TB) *BlockExplorerTestSuite {
-	a.C.StartAPIServer(t)
+	a.ConMngr.StartAPIServer(t)
 	return a
 }
 
@@ -75,7 +75,7 @@ func (a *BlockExplorerTestSuite) WaitRecordsCount(t testing.TB, expCount int, ti
 	require.Equal(t, expCount, c, "Records count in DB not as expected")
 }
 
-func (a *BlockExplorerTestSuite) WaitRecordsCountUnchanged(t testing.TB, expCount int, timeoutMs int) {
+func (a *BlockExplorerTestSuite) CheckForRecordsNotChanged(t testing.TB, expCount int, timeoutMs int) {
 	var c int
 	interval := 100
 	for i := 0; i < timeoutMs/interval; i++ {
@@ -97,6 +97,6 @@ func (a *BlockExplorerTestSuite) ImportRecordsMultipleJetDrops(t testing.TB, jet
 	notFinalizedRecords := testutils.GenerateRecordsFromOneJetSilence(1, 1)
 	d = append(d, notFinalizedRecords...)
 	t.Logf("total records: %d", len(d))
-	err := heavymock.ImportRecords(a.C.ImporterClient, d)
+	err := heavymock.ImportRecords(a.ConMngr.ImporterClient, d)
 	require.NoError(t, err)
 }

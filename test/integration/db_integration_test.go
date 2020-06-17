@@ -30,7 +30,7 @@ func TestIntegrationWithDb_GetRecords(t *testing.T) {
 	pulsesNumber := 10
 	recordsInPulse := 1
 	recordsWithDifferencePulses := testutils.GenerateRecordsWithDifferencePulses(pulsesNumber, recordsInPulse)
-	stream, err := ts.C.ImporterClient.Import(context.Background())
+	stream, err := ts.ConMngr.ImporterClient.Import(context.Background())
 	require.NoError(t, err)
 
 	records := make([]*exporter.Record, 0)
@@ -106,7 +106,7 @@ func TestIntegrationWithDb_GetJetDrops(t *testing.T) {
 		pulseNumbers[int(r.Record.ID.Pulse())] = true
 	}
 
-	err := heavymock.ImportRecords(ts.C.ImporterClient, expRecords)
+	err := heavymock.ImportRecords(ts.ConMngr.ImporterClient, expRecords)
 	require.NoError(t, err)
 
 	// last records with the biggest pulse number won't be processed, so we do not expect this record in DB

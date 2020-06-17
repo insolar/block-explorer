@@ -37,7 +37,7 @@ func TestLifeline_onePulse(t *testing.T) {
 	records = append(records, lifelineRecords...)
 	records = append(records, lastPulseRecord)
 
-	err := heavymock.ImportRecords(ts.C.ImporterClient, records)
+	err := heavymock.ImportRecords(ts.ConMngr.ImporterClient, records)
 	require.NoError(t, err)
 
 	ts.WaitRecordsCount(t, len(lifelineRecords), 1000)
@@ -67,7 +67,7 @@ func TestLifeline_severalPulses(t *testing.T) {
 	records = append(records, lifelineRecords...)
 	records = append(records, lastPulseRecord)
 
-	err := heavymock.ImportRecords(ts.C.ImporterClient, records)
+	err := heavymock.ImportRecords(ts.ConMngr.ImporterClient, records)
 	require.NoError(t, err)
 
 	ts.WaitRecordsCount(t, len(lifelineRecords), 1000)
@@ -98,7 +98,7 @@ func TestLifeline_amendRecords(t *testing.T) {
 	lastPulseRecord := testutils.GenerateRecordInNextPulse(lifeline.StateRecords[0].Pn)
 	allRecords = append(allRecords, lastPulseRecord)
 
-	err := heavymock.ImportRecords(ts.C.ImporterClient, allRecords)
+	err := heavymock.ImportRecords(ts.ConMngr.ImporterClient, allRecords)
 	require.NoError(t, err)
 
 	ts.WaitRecordsCount(t, count, 1000)
@@ -136,7 +136,7 @@ func TestLifeline_removedStatesBetweenPulses(t *testing.T) {
 	lastPulseRecord := testutils.GenerateRecordInNextPulse(pn + 30)
 	allRecords = append(allRecords, lastPulseRecord)
 
-	err := heavymock.ImportRecords(ts.C.ImporterClient, allRecords)
+	err := heavymock.ImportRecords(ts.ConMngr.ImporterClient, allRecords)
 	require.NoError(t, err)
 
 	expCount := len(allRecords) - 1
@@ -165,7 +165,7 @@ func TestLifeline_removedStatesWithinPulses(t *testing.T) {
 	lastPulseRecord := testutils.GenerateRecordInNextPulse(lifeline.StateRecords[0].Pn + 100)
 	records = append(records, lastPulseRecord)
 
-	err := heavymock.ImportRecords(ts.C.ImporterClient, records)
+	err := heavymock.ImportRecords(ts.ConMngr.ImporterClient, records)
 	require.NoError(t, err)
 
 	ts.WaitRecordsCount(t, recordsInPulse, 1000)
@@ -198,7 +198,7 @@ func TestLifeline_recordsHaveSamePrevState(t *testing.T) {
 	records = append(records, lifeline.StateRecords[1].Records...)
 	records = append(records, lastPulseRecord)
 
-	err := heavymock.ImportRecords(ts.C.ImporterClient, records)
+	err := heavymock.ImportRecords(ts.ConMngr.ImporterClient, records)
 	require.NoError(t, err)
 	ts.WaitRecordsCount(t, recordsInPulse, 1000)
 
@@ -217,15 +217,15 @@ func TestLifeline_receiveNewObjectStates(t *testing.T) {
 	recordsInPulse := 2
 	lifeline := testutils.GenerateObjectLifeline(pulsesNumber, recordsInPulse)
 
-	err := heavymock.ImportRecords(ts.C.ImporterClient, lifeline.StateRecords[0].Records)
-	err = heavymock.ImportRecords(ts.C.ImporterClient, lifeline.StateRecords[1].Records)
-	err = heavymock.ImportRecords(ts.C.ImporterClient, lifeline.StateRecords[2].Records)
+	err := heavymock.ImportRecords(ts.ConMngr.ImporterClient, lifeline.StateRecords[0].Records)
+	err = heavymock.ImportRecords(ts.ConMngr.ImporterClient, lifeline.StateRecords[1].Records)
+	err = heavymock.ImportRecords(ts.ConMngr.ImporterClient, lifeline.StateRecords[2].Records)
 	require.NoError(t, err)
 	// expected records from pulses 1, 2
 	ts.WaitRecordsCount(t, recordsInPulse*2, 1000)
 
-	err = heavymock.ImportRecords(ts.C.ImporterClient, lifeline.StateRecords[3].Records)
-	err = heavymock.ImportRecords(ts.C.ImporterClient, lifeline.StateRecords[4].Records)
+	err = heavymock.ImportRecords(ts.ConMngr.ImporterClient, lifeline.StateRecords[3].Records)
+	err = heavymock.ImportRecords(ts.ConMngr.ImporterClient, lifeline.StateRecords[4].Records)
 	require.NoError(t, err)
 	// expected records from pulses 1, 2, 3, 4
 	ts.WaitRecordsCount(t, recordsInPulse*4, 1000)
@@ -249,20 +249,20 @@ func TestLifeline_fillMissedStates(t *testing.T) {
 	records = append(records, recordsPulseOne[:2]...)
 	records = append(records, recordsPulseOne[3:]...)
 
-	err := heavymock.ImportRecords(ts.C.ImporterClient, records)
+	err := heavymock.ImportRecords(ts.ConMngr.ImporterClient, records)
 	require.NoError(t, err)
 
-	ts.WaitRecordsCountUnchanged(t, 0, 500)
+	ts.CheckForRecordsNotChanged(t, 0, 500)
 
-	err = heavymock.ImportRecords(ts.C.ImporterClient, []*exporter.Record{recordsPulseOne[2]})
+	err = heavymock.ImportRecords(ts.ConMngr.ImporterClient, []*exporter.Record{recordsPulseOne[2]})
 	require.NoError(t, err)
 
-	ts.WaitRecordsCountUnchanged(t, 0, 500)
+	ts.CheckForRecordsNotChanged(t, 0, 500)
 
-	err = heavymock.ImportRecords(ts.C.ImporterClient, lifeline.StateRecords[1].Records)
+	err = heavymock.ImportRecords(ts.ConMngr.ImporterClient, lifeline.StateRecords[1].Records)
 	require.NoError(t, err)
 	lastPulseRecord := testutils.GenerateRecordInNextPulse(lifeline.StateRecords[1].Pn)
-	err = heavymock.ImportRecords(ts.C.ImporterClient, []*exporter.Record{lastPulseRecord})
+	err = heavymock.ImportRecords(ts.ConMngr.ImporterClient, []*exporter.Record{lastPulseRecord})
 	lenExpRecords := recordsInPulse * pulsesNumber
 	ts.WaitRecordsCount(t, lenExpRecords, 1000)
 
