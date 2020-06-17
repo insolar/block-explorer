@@ -18,7 +18,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"gopkg.in/gormigrate.v1"
 
-	"github.com/insolar/block-explorer/configuration"
 	"github.com/insolar/block-explorer/migrations"
 )
 
@@ -97,17 +96,4 @@ func TruncateTables(t testing.TB, db *gorm.DB, models []interface{}) {
 		err := db.Delete(m).Error
 		require.NoError(t, err)
 	}
-}
-
-func GetLocalDB(cfg configuration.API) (*gorm.DB, error) {
-	db, err := gorm.Open("postgres", cfg.DB.URL)
-	if err != nil {
-		return nil, err
-	}
-	err = db.Exec("select 1").Error
-	if err != nil {
-		return nil, err
-	}
-
-	return db, nil
 }

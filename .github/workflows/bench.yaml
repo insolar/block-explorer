@@ -34,9 +34,6 @@ jobs:
       - name: vendor
         run: make vendor
         working-directory: ${{env.GOPATH}}/src/github.com/insolar/block-explorer
-      - name: vendor
-        run: make vendor
-        working-directory: ${{env.GOPATH}}/src/github.com/insolar/block-explorer
       - name: Run comparative benchmarks
         run: make bench-compare
         working-directory: ${{env.GOPATH}}/src/github.com/insolar/block-explorer

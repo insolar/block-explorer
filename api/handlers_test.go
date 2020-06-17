@@ -255,7 +255,7 @@ func TestObjectLifeline_Index_Error(t *testing.T) {
 
 func TestServer_JetDropsByPulseNumber(t *testing.T) {
 	t.Run("happy", func(t *testing.T) {
-		// defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+		defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
 
 		// insert records
 		pulse, err := testutils.InitPulseDB()
@@ -333,7 +333,7 @@ func TestServer_JetDropsByPulseNumber(t *testing.T) {
 		var received server.JetDropsResponse
 		err = json.Unmarshal(bodyBytes, &received)
 		require.NoError(t, err)
-		require.EqualValues(t, 2, int(*received.Total))
+		require.EqualValues(t, 3, int(*received.Total))
 		require.Len(t, *received.Result, 2)
 		// check asc order by default
 		require.Equal(t, models.JetDropID(jetDrop1.JetID, int64(pulse.PulseNumber)), *(*received.Result)[0].JetDropId)
@@ -342,8 +342,6 @@ func TestServer_JetDropsByPulseNumber(t *testing.T) {
 
 	t.Run("happy with all params", func(t *testing.T) {
 		defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
-
-		// insert records
 
 		// insert records
 		pulse, err := testutils.InitPulseDB()
@@ -401,7 +399,7 @@ func TestServer_JetDropsByPulseNumber(t *testing.T) {
 		var received server.JetDropsResponse
 		err = json.Unmarshal(bodyBytes, &received)
 		require.NoError(t, err)
-		require.EqualValues(t, 2, int(*received.Total))
+		require.EqualValues(t, 4, int(*received.Total))
 		require.Len(t, *received.Result, 2)
 		// check asc order by default
 		require.Equal(t, models.JetDropID(jetDrop5.JetID, int64(pulse.PulseNumber)), *(*received.Result)[0].JetDropId)
@@ -419,6 +417,17 @@ func TestServer_JetDropsByPulseNumber(t *testing.T) {
 		)
 		require.NoError(t, err)
 		require.Equal(t, http.StatusBadRequest, resp.StatusCode)
+		bodyBytes, err := ioutil.ReadAll(resp.Body)
+		require.NoError(t, err)
+		var received server.CodeValidationError
+		err = json.Unmarshal(bodyBytes, &received)
+		require.NoError(t, err)
+		expected := server.CodeValidationFailures{
+			FailureReason: NullableString("invalid"),
+			Property:      NullableString("jet drop id"),
+		}
+		e := *received.ValidationFailures
+		require.Equal(t, expected, e[0])
 
 		resp, err = http.Get(
 			"http://" + apihost + "/api/v1/pulses/" +
@@ -428,6 +437,16 @@ func TestServer_JetDropsByPulseNumber(t *testing.T) {
 		)
 		require.NoError(t, err)
 		require.Equal(t, http.StatusBadRequest, resp.StatusCode)
+		bodyBytes, err = ioutil.ReadAll(resp.Body)
+		require.NoError(t, err)
+		err = json.Unmarshal(bodyBytes, &received)
+		require.NoError(t, err)
+		expected = server.CodeValidationFailures{
+			FailureReason: NullableString("invalid"),
+			Property:      NullableString("jet drop id"),
+		}
+		e = *received.ValidationFailures
+		require.Equal(t, expected, e[0])
 
 		resp, err = http.Get(
 			"http://" + apihost + "/api/v1/pulses/" +
@@ -437,6 +456,50 @@ func TestServer_JetDropsByPulseNumber(t *testing.T) {
 		)
 		require.NoError(t, err)
 		require.Equal(t, http.StatusBadRequest, resp.StatusCode)
+		bodyBytes, err = ioutil.ReadAll(resp.Body)
+		require.NoError(t, err)
+		err = json.Unmarshal(bodyBytes, &received)
+		require.NoError(t, err)
+		expected = server.CodeValidationFailures{
+			FailureReason: NullableString("invalid"),
+			Property:      NullableString("jet drop id"),
+		}
+		e = *received.ValidationFailures
+		require.Equal(t, expected, e[0])
+	})
+
+	t.Run("error wrong jetdropid, pulse, limit", func(t *testing.T) {
+		resp, err := http.Get(
+			"http://" + apihost + "/api/v1/pulses/" +
+				"100" +
+				"/jet-drops?from_jet_drop_id=23423:90000&limit=2000",
+		)
+		require.NoError(t, err)
+		require.Equal(t, http.StatusBadRequest, resp.StatusCode)
+		bodyBytes, err := ioutil.ReadAll(resp.Body)
+		require.NoError(t, err)
+		var received server.CodeValidationError
+		err = json.Unmarshal(bodyBytes, &received)
+		require.NoError(t, err)
+		expected := []server.CodeValidationFailures{
+			{
+				FailureReason: NullableString("invalid"),
+				Property:      NullableString("jet drop id"),
+			},
+			{
+				FailureReason: NullableString("invalid"),
+				Property:      NullableString("limit or offset"),
+			},
+			{
+				FailureReason: NullableString("invalid"),
+				Property:      NullableString("pulse"),
+			},
+		}
+		e := *received.ValidationFailures
+		require.Contains(t, expected, e[0])
+		require.Contains(t, expected, e[1])
+		require.Contains(t, expected, e[2])
+
 	})
 
 	t.Run("error wrong pulse", func(t *testing.T) {
@@ -447,17 +510,47 @@ func TestServer_JetDropsByPulseNumber(t *testing.T) {
 		)
 		require.NoError(t, err)
 		require.Equal(t, http.StatusBadRequest, resp.StatusCode)
-
+		bodyBytes, err := ioutil.ReadAll(resp.Body)
+		require.NoError(t, err)
+		var received server.CodeValidationError
+		err = json.Unmarshal(bodyBytes, &received)
+		require.NoError(t, err)
+		require.Contains(t, *received.Message, "wrong-pulse")
 	})
 
 	t.Run("error wrong limit", func(t *testing.T) {
+		pulse, err := testutils.InitPulseDB()
+		require.NoError(t, err)
 		resp, err := http.Get(
 			"http://" + apihost + "/api/v1/pulses/" +
-				"wrong-pulse" +
+				strconv.Itoa(pulse.PulseNumber) +
 				"/jet-drops?limit=" + "we248934h9h'`;",
 		)
 		require.NoError(t, err)
 		require.Equal(t, http.StatusBadRequest, resp.StatusCode)
+		bodyBytes, err := ioutil.ReadAll(resp.Body)
+		require.NoError(t, err)
+		var received server.CodeValidationError
+		err = json.Unmarshal(bodyBytes, &received)
+		require.NoError(t, err)
+		require.Contains(t, *received.Message, "we248934h9h")
+	})
 
+	t.Run("ok empty pulse", func(t *testing.T) {
+		resp, err := http.Get(
+			"http://" + apihost + "/api/v1/pulses/" +
+				"383615209" +
+				"/jet-drops",
+		)
+		require.NoError(t, err)
+		require.Equal(t, http.StatusOK, resp.StatusCode)
+		bodyBytes, err := ioutil.ReadAll(resp.Body)
+		require.NoError(t, err)
+
+		var received server.JetDropsResponse
+		err = json.Unmarshal(bodyBytes, &received)
+		require.NoError(t, err)
+		require.EqualValues(t, 0, int(*received.Total))
+		require.Nil(t, received.Result)
 	})
 }

@@ -26,6 +26,8 @@ import (
 	"github.com/insolar/block-explorer/instrumentation/belogger"
 )
 
+const InvalidParamsMessage = "Invalid query or path parameters"
+
 type Server struct {
 	storage interfaces.StorageFetcher
 	logger  log.Logger
@@ -59,45 +61,45 @@ func (s *Server) Pulse(ctx echo.Context, pulseNumber server.PulseNumberPathParam
 }
 
 func (s *Server) JetDropsByPulseNumber(ctx echo.Context, pulseNumber server.PulseNumberPathParam, params server.JetDropsByPulseNumberParams) error {
+	var failures []server.CodeValidationFailures
 	if !pulse.IsValidAsPulseNumber(int(pulseNumber)) {
-		response := server.CodeValidationError{
-			Code:               NullableString("400"),
-			Description:        NullableString("Invalid pulse number"),
-			Link:               nil,
-			Message:            nil,
-			ValidationFailures: nil,
-		}
-		return ctx.JSON(http.StatusBadRequest, response)
+		failures = append(failures, server.CodeValidationFailures{
+			FailureReason: NullableString("invalid"),
+			Property:      NullableString("pulse"),
+		})
 	}
-
 	limit, offset, err := checkLimitOffset(params.Limit, params.Offset)
 	if err != nil {
-		response := server.CodeValidationError{
-			Code:               NullableString("400"),
-			Description:        NullableString("Invalid limit or offset query parameters"),
-			Link:               nil,
-			Message:            NullableString(err.Error()),
-			ValidationFailures: nil,
-		}
-		return ctx.JSON(http.StatusBadRequest, response)
+		failures = append(failures, server.CodeValidationFailures{
+			FailureReason: NullableString("invalid"),
+			Property:      NullableString("limit or offset"),
+		})
 	}
 
 	jetDropID, err := checkJetDropID(params.FromJetDropId)
 	if err != nil {
+		failures = append(failures, server.CodeValidationFailures{
+			FailureReason: NullableString("invalid"),
+			Property:      NullableString("jet drop id"),
+		})
+	}
+
+	if failures != nil {
 		response := server.CodeValidationError{
-			Code:               NullableString("400"),
-			Description:        NullableString("Invalid jet drop id in query parameters"),
+			Code:               NullableString(strconv.Itoa(http.StatusBadRequest)),
+			Description:        nil,
 			Link:               nil,
-			Message:            NullableString(err.Error()),
-			ValidationFailures: nil,
+			Message:            NullableString(InvalidParamsMessage),
+			ValidationFailures: &failures,
 		}
 		return ctx.JSON(http.StatusBadRequest, response)
 	}
-	jetDrops, err := s.storage.GetJetDrops(
+
+	jetDrops, total, err := s.storage.GetJetDropsWithParams(
 		models.Pulse{PulseNumber: int(pulseNumber)},
 		jetDropID,
-		&limit,
-		&offset,
+		limit,
+		offset,
 	)
 	if err != nil {
 		s.logger.Error(err)
@@ -109,7 +111,7 @@ func (s *Server) JetDropsByPulseNumber(ctx echo.Context, pulseNumber server.Puls
 		result = append(result, JetDropToAPI(jetDrop))
 
 	}
-	cnt := int64(len(result))
+	cnt := int64(total)
 	return ctx.JSON(http.StatusOK, server.JetDropsResponse{
 		Total:  &cnt,
 		Result: &result,

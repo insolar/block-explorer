@@ -66,7 +66,7 @@ func JetDropToAPI(jetDrop models.JetDrop) server.JetDrop {
 		Hash:      NullableString(base64.StdEncoding.EncodeToString(jetDrop.Hash)),
 		JetDropId: NullableString(models.JetDropID(jetDrop.JetID, int64(jetDrop.PulseNumber))),
 		JetId:     NullableString(models.JetIDToString(jetDrop.JetID)),
-		// todo implement this
+		// todo implement this if needed
 		NextJetDropId: nil,
 		PrevJetDropId: nil,
 		PulseNumber:   &pulseNumber,

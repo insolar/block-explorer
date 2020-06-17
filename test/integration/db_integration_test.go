@@ -114,7 +114,7 @@ func TestIntegrationWithDb_GetJetDrops(t *testing.T) {
 
 	var jetDropsDB []models.JetDrop
 	for pulse, _ := range pulseNumbers {
-		jd, err := ts.be.Storage().GetJetDrops(models.Pulse{PulseNumber: pulse}, nil, nil, nil)
+		jd, err := ts.be.Storage().GetJetDrops(models.Pulse{PulseNumber: pulse})
 		require.NoError(t, err)
 		jetDropsDB = append(jetDropsDB, jd...)
 	}

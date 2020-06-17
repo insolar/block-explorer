@@ -72,7 +72,7 @@ func TestNewController_SeveralNotCompletePulses(t *testing.T) {
 	expectedData := map[types.Pulse][][]byte{firstPulse: {firstJetID}, secondPulse: {secondJetID}}
 
 	sm := mock.NewStorageMock(t)
-	getJetDrops := func(pulse models.Pulse, fromJetDropID *string, limit *int, offset *int) (ja1 []models.JetDrop, err error) {
+	getJetDrops := func(pulse models.Pulse) (ja1 []models.JetDrop, err error) {
 		jd := make([]models.JetDrop, 0)
 		switch pulse.PulseNumber {
 		case 1:
