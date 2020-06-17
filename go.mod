@@ -4,8 +4,9 @@ go 1.14
 
 require (
 	github.com/antihax/optional v1.0.0
-	github.com/deepmap/oapi-codegen v1.3.8
+	github.com/deepmap/oapi-codegen v1.3.8 // indirect
 	github.com/fortytw2/leaktest v1.3.0
+	github.com/fsnotify/fsnotify v1.4.9 // indirect
 	github.com/gogo/protobuf v1.3.1
 	github.com/gojuno/minimock/v3 v3.0.6
 	github.com/google/gofuzz v1.0.0
@@ -15,22 +16,26 @@ require (
 	github.com/insolar/insolar v1.5.2
 	github.com/insolar/spec-insolar-block-explorer-api v1.0.0
 	github.com/jinzhu/gorm v1.9.12
-	github.com/knqyf263/cob v0.0.6 // indirect
+	github.com/kr/pretty v0.2.0 // indirect
 	github.com/labstack/echo/v4 v4.1.16
+	github.com/mitchellh/mapstructure v1.3.2 // indirect
 	github.com/ory/dockertest/v3 v3.5.2
-	github.com/ory/go-acc v0.2.3 // indirect
-	github.com/ory/x v0.0.85 // indirect
+	github.com/pelletier/go-toml v1.8.0 // indirect
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.1.0 // indirect
 	github.com/rs/zerolog v1.15.0
+	github.com/spf13/cast v1.3.1 // indirect
 	github.com/stretchr/testify v1.5.1
 	github.com/ugorji/go/codec v0.0.0-20181204163529-d75b2dcb6bc8
 	go.opencensus.io v0.22.1
 	golang.org/x/crypto v0.0.0-20200510223506-06a226fb4e37
 	golang.org/x/exp v0.0.0-20190510132918-efd6b22b2522 // indirect
+	golang.org/x/sys v0.0.0-20200602225109-6fdc65e7d980 // indirect
 	google.golang.org/appengine v1.6.1 // indirect
 	google.golang.org/grpc v1.22.0
+	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15 // indirect
 	gopkg.in/gormigrate.v1 v1.6.0
+	gopkg.in/ini.v1 v1.57.0 // indirect
 	gotest.tools v2.2.0+incompatible // indirect
 )
 

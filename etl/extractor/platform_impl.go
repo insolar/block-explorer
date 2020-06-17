@@ -12,6 +12,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/insolar/block-explorer/etl/interfaces"
 	"github.com/insolar/block-explorer/etl/types"
 	"github.com/insolar/block-explorer/instrumentation/belogger"
 	"github.com/insolar/insolar/insolar"
@@ -26,12 +27,15 @@ type PlatformExtractor struct {
 	hasStarted     bool
 	startStopMutex *sync.Mutex
 
+	pulseExtractor       interfaces.PulseExtractor
+	pulseExtractAttempts int
+
 	client           exporter.RecordExporterClient
 	request          *exporter.GetRecords
 	mainJetDropsChan chan *types.PlatformJetDrops
 }
 
-func NewPlatformExtractor(batchSize uint32, exporterClient exporter.RecordExporterClient) *PlatformExtractor {
+func NewPlatformExtractor(batchSize uint32, pulseExtractor interfaces.PulseExtractor, exporterClient exporter.RecordExporterClient) *PlatformExtractor {
 	request := &exporter.GetRecords{Count: batchSize}
 	return &PlatformExtractor{
 		stopSignal:       make(chan bool, 1),
@@ -39,6 +43,9 @@ func NewPlatformExtractor(batchSize uint32, exporterClient exporter.RecordExport
 		client:           exporterClient,
 		request:          request,
 		mainJetDropsChan: make(chan *types.PlatformJetDrops),
+
+		pulseExtractor:       pulseExtractor,
+		pulseExtractAttempts: 50,
 	}
 }
 
@@ -147,9 +154,28 @@ func (m *PlatformExtractor) getJetDrops(ctx context.Context, request *exporter.G
 }
 
 func (m *PlatformExtractor) getJetDropsContinuously(ctx context.Context) {
-	// from pulse, 0 means start to get from pulse number 0
-	//todo: add pulse fetcher
-	m.request.PulseNumber = 0
+	logger := belogger.FromContext(ctx)
+	var pulse uint32 = 0
+	var err error
+
+	// try to get current pulse with attempts
+	for i := 0; i < m.pulseExtractAttempts; i++ {
+		pulse, err = m.pulseExtractor.GetCurrentPulse(ctx)
+		if err != nil {
+			logger.Warnf("trying to get current pulse, attempt: %d", i)
+			time.Sleep(time.Duration(pulseDelta) * time.Second)
+		} else {
+			break
+		}
+	}
+
+	// fatal and exit if could not get current pulse
+	if pulse == 0 || err != nil {
+		logger.Fatalf("could not get current pulse number after %d attempts", m.pulseExtractAttempts)
+	}
+
+	logger.Infof("current pulse number: %d", pulse)
+	m.request.PulseNumber = insolar.PulseNumber(pulse)
 	m.request.RecordNumber = 0
 	m.getJetDrops(ctx, m.request, 0, math.MaxUint32, false)
 }

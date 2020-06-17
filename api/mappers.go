@@ -13,6 +13,7 @@ import (
 	"strings"
 
 	"github.com/insolar/insolar/insolar"
+	"github.com/insolar/spec-insolar-block-explorer-api/v1/server"
 
 	"github.com/insolar/block-explorer/etl/models"
 )
@@ -21,11 +22,11 @@ func NullableString(s string) *string {
 	return &s
 }
 
-func RecordToAPI(record models.Record) ResponsesRecordYaml {
+func RecordToAPI(record models.Record) server.Record {
 	pulseNumber := int64(record.PulseNumber)
 	jetID := jetIDToString(record.JetID)
 	jetDropID := fmt.Sprintf("%s:%d", jetID, record.PulseNumber)
-	response := ResponsesRecordYaml{
+	response := server.Record{
 		Hash:        NullableString(base64.StdEncoding.EncodeToString(record.Hash)),
 		JetDropId:   NullableString(jetDropID),
 		JetId:       NullableString(jetID),
