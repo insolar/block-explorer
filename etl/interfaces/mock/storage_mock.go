@@ -27,8 +27,8 @@ type StorageMock struct {
 	beforeGetIncompletePulsesCounter uint64
 	GetIncompletePulsesMock          mStorageMockGetIncompletePulses
 
-	funcGetJetDrops          func(pulse models.Pulse) (ja1 []models.JetDrop, err error)
-	inspectFuncGetJetDrops   func(pulse models.Pulse)
+	funcGetJetDrops          func(pulse models.Pulse, fromJetDropID *string, limit *int, offset *int) (ja1 []models.JetDrop, err error)
+	inspectFuncGetJetDrops   func(pulse models.Pulse, fromJetDropID *string, limit *int, offset *int)
 	afterGetJetDropsCounter  uint64
 	beforeGetJetDropsCounter uint64
 	GetJetDropsMock          mStorageMockGetJetDrops
@@ -466,7 +466,10 @@ type StorageMockGetJetDropsExpectation struct {
 
 // StorageMockGetJetDropsParams contains parameters of the Storage.GetJetDrops
 type StorageMockGetJetDropsParams struct {
-	pulse models.Pulse
+	pulse         models.Pulse
+	fromJetDropID *string
+	limit         *int
+	offset        *int
 }
 
 // StorageMockGetJetDropsResults contains results of the Storage.GetJetDrops
@@ -476,7 +479,7 @@ type StorageMockGetJetDropsResults struct {
 }
 
 // Expect sets up expected params for Storage.GetJetDrops
-func (mmGetJetDrops *mStorageMockGetJetDrops) Expect(pulse models.Pulse) *mStorageMockGetJetDrops {
+func (mmGetJetDrops *mStorageMockGetJetDrops) Expect(pulse models.Pulse, fromJetDropID *string, limit *int, offset *int) *mStorageMockGetJetDrops {
 	if mmGetJetDrops.mock.funcGetJetDrops != nil {
 		mmGetJetDrops.mock.t.Fatalf("StorageMock.GetJetDrops mock is already set by Set")
 	}
@@ -485,7 +488,7 @@ func (mmGetJetDrops *mStorageMockGetJetDrops) Expect(pulse models.Pulse) *mStora
 		mmGetJetDrops.defaultExpectation = &StorageMockGetJetDropsExpectation{}
 	}
 
-	mmGetJetDrops.defaultExpectation.params = &StorageMockGetJetDropsParams{pulse}
+	mmGetJetDrops.defaultExpectation.params = &StorageMockGetJetDropsParams{pulse, fromJetDropID, limit, offset}
 	for _, e := range mmGetJetDrops.expectations {
 		if minimock.Equal(e.params, mmGetJetDrops.defaultExpectation.params) {
 			mmGetJetDrops.mock.t.Fatalf("Expectation set by When has same params: %#v", *mmGetJetDrops.defaultExpectation.params)
@@ -496,7 +499,7 @@ func (mmGetJetDrops *mStorageMockGetJetDrops) Expect(pulse models.Pulse) *mStora
 }
 
 // Inspect accepts an inspector function that has same arguments as the Storage.GetJetDrops
-func (mmGetJetDrops *mStorageMockGetJetDrops) Inspect(f func(pulse models.Pulse)) *mStorageMockGetJetDrops {
+func (mmGetJetDrops *mStorageMockGetJetDrops) Inspect(f func(pulse models.Pulse, fromJetDropID *string, limit *int, offset *int)) *mStorageMockGetJetDrops {
 	if mmGetJetDrops.mock.inspectFuncGetJetDrops != nil {
 		mmGetJetDrops.mock.t.Fatalf("Inspect function is already set for StorageMock.GetJetDrops")
 	}
@@ -520,7 +523,7 @@ func (mmGetJetDrops *mStorageMockGetJetDrops) Return(ja1 []models.JetDrop, err e
 }
 
 //Set uses given function f to mock the Storage.GetJetDrops method
-func (mmGetJetDrops *mStorageMockGetJetDrops) Set(f func(pulse models.Pulse) (ja1 []models.JetDrop, err error)) *StorageMock {
+func (mmGetJetDrops *mStorageMockGetJetDrops) Set(f func(pulse models.Pulse, fromJetDropID *string, limit *int, offset *int) (ja1 []models.JetDrop, err error)) *StorageMock {
 	if mmGetJetDrops.defaultExpectation != nil {
 		mmGetJetDrops.mock.t.Fatalf("Default expectation is already set for the Storage.GetJetDrops method")
 	}
@@ -535,14 +538,14 @@ func (mmGetJetDrops *mStorageMockGetJetDrops) Set(f func(pulse models.Pulse) (ja
 
 // When sets expectation for the Storage.GetJetDrops which will trigger the result defined by the following
 // Then helper
-func (mmGetJetDrops *mStorageMockGetJetDrops) When(pulse models.Pulse) *StorageMockGetJetDropsExpectation {
+func (mmGetJetDrops *mStorageMockGetJetDrops) When(pulse models.Pulse, fromJetDropID *string, limit *int, offset *int) *StorageMockGetJetDropsExpectation {
 	if mmGetJetDrops.mock.funcGetJetDrops != nil {
 		mmGetJetDrops.mock.t.Fatalf("StorageMock.GetJetDrops mock is already set by Set")
 	}
 
 	expectation := &StorageMockGetJetDropsExpectation{
 		mock:   mmGetJetDrops.mock,
-		params: &StorageMockGetJetDropsParams{pulse},
+		params: &StorageMockGetJetDropsParams{pulse, fromJetDropID, limit, offset},
 	}
 	mmGetJetDrops.expectations = append(mmGetJetDrops.expectations, expectation)
 	return expectation
@@ -555,15 +558,15 @@ func (e *StorageMockGetJetDropsExpectation) Then(ja1 []models.JetDrop, err error
 }
 
 // GetJetDrops implements interfaces.Storage
-func (mmGetJetDrops *StorageMock) GetJetDrops(pulse models.Pulse) (ja1 []models.JetDrop, err error) {
+func (mmGetJetDrops *StorageMock) GetJetDrops(pulse models.Pulse, fromJetDropID *string, limit *int, offset *int) (ja1 []models.JetDrop, err error) {
 	mm_atomic.AddUint64(&mmGetJetDrops.beforeGetJetDropsCounter, 1)
 	defer mm_atomic.AddUint64(&mmGetJetDrops.afterGetJetDropsCounter, 1)
 
 	if mmGetJetDrops.inspectFuncGetJetDrops != nil {
-		mmGetJetDrops.inspectFuncGetJetDrops(pulse)
+		mmGetJetDrops.inspectFuncGetJetDrops(pulse, fromJetDropID, limit, offset)
 	}
 
-	mm_params := &StorageMockGetJetDropsParams{pulse}
+	mm_params := &StorageMockGetJetDropsParams{pulse, fromJetDropID, limit, offset}
 
 	// Record call args
 	mmGetJetDrops.GetJetDropsMock.mutex.Lock()
@@ -580,7 +583,7 @@ func (mmGetJetDrops *StorageMock) GetJetDrops(pulse models.Pulse) (ja1 []models.
 	if mmGetJetDrops.GetJetDropsMock.defaultExpectation != nil {
 		mm_atomic.AddUint64(&mmGetJetDrops.GetJetDropsMock.defaultExpectation.Counter, 1)
 		mm_want := mmGetJetDrops.GetJetDropsMock.defaultExpectation.params
-		mm_got := StorageMockGetJetDropsParams{pulse}
+		mm_got := StorageMockGetJetDropsParams{pulse, fromJetDropID, limit, offset}
 		if mm_want != nil && !minimock.Equal(*mm_want, mm_got) {
 			mmGetJetDrops.t.Errorf("StorageMock.GetJetDrops got unexpected parameters, want: %#v, got: %#v%s\n", *mm_want, mm_got, minimock.Diff(*mm_want, mm_got))
 		}
@@ -592,9 +595,9 @@ func (mmGetJetDrops *StorageMock) GetJetDrops(pulse models.Pulse) (ja1 []models.
 		return (*mm_results).ja1, (*mm_results).err
 	}
 	if mmGetJetDrops.funcGetJetDrops != nil {
-		return mmGetJetDrops.funcGetJetDrops(pulse)
+		return mmGetJetDrops.funcGetJetDrops(pulse, fromJetDropID, limit, offset)
 	}
-	mmGetJetDrops.t.Fatalf("Unexpected call to StorageMock.GetJetDrops. %v", pulse)
+	mmGetJetDrops.t.Fatalf("Unexpected call to StorageMock.GetJetDrops. %v %v %v %v", pulse, fromJetDropID, limit, offset)
 	return
 }
 

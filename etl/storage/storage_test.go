@@ -232,12 +232,26 @@ func TestStorage_GetJetDrops(t *testing.T) {
 	err = testutils.CreateJetDrop(testDB, jetDropForSecondPulse)
 	require.NoError(t, err)
 
-	jetDrops, err := s.GetJetDrops(firstPulse)
+	jetDrops, err := s.GetJetDrops(firstPulse, nil, nil, nil)
 	require.NoError(t, err)
 	expected := []models.JetDrop{jetDropForFirstPulse1, jetDropForFirstPulse2}
 	require.Len(t, jetDrops, 2)
 	require.Contains(t, expected, jetDrops[0])
 	require.Contains(t, expected, jetDrops[1])
+
+	lim, off := 1, 0
+	jetDrops, err = s.GetJetDrops(firstPulse, nil, &lim, nil)
+	require.NoError(t, err)
+	expected = []models.JetDrop{jetDropForFirstPulse1, jetDropForFirstPulse2}
+	require.Len(t, jetDrops, 1)
+	require.Contains(t, expected, jetDrops[0])
+
+	lim, off = 1, 1
+	jetDrops, err = s.GetJetDrops(firstPulse, nil, &lim, &off)
+	require.NoError(t, err)
+	expected = []models.JetDrop{jetDropForFirstPulse1, jetDropForFirstPulse2}
+	require.Len(t, jetDrops, 1)
+	require.Contains(t, expected, jetDrops[0])
 }
 
 func TestStorage_CompletePulse(t *testing.T) {

@@ -48,7 +48,7 @@ func NewController(cfg configuration.Controller, extractor interfaces.JetDropsEx
 	}
 	for _, p := range pulses {
 		key := types.Pulse{PulseNo: p.PulseNumber}
-		jetDrops, err := c.storage.GetJetDrops(p)
+		jetDrops, err := c.storage.GetJetDrops(p, nil, nil, nil)
 		if err != nil {
 			return nil, errors.Wrapf(err, "can't get jetDrops for pulse %d from storage", p.PulseNumber)
 		}

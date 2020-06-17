@@ -6,6 +6,10 @@
 package models
 
 import (
+	"fmt"
+	"strconv"
+	"strings"
+
 	"github.com/insolar/block-explorer/etl/types"
 )
 
@@ -59,4 +63,21 @@ type Pulse struct {
 	NextPulseNumber int
 	IsComplete      bool
 	Timestamp       int64
+}
+
+func JetIDToString(jetID []byte) string {
+	res := strings.Builder{}
+	for i := 0; i < 5; i++ {
+		bytePos, bitPos := i/8, 7-i%8
+
+		byteValue := jetID[bytePos]
+		bitValue := byteValue >> uint(bitPos) & 0x01
+		bitString := strconv.Itoa(int(bitValue))
+		res.WriteString(bitString)
+	}
+	return res.String()
+}
+
+func JetDropID(jetID []byte, pulseNumber int64) string {
+	return fmt.Sprintf("%s:%d", JetIDToString(jetID), pulseNumber)
 }

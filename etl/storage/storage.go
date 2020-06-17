@@ -182,8 +182,25 @@ func (s *storage) GetIncompletePulses() ([]models.Pulse, error) {
 }
 
 // GetJetDrops returns jetDrops for provided pulse from db.
-func (s *storage) GetJetDrops(pulse models.Pulse) ([]models.JetDrop, error) {
+func (s *storage) GetJetDrops(pulse models.Pulse, fromJetDropID *string, limit *int, offset *int) ([]models.JetDrop, error) {
 	var jetDrops []models.JetDrop
-	err := s.db.Where("pulse_number = ?", pulse.PulseNumber).Find(&jetDrops).Error
+	q := s.db.Where("pulse_number = ?", pulse.PulseNumber).Order("jet_id asc")
+	if fromJetDropID != nil {
+		jetID := jetIDFromJetDropID(fromJetDropID)
+		q = q.Where("jet_id >= ?", []byte(jetID))
+	}
+	if limit != nil {
+		q = q.Limit(*limit)
+	}
+	if offset != nil {
+		q = q.Offset(*offset)
+	}
+
+	err := q.Find(&jetDrops).Error
 	return jetDrops, err
+}
+
+func jetIDFromJetDropID(jetDropID *string) string {
+	s := strings.Split(*jetDropID, ":")
+	return s[0]
 }

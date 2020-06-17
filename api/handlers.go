@@ -8,17 +8,21 @@ package api
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 
 	"github.com/insolar/assured-ledger/ledger-core/v2/log"
 	"github.com/insolar/insolar/insolar"
+	"github.com/insolar/insolar/pulse"
 	"github.com/insolar/spec-insolar-block-explorer-api/v1/server"
 	"github.com/labstack/echo/v4"
 
 	"github.com/insolar/block-explorer/configuration"
 	"github.com/insolar/block-explorer/etl/interfaces"
+	"github.com/insolar/block-explorer/etl/models"
 	"github.com/insolar/block-explorer/instrumentation/belogger"
 )
 
@@ -55,7 +59,79 @@ func (s *Server) Pulse(ctx echo.Context, pulseNumber server.PulseNumberPathParam
 }
 
 func (s *Server) JetDropsByPulseNumber(ctx echo.Context, pulseNumber server.PulseNumberPathParam, params server.JetDropsByPulseNumberParams) error {
-	panic("implement me")
+	if !pulse.IsValidAsPulseNumber(int(pulseNumber)) {
+		response := server.CodeValidationError{
+			Code:               NullableString("400"),
+			Description:        NullableString("Invalid pulse number"),
+			Link:               nil,
+			Message:            nil,
+			ValidationFailures: nil,
+		}
+		return ctx.JSON(http.StatusBadRequest, response)
+	}
+
+	limit, offset, err := checkLimitOffset(params.Limit, params.Offset)
+	if err != nil {
+		response := server.CodeValidationError{
+			Code:               NullableString("400"),
+			Description:        NullableString("Invalid limit or offset query parameters"),
+			Link:               nil,
+			Message:            NullableString(err.Error()),
+			ValidationFailures: nil,
+		}
+		return ctx.JSON(http.StatusBadRequest, response)
+	}
+
+	jetDropID, err := checkJetDropID(params.FromJetDropId)
+	if err != nil {
+		response := server.CodeValidationError{
+			Code:               NullableString("400"),
+			Description:        NullableString("Invalid jet drop id in query parameters"),
+			Link:               nil,
+			Message:            NullableString(err.Error()),
+			ValidationFailures: nil,
+		}
+		return ctx.JSON(http.StatusBadRequest, response)
+	}
+	jetDrops, err := s.storage.GetJetDrops(
+		models.Pulse{PulseNumber: int(pulseNumber)},
+		jetDropID,
+		&limit,
+		&offset,
+	)
+	if err != nil {
+		s.logger.Error(err)
+		return ctx.JSON(http.StatusInternalServerError, struct{}{})
+	}
+
+	var result []server.JetDrop
+	for _, jetDrop := range jetDrops {
+		result = append(result, JetDropToAPI(jetDrop))
+
+	}
+	cnt := int64(len(result))
+	return ctx.JSON(http.StatusOK, server.JetDropsResponse{
+		Total:  &cnt,
+		Result: &result,
+	})
+}
+
+func checkJetDropID(jetDropID *server.FromJetDropId) (*string, error) {
+	if jetDropID == nil {
+		return nil, nil
+	}
+	str := string(*jetDropID)
+	s := strings.Split(str, ":")
+	if len(s) != 2 {
+		return nil, fmt.Errorf("wrong jet drop id format")
+	}
+	if _, err := strconv.ParseInt(s[0], 2, 64); err != nil {
+		return nil, fmt.Errorf("wrong jet drop id format")
+	}
+	if _, err := strconv.ParseInt(s[1], 10, 64); err != nil {
+		return nil, fmt.Errorf("wrong jet drop id format")
+	}
+	return &str, nil
 }
 
 func (s *Server) Search(ctx echo.Context, params server.SearchParams) error {

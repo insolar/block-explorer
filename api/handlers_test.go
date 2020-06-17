@@ -14,11 +14,13 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"strconv"
 	"testing"
 	"time"
 
 	"github.com/insolar/insolar/insolar"
 	"github.com/insolar/insolar/insolar/gen"
+	"github.com/insolar/insolar/insolar/jet"
 	"github.com/insolar/spec-insolar-block-explorer-api/v1/server"
 	"github.com/jinzhu/gorm"
 	"github.com/labstack/echo/v4"
@@ -249,4 +251,213 @@ func TestObjectLifeline_Index_Error(t *testing.T) {
 
 	expected := ErrorMessage{Error: []string{"query parameter 'index' should have the '<pulse_number>:<order>' format"}}
 	require.Equal(t, expected, received)
+}
+
+func TestServer_JetDropsByPulseNumber(t *testing.T) {
+	t.Run("happy", func(t *testing.T) {
+		// defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+
+		// insert records
+		pulse, err := testutils.InitPulseDB()
+		require.NoError(t, err)
+		err = testutils.CreatePulse(testDB, pulse)
+		require.NoError(t, err)
+
+		jetDrop2 := testutils.InitJetDropDB(pulse)
+		jetID2 := jet.NewIDFromString("001")
+		jetDrop2.JetID = jetID2.Prefix()
+		err = testutils.CreateJetDrop(testDB, jetDrop2)
+		require.NoError(t, err)
+
+		jetDrop1 := testutils.InitJetDropDB(pulse)
+		jetID1 := jet.NewIDFromString("000")
+		jetDrop1.JetID = jetID1.Prefix()
+		err = testutils.CreateJetDrop(testDB, jetDrop1)
+		require.NoError(t, err)
+
+		jetDrop3 := testutils.InitJetDropDB(pulse)
+		jetID3 := jet.NewIDFromString("010")
+		jetDrop3.JetID = jetID3.Prefix()
+		err = testutils.CreateJetDrop(testDB, jetDrop3)
+		require.NoError(t, err)
+
+		resp, err := http.Get("http://" + apihost + "/api/v1/pulses/" + strconv.Itoa(pulse.PulseNumber) + "/jet-drops")
+		require.NoError(t, err)
+		require.Equal(t, http.StatusOK, resp.StatusCode)
+		bodyBytes, err := ioutil.ReadAll(resp.Body)
+		require.NoError(t, err)
+
+		var received server.JetDropsResponse
+		err = json.Unmarshal(bodyBytes, &received)
+		require.NoError(t, err)
+		require.EqualValues(t, 3, int(*received.Total))
+		require.Len(t, *received.Result, 3)
+		// check asc order by default
+		require.Equal(t, models.JetDropID(jetDrop1.JetID, int64(pulse.PulseNumber)), *(*received.Result)[0].JetDropId)
+		require.Equal(t, models.JetDropID(jetDrop2.JetID, int64(pulse.PulseNumber)), *(*received.Result)[1].JetDropId)
+		require.Equal(t, models.JetDropID(jetDrop3.JetID, int64(pulse.PulseNumber)), *(*received.Result)[2].JetDropId)
+	})
+
+	t.Run("happy with limit", func(t *testing.T) {
+		defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+
+		// insert records
+		pulse, err := testutils.InitPulseDB()
+		require.NoError(t, err)
+		err = testutils.CreatePulse(testDB, pulse)
+		require.NoError(t, err)
+		jetDrop1 := testutils.InitJetDropDB(pulse)
+		jetID1 := jet.NewIDFromString("000")
+		jetDrop1.JetID = jetID1.Prefix()
+		err = testutils.CreateJetDrop(testDB, jetDrop1)
+		require.NoError(t, err)
+
+		jetDrop2 := testutils.InitJetDropDB(pulse)
+		jetID2 := jet.NewIDFromString("001")
+		jetDrop2.JetID = jetID2.Prefix()
+		err = testutils.CreateJetDrop(testDB, jetDrop2)
+		require.NoError(t, err)
+
+		jetDrop3 := testutils.InitJetDropDB(pulse)
+		jetID3 := jet.NewIDFromString("010")
+		jetDrop3.JetID = jetID3.Prefix()
+		err = testutils.CreateJetDrop(testDB, jetDrop3)
+		require.NoError(t, err)
+
+		resp, err := http.Get("http://" + apihost + "/api/v1/pulses/" + strconv.Itoa(pulse.PulseNumber) + "/jet-drops?limit=2")
+		require.NoError(t, err)
+		require.Equal(t, http.StatusOK, resp.StatusCode)
+		bodyBytes, err := ioutil.ReadAll(resp.Body)
+		require.NoError(t, err)
+
+		var received server.JetDropsResponse
+		err = json.Unmarshal(bodyBytes, &received)
+		require.NoError(t, err)
+		require.EqualValues(t, 2, int(*received.Total))
+		require.Len(t, *received.Result, 2)
+		// check asc order by default
+		require.Equal(t, models.JetDropID(jetDrop1.JetID, int64(pulse.PulseNumber)), *(*received.Result)[0].JetDropId)
+		require.Equal(t, models.JetDropID(jetDrop2.JetID, int64(pulse.PulseNumber)), *(*received.Result)[1].JetDropId)
+	})
+
+	t.Run("happy with all params", func(t *testing.T) {
+		defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+
+		// insert records
+
+		// insert records
+		pulse, err := testutils.InitPulseDB()
+		require.NoError(t, err)
+		err = testutils.CreatePulse(testDB, pulse)
+		require.NoError(t, err)
+		jetDrop1 := testutils.InitJetDropDB(pulse)
+		jetID1 := jet.NewIDFromString("000")
+		jetDrop1.JetID = jetID1.Prefix()
+		err = testutils.CreateJetDrop(testDB, jetDrop1)
+		require.NoError(t, err)
+
+		jetDrop2 := testutils.InitJetDropDB(pulse)
+		jetID2 := jet.NewIDFromString("001")
+		jetDrop2.JetID = jetID2.Prefix()
+		err = testutils.CreateJetDrop(testDB, jetDrop2)
+		require.NoError(t, err)
+		jetDropID2 := models.JetDropID(jetDrop1.JetID, int64(pulse.PulseNumber))
+
+		jetDrop3 := testutils.InitJetDropDB(pulse)
+		jetID3 := jet.NewIDFromString("010")
+		jetDrop3.JetID = jetID3.Prefix()
+		err = testutils.CreateJetDrop(testDB, jetDrop3)
+		require.NoError(t, err)
+
+		jetDrop4 := testutils.InitJetDropDB(pulse)
+		jetID4 := jet.NewIDFromString("011")
+		jetDrop4.JetID = jetID4.Prefix()
+		err = testutils.CreateJetDrop(testDB, jetDrop4)
+		require.NoError(t, err)
+
+		jetDrop5 := testutils.InitJetDropDB(pulse)
+		jetID5 := jet.NewIDFromString("100")
+		jetDrop5.JetID = jetID5.Prefix()
+		err = testutils.CreateJetDrop(testDB, jetDrop5)
+		require.NoError(t, err)
+
+		jetDrop6 := testutils.InitJetDropDB(pulse)
+		jetID6 := jet.NewIDFromString("101")
+		jetDrop6.JetID = jetID6.Prefix()
+		err = testutils.CreateJetDrop(testDB, jetDrop6)
+		require.NoError(t, err)
+
+		resp, err := http.Get(
+			"http://" + apihost + "/api/v1/pulses/" +
+				strconv.Itoa(pulse.PulseNumber) +
+				"/jet-drops?limit=2&offset=2&from_jet_drop_id=" +
+				jetDropID2,
+		)
+		require.NoError(t, err)
+		require.Equal(t, http.StatusOK, resp.StatusCode)
+		bodyBytes, err := ioutil.ReadAll(resp.Body)
+		require.NoError(t, err)
+
+		var received server.JetDropsResponse
+		err = json.Unmarshal(bodyBytes, &received)
+		require.NoError(t, err)
+		require.EqualValues(t, 2, int(*received.Total))
+		require.Len(t, *received.Result, 2)
+		// check asc order by default
+		require.Equal(t, models.JetDropID(jetDrop5.JetID, int64(pulse.PulseNumber)), *(*received.Result)[0].JetDropId)
+		require.Equal(t, models.JetDropID(jetDrop6.JetID, int64(pulse.PulseNumber)), *(*received.Result)[1].JetDropId)
+	})
+
+	t.Run("error wrong jetdropid", func(t *testing.T) {
+		pulse, err := testutils.InitPulseDB()
+		require.NoError(t, err)
+		resp, err := http.Get(
+			"http://" + apihost + "/api/v1/pulses/" +
+				strconv.Itoa(pulse.PulseNumber) +
+				"/jet-drops?from_jet_drop_id=" +
+				"test",
+		)
+		require.NoError(t, err)
+		require.Equal(t, http.StatusBadRequest, resp.StatusCode)
+
+		resp, err = http.Get(
+			"http://" + apihost + "/api/v1/pulses/" +
+				strconv.Itoa(pulse.PulseNumber) +
+				"/jet-drops?from_jet_drop_id=" +
+				"10076767676",
+		)
+		require.NoError(t, err)
+		require.Equal(t, http.StatusBadRequest, resp.StatusCode)
+
+		resp, err = http.Get(
+			"http://" + apihost + "/api/v1/pulses/" +
+				strconv.Itoa(pulse.PulseNumber) +
+				"/jet-drops?from_jet_drop_id=" +
+				"76767676:1000",
+		)
+		require.NoError(t, err)
+		require.Equal(t, http.StatusBadRequest, resp.StatusCode)
+	})
+
+	t.Run("error wrong pulse", func(t *testing.T) {
+		resp, err := http.Get(
+			"http://" + apihost + "/api/v1/pulses/" +
+				"wrong-pulse" +
+				"/jet-drops",
+		)
+		require.NoError(t, err)
+		require.Equal(t, http.StatusBadRequest, resp.StatusCode)
+
+	})
+
+	t.Run("error wrong limit", func(t *testing.T) {
+		resp, err := http.Get(
+			"http://" + apihost + "/api/v1/pulses/" +
+				"wrong-pulse" +
+				"/jet-drops?limit=" + "we248934h9h'`;",
+		)
+		require.NoError(t, err)
+		require.Equal(t, http.StatusBadRequest, resp.StatusCode)
+
+	})
 }
