@@ -55,3 +55,46 @@ func TestConnect(t *testing.T) {
 		require.True(t, SimpleRecord.Equal(record), "Incorrect response message")
 	}
 }
+
+func TestHeavymockImporter_storeAndSend(t *testing.T) {
+	server := testutils.CreateTestGRPCServer(t)
+	importer := NewHeavymockImporter()
+	RegisterHeavymockImporterServer(server.Server, importer)
+	exporter.RegisterRecordExporterServer(server.Server, NewRecordExporter(importer))
+	server.Serve(t)
+	defer server.Server.Stop()
+
+	cfg := connection.GetClientConfiguration(server.Address)
+	importerConn, err := connection.NewGRPCClientConnection(context.Background(), cfg)
+	require.NoError(t, err)
+
+	defer importerConn.GetGRPCConn().Close()
+
+	importerCli := NewHeavymockImporterClient(importerConn.GetGRPCConn())
+	exporterCli := exporter.NewRecordExporterClient(importerConn.GetGRPCConn())
+
+	recordsPtOne := testutils.GenerateRecordsSilence(5)
+	recordsPtTwo := testutils.GenerateRecordsSilence(10)
+
+	err = ImportRecords(importerCli, recordsPtOne)
+	require.NoError(t, err)
+	require.Len(t, importer.GetUnsentRecords(), len(recordsPtOne))
+
+	err = ImportRecords(importerCli, recordsPtTwo)
+	require.NoError(t, err)
+	require.Len(t, importer.GetUnsentRecords(), len(recordsPtOne)+len(recordsPtTwo))
+
+	received, err := ReceiveRecords(exporterCli, &exporter.GetRecords{})
+	require.NoError(t, err)
+	require.Len(t, received, len(recordsPtOne)+len(recordsPtTwo))
+	require.Empty(t, importer.GetUnsentRecords())
+
+	// send same records once again, then receive
+	err = ImportRecords(importerCli, recordsPtOne)
+	require.NoError(t, err)
+	require.Len(t, importer.GetUnsentRecords(), len(recordsPtOne))
+	received, err = ReceiveRecords(exporterCli, &exporter.GetRecords{})
+	require.NoError(t, err)
+	require.Len(t, received, len(recordsPtOne))
+	require.Empty(t, importer.GetUnsentRecords())
+}

@@ -99,6 +99,8 @@ type StorageFetcher interface {
 	GetRecord(ref models.Reference) (models.Record, error)
 	// GetIncompletePulses returns pulses that are not complete from db.
 	GetIncompletePulses() ([]models.Pulse, error)
+	// GetPulse returns pulse with provided pulse number from db.
+	GetPulse(pulseNumber int) (models.Pulse, int64, int64, error)
 	// GetJetDrops returns jetDrops for provided pulse from db.
 	GetJetDrops(pulse models.Pulse) ([]models.JetDrop, error)
 	// GetJetDrops returns jetDrops for provided pulse with limit and offset.

@@ -174,6 +174,48 @@ func (s *storage) GetLifeline(objRef []byte, fromIndex *string, pulseNumberLt, p
 	return records, total, nil
 }
 
+// GetPulse returns pulse with provided pulse number from db.
+func (s *storage) GetPulse(pulseNumber int) (models.Pulse, int64, int64, error) {
+	var pulse models.Pulse
+	err := s.db.Where("pulse_number = ?", pulseNumber).First(&pulse).Error
+	if err != nil {
+		return pulse, 0, 0, err
+	}
+
+	pulse = s.updateNextPulse(pulse)
+
+	jetDrops, records, err := s.GetAmounts(pulseNumber)
+	if err != nil {
+		return pulse, 0, 0, errors.Wrapf(err, "error while select count of records from db for pulse number %d", pulseNumber)
+	}
+
+	return pulse, jetDrops, records, err
+}
+
+// GetAmounts return amount of jetDrops and records at provided pulse.
+func (s *storage) GetAmounts(pulseNumber int) (int64, int64, error) {
+	res := struct {
+		JetDrops int
+		Records  int
+	}{}
+	err := s.db.Model(models.JetDrop{}).Select("count(*) as jet_drops, sum(record_amount) as records").Where("pulse_number = ?", pulseNumber).Scan(&res).Error
+	if err != nil {
+		return 0, 0, errors.Wrapf(err, "error while select count of records from db for pulse number %d", pulseNumber)
+	}
+
+	return int64(res.JetDrops), int64(res.Records), err
+}
+
+func (s *storage) updateNextPulse(pulse models.Pulse) models.Pulse {
+	var nextPulse models.Pulse
+	err := s.db.Where("prev_pulse_number = ?", pulse.PulseNumber).First(&nextPulse).Error
+	if err != nil {
+		return pulse
+	}
+	pulse.NextPulseNumber = nextPulse.PulseNumber
+	return pulse
+}
+
 // GetIncompletePulses returns pulses that are not complete from db.
 func (s *storage) GetIncompletePulses() ([]models.Pulse, error) {
 	var pulses []models.Pulse

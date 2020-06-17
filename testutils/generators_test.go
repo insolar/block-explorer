@@ -12,6 +12,8 @@ import (
 	"io"
 	"testing"
 
+	"github.com/insolar/insolar/insolar"
+	ins_record "github.com/insolar/insolar/insolar/record"
 	"github.com/insolar/insolar/ledger/heavy/exporter"
 	"github.com/stretchr/testify/require"
 )
@@ -89,4 +91,69 @@ func TestGenerateRecordsWithDifferencePulses(t *testing.T) {
 			require.EqualError(t, err, io.EOF.Error())
 		})
 	}
+}
+
+func TestGenerateObjectLifeline(t *testing.T) {
+	pulsesNumber := 5
+	recordsNumber := 10
+	lifeline := GenerateObjectLifeline(pulsesNumber, recordsNumber)
+	require.Len(t, lifeline.StateRecords, pulsesNumber)
+	require.Len(t, lifeline.SideRecords, 2)
+
+	objID := lifeline.ObjID
+	allRecords := make([]*exporter.Record, 0)
+	var prevPn insolar.PulseNumber
+	prevPn = 0
+	for i := 0; i < pulsesNumber; i++ {
+		pn := lifeline.StateRecords[i].Pn
+		require.Greater(t, pn.AsUint32(), prevPn.AsUint32())
+		prevPn = pn
+
+		records := lifeline.StateRecords[i].Records
+		require.Len(t, records, recordsNumber)
+		allRecords = append(allRecords, records...)
+	}
+
+	var amendCount int
+	var unknown int
+	for _, r := range allRecords {
+		require.Equal(t, objID, r.Record.ObjectID)
+
+		virtual := r.Record.Virtual
+		switch virtual.Union.(type) {
+		case *ins_record.Virtual_Amend:
+			amendCount++
+		default:
+			unknown++
+		}
+	}
+	require.Equal(t, 0, unknown)
+	require.Equal(t, pulsesNumber*recordsNumber, amendCount)
+
+	sideRecords := make([]*exporter.Record, 0)
+	sideRecords = append(sideRecords, lifeline.SideRecords[0].Records...)
+	sideRecords = append(sideRecords, lifeline.SideRecords[1].Records...)
+	var activateCount int
+	var incomingCount int
+	for _, r := range sideRecords {
+		require.Equal(t, objID, r.Record.ObjectID)
+
+		virtual := r.Record.Virtual
+		switch virtual.Union.(type) {
+		case *ins_record.Virtual_Activate:
+			activateCount++
+		case *ins_record.Virtual_IncomingRequest:
+			incomingCount++
+		default:
+			unknown++
+		}
+	}
+	require.Equal(t, 1, activateCount)
+	require.Equal(t, 1, incomingCount)
+	require.Equal(t, 0, unknown)
+
+	all := lifeline.GetAllRecords()
+	require.Len(t, all, pulsesNumber*recordsNumber+2)
+	sr := lifeline.GetStateRecords()
+	require.Len(t, sr, pulsesNumber*recordsNumber)
 }
