@@ -152,7 +152,7 @@ func TestObjectLifeline_Limit_Error(t *testing.T) {
 	require.NoError(t, err)
 
 	expected := server.CodeValidationError{
-		Code: NullableString(http.StatusText(http.StatusInternalServerError)),
+		Code: NullableString(http.StatusText(http.StatusBadRequest)),
 		ValidationFailures: &[]server.CodeValidationFailures{{
 			FailureReason: NullableString("should be in range [1, 100]"),
 			Property:      NullableString("limit"),
@@ -174,7 +174,7 @@ func TestObjectLifeline_Offset_Error(t *testing.T) {
 	require.NoError(t, err)
 
 	expected := server.CodeValidationError{
-		Code: NullableString(http.StatusText(http.StatusInternalServerError)),
+		Code: NullableString(http.StatusText(http.StatusBadRequest)),
 		ValidationFailures: &[]server.CodeValidationFailures{{
 			FailureReason: NullableString("should not be negative"),
 			Property:      NullableString("offset"),
