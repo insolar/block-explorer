@@ -23,6 +23,150 @@ func init() {
 	rand.Seed(time.Now().UnixNano())
 }
 
+func GenerateRequestRecord(pulse insolar.PulseNumber, objectID insolar.ID) *exporter.Record {
+	r := GenerateRecordsSilence(1)[0]
+	id := gen.IDWithPulse(pulse)
+	r.Record.ID = id
+	r.Record.ObjectID = objectID
+	r.ShouldIterateFrom = nil
+	reference := insolar.NewReference(id)
+	r.Record.Virtual.Union = &insrecord.Virtual_IncomingRequest{
+		IncomingRequest: &insrecord.IncomingRequest{
+			Object: reference,
+		},
+	}
+	return r
+}
+
+func GenerateVirtualActivateRecord(pulse insolar.PulseNumber, objectID, requestID insolar.ID) (record *exporter.Record) {
+	r := GenerateRecordsSilence(1)[0]
+	id := gen.IDWithPulse(pulse)
+	r.Record.ID = id
+	r.Record.ObjectID = objectID
+	r.ShouldIterateFrom = nil
+	requestRerence := insolar.NewReference(requestID)
+	r.Record.Virtual.Union = &insrecord.Virtual_Activate{
+		Activate: &insrecord.Activate{
+			Image:   gen.Reference(),
+			Request: *requestRerence,
+		},
+	}
+	return r
+}
+
+func GenerateVirtualAmendRecordsLinkedArray(pulse insolar.PulseNumber, jetID insolar.JetID, objectID, prevStateID insolar.ID, recordsCount int) []*exporter.Record {
+	result := make([]*exporter.Record, recordsCount)
+	for i := 0; i < recordsCount; i++ {
+		r := GenerateVirtualAmendRecord(pulse, objectID, prevStateID)
+		r.Record.JetID = jetID
+		result[i] = r
+		prevStateID = r.Record.ID
+	}
+	return result
+}
+
+func GenerateVirtualAmendRecord(pulse insolar.PulseNumber, objectID, prevStateID insolar.ID) *exporter.Record {
+	r := GenerateRecordsSilence(1)[0]
+	id := gen.IDWithPulse(pulse)
+	r.Record.ID = id
+	r.Record.ObjectID = objectID
+	r.ShouldIterateFrom = nil
+	r.Record.Virtual.Union = &insrecord.Virtual_Amend{
+		Amend: &insrecord.Amend{
+			Image:     gen.Reference(),
+			PrevState: prevStateID,
+		},
+	}
+	return r
+}
+
+func GenerateVirtualDeactivateRecord(pulse insolar.PulseNumber, objectID, prevStateID insolar.ID) *exporter.Record {
+	r := GenerateRecordsSilence(1)[0]
+	id := gen.IDWithPulse(pulse)
+	r.Record.ID = id
+	r.Record.ObjectID = objectID
+	r.ShouldIterateFrom = nil
+	r.Record.Virtual.Union = &insrecord.Virtual_Deactivate{
+		Deactivate: &insrecord.Deactivate{
+			PrevState: prevStateID,
+		},
+	}
+	return r
+}
+
+type ObjectLifeline struct {
+	StateRecords []RecordsByPulse
+	SideRecords  []RecordsByPulse
+	ObjID        insolar.ID
+}
+
+type RecordsByPulse struct {
+	Pn      insolar.PulseNumber
+	Records []*exporter.Record
+}
+
+func (l *ObjectLifeline) GetAllRecords() []*exporter.Record {
+	r := l.GetStateRecords()
+	r = append(r, l.SideRecords[0].Records...)
+	r = append(r, l.SideRecords[1].Records...)
+	return r
+}
+
+func (l *ObjectLifeline) GetStateRecords() []*exporter.Record {
+	r := make([]*exporter.Record, 0)
+	for i := 0; i < len(l.StateRecords); i++ {
+		r = append(r, l.StateRecords[i].Records...)
+	}
+	return r
+}
+
+func GenerateObjectLifeline(pulseCount, recordsInPulse int) ObjectLifeline {
+	objectID := gen.ID()
+	var prevState insolar.ID
+	stateRecords := make([]RecordsByPulse, pulseCount)
+	sideRecords := make([]RecordsByPulse, 2)
+	pn := gen.PulseNumber()
+	for i := 0; i < pulseCount; i++ {
+		jetID := GenerateUniqueJetID()
+		pn += 10
+		if i == 0 {
+			request := GenerateRequestRecord(pn, objectID)
+			activate := GenerateVirtualActivateRecord(pn, objectID, request.Record.ID)
+			sideRecords[0] = RecordsByPulse{
+				Pn:      pn,
+				Records: []*exporter.Record{request, activate},
+			}
+			prevState = activate.Record.ID
+		}
+
+		records := make([]*exporter.Record, recordsInPulse)
+		amends := GenerateVirtualAmendRecordsLinkedArray(pn, jetID, objectID, prevState, recordsInPulse)
+		copy(records, amends)
+		prevState = amends[len(amends)-1].Record.ID
+		// TODO uncomment after resolving https://insolar.atlassian.net/browse/PENV-368
+		// if i == pulseCount-1 {
+		// 	deactivate := GenerateVirtualDeactivateRecord(pn, objectID, prevState)
+		// 	deactivate.Record.JetID = jetID
+		// 	sideRecords[1] = RecordsByPulse{
+		// 		Pn:      pn,
+		// 		Records: []*exporter.Record{deactivate},
+		// 	}
+		// }
+
+		stateRecords[i] = RecordsByPulse{
+			Pn:      pn,
+			Records: records,
+		}
+	}
+
+	return ObjectLifeline{
+		StateRecords: stateRecords,
+		SideRecords:  sideRecords,
+		ObjID:        objectID,
+	}
+
+}
+
 // GenerateRecords returns a function for generating record with error
 func GenerateRecords(batchSize int) func() (record *exporter.Record, e error) {
 	pn := gen.PulseNumber()
@@ -116,6 +260,15 @@ func GenerateRecordsWithDifferencePulses(differentPulseSize, recordCount int) fu
 		return nil, io.EOF
 	}
 	return fn
+}
+
+func GenerateRecordInNextPulse(prevPulse insolar.PulseNumber) *exporter.Record {
+	r := GenerateRecordsSilence(1)[0]
+	nextPn := prevPulse + 10
+	newID := gen.IDWithPulse(nextPn)
+	r.Record.ID = newID
+	r.ShouldIterateFrom = nil
+	return r
 }
 
 // GenerateRecordsSilence returns new generated records without errors

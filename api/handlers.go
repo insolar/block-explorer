@@ -7,12 +7,15 @@ package api
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 
 	"github.com/insolar/assured-ledger/ledger-core/v2/log"
 	"github.com/insolar/insolar/insolar"
+	"github.com/insolar/insolar/pulse"
 	"github.com/insolar/spec-insolar-block-explorer-api/v1/server"
 	"github.com/jinzhu/gorm"
 	"github.com/labstack/echo/v4"
@@ -20,8 +23,11 @@ import (
 
 	"github.com/insolar/block-explorer/configuration"
 	"github.com/insolar/block-explorer/etl/interfaces"
+	"github.com/insolar/block-explorer/etl/models"
 	"github.com/insolar/block-explorer/instrumentation/belogger"
 )
+
+const InvalidParamsMessage = "Invalid query or path parameters"
 
 type Server struct {
 	storage interfaces.StorageFetcher
@@ -49,13 +55,6 @@ func (s *Server) JetDropsByJetID(ctx echo.Context, jetID server.JetIdPathParam, 
 
 func (s *Server) Pulses(ctx echo.Context, params server.PulsesParams) error {
 	limit, offset, failures := checkLimitOffset(params.Limit, params.Offset)
-	if len(failures) != 0 {
-		apiErr := server.CodeValidationError{
-			Code:               NullableString(http.StatusText(http.StatusBadRequest)),
-			ValidationFailures: &failures,
-		}
-		return ctx.JSON(http.StatusBadRequest, apiErr)
-	}
 
 	var fromPulseString *int64
 	var timestampLte *int
@@ -64,7 +63,23 @@ func (s *Server) Pulses(ctx echo.Context, params server.PulsesParams) error {
 	if params.FromPulseNumber != nil {
 		i := int64(*params.FromPulseNumber)
 		fromPulseString = &i
+		if !pulse.IsValidAsPulseNumber(int(i)) {
+			failures = append(failures, server.CodeValidationFailures{
+				FailureReason: NullableString("invalid"),
+				Property:      NullableString("pulse"),
+			})
+		}
 	}
+
+	if failures != nil {
+		response := server.CodeValidationError{
+			Code:               NullableString(http.StatusText(http.StatusBadRequest)),
+			Message:            NullableString(InvalidParamsMessage),
+			ValidationFailures: &failures,
+		}
+		return ctx.JSON(http.StatusBadRequest, response)
+	}
+
 	if params.TimestampLte != nil {
 		str := int(*params.TimestampLte)
 		timestampLte = &str
@@ -128,7 +143,55 @@ func (s *Server) Pulse(ctx echo.Context, pulseNumber server.PulseNumberPathParam
 }
 
 func (s *Server) JetDropsByPulseNumber(ctx echo.Context, pulseNumber server.PulseNumberPathParam, params server.JetDropsByPulseNumberParams) error {
-	panic("implement me")
+	limit, offset, failures := checkLimitOffset(params.Limit, params.Offset)
+
+	if !pulse.IsValidAsPulseNumber(int(pulseNumber)) {
+		failures = append(failures, server.CodeValidationFailures{
+			FailureReason: NullableString("invalid"),
+			Property:      NullableString("pulse"),
+		})
+	}
+
+	jetDropID, err := checkJetDropID(params.FromJetDropId)
+	if err != nil {
+		failures = append(failures, server.CodeValidationFailures{
+			FailureReason: NullableString("invalid"),
+			Property:      NullableString("jet drop id"),
+		})
+	}
+
+	if failures != nil {
+		response := server.CodeValidationError{
+			Code:               NullableString(strconv.Itoa(http.StatusBadRequest)),
+			Description:        nil,
+			Link:               nil,
+			Message:            NullableString(InvalidParamsMessage),
+			ValidationFailures: &failures,
+		}
+		return ctx.JSON(http.StatusBadRequest, response)
+	}
+
+	jetDrops, total, err := s.storage.GetJetDropsWithParams(
+		models.Pulse{PulseNumber: int(pulseNumber)},
+		jetDropID,
+		limit,
+		offset,
+	)
+	if err != nil {
+		s.logger.Error(err)
+		return ctx.JSON(http.StatusInternalServerError, struct{}{})
+	}
+
+	var result []server.JetDrop
+	for _, jetDrop := range jetDrops {
+		result = append(result, JetDropToAPI(jetDrop))
+
+	}
+	cnt := int64(total)
+	return ctx.JSON(http.StatusOK, server.JetDropsResponse{
+		Total:  &cnt,
+		Result: &result,
+	})
 }
 
 func (s *Server) Search(ctx echo.Context, params server.SearchParams) error {
@@ -253,4 +316,22 @@ func checkLimitOffset(l *server.LimitParam, o *server.OffsetParam) (int, int, []
 	}
 
 	return limit, offset, failures
+}
+
+func checkJetDropID(jetDropID *server.FromJetDropId) (*string, error) {
+	if jetDropID == nil {
+		return nil, nil
+	}
+	str := string(*jetDropID)
+	s := strings.Split(str, ":")
+	if len(s) != 2 {
+		return nil, fmt.Errorf("wrong jet drop id format")
+	}
+	if _, err := strconv.ParseInt(s[0], 2, 64); err != nil {
+		return nil, fmt.Errorf("wrong jet drop id format")
+	}
+	if _, err := strconv.ParseInt(s[1], 10, 64); err != nil {
+		return nil, fmt.Errorf("wrong jet drop id format")
+	}
+	return &str, nil
 }

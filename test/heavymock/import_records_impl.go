@@ -64,7 +64,7 @@ func (s *ImporterServer) MarkAsSent(records []*exporter.Record) {
 
 	for _, r := range records {
 		for _, s := range s.records {
-			if r.Equal(s.record) {
+			if r.Equal(s.record) && !s.isSent {
 				s.isSent = true
 				break
 			}

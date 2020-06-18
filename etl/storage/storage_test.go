@@ -15,6 +15,7 @@ import (
 
 	"github.com/insolar/insolar/insolar/gen"
 	"github.com/jinzhu/gorm"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/insolar/block-explorer/etl/models"
@@ -238,6 +239,50 @@ func TestStorage_GetJetDrops(t *testing.T) {
 	require.Len(t, jetDrops, 2)
 	require.Contains(t, expected, jetDrops[0])
 	require.Contains(t, expected, jetDrops[1])
+}
+
+func TestStorage_GetJetDropsWithParams(t *testing.T) {
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+	s := NewStorage(testDB)
+
+	firstPulse, err := testutils.InitPulseDB()
+	assert.NoError(t, err)
+	err = testutils.CreatePulse(testDB, firstPulse)
+	assert.NoError(t, err)
+	jetDropForFirstPulse1 := testutils.InitJetDropDB(firstPulse)
+	err = testutils.CreateJetDrop(testDB, jetDropForFirstPulse1)
+	assert.NoError(t, err)
+	jetDropForFirstPulse2 := testutils.InitJetDropDB(firstPulse)
+	err = testutils.CreateJetDrop(testDB, jetDropForFirstPulse2)
+	assert.NoError(t, err)
+
+	secondPulse, err := testutils.InitPulseDB()
+	assert.NoError(t, err)
+	err = testutils.CreatePulse(testDB, secondPulse)
+	assert.NoError(t, err)
+	jetDropForSecondPulse := testutils.InitJetDropDB(secondPulse)
+	err = testutils.CreateJetDrop(testDB, jetDropForSecondPulse)
+	assert.NoError(t, err)
+
+	jetDrops, total, err := s.GetJetDropsWithParams(firstPulse, nil, 20, 0)
+	assert.NoError(t, err)
+	expected := []models.JetDrop{jetDropForFirstPulse1, jetDropForFirstPulse2}
+	assert.Len(t, jetDrops, 2)
+	assert.Contains(t, expected, jetDrops[0])
+	assert.Contains(t, expected, jetDrops[1])
+	assert.Equal(t, 2, total)
+
+	jetDrops, total, err = s.GetJetDropsWithParams(firstPulse, nil, 1, 0)
+	assert.NoError(t, err)
+	assert.Len(t, jetDrops, 1)
+	assert.Contains(t, expected, jetDrops[0])
+	assert.Equal(t, 2, total)
+
+	jetDrops, total, err = s.GetJetDropsWithParams(firstPulse, nil, 1, 1)
+	assert.NoError(t, err)
+	assert.Len(t, jetDrops, 1)
+	assert.Contains(t, expected, jetDrops[0])
+	assert.Equal(t, 2, total)
 }
 
 func TestStorage_CompletePulse(t *testing.T) {
