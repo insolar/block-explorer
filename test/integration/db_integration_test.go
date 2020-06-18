@@ -30,7 +30,7 @@ func TestIntegrationWithDb_GetRecords(t *testing.T) {
 	pulsesNumber := 10
 	recordsInPulse := 1
 	recordsWithDifferencePulses := testutils.GenerateRecordsWithDifferencePulses(pulsesNumber, recordsInPulse)
-	stream, err := ts.c.ImporterClient.Import(context.Background())
+	stream, err := ts.ConMngr.ImporterClient.Import(context.Background())
 	require.NoError(t, err)
 
 	records := make([]*exporter.Record, 0)
@@ -76,11 +76,11 @@ func TestIntegrationWithDb_GetRecords(t *testing.T) {
 
 	// last record with the biggest pulse number won't be processed, so we do not expect this record in DB
 	expRecordsCount := recordsInPulse * (pulsesNumber - 1)
-	ts.waitRecordsCount(t, expRecordsCount, 6000)
+	ts.WaitRecordsCount(t, expRecordsCount, 6000)
 
 	for _, ref := range refs[:expRecordsCount] {
 		modelRef := models.ReferenceFromTypes(ref)
-		record, err := ts.be.Storage().GetRecord(modelRef)
+		record, err := ts.BE.Storage().GetRecord(modelRef)
 		require.NoError(t, err, "Error executing GetRecord from db")
 		require.NotEmpty(t, record, "Record is empty")
 		require.Equal(t, modelRef, record.Reference, "Reference not equal")
@@ -106,15 +106,15 @@ func TestIntegrationWithDb_GetJetDrops(t *testing.T) {
 		pulseNumbers[int(r.Record.ID.Pulse())] = true
 	}
 
-	err := heavymock.ImportRecords(ts.c.ImporterClient, expRecords)
+	err := heavymock.ImportRecords(ts.ConMngr.ImporterClient, expRecords)
 	require.NoError(t, err)
 
 	// last records with the biggest pulse number won't be processed, so we do not expect this record in DB
-	ts.waitRecordsCount(t, len(expRecords)-recordsCount, 6000)
+	ts.WaitRecordsCount(t, len(expRecords)-recordsCount, 6000)
 
 	var jetDropsDB []models.JetDrop
 	for pulse, _ := range pulseNumbers {
-		jd, err := ts.be.Storage().GetJetDrops(models.Pulse{PulseNumber: pulse})
+		jd, err := ts.BE.Storage().GetJetDrops(models.Pulse{PulseNumber: pulse})
 		require.NoError(t, err)
 		jetDropsDB = append(jetDropsDB, jd...)
 	}

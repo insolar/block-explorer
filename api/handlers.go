@@ -7,7 +7,6 @@ package api
 
 import (
 	"context"
-	"errors"
 	"net/http"
 	"net/url"
 	"strings"
@@ -15,7 +14,9 @@ import (
 	"github.com/insolar/assured-ledger/ledger-core/v2/log"
 	"github.com/insolar/insolar/insolar"
 	"github.com/insolar/spec-insolar-block-explorer-api/v1/server"
+	"github.com/jinzhu/gorm"
 	"github.com/labstack/echo/v4"
+	"github.com/pkg/errors"
 
 	"github.com/insolar/block-explorer/configuration"
 	"github.com/insolar/block-explorer/etl/interfaces"
@@ -51,7 +52,22 @@ func (s *Server) Pulses(ctx echo.Context, params server.PulsesParams) error {
 }
 
 func (s *Server) Pulse(ctx echo.Context, pulseNumber server.PulseNumberPathParam) error {
-	panic("implement me")
+	pulse, jetDropAmount, recordAmount, err := s.storage.GetPulse(int(pulseNumber))
+	if err != nil {
+		if gorm.IsRecordNotFoundError(err) {
+			return ctx.JSON(http.StatusOK, struct{}{})
+		}
+		err = errors.Wrapf(err, "error while select pulse from db by pulse number %d", pulseNumber)
+		s.logger.Error(err)
+		apiErr := server.CodeError{
+			Code:        NullableString(http.StatusText(http.StatusInternalServerError)),
+			Description: NullableString(err.Error()),
+		}
+		return ctx.JSON(http.StatusInternalServerError, apiErr)
+	}
+
+	pulseResponse := PulseToAPI(pulse, jetDropAmount, recordAmount)
+	return ctx.JSON(http.StatusOK, pulseResponse)
 }
 
 func (s *Server) JetDropsByPulseNumber(ctx echo.Context, pulseNumber server.PulseNumberPathParam, params server.JetDropsByPulseNumberParams) error {

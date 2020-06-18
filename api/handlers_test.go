@@ -163,7 +163,6 @@ func TestObjectLifeline_Offset_Error(t *testing.T) {
 
 	var received ErrorMessage
 	err = json.Unmarshal(bodyBytes, &received)
-	fmt.Println(string(bodyBytes))
 	require.NoError(t, err)
 
 	expected := ErrorMessage{Error: []string{"query parameter 'offset' should not be negative"}}
@@ -180,7 +179,6 @@ func TestObjectLifeline_Sort_Error(t *testing.T) {
 
 	var received ErrorMessage
 	err = json.Unmarshal(bodyBytes, &received)
-	fmt.Println(string(bodyBytes))
 	require.NoError(t, err)
 
 	expected := ErrorMessage{Error: []string{"query parameter 'sort' should be 'desc' or 'asc'"}}
@@ -249,4 +247,85 @@ func TestObjectLifeline_Index_Error(t *testing.T) {
 
 	expected := ErrorMessage{Error: []string{"query parameter 'index' should have the '<pulse_number>:<order>' format"}}
 	require.Equal(t, expected, received)
+}
+
+func TestPulse_HappyPath(t *testing.T) {
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+
+	// insert pulses
+	pulse, err := testutils.InitPulseDB()
+	require.NoError(t, err)
+	err = testutils.CreatePulse(testDB, pulse)
+	require.NoError(t, err)
+	notExpectedPulse, err := testutils.InitPulseDB()
+	require.NoError(t, err)
+	err = testutils.CreatePulse(testDB, notExpectedPulse)
+	require.NoError(t, err)
+
+	// request pulse for pulseNumber
+	resp, err := http.Get("http://" + apihost + fmt.Sprintf("/api/v1/pulses/%d", pulse.PulseNumber))
+	require.NoError(t, err)
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+	bodyBytes, err := ioutil.ReadAll(resp.Body)
+	require.NoError(t, err)
+
+	var received server.PulseResponse
+	err = json.Unmarshal(bodyBytes, &received)
+	require.NoError(t, err)
+	require.EqualValues(t, pulse.PulseNumber, *received.PulseNumber)
+	require.False(t, *received.IsComplete)
+	require.EqualValues(t, 0, *received.JetDropAmount)
+	require.EqualValues(t, 0, *received.RecordAmount)
+}
+
+func TestPulse_PulseWithRecords(t *testing.T) {
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+
+	// insert data
+	pulse, err := testutils.InitPulseDB()
+	require.NoError(t, err)
+	err = testutils.CreatePulse(testDB, pulse)
+	require.NoError(t, err)
+	jetDrop1 := testutils.InitJetDropDB(pulse)
+	jetDrop1.RecordAmount = 10
+	err = testutils.CreateJetDrop(testDB, jetDrop1)
+	jetDrop2 := testutils.InitJetDropDB(pulse)
+	jetDrop2.RecordAmount = 25
+	err = testutils.CreateJetDrop(testDB, jetDrop2)
+	require.NoError(t, err)
+
+	// request pulse for pulseNumber
+	resp, err := http.Get("http://" + apihost + fmt.Sprintf("/api/v1/pulses/%d", pulse.PulseNumber))
+	require.NoError(t, err)
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+	bodyBytes, err := ioutil.ReadAll(resp.Body)
+	require.NoError(t, err)
+
+	var received server.PulseResponse
+	err = json.Unmarshal(bodyBytes, &received)
+	require.NoError(t, err)
+	require.EqualValues(t, pulse.PulseNumber, *received.PulseNumber)
+	require.False(t, *received.IsComplete)
+	require.EqualValues(t, 2, *received.JetDropAmount)
+	require.EqualValues(t, jetDrop1.RecordAmount+jetDrop2.RecordAmount, *received.RecordAmount)
+}
+
+func TestPulse_Pulse_NotExist(t *testing.T) {
+	// request pulse for not existed pulse number
+	resp, err := http.Get("http://" + apihost + fmt.Sprintf("/api/v1/pulses/%d", gen.PulseNumber()))
+	require.NoError(t, err)
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+	bodyBytes, err := ioutil.ReadAll(resp.Body)
+	require.NoError(t, err)
+
+	var received server.PulseResponse
+	err = json.Unmarshal(bodyBytes, &received)
+	require.NoError(t, err)
+	require.Empty(t, received)
+}
+
+func TestPulse_Pulse_WrongFormat(t *testing.T) {
+	resp, err := http.Get("http://" + apihost + "/api/v1/pulses/" + "wrong_type")
+	require.NoError(t, err)
+	require.Equal(t, http.StatusBadRequest, resp.StatusCode)
 }
