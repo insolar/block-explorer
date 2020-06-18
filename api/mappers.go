@@ -48,9 +48,11 @@ func RecordToAPI(record models.Record) server.Record {
 			response.PrevRecordReference = NullableString(prevRecordReference.String())
 		}
 	}
-	prototypeReference := insolar.NewIDFromBytes(record.PrototypeReference)
-	if prototypeReference != nil {
-		response.PrototypeReference = NullableString(prototypeReference.String())
+	if !bytes.Equal([]byte{}, record.PrototypeReference) {
+		prototypeReference := insolar.NewIDFromBytes(record.PrototypeReference)
+		if prototypeReference != nil {
+			response.PrototypeReference = NullableString(prototypeReference.String())
+		}
 	}
 	reference := insolar.NewIDFromBytes(record.Reference)
 	if reference != nil {
@@ -78,13 +80,16 @@ func PulseToAPI(pulse models.Pulse, jetDropAmount, recordAmount int64) server.Pu
 func JetDropToAPI(jetDrop models.JetDrop) server.JetDrop {
 	pulseNumber := int64(jetDrop.PulseNumber)
 	recordAmount := int64(jetDrop.RecordAmount)
+	// TODO: set correct prev and next after PENV-348
+	nextJetDropID := []string{"test_next_jet_drop"}
+	prevJetDropID := []string{"test_prev_jet_drop"}
 	result := server.JetDrop{
 		Hash:      NullableString(base64.StdEncoding.EncodeToString(jetDrop.Hash)),
 		JetDropId: NullableString(models.NewJetDropID(jetDrop.JetID, int64(jetDrop.PulseNumber)).ToString()),
 		JetId:     NullableString(models.BEJetIDToString(jetDrop.JetID)),
 		// todo implement this if needed
-		NextJetDropId: nil,
-		PrevJetDropId: nil,
+		NextJetDropId: &nextJetDropID,
+		PrevJetDropId: &prevJetDropID,
 		PulseNumber:   &pulseNumber,
 		RecordAmount:  &recordAmount,
 		Timestamp:     &jetDrop.Timestamp,
