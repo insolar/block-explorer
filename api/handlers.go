@@ -43,7 +43,33 @@ func NewServer(ctx context.Context, storage interfaces.StorageFetcher, config co
 }
 
 func (s *Server) JetDropByID(ctx echo.Context, jetDropID server.JetDropIdPathParam) error {
-	panic("implement me")
+	BEJetDropID, err := models.NewJetDropIDFromString(string(jetDropID))
+	if err != nil {
+		response := server.CodeValidationError{
+			Code:        NullableString(strconv.Itoa(http.StatusBadRequest)),
+			Description: nil,
+			Link:        nil,
+			Message:     NullableString(InvalidParamsMessage),
+			ValidationFailures: &[]server.CodeValidationFailures{{
+				FailureReason: NullableString("invalid"),
+				Property:      NullableString("jet drop id"),
+			}},
+		}
+		return ctx.JSON(http.StatusBadRequest, response)
+	}
+	jetDrop, err := s.storage.GetJetDropByID(
+		*BEJetDropID,
+	)
+	if err != nil {
+		if gorm.IsRecordNotFoundError(err) {
+			return ctx.JSON(http.StatusNotFound, struct{}{})
+		}
+		s.logger.Error(err)
+		return ctx.JSON(http.StatusInternalServerError, struct{}{})
+	}
+
+	apiJetDrop := JetDropToAPI(jetDrop)
+	return ctx.JSON(http.StatusOK, server.JetDropResponse(apiJetDrop))
 }
 
 func (s *Server) JetDropRecords(ctx echo.Context, jetDropID server.JetDropIdPathParam, params server.JetDropRecordsParams) error {
@@ -203,13 +229,16 @@ func (s *Server) JetDropsByPulseNumber(ctx echo.Context, pulseNumber server.Puls
 			Property:      NullableString("pulse"),
 		})
 	}
-
-	jetDropID, err := checkJetDropID(params.FromJetDropId)
-	if err != nil {
-		failures = append(failures, server.CodeValidationFailures{
-			FailureReason: NullableString("invalid"),
-			Property:      NullableString("jet drop id"),
-		})
+	var BEJetDropID *models.JetDropID
+	var err error
+	if params.FromJetDropId != nil {
+		BEJetDropID, err = models.NewJetDropIDFromString(string(*params.FromJetDropId))
+		if err != nil {
+			failures = append(failures, server.CodeValidationFailures{
+				FailureReason: NullableString("invalid"),
+				Property:      NullableString("jet drop id"),
+			})
+		}
 	}
 
 	if failures != nil {
@@ -225,7 +254,7 @@ func (s *Server) JetDropsByPulseNumber(ctx echo.Context, pulseNumber server.Puls
 
 	jetDrops, total, err := s.storage.GetJetDropsWithParams(
 		models.Pulse{PulseNumber: int(pulseNumber)},
-		jetDropID,
+		BEJetDropID,
 		limit,
 		offset,
 	)
@@ -495,22 +524,4 @@ func checkLimitOffset(l *server.LimitParam, o *server.OffsetParam) (int, int, []
 	}
 
 	return limit, offset, failures
-}
-
-func checkJetDropID(jetDropID *server.FromJetDropId) (*string, error) {
-	if jetDropID == nil {
-		return nil, nil
-	}
-	str := string(*jetDropID)
-	s := strings.Split(str, ":")
-	if len(s) != 2 {
-		return nil, errors.New("wrong jet drop id format")
-	}
-	if _, err := strconv.ParseInt(s[0], 2, 64); err != nil {
-		return nil, errors.New("wrong jet drop id format")
-	}
-	if _, err := strconv.ParseInt(s[1], 10, 64); err != nil {
-		return nil, errors.New("wrong jet drop id format")
-	}
-	return &str, nil
 }

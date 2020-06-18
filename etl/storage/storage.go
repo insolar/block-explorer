@@ -315,12 +315,11 @@ func (s *storage) GetJetDrops(pulse models.Pulse) ([]models.JetDrop, error) {
 	return jetDrops, err
 }
 
-func (s *storage) GetJetDropsWithParams(pulse models.Pulse, fromJetDropID *string, limit int, offset int) ([]models.JetDrop, int, error) {
+func (s *storage) GetJetDropsWithParams(pulse models.Pulse, fromJetDropID *models.JetDropID, limit int, offset int) ([]models.JetDrop, int, error) {
 	var jetDrops []models.JetDrop
 	q := s.db.Model(&jetDrops).Where("pulse_number = ?", pulse.PulseNumber).Order("jet_id asc")
 	if fromJetDropID != nil {
-		jetID := jetIDFromJetDropID(fromJetDropID)
-		q = q.Where("jet_id >= ?", []byte(jetID))
+		q = q.Where("jet_id >= ?", fromJetDropID.JetID)
 	}
 	err := q.Limit(limit).Offset(offset).Find(&jetDrops).Error
 	if err != nil {
@@ -334,7 +333,8 @@ func (s *storage) GetJetDropsWithParams(pulse models.Pulse, fromJetDropID *strin
 	return jetDrops, int(total), err
 }
 
-func jetIDFromJetDropID(jetDropID *string) string {
-	s := strings.Split(*jetDropID, ":")
-	return s[0]
+func (s *storage) GetJetDropByID(id models.JetDropID) (models.JetDrop, error) {
+	var jetDrop models.JetDrop
+	err := s.db.Model(&jetDrop).Where("pulse_number = ? AND jet_id = ?", id.PulseNumber, id.JetID).Find(&jetDrop).Error
+	return jetDrop, err
 }

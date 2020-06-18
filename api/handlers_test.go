@@ -9,6 +9,7 @@ package api
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -733,13 +734,13 @@ func TestServer_JetDropsByPulseNumber(t *testing.T) {
 		jetDrop2.JetID = jetID2.Prefix()
 		err = testutils.CreateJetDrop(testDB, jetDrop2)
 		require.NoError(t, err)
-		jetDropID2 := models.NewJetDropID(jetDrop1.JetID, int64(pulse.PulseNumber)).ToString()
 
 		jetDrop3 := testutils.InitJetDropDB(pulse)
 		jetID3 := jet.NewIDFromString("010")
 		jetDrop3.JetID = jetID3.Prefix()
 		err = testutils.CreateJetDrop(testDB, jetDrop3)
 		require.NoError(t, err)
+		jetDropID3 := models.NewJetDropID(jetDrop3.JetID, int64(pulse.PulseNumber)).ToString()
 
 		jetDrop4 := testutils.InitJetDropDB(pulse)
 		jetID4 := jet.NewIDFromString("011")
@@ -763,7 +764,7 @@ func TestServer_JetDropsByPulseNumber(t *testing.T) {
 			"http://" + apihost + "/api/v1/pulses/" +
 				strconv.Itoa(pulse.PulseNumber) +
 				"/jet-drops?limit=2&offset=2&from_jet_drop_id=" +
-				jetDropID2,
+				jetDropID3,
 		)
 		require.NoError(t, err)
 		require.Equal(t, http.StatusOK, resp.StatusCode)
@@ -1064,6 +1065,189 @@ func TestSearch_InvalidValue(t *testing.T) {
 	require.Len(t, *received.ValidationFailures, 1)
 	require.EqualValues(t, "is neither pulse number, jet drop id nor reference", *(*received.ValidationFailures)[0].FailureReason)
 	require.EqualValues(t, "value", *(*received.ValidationFailures)[0].Property)
+}
+
+func TestServer_JetDropsByID(t *testing.T) {
+	t.Run("happy", func(t *testing.T) {
+		defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+
+		// insert records
+		pulse, err := testutils.InitPulseDB()
+		require.NoError(t, err)
+		err = testutils.CreatePulse(testDB, pulse)
+		require.NoError(t, err)
+
+		jetDrop2 := testutils.InitJetDropDB(pulse)
+		jetID2 := jet.NewIDFromString("001")
+		jetDrop2.JetID = jetID2.Prefix()
+		err = testutils.CreateJetDrop(testDB, jetDrop2)
+		require.NoError(t, err)
+
+		jetDrop1 := testutils.InitJetDropDB(pulse)
+		jetID1 := jet.NewIDFromString("000")
+		jetDrop1.JetID = jetID1.Prefix()
+		err = testutils.CreateJetDrop(testDB, jetDrop1)
+		require.NoError(t, err)
+		jetDropID1 := models.NewJetDropID(jetDrop1.JetID, int64(pulse.PulseNumber)).ToString()
+
+		jetDrop3 := testutils.InitJetDropDB(pulse)
+		jetID3 := jet.NewIDFromString("010")
+		jetDrop3.JetID = jetID3.Prefix()
+		err = testutils.CreateJetDrop(testDB, jetDrop3)
+		require.NoError(t, err)
+
+		resp, err := http.Get("http://" + apihost + "/api/v1/jet-drops/" + jetDropID1)
+		require.NoError(t, err)
+		require.Equal(t, http.StatusOK, resp.StatusCode)
+		bodyBytes, err := ioutil.ReadAll(resp.Body)
+		require.NoError(t, err)
+
+		var received server.JetDropResponse
+		err = json.Unmarshal(bodyBytes, &received)
+		require.NoError(t, err)
+		require.Equal(t, jetDropID1, *received.JetDropId)
+		require.Equal(t, base64.StdEncoding.EncodeToString(jetDrop1.Hash), *received.Hash)
+	})
+
+	t.Run("happy with tree", func(t *testing.T) {
+		t.Skip("uncomment after tree will be ready")
+		defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+
+		// insert records
+		pulse, err := testutils.InitPulseDB()
+		require.NoError(t, err)
+		err = testutils.CreatePulse(testDB, pulse)
+		require.NoError(t, err)
+
+		jetDrop2 := testutils.InitJetDropDB(pulse)
+		jetID2 := jet.NewIDFromString("001")
+		jetDrop2.JetID = jetID2.Prefix()
+		err = testutils.CreateJetDrop(testDB, jetDrop2)
+		require.NoError(t, err)
+		jetDropID2 := models.NewJetDropID(jetDrop2.JetID, int64(pulse.PulseNumber)).ToString()
+
+		jetDrop1 := testutils.InitJetDropDB(pulse)
+		jetID1 := jet.NewIDFromString("000")
+		jetDrop1.JetID = jetID1.Prefix()
+		err = testutils.CreateJetDrop(testDB, jetDrop1)
+		require.NoError(t, err)
+		jetDropID1 := models.NewJetDropID(jetDrop1.JetID, int64(pulse.PulseNumber)).ToString()
+
+		jetDrop3 := testutils.InitJetDropDB(pulse)
+		jetID3 := jet.NewIDFromString("010")
+		jetDrop3.JetID = jetID3.Prefix()
+		err = testutils.CreateJetDrop(testDB, jetDrop3)
+		require.NoError(t, err)
+		jetDropID3 := models.NewJetDropID(jetDrop3.JetID, int64(pulse.PulseNumber)).ToString()
+
+		// create next pulse and jet drops
+		pulse.PulseNumber = pulse.PulseNumber + 10
+		err = testutils.CreatePulse(testDB, pulse)
+		require.NoError(t, err)
+
+		jetDrop4 := testutils.InitJetDropDB(pulse)
+		jetID4 := jet.NewIDFromString("001")
+		jetDrop4.JetID = jetID4.Prefix()
+		err = testutils.CreateJetDrop(testDB, jetDrop4)
+		require.NoError(t, err)
+		jetDropID4 := models.NewJetDropID(jetDrop4.JetID, int64(pulse.PulseNumber)).ToString()
+
+		jetDrop5 := testutils.InitJetDropDB(pulse)
+		jetID5 := jet.NewIDFromString("000")
+		jetDrop5.JetID = jetID5.Prefix()
+		err = testutils.CreateJetDrop(testDB, jetDrop5)
+		require.NoError(t, err)
+		jetDropID5 := models.NewJetDropID(jetDrop5.JetID, int64(pulse.PulseNumber)).ToString()
+
+		jetDrop6 := testutils.InitJetDropDB(pulse)
+		jetID6 := jet.NewIDFromString("010")
+		jetDrop6.JetID = jetID6.Prefix()
+		err = testutils.CreateJetDrop(testDB, jetDrop6)
+		require.NoError(t, err)
+		jetDropID6 := models.NewJetDropID(jetDrop6.JetID, int64(pulse.PulseNumber)).ToString()
+
+		// create next pulse and jet drops
+		pulse.PulseNumber = pulse.PulseNumber + 10
+		err = testutils.CreatePulse(testDB, pulse)
+		require.NoError(t, err)
+
+		jetDrop7 := testutils.InitJetDropDB(pulse)
+		jetID7 := jet.NewIDFromString("001")
+		jetDrop7.JetID = jetID7.Prefix()
+		err = testutils.CreateJetDrop(testDB, jetDrop7)
+		require.NoError(t, err)
+		jetDropID7 := models.NewJetDropID(jetDrop7.JetID, int64(pulse.PulseNumber)).ToString()
+
+		jetDrop8 := testutils.InitJetDropDB(pulse)
+		jetID8 := jet.NewIDFromString("000")
+		jetDrop8.JetID = jetID8.Prefix()
+		err = testutils.CreateJetDrop(testDB, jetDrop8)
+		require.NoError(t, err)
+		jetDropID8 := models.NewJetDropID(jetDrop8.JetID, int64(pulse.PulseNumber)).ToString()
+
+		jetDrop9 := testutils.InitJetDropDB(pulse)
+		jetID9 := jet.NewIDFromString("010")
+		jetDrop9.JetID = jetID9.Prefix()
+		err = testutils.CreateJetDrop(testDB, jetDrop9)
+		require.NoError(t, err)
+		jetDropID9 := models.NewJetDropID(jetDrop9.JetID, int64(pulse.PulseNumber)).ToString()
+
+		resp, err := http.Get("http://" + apihost + "/api/v1/jet-drops/" + jetDropID1)
+		require.NoError(t, err)
+		require.Equal(t, http.StatusOK, resp.StatusCode)
+		bodyBytes, err := ioutil.ReadAll(resp.Body)
+		require.NoError(t, err)
+
+		var received server.JetDropResponse
+		err = json.Unmarshal(bodyBytes, &received)
+		require.NoError(t, err)
+		require.Equal(t, jetDropID1, *received.JetDropId)
+		require.Equal(t, string(jetDrop1.Hash), *received.Hash)
+		expectedPrev := []string{
+			jetDropID1, jetDropID2, jetDropID3, jetDropID4,
+		}
+		expectedNext := []string{
+			jetDropID5, jetDropID6, jetDropID7, jetDropID8, jetDropID9,
+		}
+
+		require.Contains(t, expectedPrev, *received.PrevJetDropId)
+		require.Contains(t, expectedNext, *received.NextJetDropId)
+	})
+
+	t.Run("error wrong id", func(t *testing.T) {
+		resp, err := http.Get("http://" + apihost + "/api/v1/jet-drops/1000:dfg")
+		require.NoError(t, err)
+		require.Equal(t, http.StatusBadRequest, resp.StatusCode)
+		bodyBytes, err := ioutil.ReadAll(resp.Body)
+		require.NoError(t, err)
+
+		var received server.CodeValidationError
+		err = json.Unmarshal(bodyBytes, &received)
+		require.NoError(t, err)
+		expected := server.CodeValidationFailures{
+			FailureReason: NullableString("invalid"),
+			Property:      NullableString("jet drop id"),
+		}
+		e := *received.ValidationFailures
+		require.Equal(t, expected, e[0])
+	})
+
+	t.Run("error not existent id", func(t *testing.T) {
+		defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+
+		// insert records
+		pulse, err := testutils.InitPulseDB()
+		require.NoError(t, err)
+		err = testutils.CreatePulse(testDB, pulse)
+		require.NoError(t, err)
+
+		jetDrop1 := testutils.InitJetDropDB(pulse)
+		jetDropID1 := models.NewJetDropID(jetDrop1.JetID, int64(pulse.PulseNumber)).ToString()
+
+		resp, err := http.Get("http://" + apihost + "/api/v1/jet-drops/" + jetDropID1)
+		require.NoError(t, err)
+		require.Equal(t, http.StatusNotFound, resp.StatusCode)
+	})
 }
 
 func TestJetDropRecords(t *testing.T) {
