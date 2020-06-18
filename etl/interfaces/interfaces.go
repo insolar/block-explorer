@@ -107,7 +107,7 @@ type StorageFetcher interface {
 	GetPulses(fromPulse *int64, timestampLte, timestampGte *int, limit, offset int) ([]models.Pulse, int, error)
 	// GetJetDrops returns jetDrops for provided pulse from db.
 	GetJetDrops(pulse models.Pulse) ([]models.JetDrop, error)
-	// GetJetDrops returns jetDrops for provided pulse with limit and offset.
+	// GetJetDropsWithParams returns jetDrops for provided pulse with limit and offset.
 	GetJetDropsWithParams(pulse models.Pulse, fromJetDropID *string, limit int, offset int) ([]models.JetDrop, int, error)
 
 	// GetLifeline returns records for provided object reference, ordered by desc by pulse number and order fields.

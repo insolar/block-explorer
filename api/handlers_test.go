@@ -632,9 +632,9 @@ func TestServer_JetDropsByPulseNumber(t *testing.T) {
 		require.EqualValues(t, 3, int(*received.Total))
 		require.Len(t, *received.Result, 3)
 		// check asc order by default
-		require.Equal(t, models.JetDropID(jetDrop1.JetID, int64(pulse.PulseNumber)), *(*received.Result)[0].JetDropId)
-		require.Equal(t, models.JetDropID(jetDrop2.JetID, int64(pulse.PulseNumber)), *(*received.Result)[1].JetDropId)
-		require.Equal(t, models.JetDropID(jetDrop3.JetID, int64(pulse.PulseNumber)), *(*received.Result)[2].JetDropId)
+		require.Equal(t, models.NewJetDropID(jetDrop1.JetID, int64(pulse.PulseNumber)).ToString(), *(*received.Result)[0].JetDropId)
+		require.Equal(t, models.NewJetDropID(jetDrop2.JetID, int64(pulse.PulseNumber)).ToString(), *(*received.Result)[1].JetDropId)
+		require.Equal(t, models.NewJetDropID(jetDrop3.JetID, int64(pulse.PulseNumber)).ToString(), *(*received.Result)[2].JetDropId)
 	})
 
 	t.Run("happy with limit", func(t *testing.T) {
@@ -675,8 +675,8 @@ func TestServer_JetDropsByPulseNumber(t *testing.T) {
 		require.EqualValues(t, 3, int(*received.Total))
 		require.Len(t, *received.Result, 2)
 		// check asc order by default
-		require.Equal(t, models.JetDropID(jetDrop1.JetID, int64(pulse.PulseNumber)), *(*received.Result)[0].JetDropId)
-		require.Equal(t, models.JetDropID(jetDrop2.JetID, int64(pulse.PulseNumber)), *(*received.Result)[1].JetDropId)
+		require.Equal(t, models.NewJetDropID(jetDrop1.JetID, int64(pulse.PulseNumber)).ToString(), *(*received.Result)[0].JetDropId)
+		require.Equal(t, models.NewJetDropID(jetDrop2.JetID, int64(pulse.PulseNumber)).ToString(), *(*received.Result)[1].JetDropId)
 	})
 
 	t.Run("happy with all params", func(t *testing.T) {
@@ -698,7 +698,7 @@ func TestServer_JetDropsByPulseNumber(t *testing.T) {
 		jetDrop2.JetID = jetID2.Prefix()
 		err = testutils.CreateJetDrop(testDB, jetDrop2)
 		require.NoError(t, err)
-		jetDropID2 := models.JetDropID(jetDrop1.JetID, int64(pulse.PulseNumber))
+		jetDropID2 := models.NewJetDropID(jetDrop1.JetID, int64(pulse.PulseNumber)).ToString()
 
 		jetDrop3 := testutils.InitJetDropDB(pulse)
 		jetID3 := jet.NewIDFromString("010")
@@ -741,8 +741,8 @@ func TestServer_JetDropsByPulseNumber(t *testing.T) {
 		require.EqualValues(t, 4, int(*received.Total))
 		require.Len(t, *received.Result, 2)
 		// check asc order by default
-		require.Equal(t, models.JetDropID(jetDrop5.JetID, int64(pulse.PulseNumber)), *(*received.Result)[0].JetDropId)
-		require.Equal(t, models.JetDropID(jetDrop6.JetID, int64(pulse.PulseNumber)), *(*received.Result)[1].JetDropId)
+		require.Equal(t, models.NewJetDropID(jetDrop5.JetID, int64(pulse.PulseNumber)).ToString(), *(*received.Result)[0].JetDropId)
+		require.Equal(t, models.NewJetDropID(jetDrop6.JetID, int64(pulse.PulseNumber)).ToString(), *(*received.Result)[1].JetDropId)
 	})
 
 	t.Run("error wrong jetdropid", func(t *testing.T) {
