@@ -45,8 +45,8 @@ type StorageMock struct {
 	beforeGetJetDropsWithParamsCounter uint64
 	GetJetDropsWithParamsMock          mStorageMockGetJetDropsWithParams
 
-	funcGetLifeline          func(objRef []byte, fromIndex *string, pulseNumberLt *int, pulseNumberGt *int, limit int, offset int, sort string) (ra1 []models.Record, i1 int, err error)
-	inspectFuncGetLifeline   func(objRef []byte, fromIndex *string, pulseNumberLt *int, pulseNumberGt *int, limit int, offset int, sort string)
+	funcGetLifeline          func(objRef []byte, fromIndex *string, pulseNumberLt *int, pulseNumberGt *int, timestampLte *int, timestampGte *int, limit int, offset int, sort string) (ra1 []models.Record, i1 int, err error)
+	inspectFuncGetLifeline   func(objRef []byte, fromIndex *string, pulseNumberLt *int, pulseNumberGt *int, timestampLte *int, timestampGte *int, limit int, offset int, sort string)
 	afterGetLifelineCounter  uint64
 	beforeGetLifelineCounter uint64
 	GetLifelineMock          mStorageMockGetLifeline
@@ -68,6 +68,12 @@ type StorageMock struct {
 	afterGetRecordCounter  uint64
 	beforeGetRecordCounter uint64
 	GetRecordMock          mStorageMockGetRecord
+
+	funcGetRecordsByJetDrop          func(jetDropID models.JetDropID, fromIndex *string, recordType *string, limit int, offset int) (ra1 []models.Record, i1 int, err error)
+	inspectFuncGetRecordsByJetDrop   func(jetDropID models.JetDropID, fromIndex *string, recordType *string, limit int, offset int)
+	afterGetRecordsByJetDropCounter  uint64
+	beforeGetRecordsByJetDropCounter uint64
+	GetRecordsByJetDropMock          mStorageMockGetRecordsByJetDrop
 
 	funcSaveJetDropData          func(jetDrop models.JetDrop, records []models.Record) (err error)
 	inspectFuncSaveJetDropData   func(jetDrop models.JetDrop, records []models.Record)
@@ -114,6 +120,9 @@ func NewStorageMock(t minimock.Tester) *StorageMock {
 
 	m.GetRecordMock = mStorageMockGetRecord{mock: m}
 	m.GetRecordMock.callArgs = []*StorageMockGetRecordParams{}
+
+	m.GetRecordsByJetDropMock = mStorageMockGetRecordsByJetDrop{mock: m}
+	m.GetRecordsByJetDropMock.callArgs = []*StorageMockGetRecordsByJetDropParams{}
 
 	m.SaveJetDropDataMock = mStorageMockSaveJetDropData{mock: m}
 	m.SaveJetDropDataMock.callArgs = []*StorageMockSaveJetDropDataParams{}
@@ -1159,6 +1168,8 @@ type StorageMockGetLifelineParams struct {
 	fromIndex     *string
 	pulseNumberLt *int
 	pulseNumberGt *int
+	timestampLte  *int
+	timestampGte  *int
 	limit         int
 	offset        int
 	sort          string
@@ -1172,7 +1183,7 @@ type StorageMockGetLifelineResults struct {
 }
 
 // Expect sets up expected params for Storage.GetLifeline
-func (mmGetLifeline *mStorageMockGetLifeline) Expect(objRef []byte, fromIndex *string, pulseNumberLt *int, pulseNumberGt *int, limit int, offset int, sort string) *mStorageMockGetLifeline {
+func (mmGetLifeline *mStorageMockGetLifeline) Expect(objRef []byte, fromIndex *string, pulseNumberLt *int, pulseNumberGt *int, timestampLte *int, timestampGte *int, limit int, offset int, sort string) *mStorageMockGetLifeline {
 	if mmGetLifeline.mock.funcGetLifeline != nil {
 		mmGetLifeline.mock.t.Fatalf("StorageMock.GetLifeline mock is already set by Set")
 	}
@@ -1181,7 +1192,7 @@ func (mmGetLifeline *mStorageMockGetLifeline) Expect(objRef []byte, fromIndex *s
 		mmGetLifeline.defaultExpectation = &StorageMockGetLifelineExpectation{}
 	}
 
-	mmGetLifeline.defaultExpectation.params = &StorageMockGetLifelineParams{objRef, fromIndex, pulseNumberLt, pulseNumberGt, limit, offset, sort}
+	mmGetLifeline.defaultExpectation.params = &StorageMockGetLifelineParams{objRef, fromIndex, pulseNumberLt, pulseNumberGt, timestampLte, timestampGte, limit, offset, sort}
 	for _, e := range mmGetLifeline.expectations {
 		if minimock.Equal(e.params, mmGetLifeline.defaultExpectation.params) {
 			mmGetLifeline.mock.t.Fatalf("Expectation set by When has same params: %#v", *mmGetLifeline.defaultExpectation.params)
@@ -1192,7 +1203,7 @@ func (mmGetLifeline *mStorageMockGetLifeline) Expect(objRef []byte, fromIndex *s
 }
 
 // Inspect accepts an inspector function that has same arguments as the Storage.GetLifeline
-func (mmGetLifeline *mStorageMockGetLifeline) Inspect(f func(objRef []byte, fromIndex *string, pulseNumberLt *int, pulseNumberGt *int, limit int, offset int, sort string)) *mStorageMockGetLifeline {
+func (mmGetLifeline *mStorageMockGetLifeline) Inspect(f func(objRef []byte, fromIndex *string, pulseNumberLt *int, pulseNumberGt *int, timestampLte *int, timestampGte *int, limit int, offset int, sort string)) *mStorageMockGetLifeline {
 	if mmGetLifeline.mock.inspectFuncGetLifeline != nil {
 		mmGetLifeline.mock.t.Fatalf("Inspect function is already set for StorageMock.GetLifeline")
 	}
@@ -1216,7 +1227,7 @@ func (mmGetLifeline *mStorageMockGetLifeline) Return(ra1 []models.Record, i1 int
 }
 
 //Set uses given function f to mock the Storage.GetLifeline method
-func (mmGetLifeline *mStorageMockGetLifeline) Set(f func(objRef []byte, fromIndex *string, pulseNumberLt *int, pulseNumberGt *int, limit int, offset int, sort string) (ra1 []models.Record, i1 int, err error)) *StorageMock {
+func (mmGetLifeline *mStorageMockGetLifeline) Set(f func(objRef []byte, fromIndex *string, pulseNumberLt *int, pulseNumberGt *int, timestampLte *int, timestampGte *int, limit int, offset int, sort string) (ra1 []models.Record, i1 int, err error)) *StorageMock {
 	if mmGetLifeline.defaultExpectation != nil {
 		mmGetLifeline.mock.t.Fatalf("Default expectation is already set for the Storage.GetLifeline method")
 	}
@@ -1231,14 +1242,14 @@ func (mmGetLifeline *mStorageMockGetLifeline) Set(f func(objRef []byte, fromInde
 
 // When sets expectation for the Storage.GetLifeline which will trigger the result defined by the following
 // Then helper
-func (mmGetLifeline *mStorageMockGetLifeline) When(objRef []byte, fromIndex *string, pulseNumberLt *int, pulseNumberGt *int, limit int, offset int, sort string) *StorageMockGetLifelineExpectation {
+func (mmGetLifeline *mStorageMockGetLifeline) When(objRef []byte, fromIndex *string, pulseNumberLt *int, pulseNumberGt *int, timestampLte *int, timestampGte *int, limit int, offset int, sort string) *StorageMockGetLifelineExpectation {
 	if mmGetLifeline.mock.funcGetLifeline != nil {
 		mmGetLifeline.mock.t.Fatalf("StorageMock.GetLifeline mock is already set by Set")
 	}
 
 	expectation := &StorageMockGetLifelineExpectation{
 		mock:   mmGetLifeline.mock,
-		params: &StorageMockGetLifelineParams{objRef, fromIndex, pulseNumberLt, pulseNumberGt, limit, offset, sort},
+		params: &StorageMockGetLifelineParams{objRef, fromIndex, pulseNumberLt, pulseNumberGt, timestampLte, timestampGte, limit, offset, sort},
 	}
 	mmGetLifeline.expectations = append(mmGetLifeline.expectations, expectation)
 	return expectation
@@ -1251,15 +1262,15 @@ func (e *StorageMockGetLifelineExpectation) Then(ra1 []models.Record, i1 int, er
 }
 
 // GetLifeline implements interfaces.Storage
-func (mmGetLifeline *StorageMock) GetLifeline(objRef []byte, fromIndex *string, pulseNumberLt *int, pulseNumberGt *int, limit int, offset int, sort string) (ra1 []models.Record, i1 int, err error) {
+func (mmGetLifeline *StorageMock) GetLifeline(objRef []byte, fromIndex *string, pulseNumberLt *int, pulseNumberGt *int, timestampLte *int, timestampGte *int, limit int, offset int, sort string) (ra1 []models.Record, i1 int, err error) {
 	mm_atomic.AddUint64(&mmGetLifeline.beforeGetLifelineCounter, 1)
 	defer mm_atomic.AddUint64(&mmGetLifeline.afterGetLifelineCounter, 1)
 
 	if mmGetLifeline.inspectFuncGetLifeline != nil {
-		mmGetLifeline.inspectFuncGetLifeline(objRef, fromIndex, pulseNumberLt, pulseNumberGt, limit, offset, sort)
+		mmGetLifeline.inspectFuncGetLifeline(objRef, fromIndex, pulseNumberLt, pulseNumberGt, timestampLte, timestampGte, limit, offset, sort)
 	}
 
-	mm_params := &StorageMockGetLifelineParams{objRef, fromIndex, pulseNumberLt, pulseNumberGt, limit, offset, sort}
+	mm_params := &StorageMockGetLifelineParams{objRef, fromIndex, pulseNumberLt, pulseNumberGt, timestampLte, timestampGte, limit, offset, sort}
 
 	// Record call args
 	mmGetLifeline.GetLifelineMock.mutex.Lock()
@@ -1276,7 +1287,7 @@ func (mmGetLifeline *StorageMock) GetLifeline(objRef []byte, fromIndex *string, 
 	if mmGetLifeline.GetLifelineMock.defaultExpectation != nil {
 		mm_atomic.AddUint64(&mmGetLifeline.GetLifelineMock.defaultExpectation.Counter, 1)
 		mm_want := mmGetLifeline.GetLifelineMock.defaultExpectation.params
-		mm_got := StorageMockGetLifelineParams{objRef, fromIndex, pulseNumberLt, pulseNumberGt, limit, offset, sort}
+		mm_got := StorageMockGetLifelineParams{objRef, fromIndex, pulseNumberLt, pulseNumberGt, timestampLte, timestampGte, limit, offset, sort}
 		if mm_want != nil && !minimock.Equal(*mm_want, mm_got) {
 			mmGetLifeline.t.Errorf("StorageMock.GetLifeline got unexpected parameters, want: %#v, got: %#v%s\n", *mm_want, mm_got, minimock.Diff(*mm_want, mm_got))
 		}
@@ -1288,9 +1299,9 @@ func (mmGetLifeline *StorageMock) GetLifeline(objRef []byte, fromIndex *string, 
 		return (*mm_results).ra1, (*mm_results).i1, (*mm_results).err
 	}
 	if mmGetLifeline.funcGetLifeline != nil {
-		return mmGetLifeline.funcGetLifeline(objRef, fromIndex, pulseNumberLt, pulseNumberGt, limit, offset, sort)
+		return mmGetLifeline.funcGetLifeline(objRef, fromIndex, pulseNumberLt, pulseNumberGt, timestampLte, timestampGte, limit, offset, sort)
 	}
-	mmGetLifeline.t.Fatalf("Unexpected call to StorageMock.GetLifeline. %v %v %v %v %v %v %v", objRef, fromIndex, pulseNumberLt, pulseNumberGt, limit, offset, sort)
+	mmGetLifeline.t.Fatalf("Unexpected call to StorageMock.GetLifeline. %v %v %v %v %v %v %v %v %v", objRef, fromIndex, pulseNumberLt, pulseNumberGt, timestampLte, timestampGte, limit, offset, sort)
 	return
 }
 
@@ -2014,6 +2025,227 @@ func (m *StorageMock) MinimockGetRecordInspect() {
 	}
 }
 
+type mStorageMockGetRecordsByJetDrop struct {
+	mock               *StorageMock
+	defaultExpectation *StorageMockGetRecordsByJetDropExpectation
+	expectations       []*StorageMockGetRecordsByJetDropExpectation
+
+	callArgs []*StorageMockGetRecordsByJetDropParams
+	mutex    sync.RWMutex
+}
+
+// StorageMockGetRecordsByJetDropExpectation specifies expectation struct of the Storage.GetRecordsByJetDrop
+type StorageMockGetRecordsByJetDropExpectation struct {
+	mock    *StorageMock
+	params  *StorageMockGetRecordsByJetDropParams
+	results *StorageMockGetRecordsByJetDropResults
+	Counter uint64
+}
+
+// StorageMockGetRecordsByJetDropParams contains parameters of the Storage.GetRecordsByJetDrop
+type StorageMockGetRecordsByJetDropParams struct {
+	jetDropID  models.JetDropID
+	fromIndex  *string
+	recordType *string
+	limit      int
+	offset     int
+}
+
+// StorageMockGetRecordsByJetDropResults contains results of the Storage.GetRecordsByJetDrop
+type StorageMockGetRecordsByJetDropResults struct {
+	ra1 []models.Record
+	i1  int
+	err error
+}
+
+// Expect sets up expected params for Storage.GetRecordsByJetDrop
+func (mmGetRecordsByJetDrop *mStorageMockGetRecordsByJetDrop) Expect(jetDropID models.JetDropID, fromIndex *string, recordType *string, limit int, offset int) *mStorageMockGetRecordsByJetDrop {
+	if mmGetRecordsByJetDrop.mock.funcGetRecordsByJetDrop != nil {
+		mmGetRecordsByJetDrop.mock.t.Fatalf("StorageMock.GetRecordsByJetDrop mock is already set by Set")
+	}
+
+	if mmGetRecordsByJetDrop.defaultExpectation == nil {
+		mmGetRecordsByJetDrop.defaultExpectation = &StorageMockGetRecordsByJetDropExpectation{}
+	}
+
+	mmGetRecordsByJetDrop.defaultExpectation.params = &StorageMockGetRecordsByJetDropParams{jetDropID, fromIndex, recordType, limit, offset}
+	for _, e := range mmGetRecordsByJetDrop.expectations {
+		if minimock.Equal(e.params, mmGetRecordsByJetDrop.defaultExpectation.params) {
+			mmGetRecordsByJetDrop.mock.t.Fatalf("Expectation set by When has same params: %#v", *mmGetRecordsByJetDrop.defaultExpectation.params)
+		}
+	}
+
+	return mmGetRecordsByJetDrop
+}
+
+// Inspect accepts an inspector function that has same arguments as the Storage.GetRecordsByJetDrop
+func (mmGetRecordsByJetDrop *mStorageMockGetRecordsByJetDrop) Inspect(f func(jetDropID models.JetDropID, fromIndex *string, recordType *string, limit int, offset int)) *mStorageMockGetRecordsByJetDrop {
+	if mmGetRecordsByJetDrop.mock.inspectFuncGetRecordsByJetDrop != nil {
+		mmGetRecordsByJetDrop.mock.t.Fatalf("Inspect function is already set for StorageMock.GetRecordsByJetDrop")
+	}
+
+	mmGetRecordsByJetDrop.mock.inspectFuncGetRecordsByJetDrop = f
+
+	return mmGetRecordsByJetDrop
+}
+
+// Return sets up results that will be returned by Storage.GetRecordsByJetDrop
+func (mmGetRecordsByJetDrop *mStorageMockGetRecordsByJetDrop) Return(ra1 []models.Record, i1 int, err error) *StorageMock {
+	if mmGetRecordsByJetDrop.mock.funcGetRecordsByJetDrop != nil {
+		mmGetRecordsByJetDrop.mock.t.Fatalf("StorageMock.GetRecordsByJetDrop mock is already set by Set")
+	}
+
+	if mmGetRecordsByJetDrop.defaultExpectation == nil {
+		mmGetRecordsByJetDrop.defaultExpectation = &StorageMockGetRecordsByJetDropExpectation{mock: mmGetRecordsByJetDrop.mock}
+	}
+	mmGetRecordsByJetDrop.defaultExpectation.results = &StorageMockGetRecordsByJetDropResults{ra1, i1, err}
+	return mmGetRecordsByJetDrop.mock
+}
+
+//Set uses given function f to mock the Storage.GetRecordsByJetDrop method
+func (mmGetRecordsByJetDrop *mStorageMockGetRecordsByJetDrop) Set(f func(jetDropID models.JetDropID, fromIndex *string, recordType *string, limit int, offset int) (ra1 []models.Record, i1 int, err error)) *StorageMock {
+	if mmGetRecordsByJetDrop.defaultExpectation != nil {
+		mmGetRecordsByJetDrop.mock.t.Fatalf("Default expectation is already set for the Storage.GetRecordsByJetDrop method")
+	}
+
+	if len(mmGetRecordsByJetDrop.expectations) > 0 {
+		mmGetRecordsByJetDrop.mock.t.Fatalf("Some expectations are already set for the Storage.GetRecordsByJetDrop method")
+	}
+
+	mmGetRecordsByJetDrop.mock.funcGetRecordsByJetDrop = f
+	return mmGetRecordsByJetDrop.mock
+}
+
+// When sets expectation for the Storage.GetRecordsByJetDrop which will trigger the result defined by the following
+// Then helper
+func (mmGetRecordsByJetDrop *mStorageMockGetRecordsByJetDrop) When(jetDropID models.JetDropID, fromIndex *string, recordType *string, limit int, offset int) *StorageMockGetRecordsByJetDropExpectation {
+	if mmGetRecordsByJetDrop.mock.funcGetRecordsByJetDrop != nil {
+		mmGetRecordsByJetDrop.mock.t.Fatalf("StorageMock.GetRecordsByJetDrop mock is already set by Set")
+	}
+
+	expectation := &StorageMockGetRecordsByJetDropExpectation{
+		mock:   mmGetRecordsByJetDrop.mock,
+		params: &StorageMockGetRecordsByJetDropParams{jetDropID, fromIndex, recordType, limit, offset},
+	}
+	mmGetRecordsByJetDrop.expectations = append(mmGetRecordsByJetDrop.expectations, expectation)
+	return expectation
+}
+
+// Then sets up Storage.GetRecordsByJetDrop return parameters for the expectation previously defined by the When method
+func (e *StorageMockGetRecordsByJetDropExpectation) Then(ra1 []models.Record, i1 int, err error) *StorageMock {
+	e.results = &StorageMockGetRecordsByJetDropResults{ra1, i1, err}
+	return e.mock
+}
+
+// GetRecordsByJetDrop implements interfaces.Storage
+func (mmGetRecordsByJetDrop *StorageMock) GetRecordsByJetDrop(jetDropID models.JetDropID, fromIndex *string, recordType *string, limit int, offset int) (ra1 []models.Record, i1 int, err error) {
+	mm_atomic.AddUint64(&mmGetRecordsByJetDrop.beforeGetRecordsByJetDropCounter, 1)
+	defer mm_atomic.AddUint64(&mmGetRecordsByJetDrop.afterGetRecordsByJetDropCounter, 1)
+
+	if mmGetRecordsByJetDrop.inspectFuncGetRecordsByJetDrop != nil {
+		mmGetRecordsByJetDrop.inspectFuncGetRecordsByJetDrop(jetDropID, fromIndex, recordType, limit, offset)
+	}
+
+	mm_params := &StorageMockGetRecordsByJetDropParams{jetDropID, fromIndex, recordType, limit, offset}
+
+	// Record call args
+	mmGetRecordsByJetDrop.GetRecordsByJetDropMock.mutex.Lock()
+	mmGetRecordsByJetDrop.GetRecordsByJetDropMock.callArgs = append(mmGetRecordsByJetDrop.GetRecordsByJetDropMock.callArgs, mm_params)
+	mmGetRecordsByJetDrop.GetRecordsByJetDropMock.mutex.Unlock()
+
+	for _, e := range mmGetRecordsByJetDrop.GetRecordsByJetDropMock.expectations {
+		if minimock.Equal(e.params, mm_params) {
+			mm_atomic.AddUint64(&e.Counter, 1)
+			return e.results.ra1, e.results.i1, e.results.err
+		}
+	}
+
+	if mmGetRecordsByJetDrop.GetRecordsByJetDropMock.defaultExpectation != nil {
+		mm_atomic.AddUint64(&mmGetRecordsByJetDrop.GetRecordsByJetDropMock.defaultExpectation.Counter, 1)
+		mm_want := mmGetRecordsByJetDrop.GetRecordsByJetDropMock.defaultExpectation.params
+		mm_got := StorageMockGetRecordsByJetDropParams{jetDropID, fromIndex, recordType, limit, offset}
+		if mm_want != nil && !minimock.Equal(*mm_want, mm_got) {
+			mmGetRecordsByJetDrop.t.Errorf("StorageMock.GetRecordsByJetDrop got unexpected parameters, want: %#v, got: %#v%s\n", *mm_want, mm_got, minimock.Diff(*mm_want, mm_got))
+		}
+
+		mm_results := mmGetRecordsByJetDrop.GetRecordsByJetDropMock.defaultExpectation.results
+		if mm_results == nil {
+			mmGetRecordsByJetDrop.t.Fatal("No results are set for the StorageMock.GetRecordsByJetDrop")
+		}
+		return (*mm_results).ra1, (*mm_results).i1, (*mm_results).err
+	}
+	if mmGetRecordsByJetDrop.funcGetRecordsByJetDrop != nil {
+		return mmGetRecordsByJetDrop.funcGetRecordsByJetDrop(jetDropID, fromIndex, recordType, limit, offset)
+	}
+	mmGetRecordsByJetDrop.t.Fatalf("Unexpected call to StorageMock.GetRecordsByJetDrop. %v %v %v %v %v", jetDropID, fromIndex, recordType, limit, offset)
+	return
+}
+
+// GetRecordsByJetDropAfterCounter returns a count of finished StorageMock.GetRecordsByJetDrop invocations
+func (mmGetRecordsByJetDrop *StorageMock) GetRecordsByJetDropAfterCounter() uint64 {
+	return mm_atomic.LoadUint64(&mmGetRecordsByJetDrop.afterGetRecordsByJetDropCounter)
+}
+
+// GetRecordsByJetDropBeforeCounter returns a count of StorageMock.GetRecordsByJetDrop invocations
+func (mmGetRecordsByJetDrop *StorageMock) GetRecordsByJetDropBeforeCounter() uint64 {
+	return mm_atomic.LoadUint64(&mmGetRecordsByJetDrop.beforeGetRecordsByJetDropCounter)
+}
+
+// Calls returns a list of arguments used in each call to StorageMock.GetRecordsByJetDrop.
+// The list is in the same order as the calls were made (i.e. recent calls have a higher index)
+func (mmGetRecordsByJetDrop *mStorageMockGetRecordsByJetDrop) Calls() []*StorageMockGetRecordsByJetDropParams {
+	mmGetRecordsByJetDrop.mutex.RLock()
+
+	argCopy := make([]*StorageMockGetRecordsByJetDropParams, len(mmGetRecordsByJetDrop.callArgs))
+	copy(argCopy, mmGetRecordsByJetDrop.callArgs)
+
+	mmGetRecordsByJetDrop.mutex.RUnlock()
+
+	return argCopy
+}
+
+// MinimockGetRecordsByJetDropDone returns true if the count of the GetRecordsByJetDrop invocations corresponds
+// the number of defined expectations
+func (m *StorageMock) MinimockGetRecordsByJetDropDone() bool {
+	for _, e := range m.GetRecordsByJetDropMock.expectations {
+		if mm_atomic.LoadUint64(&e.Counter) < 1 {
+			return false
+		}
+	}
+
+	// if default expectation was set then invocations count should be greater than zero
+	if m.GetRecordsByJetDropMock.defaultExpectation != nil && mm_atomic.LoadUint64(&m.afterGetRecordsByJetDropCounter) < 1 {
+		return false
+	}
+	// if func was set then invocations count should be greater than zero
+	if m.funcGetRecordsByJetDrop != nil && mm_atomic.LoadUint64(&m.afterGetRecordsByJetDropCounter) < 1 {
+		return false
+	}
+	return true
+}
+
+// MinimockGetRecordsByJetDropInspect logs each unmet expectation
+func (m *StorageMock) MinimockGetRecordsByJetDropInspect() {
+	for _, e := range m.GetRecordsByJetDropMock.expectations {
+		if mm_atomic.LoadUint64(&e.Counter) < 1 {
+			m.t.Errorf("Expected call to StorageMock.GetRecordsByJetDrop with params: %#v", *e.params)
+		}
+	}
+
+	// if default expectation was set then invocations count should be greater than zero
+	if m.GetRecordsByJetDropMock.defaultExpectation != nil && mm_atomic.LoadUint64(&m.afterGetRecordsByJetDropCounter) < 1 {
+		if m.GetRecordsByJetDropMock.defaultExpectation.params == nil {
+			m.t.Error("Expected call to StorageMock.GetRecordsByJetDrop")
+		} else {
+			m.t.Errorf("Expected call to StorageMock.GetRecordsByJetDrop with params: %#v", *m.GetRecordsByJetDropMock.defaultExpectation.params)
+		}
+	}
+	// if func was set then invocations count should be greater than zero
+	if m.funcGetRecordsByJetDrop != nil && mm_atomic.LoadUint64(&m.afterGetRecordsByJetDropCounter) < 1 {
+		m.t.Error("Expected call to StorageMock.GetRecordsByJetDrop")
+	}
+}
+
 type mStorageMockSaveJetDropData struct {
 	mock               *StorageMock
 	defaultExpectation *StorageMockSaveJetDropDataExpectation
@@ -2466,6 +2698,8 @@ func (m *StorageMock) MinimockFinish() {
 
 		m.MinimockGetRecordInspect()
 
+		m.MinimockGetRecordsByJetDropInspect()
+
 		m.MinimockSaveJetDropDataInspect()
 
 		m.MinimockSavePulseInspect()
@@ -2501,6 +2735,7 @@ func (m *StorageMock) minimockDone() bool {
 		m.MinimockGetPulseDone() &&
 		m.MinimockGetPulsesDone() &&
 		m.MinimockGetRecordDone() &&
+		m.MinimockGetRecordsByJetDropDone() &&
 		m.MinimockSaveJetDropDataDone() &&
 		m.MinimockSavePulseDone()
 }

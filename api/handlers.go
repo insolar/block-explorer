@@ -23,6 +23,7 @@ import (
 	"github.com/insolar/block-explorer/configuration"
 	"github.com/insolar/block-explorer/etl/interfaces"
 	"github.com/insolar/block-explorer/etl/models"
+	"github.com/insolar/block-explorer/etl/storage"
 	"github.com/insolar/block-explorer/instrumentation/belogger"
 )
 
@@ -45,7 +46,70 @@ func (s *Server) JetDropByID(ctx echo.Context, jetDropID server.JetDropIdPathPar
 }
 
 func (s *Server) JetDropRecords(ctx echo.Context, jetDropID server.JetDropIdPathParam, params server.JetDropRecordsParams) error {
-	panic("implement me")
+	limit, offset, failures := checkLimitOffset(params.Limit, params.Offset)
+
+	jetDrop, err := models.NewJetDropIDFromString(string(jetDropID))
+	if err != nil {
+		failures = append(failures, server.CodeValidationFailures{
+			FailureReason: NullableString("invalid"),
+			Property:      NullableString("jet_drop_id"),
+		})
+	}
+
+	var fromIndexString *string
+	var recordType *string
+
+	if params.FromIndex != nil {
+		str := string(*params.FromIndex)
+		fromIndexString = &str
+		_, _, err := storage.CheckIndex(str)
+		if err != nil {
+			failures = append(failures, server.CodeValidationFailures{
+				FailureReason: NullableString("invalid"),
+				Property:      NullableString("from_index"),
+			})
+		}
+	}
+	if params.Type != nil {
+		str := string(*params.Type)
+		if str != "request" && str != "result" && str != "state" {
+			failures = append(failures, server.CodeValidationFailures{
+				FailureReason: NullableString("should be 'request', 'state' or 'result'"),
+				Property:      NullableString("type"),
+			})
+		}
+		recordType = &str
+	}
+
+	if failures != nil {
+		apiErr := server.CodeValidationError{
+			Code:               NullableString(http.StatusText(http.StatusBadRequest)),
+			Message:            NullableString(InvalidParamsMessage),
+			ValidationFailures: &failures,
+		}
+		return ctx.JSON(http.StatusBadRequest, apiErr)
+	}
+
+	records, count, err := s.storage.GetRecordsByJetDrop(
+		*jetDrop,
+		fromIndexString,
+		recordType,
+		limit, offset,
+	)
+	if err != nil {
+		s.logger.Error(err)
+		return ctx.JSON(http.StatusInternalServerError, struct{}{})
+	}
+
+	var result []server.Record
+	for _, r := range records {
+		result = append(result, RecordToAPI(r))
+	}
+	cnt := int64(count)
+	return ctx.JSON(http.StatusOK, server.RecordsResponse{
+		Total:  &cnt,
+		Result: &result,
+	})
 }
 
 func (s *Server) JetDropsByJetID(ctx echo.Context, jetID server.JetIdPathParam, params server.JetDropsByJetIDParams) error {
@@ -190,24 +254,23 @@ func (s *Server) Search(ctx echo.Context, params server.SearchParams) error {
 
 func (s *Server) ObjectLifeline(ctx echo.Context, objectReference server.ObjectReferencePathParam, params server.ObjectLifelineParams) error {
 	limit, offset, failures := checkLimitOffset(params.Limit, params.Offset)
-	if len(failures) != 0 {
-		apiErr := server.CodeValidationError{
-			Code:               NullableString(http.StatusText(http.StatusBadRequest)),
-			ValidationFailures: &failures,
-		}
-		return ctx.JSON(http.StatusBadRequest, apiErr)
+
+	ref, err := checkReference(string(objectReference))
+	if err != nil {
+		failures = append(failures, server.CodeValidationFailures{
+			FailureReason: NullableString(err.Error()),
+			Property:      NullableString("object_reference"),
+		})
 	}
 
-	ref, errMsg := checkReference(objectReference)
-	if errMsg != nil {
-		return ctx.JSON(http.StatusBadRequest, *errMsg)
-	}
-
-	sort := "desc"
+	sort := "-index"
 	if params.SortBy != nil {
 		s := string(*params.SortBy)
-		if s != "desc" && s != "asc" {
-			return ctx.JSON(http.StatusBadRequest, NewSingleMessageError("query parameter 'sort' should be 'desc' or 'asc'"))
+		if s != "-index" && s != "+index" {
+			failures = append(failures, server.CodeValidationFailures{
+				FailureReason: NullableString("should be '-index' or '+index'"),
+				Property:      NullableString("sort_by"),
+			})
 		}
 		sort = s
 	}
@@ -215,33 +278,68 @@ func (s *Server) ObjectLifeline(ctx echo.Context, objectReference server.ObjectR
 	var fromIndexString *string
 	var pulseNumberLtString *int
 	var pulseNumberGtString *int
+	var timestampLteString *int
+	var timestampGteString *int
 
 	if params.FromIndex != nil {
 		str := string(*params.FromIndex)
 		fromIndexString = &str
+		_, _, err := storage.CheckIndex(str)
+		if err != nil {
+			failures = append(failures, server.CodeValidationFailures{
+				FailureReason: NullableString("invalid"),
+				Property:      NullableString("from_index"),
+			})
+		}
 	}
 	if params.PulseNumberLt != nil {
 		str := int(*params.PulseNumberLt)
 		pulseNumberLtString = &str
+		if !pulse.IsValidAsPulseNumber(str) {
+			failures = append(failures, server.CodeValidationFailures{
+				FailureReason: NullableString("invalid"),
+				Property:      NullableString("pulse_number_lt"),
+			})
+		}
 	}
 	if params.PulseNumberGt != nil {
 		str := int(*params.PulseNumberGt)
 		pulseNumberGtString = &str
+		if !pulse.IsValidAsPulseNumber(str) {
+			failures = append(failures, server.CodeValidationFailures{
+				FailureReason: NullableString("invalid"),
+				Property:      NullableString("pulse_number_gt"),
+			})
+		}
+	}
+
+	if failures != nil {
+		apiErr := server.CodeValidationError{
+			Code:               NullableString(http.StatusText(http.StatusBadRequest)),
+			Message:            NullableString(InvalidParamsMessage),
+			ValidationFailures: &failures,
+		}
+		return ctx.JSON(http.StatusBadRequest, apiErr)
+	}
+
+	if params.TimestampLte != nil {
+		str := int(*params.TimestampLte)
+		timestampLteString = &str
+	}
+	if params.TimestampGte != nil {
+		str := int(*params.TimestampGte)
+		timestampGteString = &str
 	}
 
 	records, count, err := s.storage.GetLifeline(
-		ref.Bytes(),
+		ref.GetLocal().Bytes(),
 		fromIndexString,
 		pulseNumberLtString, pulseNumberGtString,
+		timestampLteString, timestampGteString,
 		limit, offset,
 		sort,
 	)
 	if err != nil {
-		errMsg := err.Error()
-		if strings.Contains(errMsg, "query parameter") {
-			return ctx.JSON(http.StatusBadRequest, NewSingleMessageError(errMsg))
-
-		}
 		s.logger.Error(err)
 		return ctx.JSON(http.StatusInternalServerError, struct{}{})
 	}
@@ -257,28 +355,24 @@ func (s *Server) ObjectLifeline(ctx echo.Context, objectReference server.ObjectR
 	})
 }
 
-func checkReference(referenceRow server.ObjectReferencePathParam) (*insolar.ID, *ErrorMessage) {
-	referenceString := strings.TrimSpace(string(referenceRow))
-	var errMsg ErrorMessage
+func checkReference(referenceRow string) (*insolar.Reference, error) {
+	referenceString := strings.TrimSpace(referenceRow)
 
 	if len(referenceString) == 0 {
-		errMsg = NewSingleMessageError("empty reference")
-		return nil, &errMsg
+		return nil, errors.New("empty reference")
 	}
 
 	reference, err := url.QueryUnescape(referenceString)
 	if err != nil {
-		errMsg = NewSingleMessageError("error unescaping reference parameter")
-		return nil, &errMsg
+		return nil, errors.New("error unescaping")
 	}
 
 	ref, err := insolar.NewReferenceFromString(reference)
 	if err != nil {
-		errMsg = NewSingleMessageError("path parameter object reference wrong format")
-		return nil, &errMsg
+		return nil, errors.New("wrong format")
 	}
 
-	return ref.GetLocal(), nil
+	return ref, nil
 }
 
 func checkLimitOffset(l *server.LimitParam, o *server.OffsetParam) (int, int, []server.CodeValidationFailures) {

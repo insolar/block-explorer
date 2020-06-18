@@ -13,6 +13,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"os"
 	"strconv"
 	"testing"
@@ -121,7 +122,7 @@ func TestObjectLifeline_SortAsc(t *testing.T) {
 	testutils.OrderedRecords(t, testDB, jetDrop, gen.ID(), 3)
 
 	// request records for objRef
-	resp, err := http.Get("http://" + apihost + "/api/v1/lifeline/" + objRef.String() + "/records?sort_by=asc")
+	resp, err := http.Get("http://" + apihost + "/api/v1/lifeline/" + objRef.String() + "/records?sort_by=" + url.QueryEscape("+index"))
 	require.NoError(t, err)
 	require.Equal(t, http.StatusOK, resp.StatusCode)
 	bodyBytes, err := ioutil.ReadAll(resp.Body)
@@ -152,7 +153,8 @@ func TestObjectLifeline_Limit_Error(t *testing.T) {
 	require.NoError(t, err)
 
 	expected := server.CodeValidationError{
-		Code: NullableString(http.StatusText(http.StatusBadRequest)),
+		Code:    NullableString(http.StatusText(http.StatusBadRequest)),
+		Message: NullableString(InvalidParamsMessage),
 		ValidationFailures: &[]server.CodeValidationFailures{{
 			FailureReason: NullableString("should be in range [1, 100]"),
 			Property:      NullableString("limit"),
@@ -174,7 +176,8 @@ func TestObjectLifeline_Offset_Error(t *testing.T) {
 	require.NoError(t, err)
 
 	expected := server.CodeValidationError{
-		Code: NullableString(http.StatusText(http.StatusBadRequest)),
+		Code:    NullableString(http.StatusText(http.StatusBadRequest)),
+		Message: NullableString(InvalidParamsMessage),
 		ValidationFailures: &[]server.CodeValidationFailures{{
 			FailureReason: NullableString("should not be negative"),
 			Property:      NullableString("offset"),
@@ -191,11 +194,18 @@ func TestObjectLifeline_Sort_Error(t *testing.T) {
 	bodyBytes, err := ioutil.ReadAll(resp.Body)
 	require.NoError(t, err)
 
-	var received ErrorMessage
+	var received server.CodeValidationError
 	err = json.Unmarshal(bodyBytes, &received)
 	require.NoError(t, err)
 
-	expected := ErrorMessage{Error: []string{"query parameter 'sort' should be 'desc' or 'asc'"}}
+	expected := server.CodeValidationError{
+		Code:    NullableString(http.StatusText(http.StatusBadRequest)),
+		Message: NullableString(InvalidParamsMessage),
+		ValidationFailures: &[]server.CodeValidationFailures{{
+			FailureReason: NullableString("should be '-index' or '+index'"),
+			Property:      NullableString("sort_by"),
+		}},
+	}
 	require.Equal(t, expected, received)
 }
 
@@ -223,11 +233,19 @@ func TestObjectLifeline_ReferenceFormat_Error(t *testing.T) {
 	bodyBytes, err := ioutil.ReadAll(resp.Body)
 	require.NoError(t, err)
 
-	var received ErrorMessage
+	var received server.CodeValidationError
 	err = json.Unmarshal(bodyBytes, &received)
 	require.NoError(t, err)
 
-	expected := ErrorMessage{Error: []string{"path parameter object reference wrong format"}}
+	expected := server.CodeValidationError{
+		Code:    NullableString(http.StatusText(http.StatusBadRequest)),
+		Message: NullableString(InvalidParamsMessage),
+		ValidationFailures: &[]server.CodeValidationFailures{{
+			FailureReason: NullableString("wrong format"),
+			Property:      NullableString("object_reference"),
+		}},
+	}
+
 	require.Equal(t, expected, received)
 }
 
@@ -239,11 +257,19 @@ func TestObjectLifeline_ReferenceEmpty_Error(t *testing.T) {
 	bodyBytes, err := ioutil.ReadAll(resp.Body)
 	require.NoError(t, err)
 
-	var received ErrorMessage
+	var received server.CodeValidationError
 	err = json.Unmarshal(bodyBytes, &received)
 	require.NoError(t, err)
 
-	expected := ErrorMessage{Error: []string{"empty reference"}}
+	expected := server.CodeValidationError{
+		Code:    NullableString(http.StatusText(http.StatusBadRequest)),
+		Message: NullableString(InvalidParamsMessage),
+		ValidationFailures: &[]server.CodeValidationFailures{{
+			FailureReason: NullableString("empty reference"),
+			Property:      NullableString("object_reference"),
+		}},
+	}
+
 	require.Equal(t, expected, received)
 }
 
@@ -255,11 +281,19 @@ func TestObjectLifeline_Index_Error(t *testing.T) {
 	bodyBytes, err := ioutil.ReadAll(resp.Body)
 	require.NoError(t, err)
 
-	var received ErrorMessage
+	var received server.CodeValidationError
 	err = json.Unmarshal(bodyBytes, &received)
 	require.NoError(t, err)
 
-	expected := ErrorMessage{Error: []string{"query parameter 'index' should have the '<pulse_number>:<order>' format"}}
+	expected := server.CodeValidationError{
+		Code:    NullableString(http.StatusText(http.StatusBadRequest)),
+		Message: NullableString(InvalidParamsMessage),
+		ValidationFailures: &[]server.CodeValidationFailures{{
+			FailureReason: NullableString("invalid"),
+			Property:      NullableString("from_index"),
+		}},
+	}
+
 	require.Equal(t, expected, received)
 }
 
@@ -896,4 +930,179 @@ func TestServer_JetDropsByPulseNumber(t *testing.T) {
 		require.EqualValues(t, 0, int(*received.Total))
 		require.Nil(t, received.Result)
 	})
+}
+
+func TestJetDropRecords(t *testing.T) {
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+
+	pulse, err := testutils.InitPulseDB()
+	require.NoError(t, err)
+	err = testutils.CreatePulse(testDB, pulse)
+	require.NoError(t, err)
+	jetDrop1 := testutils.InitJetDropDB(pulse)
+	err = testutils.CreateJetDrop(testDB, jetDrop1)
+	require.NoError(t, err)
+	recordResult := testutils.InitRecordDB(jetDrop1)
+	recordResult.Type = models.Result
+	recordResult.Order = 1
+	err = testutils.CreateRecord(testDB, recordResult)
+	require.NoError(t, err)
+	recordState1 := testutils.InitRecordDB(jetDrop1)
+	recordState1.Order = 2
+	err = testutils.CreateRecord(testDB, recordState1)
+	require.NoError(t, err)
+	recordState2 := testutils.InitRecordDB(jetDrop1)
+	recordState2.Order = 3
+	err = testutils.CreateRecord(testDB, recordState2)
+	require.NoError(t, err)
+
+	jetDrop2 := testutils.InitJetDropDB(pulse)
+	err = testutils.CreateJetDrop(testDB, jetDrop2)
+	require.NoError(t, err)
+	err = testutils.CreateRecord(testDB, testutils.InitRecordDB(jetDrop2))
+	require.NoError(t, err)
+
+	jetDropID := *models.NewJetDropID(jetDrop1.JetID, int64(pulse.PulseNumber))
+	t.Run("happy", func(t *testing.T) {
+		resp, err := http.Get("http://" + apihost + "/api/v1/jet-drops/" + jetDropID.ToString() + "/records")
+		require.NoError(t, err)
+
+		require.NoError(t, err)
+		require.Equal(t, http.StatusOK, resp.StatusCode)
+		bodyBytes, err := ioutil.ReadAll(resp.Body)
+		require.NoError(t, err)
+
+		var received server.RecordsResponse
+		err = json.Unmarshal(bodyBytes, &received)
+		require.NoError(t, err)
+		require.EqualValues(t, 3, *received.Total)
+		require.Len(t, *received.Result, 3)
+		require.Equal(t, insolar.NewIDFromBytes(recordResult.Reference).String(), *(*received.Result)[0].Reference)
+		require.Equal(t, insolar.NewIDFromBytes(recordState1.Reference).String(), *(*received.Result)[1].Reference)
+		require.Equal(t, insolar.NewIDFromBytes(recordState2.Reference).String(), *(*received.Result)[2].Reference)
+	})
+
+	t.Run("type", func(t *testing.T) {
+		resp, err := http.Get("http://" + apihost + "/api/v1/jet-drops/" + jetDropID.ToString() + "/records?type=result")
+		require.NoError(t, err)
+
+		require.NoError(t, err)
+		require.Equal(t, http.StatusOK, resp.StatusCode)
+		bodyBytes, err := ioutil.ReadAll(resp.Body)
+		require.NoError(t, err)
+
+		var received server.RecordsResponse
+		err = json.Unmarshal(bodyBytes, &received)
+		require.NoError(t, err)
+		require.EqualValues(t, 1, *received.Total)
+		require.Len(t, *received.Result, 1)
+		require.Equal(t, insolar.NewIDFromBytes(recordResult.Reference).String(), *(*received.Result)[0].Reference)
+	})
+
+	t.Run("limit", func(t *testing.T) {
+		resp, err := http.Get("http://" + apihost + "/api/v1/jet-drops/" + jetDropID.ToString() + "/records?limit=2")
+		require.NoError(t, err)
+
+		require.NoError(t, err)
+		require.Equal(t, http.StatusOK, resp.StatusCode)
+		bodyBytes, err := ioutil.ReadAll(resp.Body)
+		require.NoError(t, err)
+
+		var received server.RecordsResponse
+		err = json.Unmarshal(bodyBytes, &received)
+		require.NoError(t, err)
+		require.EqualValues(t, 3, *received.Total)
+		require.Len(t, *received.Result, 2)
+		require.Equal(t, insolar.NewIDFromBytes(recordResult.Reference).String(), *(*received.Result)[0].Reference)
+		require.Equal(t, insolar.NewIDFromBytes(recordState1.Reference).String(), *(*received.Result)[1].Reference)
+	})
+
+	t.Run("offset", func(t *testing.T) {
+		resp, err := http.Get("http://" + apihost + "/api/v1/jet-drops/" + jetDropID.ToString() + "/records?offset=1")
+		require.NoError(t, err)
+
+		require.NoError(t, err)
+		require.Equal(t, http.StatusOK, resp.StatusCode)
+		bodyBytes, err := ioutil.ReadAll(resp.Body)
+		require.NoError(t, err)
+
+		var received server.RecordsResponse
+		err = json.Unmarshal(bodyBytes, &received)
+		require.NoError(t, err)
+		require.EqualValues(t, 3, *received.Total)
+		require.Len(t, *received.Result, 2)
+		require.Equal(t, insolar.NewIDFromBytes(recordState1.Reference).String(), *(*received.Result)[0].Reference)
+		require.Equal(t, insolar.NewIDFromBytes(recordState2.Reference).String(), *(*received.Result)[1].Reference)
+	})
+
+	t.Run("from_index", func(t *testing.T) {
+		index := fmt.Sprintf("%d:%d", pulse.PulseNumber, recordState1.Order)
+		resp, err := http.Get("http://" + apihost + "/api/v1/jet-drops/" + jetDropID.ToString() + "/records?from_index=" + index)
+		require.NoError(t, err)
+
+		require.NoError(t, err)
+		require.Equal(t, http.StatusOK, resp.StatusCode)
+		bodyBytes, err := ioutil.ReadAll(resp.Body)
+		require.NoError(t, err)
+
+		var received server.RecordsResponse
+		err = json.Unmarshal(bodyBytes, &received)
+		require.NoError(t, err)
+		require.EqualValues(t, 2, *received.Total)
+		require.Len(t, *received.Result, 2)
+		require.Equal(t, insolar.NewIDFromBytes(recordState1.Reference).String(), *(*received.Result)[0].Reference)
+		require.Equal(t, insolar.NewIDFromBytes(recordState2.Reference).String(), *(*received.Result)[1].Reference)
+	})
+
+	t.Run("empty", func(t *testing.T) {
+		jetDropEmpty := testutils.InitJetDropDB(pulse)
+		jetDropIDEmpty := *models.NewJetDropID(jetDropEmpty.JetID, int64(pulse.PulseNumber))
+		resp, err := http.Get("http://" + apihost + "/api/v1/jet-drops/" + jetDropIDEmpty.ToString() + "/records")
+		require.NoError(t, err)
+
+		require.NoError(t, err)
+		require.Equal(t, http.StatusOK, resp.StatusCode)
+		bodyBytes, err := ioutil.ReadAll(resp.Body)
+		require.NoError(t, err)
+
+		var received server.RecordsResponse
+		err = json.Unmarshal(bodyBytes, &received)
+		require.NoError(t, err)
+		require.EqualValues(t, 0, *received.Total)
+		require.Nil(t, received.Result)
+	})
+}
+
+func TestJetDropRecords_Several_Errors(t *testing.T) {
+	resp, err := http.Get("http://" + apihost + "/api/v1/jet-drops/not_valid:value/records?limit=200000000&offset=-10&type=not_valid_type&from_index=not_valid_index")
+	require.NoError(t, err)
+	require.Equal(t, http.StatusBadRequest, resp.StatusCode)
+	bodyBytes, err := ioutil.ReadAll(resp.Body)
+	require.NoError(t, err)
+
+	var received server.CodeValidationError
+	err = json.Unmarshal(bodyBytes, &received)
+	require.NoError(t, err)
+
+	expected := server.CodeValidationError{
+		Code:    NullableString(http.StatusText(http.StatusBadRequest)),
+		Message: NullableString(InvalidParamsMessage),
+		ValidationFailures: &[]server.CodeValidationFailures{{
+			FailureReason: NullableString("should be in range [1, 100]"),
+			Property:      NullableString("limit"),
+		}, {
+			FailureReason: NullableString("should not be negative"),
+			Property:      NullableString("offset"),
+		}, {
+			FailureReason: NullableString("invalid"),
+			Property:      NullableString("jet_drop_id"),
+		}, {
+			FailureReason: NullableString("invalid"),
+			Property:      NullableString("from_index"),
+		}, {
+			FailureReason: NullableString("should be 'request', 'state' or 'result'"),
+			Property:      NullableString("type"),
+		}},
+	}
+	require.Equal(t, expected, received)
 }
