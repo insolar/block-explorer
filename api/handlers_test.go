@@ -940,6 +940,7 @@ func TestJetDropRecords(t *testing.T) {
 	err = testutils.CreatePulse(testDB, pulse)
 	require.NoError(t, err)
 	jetDrop1 := testutils.InitJetDropDB(pulse)
+	jetDrop1.JetID = jet.NewIDFromString("10101").Prefix()
 	err = testutils.CreateJetDrop(testDB, jetDrop1)
 	require.NoError(t, err)
 	recordResult := testutils.InitRecordDB(jetDrop1)
@@ -957,6 +958,7 @@ func TestJetDropRecords(t *testing.T) {
 	require.NoError(t, err)
 
 	jetDrop2 := testutils.InitJetDropDB(pulse)
+	jetDrop2.JetID = jet.NewIDFromString("11111").Prefix()
 	err = testutils.CreateJetDrop(testDB, jetDrop2)
 	require.NoError(t, err)
 	err = testutils.CreateRecord(testDB, testutils.InitRecordDB(jetDrop2))

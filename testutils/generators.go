@@ -289,22 +289,9 @@ func GenerateRecordsSilence(count int) []*exporter.Record {
 var uniqueJetID = make(map[uint64]bool)
 var mutex = &sync.Mutex{}
 
-func genJetID() insolar.JetID {
-	var jetID insolar.JetID
-	f := fuzz.New().Funcs(func(jet *insolar.JetID, c fuzz.Continue) {
-		prefix := make([]byte, insolar.JetPrefixSize)
-		c.Fuzz(&prefix)
-		depth := 5
-		*jet = *insolar.NewJetID(uint8(depth), prefix)
-	})
-	f.Fuzz(&jetID)
-
-	return jetID
-}
-
 func GenerateUniqueJetID() insolar.JetID {
 	for {
-		jetID := genJetID()
+		jetID := gen.JetID()
 		id := binary.BigEndian.Uint64(jetID.Prefix())
 		mutex.Lock()
 		_, hasKey := uniqueJetID[id]
