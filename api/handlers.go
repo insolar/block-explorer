@@ -49,7 +49,41 @@ func (s *Server) JetDropRecords(ctx echo.Context, jetDropID server.JetDropIdPath
 }
 
 func (s *Server) JetDropsByJetID(ctx echo.Context, jetID server.JetIdPathParam, params server.JetDropsByJetIDParams) error {
-	panic("implement me")
+	var failures []server.CodeValidationFailures
+	limit, offset, err := checkLimitOffset(params.Limit, params.Offset)
+	if err != nil {
+		failures = append(failures, server.CodeValidationFailures{
+			FailureReason: NullableString(err.Error()),
+			Property:      NullableString("limit or offset"),
+		})
+	}
+
+	id, validationError := checkJetID(jetID)
+	if validationError != nil {
+		failures = append(failures, validationError...)
+	}
+
+	sort, validationError := checkSortByPulseParameter(params.SortBy)
+	if validationError != nil {
+		failures = append(failures, validationError...)
+	}
+
+	var fromJetDropId *string
+	var jetDropIdGt *string
+	var jetDropIdLt *string
+	var limit, offset int
+
+	fromJetDropId, err = checkJetDropID(params.FromJetDropId)
+	if err != nil {
+		failures = append(failures, server.CodeValidationFailures{
+			FailureReason: NullableString("invalid value"),
+			Property:      NullableString("from_jet_drop_id"),
+		})
+	}
+
+	// todo: jetDropIdGt jetDropIdLt
+	s.storage.GetJetDropsByJetId()
+	return ctx.JSON(200, "")
 }
 
 func (s *Server) Pulses(ctx echo.Context, params server.PulsesParams) error {
@@ -262,4 +296,56 @@ func checkJetDropID(jetDropID *server.FromJetDropId) (*string, error) {
 		return nil, errors.New("wrong jet drop id format")
 	}
 	return &str, nil
+}
+
+func checkSortByPulseParameter(sortBy *server.SortByPulse) (string, []server.CodeValidationFailures) {
+	sort := "+pulse_number"
+	if sortBy != nil {
+		s := string(*sortBy)
+		if s != "+pulse_number" && s != "-pulse_number" {
+			errResponse := []server.CodeValidationFailures{
+				{
+					Property:      NullableString("sortBy"),
+					FailureReason: NullableString("query parameter 'sort_by' should be '+pulse_number' or '-pulse_number'"),
+				},
+			}
+			return "", errResponse
+		}
+		sort = s
+	}
+	return sort, nil
+}
+
+func checkJetID(jetID server.JetIdPathParam) (*insolar.JetID, []server.CodeValidationFailures) {
+	var failures []server.CodeValidationFailures
+
+	value := strings.TrimSpace(string(jetID))
+
+	if len(value) == 0 {
+		failures = append(failures, server.CodeValidationFailures{
+			Property:      NullableString("jet-id path parameter"),
+			FailureReason: NullableString("empty value of path parameter"),
+		})
+	}
+
+	unescapedValue, err := url.QueryUnescape(value)
+	if err != nil {
+		failures = append(failures, server.CodeValidationFailures{
+			Property:      NullableString("jet-id path parameter"),
+			FailureReason: NullableString(errors.Wrapf(err, "cannot unescape path parameter jet-id").Error()),
+		})
+	}
+
+	id := insolar.NewJetID(0, []byte(unescapedValue))
+	if id == nil {
+		failures = append(failures, server.CodeValidationFailures{
+			Property:      NullableString("jet-id path parameter"),
+			FailureReason: NullableString(errors.Wrapf(err, "cannot cast to insolar.JetID").Error()),
+		})
+	}
+
+	if failures != nil {
+		return nil, failures
+	}
+	return id, nil
 }

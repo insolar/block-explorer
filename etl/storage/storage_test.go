@@ -281,7 +281,8 @@ func TestStorage_GetJetDropsWithParams(t *testing.T) {
 		require.Equal(t, 2, total)
 	})
 	t.Run("happy limit/offset", func(t *testing.T) {
-		jetDrops, total, err := s.GetJetDropsWithParams(firstPulse, nil, 1, 1)
+		s2 := string(jetDropForFirstPulse1.JetID)
+		jetDrops, total, err := s.GetJetDropsWithParams(firstPulse, &s2, 1, 1)
 		require.NoError(t, err)
 		expected := []models.JetDrop{jetDropForFirstPulse1, jetDropForFirstPulse2}
 		require.Len(t, jetDrops, 1)
@@ -825,4 +826,179 @@ func TestStorage_GetPulse_NotExist(t *testing.T) {
 	_, _, _, err := s.GetPulse(int(gen.PulseNumber()))
 	require.Error(t, err)
 	require.True(t, gorm.IsRecordNotFoundError(err))
+}
+
+func TestStorage_GetJetDropsByJetId_Success(t *testing.T) {
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+	s := NewStorage(testDB)
+
+	firstPulse, err := testutils.InitPulseDB()
+	require.NoError(t, err)
+
+	err = testutils.CreatePulse(testDB, firstPulse)
+	require.NoError(t, err)
+
+	jetDropForFirstPulse1 := testutils.InitJetDropDB(firstPulse)
+	err = testutils.CreateJetDrop(testDB, jetDropForFirstPulse1)
+	require.NoError(t, err)
+
+	jetDropForFirstPulse2 := testutils.InitJetDropDB(firstPulse)
+	err = testutils.CreateJetDrop(testDB, jetDropForFirstPulse2)
+	require.NoError(t, err)
+
+	jID := string(jetDropForFirstPulse1.JetID)
+	fromJetDropID := fmt.Sprintf("%d:%s", jetDropForFirstPulse1.PulseNumber, jID)
+	jetDrops, total, err := s.GetJetDropsByJetId(jID, &fromJetDropID, 0, 0, nil, nil, true)
+	require.NoError(t, err)
+	require.Len(t, jetDrops, 1)
+	require.EqualValues(t, jetDropForFirstPulse1, jetDrops[0])
+	require.Equal(t, 1, total)
+}
+
+func TestStorage_GetJetDropsByJetId_Fail(t *testing.T) {
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+	s := NewStorage(testDB)
+
+	firstPulse, err := testutils.InitPulseDB()
+	require.NoError(t, err)
+
+	err = testutils.CreatePulse(testDB, firstPulse)
+	require.NoError(t, err)
+
+	jetDropForFirstPulse1 := testutils.InitJetDropDB(firstPulse)
+	err = testutils.CreateJetDrop(testDB, jetDropForFirstPulse1)
+	require.NoError(t, err)
+
+	jetDropForFirstPulse2 := testutils.InitJetDropDB(firstPulse)
+	err = testutils.CreateJetDrop(testDB, jetDropForFirstPulse2)
+	require.NoError(t, err)
+
+	secondPulse, err := testutils.InitPulseDB()
+	require.NoError(t, err)
+	err = testutils.CreatePulse(testDB, secondPulse)
+	require.NoError(t, err)
+	jetDropForSecondPulse := testutils.InitJetDropDB(secondPulse)
+
+	wrongJetID := string(jetDropForSecondPulse.JetID)
+	fromJetDropID := fmt.Sprintf("%d:%s", jetDropForFirstPulse1.PulseNumber, wrongJetID)
+	jetDrops, total, err := s.GetJetDropsByJetId(wrongJetID, &fromJetDropID, 0, 0, nil, nil, true)
+	require.NoError(t, err)
+	require.Len(t, jetDrops, 0)
+	require.Equal(t, 0, total)
+}
+
+func TestStorage_GetJetDropsByJetId2(t *testing.T) {
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+	s := NewStorage(testDB)
+
+	firstPulse, err := testutils.InitPulseDB()
+	require.NoError(t, err)
+
+	err = testutils.CreatePulse(testDB, firstPulse)
+	require.NoError(t, err)
+
+	jetDropForFirstPulse1 := testutils.InitJetDropDB(firstPulse)
+	err = testutils.CreateJetDrop(testDB, jetDropForFirstPulse1)
+	require.NoError(t, err)
+
+	jetDropForFirstPulse2 := testutils.InitJetDropDB(firstPulse)
+	err = testutils.CreateJetDrop(testDB, jetDropForFirstPulse2)
+	require.NoError(t, err)
+
+	secondPulse, err := testutils.InitPulseDB()
+	require.NoError(t, err)
+	err = testutils.CreatePulse(testDB, secondPulse)
+	require.NoError(t, err)
+	jetDropForSecondPulse := testutils.InitJetDropDB(secondPulse)
+
+	t.Run("limit", func(t *testing.T) {
+		jID := string(jetDropForFirstPulse1.JetID)
+		fromJetDropID := fmt.Sprintf("%d:%s", jetDropForFirstPulse1.PulseNumber, jID)
+		jetDrops, total, err := s.GetJetDropsByJetId(jID, &fromJetDropID, 1, 0, nil, nil, true)
+		require.NoError(t, err)
+		require.Len(t, jetDrops, 1)
+		require.Equal(t, 2, total)
+	})
+	t.Run("offset", func(t *testing.T) {
+
+	})
+	t.Run("jetDropIDGte", func(t *testing.T) {
+
+	})
+	t.Run("jetDropIDLte", func(t *testing.T) {
+
+	})
+	t.Run("sortBy", func(t *testing.T) {
+
+	})
+
+	wrongJetID := string(jetDropForSecondPulse.JetID)
+	fromJetDropID := fmt.Sprintf("%d:%s", jetDropForFirstPulse1.PulseNumber, wrongJetID)
+	jetDrops, total, err := s.GetJetDropsByJetId(wrongJetID, &fromJetDropID, 0, 0, nil, nil, true)
+	require.NoError(t, err)
+	require.Len(t, jetDrops, 0)
+	require.Equal(t, 0, total)
+}
+
+func TestStorage_GetJetDropsByJetId_MultipleCounts(t *testing.T) {
+	// defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+	s := NewStorage(testDB)
+
+	tests := map[string]struct {
+		jetDropCount int
+		limit        int
+		offset       int
+	}{
+		// "one jetDrop by pulse": {jetDropCount: 1, limit: 1, offset: 0},
+		// "two jetDrop by pulse": {jetDropCount: 2, limit: 10, offset: 0},
+		// "10 jetDrop by pulse":  {jetDropCount: 10, limit: 10, offset: 0},
+		"15 jetDrop by pulse": {jetDropCount: 15, limit: 10, offset: 10},
+	}
+
+	for testName, data := range tests {
+		t.Run(testName, func(t *testing.T) {
+			jID, preparedJetDrops := generateJetDropsWithSomeJetID(t, data.jetDropCount)
+			for _, v := range preparedJetDrops {
+				err := testutils.CreateJetDrop(testDB, v)
+				require.NoError(t, err)
+			}
+			fromJetDropID := fmt.Sprintf("1020:%s", jID)
+			jetDropsFromDb, total, err := s.GetJetDropsByJetId(jID, &fromJetDropID, data.limit, data.offset, nil, nil, true)
+			require.NoError(t, err)
+			expectedCount := data.jetDropCount - data.offset
+			if expectedCount > data.limit {
+				expectedCount = data.limit
+			}
+			require.Len(t, jetDropsFromDb, expectedCount)
+			for i := 0; i < expectedCount; i++ {
+				require.Contains(t, preparedJetDrops, jetDropsFromDb[i])
+			}
+			require.Equal(t, data.jetDropCount, total)
+		})
+	}
+}
+
+func generateJetDropsWithSomeJetID(t *testing.T, jCount int) (string, []models.JetDrop) {
+	var jID *[]byte
+	pulse, err := testutils.InitPulseDB()
+	require.NoError(t, err)
+	err = testutils.CreatePulse(testDB, pulse)
+	require.NoError(t, err)
+
+	drops := make([]models.JetDrop, jCount)
+	jDrop := testutils.InitJetDropDB(pulse)
+	drops[0] = jDrop
+	if jID == nil {
+		jID = &jDrop.JetID
+	}
+	for i := 1; i < jCount; i++ {
+		pulse, err := testutils.InitPulseDB()
+		require.NoError(t, err)
+		err = testutils.CreatePulse(testDB, pulse)
+		require.NoError(t, err)
+		jd := testutils.InitJetDropDB(pulse)
+		jd.JetID = *jID
+		drops[i] = jd
+	}
+	return string(*jID), drops
 }

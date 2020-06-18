@@ -293,6 +293,9 @@ func GenerateUniqueJetID() insolar.JetID {
 	for {
 		jetID := gen.JetID()
 		id := binary.BigEndian.Uint64(jetID.Prefix())
+		if id == 0 {
+			continue
+		}
 		mutex.Lock()
 		_, hasKey := uniqueJetID[id]
 		if !hasKey {

@@ -249,7 +249,51 @@ func (s *storage) GetJetDropsWithParams(pulse models.Pulse, fromJetDropID *strin
 	return jetDrops, int(total), err
 }
 
+func (s *storage) GetJetDropsByJetId(jetID string, fromJetDropID *string, limit int, offset int, jetDropIDGte, jetDropIDLte *string, sortByAsc bool) ([]models.JetDrop, int, error) {
+	var jetDrops []models.JetDrop
+	q := s.db.Model(&jetDrops).
+		Where(&models.JetDrop{JetID: []byte(jetID)})
+
+	if fromJetDropID != nil {
+		jetID := jetIDFromJetDropID(fromJetDropID)
+		q = q.Where("jet_id >= ?", []byte(jetID))
+	}
+
+	if jetDropIDGte != nil {
+		pnGte, jIDGte := splitJetDropID(jetDropIDGte)
+		q = q.Where("(pulse_number >= ? and jet_id >= ?)", []byte(pnGte), []byte(jIDGte))
+	}
+
+	if jetDropIDLte != nil {
+		pnGte, jIDGte := splitJetDropID(jetDropIDLte)
+		q = q.Where("(pulse_number <= ? and jet_id <= ?)", []byte(pnGte), []byte(jIDGte))
+	}
+
+	q = q.Limit(limit).Offset(offset)
+	if sortByAsc {
+		q = q.Order("pulse_number asc")
+	} else {
+		q = q.Order("pulse_number desc")
+	}
+
+	err := q.Find(&jetDrops).Error
+	if err != nil {
+		return nil, 0, err
+	}
+	var total int64
+	err = q.Count(&total).Error
+	if err != nil {
+		return nil, 0, err
+	}
+	return jetDrops, int(total), err
+}
+
 func jetIDFromJetDropID(jetDropID *string) string {
 	s := strings.Split(*jetDropID, ":")
 	return s[0]
+}
+
+func splitJetDropID(jetDropID *string) (pulseNumber string, jetID string) {
+	s := strings.Split(*jetDropID, ":")
+	return s[0], s[1]
 }
