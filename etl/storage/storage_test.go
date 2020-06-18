@@ -272,7 +272,7 @@ func TestStorage_GetJetDropsWithParams(t *testing.T) {
 		require.Contains(t, expected, jetDrops[1])
 		require.Equal(t, 2, total)
 	})
-	t.Run("happy common", func(t *testing.T) {
+	t.Run("happy limit", func(t *testing.T) {
 		jetDrops, total, err := s.GetJetDropsWithParams(firstPulse, nil, 1, 0)
 		require.NoError(t, err)
 		expected := []models.JetDrop{jetDropForFirstPulse1, jetDropForFirstPulse2}
@@ -280,7 +280,7 @@ func TestStorage_GetJetDropsWithParams(t *testing.T) {
 		require.Contains(t, expected, jetDrops[0])
 		require.Equal(t, 2, total)
 	})
-	t.Run("happy common", func(t *testing.T) {
+	t.Run("happy limit/offset", func(t *testing.T) {
 		jetDrops, total, err := s.GetJetDropsWithParams(firstPulse, nil, 1, 1)
 		require.NoError(t, err)
 		expected := []models.JetDrop{jetDropForFirstPulse1, jetDropForFirstPulse2}

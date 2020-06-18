@@ -72,8 +72,8 @@ type JetDropID struct {
 	PulseNumber int64
 }
 
-func NewJetDropID(jetId []byte, pulseNumber int64) *JetDropID {
-	return &JetDropID{JetID: jetId, PulseNumber: pulseNumber}
+func NewJetDropID(jetID []byte, pulseNumber int64) *JetDropID {
+	return &JetDropID{JetID: jetID, PulseNumber: pulseNumber}
 }
 
 func NewJetDropIDFromString(jetDropID string) (*JetDropID, error) {
