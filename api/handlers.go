@@ -121,15 +121,18 @@ func (s *Server) JetDropsByPulseNumber(ctx echo.Context, pulseNumber server.Puls
 		return ctx.JSON(http.StatusInternalServerError, struct{}{})
 	}
 
-	var result []server.JetDrop
-	for _, jetDrop := range jetDrops {
-		result = append(result, JetDropToAPI(jetDrop))
-
+	drops := make([]server.JetDrop, len(jetDrops))
+	var result *[]server.JetDrop
+	for i, jetDrop := range jetDrops {
+		drops[i] = JetDropToAPI(jetDrop)
 	}
 	cnt := int64(total)
+	if cap(drops) > 0 {
+		result = &drops
+	}
 	return ctx.JSON(http.StatusOK, server.JetDropsResponse{
 		Total:  &cnt,
-		Result: &result,
+		Result: result,
 	})
 }
 
