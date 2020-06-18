@@ -240,6 +240,56 @@ func TestStorage_GetJetDrops(t *testing.T) {
 	require.Contains(t, expected, jetDrops[1])
 }
 
+func TestStorage_GetJetDropsWithParams(t *testing.T) {
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+	s := NewStorage(testDB)
+
+	firstPulse, err := testutils.InitPulseDB()
+	require.NoError(t, err)
+	err = testutils.CreatePulse(testDB, firstPulse)
+	require.NoError(t, err)
+	jetDropForFirstPulse1 := testutils.InitJetDropDB(firstPulse)
+	err = testutils.CreateJetDrop(testDB, jetDropForFirstPulse1)
+	require.NoError(t, err)
+	jetDropForFirstPulse2 := testutils.InitJetDropDB(firstPulse)
+	err = testutils.CreateJetDrop(testDB, jetDropForFirstPulse2)
+	require.NoError(t, err)
+
+	secondPulse, err := testutils.InitPulseDB()
+	require.NoError(t, err)
+	err = testutils.CreatePulse(testDB, secondPulse)
+	require.NoError(t, err)
+	jetDropForSecondPulse := testutils.InitJetDropDB(secondPulse)
+	err = testutils.CreateJetDrop(testDB, jetDropForSecondPulse)
+	require.NoError(t, err)
+
+	t.Run("happy common", func(t *testing.T) {
+		jetDrops, total, err := s.GetJetDropsWithParams(firstPulse, nil, 20, 0)
+		require.NoError(t, err)
+		expected := []models.JetDrop{jetDropForFirstPulse1, jetDropForFirstPulse2}
+		require.Len(t, jetDrops, 2)
+		require.Contains(t, expected, jetDrops[0])
+		require.Contains(t, expected, jetDrops[1])
+		require.Equal(t, 2, total)
+	})
+	t.Run("happy limit", func(t *testing.T) {
+		jetDrops, total, err := s.GetJetDropsWithParams(firstPulse, nil, 1, 0)
+		require.NoError(t, err)
+		expected := []models.JetDrop{jetDropForFirstPulse1, jetDropForFirstPulse2}
+		require.Len(t, jetDrops, 1)
+		require.Contains(t, expected, jetDrops[0])
+		require.Equal(t, 2, total)
+	})
+	t.Run("happy limit/offset", func(t *testing.T) {
+		jetDrops, total, err := s.GetJetDropsWithParams(firstPulse, nil, 1, 1)
+		require.NoError(t, err)
+		expected := []models.JetDrop{jetDropForFirstPulse1, jetDropForFirstPulse2}
+		require.Len(t, jetDrops, 1)
+		require.Contains(t, expected, jetDrops[0])
+		require.Equal(t, 2, total)
+	})
+}
+
 func TestStorage_CompletePulse(t *testing.T) {
 	defer testutils.TruncateTables(t, testDB, []interface{}{models.Pulse{}})
 	s := NewStorage(testDB)
