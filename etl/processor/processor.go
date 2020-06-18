@@ -151,7 +151,7 @@ func (p *Processor) process(ctx context.Context, jd *types.JetDrop) {
 		RecordAmount:   len(ms.Records),
 	}
 
-	mrs := []models.Record{}
+	var mrs []models.Record
 	for i, r := range ms.Records {
 		mrs = append(mrs, models.Record{
 			Reference:           models.ReferenceFromTypes(r.Ref),

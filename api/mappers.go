@@ -75,6 +75,23 @@ func PulseToAPI(pulse models.Pulse, jetDropAmount, recordAmount int64) server.Pu
 	return response
 }
 
+func JetDropToAPI(jetDrop models.JetDrop) server.JetDrop {
+	pulseNumber := int64(jetDrop.PulseNumber)
+	recordAmount := int64(jetDrop.RecordAmount)
+	result := server.JetDrop{
+		Hash:      NullableString(base64.StdEncoding.EncodeToString(jetDrop.Hash)),
+		JetDropId: NullableString(models.NewJetDropID(jetDrop.JetID, int64(jetDrop.PulseNumber)).ToString()),
+		JetId:     NullableString(models.BEJetIDToString(jetDrop.JetID)),
+		// todo implement this if needed
+		NextJetDropId: nil,
+		PrevJetDropId: nil,
+		PulseNumber:   &pulseNumber,
+		RecordAmount:  &recordAmount,
+		Timestamp:     &jetDrop.Timestamp,
+	}
+	return result
+}
+
 func jetIDToString(prefix []byte) string {
 	res := strings.Builder{}
 	for i := 0; i < 5; i++ {

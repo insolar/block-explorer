@@ -229,3 +229,27 @@ func (s *storage) GetJetDrops(pulse models.Pulse) ([]models.JetDrop, error) {
 	err := s.db.Where("pulse_number = ?", pulse.PulseNumber).Find(&jetDrops).Error
 	return jetDrops, err
 }
+
+func (s *storage) GetJetDropsWithParams(pulse models.Pulse, fromJetDropID *string, limit int, offset int) ([]models.JetDrop, int, error) {
+	var jetDrops []models.JetDrop
+	q := s.db.Model(&jetDrops).Where("pulse_number = ?", pulse.PulseNumber).Order("jet_id asc")
+	if fromJetDropID != nil {
+		jetID := jetIDFromJetDropID(fromJetDropID)
+		q = q.Where("jet_id >= ?", []byte(jetID))
+	}
+	err := q.Limit(limit).Offset(offset).Find(&jetDrops).Error
+	if err != nil {
+		return nil, 0, err
+	}
+	var total int64
+	err = q.Count(&total).Error
+	if err != nil {
+		return nil, 0, err
+	}
+	return jetDrops, int(total), err
+}
+
+func jetIDFromJetDropID(jetDropID *string) string {
+	s := strings.Split(*jetDropID, ":")
+	return s[0]
+}
