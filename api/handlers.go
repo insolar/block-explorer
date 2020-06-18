@@ -96,11 +96,7 @@ func (s *Server) Pulses(ctx echo.Context, params server.PulsesParams) error {
 	)
 	if err != nil {
 		s.logger.Error(err)
-		apiErr := server.CodeError{
-			Code:        NullableString(http.StatusText(http.StatusInternalServerError)),
-			Description: NullableString(err.Error()),
-		}
-		return ctx.JSON(http.StatusInternalServerError, apiErr)
+		return ctx.JSON(http.StatusInternalServerError, struct{}{})
 	}
 
 	var result []server.Pulse
@@ -108,11 +104,7 @@ func (s *Server) Pulses(ctx echo.Context, params server.PulsesParams) error {
 		jetDrops, records, err := s.storage.GetAmounts(p.PulseNumber)
 		if err != nil {
 			s.logger.Error(err)
-			apiErr := server.CodeError{
-				Code:        NullableString(http.StatusText(http.StatusInternalServerError)),
-				Description: NullableString(errors.Wrapf(err, "error while select count of records from db for pulse number %d", p.PulseNumber).Error()),
-			}
-			return ctx.JSON(http.StatusInternalServerError, apiErr)
+			return ctx.JSON(http.StatusInternalServerError, struct{}{})
 		}
 		result = append(result, PulseToAPI(p, jetDrops, records))
 	}
@@ -131,11 +123,7 @@ func (s *Server) Pulse(ctx echo.Context, pulseNumber server.PulseNumberPathParam
 		}
 		err = errors.Wrapf(err, "error while select pulse from db by pulse number %d", pulseNumber)
 		s.logger.Error(err)
-		apiErr := server.CodeError{
-			Code:        NullableString(http.StatusText(http.StatusInternalServerError)),
-			Description: NullableString(err.Error()),
-		}
-		return ctx.JSON(http.StatusInternalServerError, apiErr)
+		return ctx.JSON(http.StatusInternalServerError, struct{}{})
 	}
 
 	pulseResponse := PulseToAPI(pulse, jetDropAmount, recordAmount)
@@ -202,7 +190,7 @@ func (s *Server) ObjectLifeline(ctx echo.Context, objectReference server.ObjectR
 	limit, offset, failures := checkLimitOffset(params.Limit, params.Offset)
 	if len(failures) != 0 {
 		apiErr := server.CodeValidationError{
-			Code:               NullableString(http.StatusText(http.StatusInternalServerError)),
+			Code:               NullableString(http.StatusText(http.StatusBadRequest)),
 			ValidationFailures: &failures,
 		}
 		return ctx.JSON(http.StatusBadRequest, apiErr)
