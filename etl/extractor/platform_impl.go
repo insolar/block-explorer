@@ -175,7 +175,7 @@ func (m *PlatformExtractor) getJetDropsContinuously(ctx context.Context) {
 	}
 
 	logger.Infof("current pulse number: %d", pulse)
-	m.request.PulseNumber = insolar.PulseNumber(pulse)
+	m.request.PulseNumber = 0
 	m.request.RecordNumber = 0
 	m.getJetDrops(ctx, m.request, 0, math.MaxUint32, false)
 }
