@@ -42,7 +42,7 @@ func NewServer(ctx context.Context, storage interfaces.StorageFetcher, config co
 }
 
 func (s *Server) JetDropByID(ctx echo.Context, jetDropID server.JetDropIdPathParam) error {
-	BEJetDropID, err := models.NewJetDropIDFromString(string(jetDropID))
+	exporterJetDropID, err := models.NewJetDropIDFromString(string(jetDropID))
 	if err != nil {
 		response := server.CodeValidationError{
 			Code:        NullableString(strconv.Itoa(http.StatusBadRequest)),
@@ -57,7 +57,7 @@ func (s *Server) JetDropByID(ctx echo.Context, jetDropID server.JetDropIdPathPar
 		return ctx.JSON(http.StatusBadRequest, response)
 	}
 	jetDrop, err := s.storage.GetJetDropByID(
-		*BEJetDropID,
+		*exporterJetDropID,
 	)
 	if err != nil {
 		if gorm.IsRecordNotFoundError(err) {
@@ -127,7 +127,7 @@ func (s *Server) JetDropRecords(ctx echo.Context, jetDropID server.JetDropIdPath
 		return ctx.JSON(http.StatusInternalServerError, struct{}{})
 	}
 
-	var result []server.Record
+	result := []server.Record{}
 	for _, r := range records {
 		result = append(result, RecordToAPI(r))
 	}
@@ -228,10 +228,10 @@ func (s *Server) JetDropsByPulseNumber(ctx echo.Context, pulseNumber server.Puls
 			Property:      NullableString("pulse"),
 		})
 	}
-	var BEJetDropID *models.JetDropID
+	var exporterJetDropID *models.JetDropID
 	var err error
 	if params.FromJetDropId != nil {
-		BEJetDropID, err = models.NewJetDropIDFromString(string(*params.FromJetDropId))
+		exporterJetDropID, err = models.NewJetDropIDFromString(string(*params.FromJetDropId))
 		if err != nil {
 			failures = append(failures, server.CodeValidationFailures{
 				FailureReason: NullableString("invalid"),
@@ -253,7 +253,7 @@ func (s *Server) JetDropsByPulseNumber(ctx echo.Context, pulseNumber server.Puls
 
 	jetDrops, total, err := s.storage.GetJetDropsWithParams(
 		models.Pulse{PulseNumber: int(pulseNumber)},
-		BEJetDropID,
+		exporterJetDropID,
 		limit,
 		offset,
 	)
@@ -263,17 +263,14 @@ func (s *Server) JetDropsByPulseNumber(ctx echo.Context, pulseNumber server.Puls
 	}
 
 	drops := make([]server.JetDrop, len(jetDrops))
-	var result *[]server.JetDrop
 	for i, jetDrop := range jetDrops {
 		drops[i] = JetDropToAPI(jetDrop)
 	}
 	cnt := int64(total)
-	if cap(drops) > 0 {
-		result = &drops
-	}
+
 	return ctx.JSON(http.StatusOK, server.JetDropsResponse{
 		Total:  &cnt,
-		Result: result,
+		Result: &drops,
 	})
 }
 
@@ -373,7 +370,7 @@ func (s *Server) ObjectLifeline(ctx echo.Context, objectReference server.ObjectR
 		return ctx.JSON(http.StatusInternalServerError, struct{}{})
 	}
 
-	var result []server.Record
+	result := []server.Record{}
 	for _, r := range records {
 		result = append(result, RecordToAPI(r))
 	}
