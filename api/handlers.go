@@ -286,14 +286,13 @@ func (s *Server) Search(ctx echo.Context, params server.SearchParams) error {
 		return s.searchResponsePulse(ctx, pulseNumber)
 	}
 	// check if value is jetDropID
-	jd := server.FromJetDropId(value)
-	jetDropID, err := checkJetDropID(&jd)
+	_, err = models.NewJetDropIDFromString(value)
 	if err == nil {
 		return ctx.JSON(http.StatusOK, server.SearchJetDrop{
 			Meta: &struct {
 				JetDropId *string `json:"jet_drop_id,omitempty"`
 			}{
-				JetDropId: jetDropID,
+				JetDropId: &value,
 			},
 			Type: NullableString("jet-drop"),
 		})
