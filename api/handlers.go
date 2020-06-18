@@ -290,7 +290,7 @@ func (s *Server) Search(ctx echo.Context, params server.SearchParams) error {
 	if err == nil {
 		return ctx.JSON(http.StatusOK, server.SearchJetDrop{
 			Meta: &struct {
-				JetDropId *string `json:"jet_drop_id,omitempty"`
+				JetDropId *string `json:"jet_drop_id,omitempty"` // nolint
 			}{
 				JetDropId: &value,
 			},
