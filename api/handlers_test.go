@@ -146,12 +146,18 @@ func TestObjectLifeline_Limit_Error(t *testing.T) {
 	bodyBytes, err := ioutil.ReadAll(resp.Body)
 	require.NoError(t, err)
 
-	var received ErrorMessage
+	var received server.CodeValidationError
 	err = json.Unmarshal(bodyBytes, &received)
 	fmt.Println(string(bodyBytes))
 	require.NoError(t, err)
 
-	expected := ErrorMessage{Error: []string{"query parameter 'limit' should be in range [1, 100]"}}
+	expected := server.CodeValidationError{
+		Code: NullableString(http.StatusText(http.StatusBadRequest)),
+		ValidationFailures: &[]server.CodeValidationFailures{{
+			FailureReason: NullableString("should be in range [1, 100]"),
+			Property:      NullableString("limit"),
+		}},
+	}
 	require.Equal(t, expected, received)
 }
 
@@ -163,11 +169,17 @@ func TestObjectLifeline_Offset_Error(t *testing.T) {
 	bodyBytes, err := ioutil.ReadAll(resp.Body)
 	require.NoError(t, err)
 
-	var received ErrorMessage
+	var received server.CodeValidationError
 	err = json.Unmarshal(bodyBytes, &received)
 	require.NoError(t, err)
 
-	expected := ErrorMessage{Error: []string{"query parameter 'offset' should not be negative"}}
+	expected := server.CodeValidationError{
+		Code: NullableString(http.StatusText(http.StatusBadRequest)),
+		ValidationFailures: &[]server.CodeValidationFailures{{
+			FailureReason: NullableString("should not be negative"),
+			Property:      NullableString("offset"),
+		}},
+	}
 	require.Equal(t, expected, received)
 }
 
@@ -330,6 +342,254 @@ func TestPulse_Pulse_WrongFormat(t *testing.T) {
 	resp, err := http.Get("http://" + apihost + "/api/v1/pulses/" + "wrong_type")
 	require.NoError(t, err)
 	require.Equal(t, http.StatusBadRequest, resp.StatusCode)
+}
+
+func TestPulses_HappyPath(t *testing.T) {
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+
+	// insert pulses
+	pulse, err := testutils.InitPulseDB()
+	require.NoError(t, err)
+	err = testutils.CreatePulse(testDB, pulse)
+	require.NoError(t, err)
+	secondPulse, err := testutils.InitPulseDB()
+	secondPulse.PulseNumber = pulse.PulseNumber + 10
+	require.NoError(t, err)
+	err = testutils.CreatePulse(testDB, secondPulse)
+	require.NoError(t, err)
+
+	// request pulses
+	resp, err := http.Get("http://" + apihost + "/api/v1/pulses")
+	require.NoError(t, err)
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+	bodyBytes, err := ioutil.ReadAll(resp.Body)
+	require.NoError(t, err)
+
+	var received server.PulsesResponse
+	err = json.Unmarshal(bodyBytes, &received)
+	require.NoError(t, err)
+	require.Len(t, *received.Result, 2)
+	require.EqualValues(t, secondPulse.PulseNumber, *(*received.Result)[0].PulseNumber)
+	require.EqualValues(t, pulse.PulseNumber, *(*received.Result)[1].PulseNumber)
+	require.EqualValues(t, 2, *received.Total)
+}
+
+func TestPulses_PulsesWithRecords(t *testing.T) {
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+
+	// insert data
+	pulse, err := testutils.InitPulseDB()
+	require.NoError(t, err)
+	err = testutils.CreatePulse(testDB, pulse)
+	require.NoError(t, err)
+	jetDrop1 := testutils.InitJetDropDB(pulse)
+	jetDrop1.RecordAmount = 10
+	err = testutils.CreateJetDrop(testDB, jetDrop1)
+	jetDrop2 := testutils.InitJetDropDB(pulse)
+	jetDrop2.RecordAmount = 25
+	err = testutils.CreateJetDrop(testDB, jetDrop2)
+	require.NoError(t, err)
+
+	secondPulse, err := testutils.InitPulseDB()
+	secondPulse.PulseNumber = pulse.PulseNumber + 10
+	require.NoError(t, err)
+	err = testutils.CreatePulse(testDB, secondPulse)
+	require.NoError(t, err)
+	jetDrop3 := testutils.InitJetDropDB(secondPulse)
+	jetDrop3.RecordAmount = 6
+	err = testutils.CreateJetDrop(testDB, jetDrop3)
+
+	// request pulses
+	resp, err := http.Get("http://" + apihost + "/api/v1/pulses")
+	require.NoError(t, err)
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+	bodyBytes, err := ioutil.ReadAll(resp.Body)
+	require.NoError(t, err)
+
+	var received server.PulsesResponse
+	err = json.Unmarshal(bodyBytes, &received)
+	require.NoError(t, err)
+	require.Len(t, *received.Result, 2)
+	require.EqualValues(t, secondPulse.PulseNumber, *(*received.Result)[0].PulseNumber)
+	require.EqualValues(t, 1, *(*received.Result)[0].JetDropAmount)
+	require.EqualValues(t, jetDrop3.RecordAmount, *(*received.Result)[0].RecordAmount)
+	require.EqualValues(t, pulse.PulseNumber, *(*received.Result)[1].PulseNumber)
+	require.EqualValues(t, 2, *(*received.Result)[1].JetDropAmount)
+	require.EqualValues(t, jetDrop1.RecordAmount+jetDrop2.RecordAmount, *(*received.Result)[1].RecordAmount)
+	require.EqualValues(t, 2, *received.Total)
+}
+
+func TestPulses_Empty(t *testing.T) {
+	// request pulse from empty db
+	resp, err := http.Get("http://" + apihost + "/api/v1/pulses")
+	require.NoError(t, err)
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+	bodyBytes, err := ioutil.ReadAll(resp.Body)
+	require.NoError(t, err)
+
+	var received server.PulsesResponse
+	err = json.Unmarshal(bodyBytes, &received)
+	require.NoError(t, err)
+	require.Empty(t, received.Result)
+	require.EqualValues(t, 0, *received.Total)
+}
+
+func TestPulses_Limit_Error(t *testing.T) {
+	// request pulses with too big limit
+	resp, err := http.Get("http://" + apihost + "/api/v1/pulses?limit=200000000")
+	require.NoError(t, err)
+	require.Equal(t, http.StatusBadRequest, resp.StatusCode)
+	bodyBytes, err := ioutil.ReadAll(resp.Body)
+	require.NoError(t, err)
+
+	var received server.CodeValidationError
+	err = json.Unmarshal(bodyBytes, &received)
+	require.NoError(t, err)
+
+	expected := server.CodeValidationError{
+		Code:    NullableString(http.StatusText(http.StatusBadRequest)),
+		Message: NullableString(InvalidParamsMessage),
+		ValidationFailures: &[]server.CodeValidationFailures{{
+			FailureReason: NullableString("should be in range [1, 100]"),
+			Property:      NullableString("limit"),
+		}},
+	}
+	require.Equal(t, expected, received)
+}
+
+func TestPulses_Offset_Error(t *testing.T) {
+	// request pulses with negative offset
+	resp, err := http.Get("http://" + apihost + "/api/v1/pulses?offset=-10")
+	require.NoError(t, err)
+	require.Equal(t, http.StatusBadRequest, resp.StatusCode)
+	bodyBytes, err := ioutil.ReadAll(resp.Body)
+	require.NoError(t, err)
+
+	var received server.CodeValidationError
+	err = json.Unmarshal(bodyBytes, &received)
+	require.NoError(t, err)
+
+	expected := server.CodeValidationError{
+		Code:    NullableString(http.StatusText(http.StatusBadRequest)),
+		Message: NullableString(InvalidParamsMessage),
+		ValidationFailures: &[]server.CodeValidationFailures{{
+			FailureReason: NullableString("should not be negative"),
+			Property:      NullableString("offset"),
+		}},
+	}
+	require.Equal(t, expected, received)
+}
+
+func TestPulses_Several_Errors(t *testing.T) {
+	// request pulses with negative offset
+	resp, err := http.Get("http://" + apihost + "/api/v1/pulses?limit=200000000&offset=-10&from_pulse_number=0")
+	require.NoError(t, err)
+	require.Equal(t, http.StatusBadRequest, resp.StatusCode)
+	bodyBytes, err := ioutil.ReadAll(resp.Body)
+	require.NoError(t, err)
+
+	var received server.CodeValidationError
+	err = json.Unmarshal(bodyBytes, &received)
+	require.NoError(t, err)
+
+	expected := server.CodeValidationError{
+		Code:    NullableString(http.StatusText(http.StatusBadRequest)),
+		Message: NullableString(InvalidParamsMessage),
+		ValidationFailures: &[]server.CodeValidationFailures{{
+			FailureReason: NullableString("should be in range [1, 100]"),
+			Property:      NullableString("limit"),
+		}, {
+			FailureReason: NullableString("should not be negative"),
+			Property:      NullableString("offset"),
+		}, {
+			FailureReason: NullableString("invalid"),
+			Property:      NullableString("pulse"),
+		}},
+	}
+	require.Equal(t, expected, received)
+}
+
+func TestPulses_FromPulseNumber(t *testing.T) {
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+
+	// insert pulses
+	pulse, err := testutils.InitPulseDB()
+	require.NoError(t, err)
+	err = testutils.CreatePulse(testDB, pulse)
+	require.NoError(t, err)
+	secondPulse, err := testutils.InitPulseDB()
+	secondPulse.PulseNumber = pulse.PulseNumber + 10
+	require.NoError(t, err)
+	err = testutils.CreatePulse(testDB, secondPulse)
+	require.NoError(t, err)
+
+	// request pulses
+	resp, err := http.Get("http://" + apihost + fmt.Sprintf("/api/v1/pulses?from_pulse_number=%d", pulse.PulseNumber))
+	require.NoError(t, err)
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+	bodyBytes, err := ioutil.ReadAll(resp.Body)
+	require.NoError(t, err)
+
+	var received server.PulsesResponse
+	err = json.Unmarshal(bodyBytes, &received)
+	require.NoError(t, err)
+	require.Len(t, *received.Result, 1)
+	require.EqualValues(t, pulse.PulseNumber, *(*received.Result)[0].PulseNumber)
+	require.EqualValues(t, 1, *received.Total)
+}
+
+func TestPulses_TimestampRange(t *testing.T) {
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+
+	// insert pulses
+	firstPulse := models.Pulse{
+		PulseNumber: 66666666,
+		IsComplete:  false,
+		Timestamp:   66666666,
+	}
+	err := testutils.CreatePulse(testDB, firstPulse)
+	require.NoError(t, err)
+
+	secondPulse := models.Pulse{
+		PulseNumber: 66666667,
+		IsComplete:  false,
+		Timestamp:   66666667,
+	}
+	err = testutils.CreatePulse(testDB, secondPulse)
+	require.NoError(t, err)
+
+	thirdPulse := models.Pulse{
+		PulseNumber: 66666668,
+		IsComplete:  false,
+		Timestamp:   66666668,
+	}
+	err = testutils.CreatePulse(testDB, thirdPulse)
+	require.NoError(t, err)
+
+	fourthPulse := models.Pulse{
+		PulseNumber: 66666669,
+		IsComplete:  false,
+		Timestamp:   66666669,
+	}
+	err = testutils.CreatePulse(testDB, fourthPulse)
+	require.NoError(t, err)
+
+	// request pulses
+	resp, err := http.Get("http://" + apihost +
+		fmt.Sprintf("/api/v1/pulses?timestamp_lte=%d&timestamp_gte=%d", thirdPulse.PulseNumber, secondPulse.PulseNumber),
+	)
+	require.NoError(t, err)
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+	bodyBytes, err := ioutil.ReadAll(resp.Body)
+	require.NoError(t, err)
+
+	var received server.PulsesResponse
+	err = json.Unmarshal(bodyBytes, &received)
+	require.NoError(t, err)
+	require.Len(t, *received.Result, 2)
+	require.EqualValues(t, thirdPulse.PulseNumber, *(*received.Result)[0].PulseNumber)
+	require.EqualValues(t, secondPulse.PulseNumber, *(*received.Result)[1].PulseNumber)
+	require.EqualValues(t, 2, *received.Total)
 }
 
 func TestServer_JetDropsByPulseNumber(t *testing.T) {
@@ -562,16 +822,20 @@ func TestServer_JetDropsByPulseNumber(t *testing.T) {
 		require.NoError(t, err)
 		expected := []server.CodeValidationFailures{
 			{
-				FailureReason: NullableString("invalid"),
-				Property:      NullableString("jet drop id"),
+				FailureReason: NullableString("should be in range [1, 100]"),
+				Property:      NullableString("limit"),
 			},
 			{
-				FailureReason: NullableString("invalid"),
-				Property:      NullableString("limit or offset"),
+				FailureReason: NullableString("should not be negative"),
+				Property:      NullableString("offset"),
 			},
 			{
 				FailureReason: NullableString("invalid"),
 				Property:      NullableString("pulse"),
+			},
+			{
+				FailureReason: NullableString("invalid"),
+				Property:      NullableString("jet drop id"),
 			},
 		}
 		e := *received.ValidationFailures
