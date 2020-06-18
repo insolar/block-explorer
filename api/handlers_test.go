@@ -699,13 +699,13 @@ func TestServer_JetDropsByPulseNumber(t *testing.T) {
 		jetDrop2.JetID = jetID2.Prefix()
 		err = testutils.CreateJetDrop(testDB, jetDrop2)
 		require.NoError(t, err)
-		jetDropID2 := models.NewJetDropID(jetDrop1.JetID, int64(pulse.PulseNumber)).ToString()
 
 		jetDrop3 := testutils.InitJetDropDB(pulse)
 		jetID3 := jet.NewIDFromString("010")
 		jetDrop3.JetID = jetID3.Prefix()
 		err = testutils.CreateJetDrop(testDB, jetDrop3)
 		require.NoError(t, err)
+		jetDropID3 := models.NewJetDropID(jetDrop3.JetID, int64(pulse.PulseNumber)).ToString()
 
 		jetDrop4 := testutils.InitJetDropDB(pulse)
 		jetID4 := jet.NewIDFromString("011")
@@ -729,7 +729,7 @@ func TestServer_JetDropsByPulseNumber(t *testing.T) {
 			"http://" + apihost + "/api/v1/pulses/" +
 				strconv.Itoa(pulse.PulseNumber) +
 				"/jet-drops?limit=2&offset=2&from_jet_drop_id=" +
-				jetDropID2,
+				jetDropID3,
 		)
 		require.NoError(t, err)
 		require.Equal(t, http.StatusOK, resp.StatusCode)
