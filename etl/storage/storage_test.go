@@ -290,6 +290,34 @@ func TestStorage_GetJetDropsWithParams(t *testing.T) {
 	})
 }
 
+func TestStorage_GetJetDropsByID(t *testing.T) {
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+	s := NewStorage(testDB)
+
+	firstPulse, err := testutils.InitPulseDB()
+	require.NoError(t, err)
+	err = testutils.CreatePulse(testDB, firstPulse)
+	require.NoError(t, err)
+	jetDropForFirstPulse1 := testutils.InitJetDropDB(firstPulse)
+	err = testutils.CreateJetDrop(testDB, jetDropForFirstPulse1)
+	require.NoError(t, err)
+	jetDropForFirstPulse2 := testutils.InitJetDropDB(firstPulse)
+	err = testutils.CreateJetDrop(testDB, jetDropForFirstPulse2)
+	require.NoError(t, err)
+
+	secondPulse, err := testutils.InitPulseDB()
+	require.NoError(t, err)
+	err = testutils.CreatePulse(testDB, secondPulse)
+	require.NoError(t, err)
+	jetDropForSecondPulse := testutils.InitJetDropDB(secondPulse)
+	err = testutils.CreateJetDrop(testDB, jetDropForSecondPulse)
+	require.NoError(t, err)
+
+	jetDrop, err := s.GetJetDropByID(*models.NewJetDropID(jetDropForSecondPulse.JetID, int64(jetDropForSecondPulse.PulseNumber)))
+	require.NoError(t, err)
+	require.EqualValues(t, jetDropForSecondPulse, jetDrop)
+}
+
 func TestStorage_CompletePulse(t *testing.T) {
 	defer testutils.TruncateTables(t, testDB, []interface{}{models.Pulse{}})
 	s := NewStorage(testDB)

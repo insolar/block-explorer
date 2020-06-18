@@ -304,6 +304,12 @@ func (s *storage) GetJetDropsWithParams(pulse models.Pulse, fromJetDropID *strin
 	return jetDrops, int(total), err
 }
 
+func (s *storage) GetJetDropByID(id models.JetDropID) (models.JetDrop, error) {
+	var jetDrop models.JetDrop
+	err := s.db.Model(&jetDrop).Where("pulse_number = ? AND jet_id = ?", id.PulseNumber, id.JetID).Find(&jetDrop).Error
+	return jetDrop, err
+}
+
 func jetIDFromJetDropID(jetDropID *string) string {
 	s := strings.Split(*jetDropID, ":")
 	return s[0]

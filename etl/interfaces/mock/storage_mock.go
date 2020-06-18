@@ -33,6 +33,12 @@ type StorageMock struct {
 	beforeGetIncompletePulsesCounter uint64
 	GetIncompletePulsesMock          mStorageMockGetIncompletePulses
 
+	funcGetJetDropByID          func(id models.JetDropID) (j1 models.JetDrop, err error)
+	inspectFuncGetJetDropByID   func(id models.JetDropID)
+	afterGetJetDropByIDCounter  uint64
+	beforeGetJetDropByIDCounter uint64
+	GetJetDropByIDMock          mStorageMockGetJetDropByID
+
 	funcGetJetDrops          func(pulse models.Pulse) (ja1 []models.JetDrop, err error)
 	inspectFuncGetJetDrops   func(pulse models.Pulse)
 	afterGetJetDropsCounter  uint64
@@ -96,6 +102,9 @@ func NewStorageMock(t minimock.Tester) *StorageMock {
 	m.GetAmountsMock.callArgs = []*StorageMockGetAmountsParams{}
 
 	m.GetIncompletePulsesMock = mStorageMockGetIncompletePulses{mock: m}
+
+	m.GetJetDropByIDMock = mStorageMockGetJetDropByID{mock: m}
+	m.GetJetDropByIDMock.callArgs = []*StorageMockGetJetDropByIDParams{}
 
 	m.GetJetDropsMock = mStorageMockGetJetDrops{mock: m}
 	m.GetJetDropsMock.callArgs = []*StorageMockGetJetDropsParams{}
@@ -697,6 +706,222 @@ func (m *StorageMock) MinimockGetIncompletePulsesInspect() {
 	// if func was set then invocations count should be greater than zero
 	if m.funcGetIncompletePulses != nil && mm_atomic.LoadUint64(&m.afterGetIncompletePulsesCounter) < 1 {
 		m.t.Error("Expected call to StorageMock.GetIncompletePulses")
+	}
+}
+
+type mStorageMockGetJetDropByID struct {
+	mock               *StorageMock
+	defaultExpectation *StorageMockGetJetDropByIDExpectation
+	expectations       []*StorageMockGetJetDropByIDExpectation
+
+	callArgs []*StorageMockGetJetDropByIDParams
+	mutex    sync.RWMutex
+}
+
+// StorageMockGetJetDropByIDExpectation specifies expectation struct of the Storage.GetJetDropByID
+type StorageMockGetJetDropByIDExpectation struct {
+	mock    *StorageMock
+	params  *StorageMockGetJetDropByIDParams
+	results *StorageMockGetJetDropByIDResults
+	Counter uint64
+}
+
+// StorageMockGetJetDropByIDParams contains parameters of the Storage.GetJetDropByID
+type StorageMockGetJetDropByIDParams struct {
+	id models.JetDropID
+}
+
+// StorageMockGetJetDropByIDResults contains results of the Storage.GetJetDropByID
+type StorageMockGetJetDropByIDResults struct {
+	j1  models.JetDrop
+	err error
+}
+
+// Expect sets up expected params for Storage.GetJetDropByID
+func (mmGetJetDropByID *mStorageMockGetJetDropByID) Expect(id models.JetDropID) *mStorageMockGetJetDropByID {
+	if mmGetJetDropByID.mock.funcGetJetDropByID != nil {
+		mmGetJetDropByID.mock.t.Fatalf("StorageMock.GetJetDropByID mock is already set by Set")
+	}
+
+	if mmGetJetDropByID.defaultExpectation == nil {
+		mmGetJetDropByID.defaultExpectation = &StorageMockGetJetDropByIDExpectation{}
+	}
+
+	mmGetJetDropByID.defaultExpectation.params = &StorageMockGetJetDropByIDParams{id}
+	for _, e := range mmGetJetDropByID.expectations {
+		if minimock.Equal(e.params, mmGetJetDropByID.defaultExpectation.params) {
+			mmGetJetDropByID.mock.t.Fatalf("Expectation set by When has same params: %#v", *mmGetJetDropByID.defaultExpectation.params)
+		}
+	}
+
+	return mmGetJetDropByID
+}
+
+// Inspect accepts an inspector function that has same arguments as the Storage.GetJetDropByID
+func (mmGetJetDropByID *mStorageMockGetJetDropByID) Inspect(f func(id models.JetDropID)) *mStorageMockGetJetDropByID {
+	if mmGetJetDropByID.mock.inspectFuncGetJetDropByID != nil {
+		mmGetJetDropByID.mock.t.Fatalf("Inspect function is already set for StorageMock.GetJetDropByID")
+	}
+
+	mmGetJetDropByID.mock.inspectFuncGetJetDropByID = f
+
+	return mmGetJetDropByID
+}
+
+// Return sets up results that will be returned by Storage.GetJetDropByID
+func (mmGetJetDropByID *mStorageMockGetJetDropByID) Return(j1 models.JetDrop, err error) *StorageMock {
+	if mmGetJetDropByID.mock.funcGetJetDropByID != nil {
+		mmGetJetDropByID.mock.t.Fatalf("StorageMock.GetJetDropByID mock is already set by Set")
+	}
+
+	if mmGetJetDropByID.defaultExpectation == nil {
+		mmGetJetDropByID.defaultExpectation = &StorageMockGetJetDropByIDExpectation{mock: mmGetJetDropByID.mock}
+	}
+	mmGetJetDropByID.defaultExpectation.results = &StorageMockGetJetDropByIDResults{j1, err}
+	return mmGetJetDropByID.mock
+}
+
+//Set uses given function f to mock the Storage.GetJetDropByID method
+func (mmGetJetDropByID *mStorageMockGetJetDropByID) Set(f func(id models.JetDropID) (j1 models.JetDrop, err error)) *StorageMock {
+	if mmGetJetDropByID.defaultExpectation != nil {
+		mmGetJetDropByID.mock.t.Fatalf("Default expectation is already set for the Storage.GetJetDropByID method")
+	}
+
+	if len(mmGetJetDropByID.expectations) > 0 {
+		mmGetJetDropByID.mock.t.Fatalf("Some expectations are already set for the Storage.GetJetDropByID method")
+	}
+
+	mmGetJetDropByID.mock.funcGetJetDropByID = f
+	return mmGetJetDropByID.mock
+}
+
+// When sets expectation for the Storage.GetJetDropByID which will trigger the result defined by the following
+// Then helper
+func (mmGetJetDropByID *mStorageMockGetJetDropByID) When(id models.JetDropID) *StorageMockGetJetDropByIDExpectation {
+	if mmGetJetDropByID.mock.funcGetJetDropByID != nil {
+		mmGetJetDropByID.mock.t.Fatalf("StorageMock.GetJetDropByID mock is already set by Set")
+	}
+
+	expectation := &StorageMockGetJetDropByIDExpectation{
+		mock:   mmGetJetDropByID.mock,
+		params: &StorageMockGetJetDropByIDParams{id},
+	}
+	mmGetJetDropByID.expectations = append(mmGetJetDropByID.expectations, expectation)
+	return expectation
+}
+
+// Then sets up Storage.GetJetDropByID return parameters for the expectation previously defined by the When method
+func (e *StorageMockGetJetDropByIDExpectation) Then(j1 models.JetDrop, err error) *StorageMock {
+	e.results = &StorageMockGetJetDropByIDResults{j1, err}
+	return e.mock
+}
+
+// GetJetDropByID implements interfaces.Storage
+func (mmGetJetDropByID *StorageMock) GetJetDropByID(id models.JetDropID) (j1 models.JetDrop, err error) {
+	mm_atomic.AddUint64(&mmGetJetDropByID.beforeGetJetDropByIDCounter, 1)
+	defer mm_atomic.AddUint64(&mmGetJetDropByID.afterGetJetDropByIDCounter, 1)
+
+	if mmGetJetDropByID.inspectFuncGetJetDropByID != nil {
+		mmGetJetDropByID.inspectFuncGetJetDropByID(id)
+	}
+
+	mm_params := &StorageMockGetJetDropByIDParams{id}
+
+	// Record call args
+	mmGetJetDropByID.GetJetDropByIDMock.mutex.Lock()
+	mmGetJetDropByID.GetJetDropByIDMock.callArgs = append(mmGetJetDropByID.GetJetDropByIDMock.callArgs, mm_params)
+	mmGetJetDropByID.GetJetDropByIDMock.mutex.Unlock()
+
+	for _, e := range mmGetJetDropByID.GetJetDropByIDMock.expectations {
+		if minimock.Equal(e.params, mm_params) {
+			mm_atomic.AddUint64(&e.Counter, 1)
+			return e.results.j1, e.results.err
+		}
+	}
+
+	if mmGetJetDropByID.GetJetDropByIDMock.defaultExpectation != nil {
+		mm_atomic.AddUint64(&mmGetJetDropByID.GetJetDropByIDMock.defaultExpectation.Counter, 1)
+		mm_want := mmGetJetDropByID.GetJetDropByIDMock.defaultExpectation.params
+		mm_got := StorageMockGetJetDropByIDParams{id}
+		if mm_want != nil && !minimock.Equal(*mm_want, mm_got) {
+			mmGetJetDropByID.t.Errorf("StorageMock.GetJetDropByID got unexpected parameters, want: %#v, got: %#v%s\n", *mm_want, mm_got, minimock.Diff(*mm_want, mm_got))
+		}
+
+		mm_results := mmGetJetDropByID.GetJetDropByIDMock.defaultExpectation.results
+		if mm_results == nil {
+			mmGetJetDropByID.t.Fatal("No results are set for the StorageMock.GetJetDropByID")
+		}
+		return (*mm_results).j1, (*mm_results).err
+	}
+	if mmGetJetDropByID.funcGetJetDropByID != nil {
+		return mmGetJetDropByID.funcGetJetDropByID(id)
+	}
+	mmGetJetDropByID.t.Fatalf("Unexpected call to StorageMock.GetJetDropByID. %v", id)
+	return
+}
+
+// GetJetDropByIDAfterCounter returns a count of finished StorageMock.GetJetDropByID invocations
+func (mmGetJetDropByID *StorageMock) GetJetDropByIDAfterCounter() uint64 {
+	return mm_atomic.LoadUint64(&mmGetJetDropByID.afterGetJetDropByIDCounter)
+}
+
+// GetJetDropByIDBeforeCounter returns a count of StorageMock.GetJetDropByID invocations
+func (mmGetJetDropByID *StorageMock) GetJetDropByIDBeforeCounter() uint64 {
+	return mm_atomic.LoadUint64(&mmGetJetDropByID.beforeGetJetDropByIDCounter)
+}
+
+// Calls returns a list of arguments used in each call to StorageMock.GetJetDropByID.
+// The list is in the same order as the calls were made (i.e. recent calls have a higher index)
+func (mmGetJetDropByID *mStorageMockGetJetDropByID) Calls() []*StorageMockGetJetDropByIDParams {
+	mmGetJetDropByID.mutex.RLock()
+
+	argCopy := make([]*StorageMockGetJetDropByIDParams, len(mmGetJetDropByID.callArgs))
+	copy(argCopy, mmGetJetDropByID.callArgs)
+
+	mmGetJetDropByID.mutex.RUnlock()
+
+	return argCopy
+}
+
+// MinimockGetJetDropByIDDone returns true if the count of the GetJetDropByID invocations corresponds
+// the number of defined expectations
+func (m *StorageMock) MinimockGetJetDropByIDDone() bool {
+	for _, e := range m.GetJetDropByIDMock.expectations {
+		if mm_atomic.LoadUint64(&e.Counter) < 1 {
+			return false
+		}
+	}
+
+	// if default expectation was set then invocations count should be greater than zero
+	if m.GetJetDropByIDMock.defaultExpectation != nil && mm_atomic.LoadUint64(&m.afterGetJetDropByIDCounter) < 1 {
+		return false
+	}
+	// if func was set then invocations count should be greater than zero
+	if m.funcGetJetDropByID != nil && mm_atomic.LoadUint64(&m.afterGetJetDropByIDCounter) < 1 {
+		return false
+	}
+	return true
+}
+
+// MinimockGetJetDropByIDInspect logs each unmet expectation
+func (m *StorageMock) MinimockGetJetDropByIDInspect() {
+	for _, e := range m.GetJetDropByIDMock.expectations {
+		if mm_atomic.LoadUint64(&e.Counter) < 1 {
+			m.t.Errorf("Expected call to StorageMock.GetJetDropByID with params: %#v", *e.params)
+		}
+	}
+
+	// if default expectation was set then invocations count should be greater than zero
+	if m.GetJetDropByIDMock.defaultExpectation != nil && mm_atomic.LoadUint64(&m.afterGetJetDropByIDCounter) < 1 {
+		if m.GetJetDropByIDMock.defaultExpectation.params == nil {
+			m.t.Error("Expected call to StorageMock.GetJetDropByID")
+		} else {
+			m.t.Errorf("Expected call to StorageMock.GetJetDropByID with params: %#v", *m.GetJetDropByIDMock.defaultExpectation.params)
+		}
+	}
+	// if func was set then invocations count should be greater than zero
+	if m.funcGetJetDropByID != nil && mm_atomic.LoadUint64(&m.afterGetJetDropByIDCounter) < 1 {
+		m.t.Error("Expected call to StorageMock.GetJetDropByID")
 	}
 }
 
@@ -2454,6 +2679,8 @@ func (m *StorageMock) MinimockFinish() {
 
 		m.MinimockGetIncompletePulsesInspect()
 
+		m.MinimockGetJetDropByIDInspect()
+
 		m.MinimockGetJetDropsInspect()
 
 		m.MinimockGetJetDropsWithParamsInspect()
@@ -2495,6 +2722,7 @@ func (m *StorageMock) minimockDone() bool {
 		m.MinimockCompletePulseDone() &&
 		m.MinimockGetAmountsDone() &&
 		m.MinimockGetIncompletePulsesDone() &&
+		m.MinimockGetJetDropByIDDone() &&
 		m.MinimockGetJetDropsDone() &&
 		m.MinimockGetJetDropsWithParamsDone() &&
 		m.MinimockGetLifelineDone() &&

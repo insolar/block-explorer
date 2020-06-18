@@ -41,7 +41,33 @@ func NewServer(ctx context.Context, storage interfaces.StorageFetcher, config co
 }
 
 func (s *Server) JetDropByID(ctx echo.Context, jetDropID server.JetDropIdPathParam) error {
-	panic("implement me")
+	BEJetDropID, err := models.NewJetDropIDFromString(string(jetDropID))
+	if err != nil {
+		response := server.CodeValidationError{
+			Code:        NullableString(strconv.Itoa(http.StatusBadRequest)),
+			Description: nil,
+			Link:        nil,
+			Message:     NullableString(InvalidParamsMessage),
+			ValidationFailures: &[]server.CodeValidationFailures{{
+				FailureReason: NullableString("invalid"),
+				Property:      NullableString("jet drop id"),
+			}},
+		}
+		return ctx.JSON(http.StatusBadRequest, response)
+	}
+	jetDrop, err := s.storage.GetJetDropByID(
+		*BEJetDropID,
+	)
+	if err != nil {
+		if gorm.IsRecordNotFoundError(err) {
+			return ctx.JSON(http.StatusNotFound, struct{}{})
+		}
+		s.logger.Error(err)
+		return ctx.JSON(http.StatusInternalServerError, struct{}{})
+	}
+
+	apiJetDrop := JetDropToAPI(jetDrop)
+	return ctx.JSON(http.StatusOK, server.JetDropResponse(apiJetDrop))
 }
 
 func (s *Server) JetDropRecords(ctx echo.Context, jetDropID server.JetDropIdPathParam, params server.JetDropRecordsParams) error {
