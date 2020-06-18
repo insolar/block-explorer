@@ -7,7 +7,6 @@ package api
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -254,13 +253,13 @@ func checkJetDropID(jetDropID *server.FromJetDropId) (*string, error) {
 	str := string(*jetDropID)
 	s := strings.Split(str, ":")
 	if len(s) != 2 {
-		return nil, fmt.Errorf("wrong jet drop id format")
+		return nil, errors.New("wrong jet drop id format")
 	}
 	if _, err := strconv.ParseInt(s[0], 2, 64); err != nil {
-		return nil, fmt.Errorf("wrong jet drop id format")
+		return nil, errors.New("wrong jet drop id format")
 	}
 	if _, err := strconv.ParseInt(s[1], 10, 64); err != nil {
-		return nil, fmt.Errorf("wrong jet drop id format")
+		return nil, errors.New("wrong jet drop id format")
 	}
 	return &str, nil
 }

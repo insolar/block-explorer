@@ -10,6 +10,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/insolar/insolar/insolar/jet"
+
 	"github.com/insolar/block-explorer/etl/types"
 )
 
@@ -65,7 +67,40 @@ type Pulse struct {
 	Timestamp       int64
 }
 
-func JetIDToString(jetID []byte) string {
+type JetDropID struct {
+	JetID       []byte
+	PulseNumber int64
+}
+
+func NewJetDropID(jetId []byte, pulseNumber int64) *JetDropID {
+	return &JetDropID{JetID: jetId, PulseNumber: pulseNumber}
+}
+
+func NewJetDropIDFromString(jetDropID string) (*JetDropID, error) {
+	var pulse int64
+	var jetID []byte
+	s := strings.Split(jetDropID, ":")
+	if len(s) != 2 {
+		return nil, fmt.Errorf("wrong jet drop id format")
+	}
+	_, err := strconv.ParseInt(s[0], 2, 64)
+	if err != nil {
+		return nil, fmt.Errorf("wrong jet drop id format")
+	}
+	pulse, err = strconv.ParseInt(s[1], 10, 64)
+	if err != nil {
+		return nil, fmt.Errorf("wrong jet drop id format")
+	}
+
+	jetID = jet.NewIDFromString(s[0]).Prefix()
+	return &JetDropID{JetID: jetID, PulseNumber: pulse}, nil
+}
+
+func (j *JetDropID) ToString() string {
+	return fmt.Sprintf("%s:%d", BEJetIDToString(j.JetID), j.PulseNumber)
+}
+
+func BEJetIDToString(jetID []byte) string {
 	res := strings.Builder{}
 	for i := 0; i < 5; i++ {
 		bytePos, bitPos := i/8, 7-i%8
@@ -76,8 +111,4 @@ func JetIDToString(jetID []byte) string {
 		res.WriteString(bitString)
 	}
 	return res.String()
-}
-
-func JetDropID(jetID []byte, pulseNumber int64) string {
-	return fmt.Sprintf("%s:%d", JetIDToString(jetID), pulseNumber)
 }

@@ -80,8 +80,8 @@ func JetDropToAPI(jetDrop models.JetDrop) server.JetDrop {
 	recordAmount := int64(jetDrop.RecordAmount)
 	result := server.JetDrop{
 		Hash:      NullableString(base64.StdEncoding.EncodeToString(jetDrop.Hash)),
-		JetDropId: NullableString(models.JetDropID(jetDrop.JetID, int64(jetDrop.PulseNumber))),
-		JetId:     NullableString(models.JetIDToString(jetDrop.JetID)),
+		JetDropId: NullableString(models.NewJetDropID(jetDrop.JetID, int64(jetDrop.PulseNumber)).ToString()),
+		JetId:     NullableString(models.BEJetIDToString(jetDrop.JetID)),
 		// todo implement this if needed
 		NextJetDropId: nil,
 		PrevJetDropId: nil,
