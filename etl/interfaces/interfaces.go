@@ -111,8 +111,8 @@ type StorageFetcher interface {
 	GetJetDropsWithParams(pulse models.Pulse, fromJetDropID *models.JetDropID, limit int, offset int) ([]models.JetDrop, int, error)
 	// GetJetDropByID returns JetDrop by JetDropID
 	GetJetDropByID(id models.JetDropID) (models.JetDrop, error)
-	//GetJetDropsByJetId returns jetDrops for provided jetID with limit, offset, sorting and filtering by pulseNumber.
-	GetJetDropsByJetId(jetID string, fromJetDropID *string, limit int, offset int, jetDropIDGte, jetDropIDLte *string, sortByAsc bool) ([]models.JetDrop, int, error)
+	// GetJetDropsByJetId returns jetDrops for provided jetID with limit, offset, sorting and filtering by pulseNumber.
+	GetJetDropsByJetId(jetID []byte, fromJetDropID *models.JetDropID, jetDropIDGte, jetDropIDLte *models.JetDropID, limit int, offset int, sortByPnAsc bool) ([]models.JetDrop, int, error)
 	// GetLifeline returns records for provided object reference, ordered by desc by pulse number and order fields.
 	GetLifeline(objRef []byte, fromIndex *string, pulseNumberLt, pulseNumberGt, timestampLte, timestampGte *int, limit, offset int, sort string) ([]models.Record, int, error)
 	// GetRecordsByJetDrop returns records for provided jet drop, ordered by order field.
