@@ -364,14 +364,7 @@ func TestPulse_Pulse_NotExist(t *testing.T) {
 	// request pulse for not existed pulse number
 	resp, err := http.Get("http://" + apihost + fmt.Sprintf("/api/v1/pulses/%d", gen.PulseNumber()))
 	require.NoError(t, err)
-	require.Equal(t, http.StatusOK, resp.StatusCode)
-	bodyBytes, err := ioutil.ReadAll(resp.Body)
-	require.NoError(t, err)
-
-	var received server.PulseResponse
-	err = json.Unmarshal(bodyBytes, &received)
-	require.NoError(t, err)
-	require.Empty(t, received)
+	require.Equal(t, http.StatusNotFound, resp.StatusCode)
 }
 
 func TestPulse_Pulse_WrongFormat(t *testing.T) {
