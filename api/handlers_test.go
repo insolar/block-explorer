@@ -224,7 +224,7 @@ func TestObjectLifeline_NoRecords(t *testing.T) {
 	require.NoError(t, err)
 
 	require.EqualValues(t, 0, int(*received.Total))
-	require.Nil(t, received.Result)
+	require.Len(t, *received.Result, 0)
 }
 
 func TestObjectLifeline_ReferenceFormat_Error(t *testing.T) {
@@ -930,7 +930,7 @@ func TestServer_JetDropsByPulseNumber(t *testing.T) {
 		err = json.Unmarshal(bodyBytes, &received)
 		require.NoError(t, err)
 		require.EqualValues(t, 0, int(*received.Total))
-		require.Nil(t, received.Result)
+		require.Len(t, *received.Result, 0)
 	})
 }
 
@@ -1387,7 +1387,7 @@ func TestJetDropRecords(t *testing.T) {
 		err = json.Unmarshal(bodyBytes, &received)
 		require.NoError(t, err)
 		require.EqualValues(t, 0, *received.Total)
-		require.Nil(t, received.Result)
+		require.Len(t, *received.Result, 0)
 	})
 }
 

@@ -97,10 +97,10 @@ func NewJetDropIDFromString(jetDropID string) (*JetDropID, error) {
 }
 
 func (j *JetDropID) ToString() string {
-	return fmt.Sprintf("%s:%d", BEJetIDToString(j.JetID), j.PulseNumber)
+	return fmt.Sprintf("%s:%d", ExporterJetIDToString(j.JetID), j.PulseNumber)
 }
 
-func BEJetIDToString(jetID []byte) string {
+func ExporterJetIDToString(jetID []byte) string {
 	res := strings.Builder{}
 	for i := 0; i < 5; i++ {
 		bytePos, bitPos := i/8, 7-i%8
