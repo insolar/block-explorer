@@ -101,15 +101,22 @@ type StorageFetcher interface {
 	GetIncompletePulses() ([]models.Pulse, error)
 	// GetPulse returns pulse with provided pulse number from db.
 	GetPulse(pulseNumber int) (models.Pulse, int64, int64, error)
+	// GetAmounts return amount of jetDrops and records at provided pulse.
+	GetAmounts(pulseNumber int) (jdAmount int64, rAmount int64, err error)
+	// GetPulse returns pulses from db.
+	GetPulses(fromPulse *int64, timestampLte, timestampGte *int, limit, offset int) ([]models.Pulse, int, error)
 	// GetJetDrops returns jetDrops for provided pulse from db.
 	GetJetDrops(pulse models.Pulse) ([]models.JetDrop, error)
 	// GetJetDropsWithParams returns jetDrops for provided pulse with limit and offset.
-	GetJetDropsWithParams(pulse models.Pulse, fromJetDropID *string, limit int, offset int) ([]models.JetDrop, int, error)
-
+	GetJetDropsWithParams(pulse models.Pulse, fromJetDropID *models.JetDropID, limit int, offset int) ([]models.JetDrop, int, error)
+	// GetJetDropByID returns JetDrop by JetDropID
+	GetJetDropByID(id models.JetDropID) (models.JetDrop, error)
 	//GetJetDropsByJetId returns jetDrops for provided jetID with limit, offset, sorting and filtering by pulseNumber.
 	GetJetDropsByJetId(jetID string, fromJetDropID *string, limit int, offset int, jetDropIDGte, jetDropIDLte *string, sortByAsc bool) ([]models.JetDrop, int, error)
 	// GetLifeline returns records for provided object reference, ordered by desc by pulse number and order fields.
-	GetLifeline(objRef []byte, fromIndex *string, pulseNumberLt, pulseNumberGt *int, limit, offset int, sort string) ([]models.Record, int, error)
+	GetLifeline(objRef []byte, fromIndex *string, pulseNumberLt, pulseNumberGt, timestampLte, timestampGte *int, limit, offset int, sort string) ([]models.Record, int, error)
+	// GetRecordsByJetDrop returns records for provided jet drop, ordered by order field.
+	GetRecordsByJetDrop(jetDropID models.JetDropID, fromIndex, recordType *string, limit, offset int) ([]models.Record, int, error)
 }
 
 //go:generate minimock -i github.com/insolar/block-explorer/etl/interfaces.Storage -o ./mock -s _mock.go -g

@@ -75,7 +75,7 @@ func (s *storage) GetRecord(ref models.Reference) (models.Record, error) {
 	return record, err
 }
 
-func checkIndex(i string) (int, int, error) {
+func CheckIndex(i string) (int, int, error) {
 	index := strings.Split(i, ":")
 	if len(index) != 2 {
 		return 0, 0, errors.New("query parameter 'index' should have the '<pulse_number>:<order>' format")
@@ -104,15 +104,15 @@ func filterByPulse(query *gorm.DB, pulseNumberLt, pulseNumberGt *int) *gorm.DB {
 }
 
 func filterRecordsByIndex(query *gorm.DB, fromIndex string, sort string) (*gorm.DB, error) {
-	pulseNumber, order, err := checkIndex(fromIndex)
+	pulseNumber, order, err := CheckIndex(fromIndex)
 	if err != nil {
 		return nil, err
 	}
 	switch sort {
-	case "asc":
+	case "+index":
 		query = query.Where("(pulse_number > ?", pulseNumber)
 		query = query.Or("pulse_number = ? AND \"order\" >= ?)", pulseNumber, order)
-	case "desc":
+	case "-index":
 		query = query.Where("(pulse_number < ?", pulseNumber)
 		query = query.Or("pulse_number = ? AND \"order\" <= ?)", pulseNumber, order)
 
@@ -122,14 +122,24 @@ func filterRecordsByIndex(query *gorm.DB, fromIndex string, sort string) (*gorm.
 	return query, nil
 }
 
+func filterByTimestamp(query *gorm.DB, timestampLte, timestampGte *int) *gorm.DB {
+	if timestampGte != nil {
+		query = query.Where("timestamp >= ?", *timestampGte)
+	}
+	if timestampLte != nil {
+		query = query.Where("timestamp <= ?", *timestampLte)
+	}
+	return query
+}
+
 func sortRecordsByDirection(query *gorm.DB, sort string) (*gorm.DB, error) {
 	switch sort {
-	case "asc":
+	case "+index":
 		query = query.Order("pulse_number asc").Order("\"order\" asc")
-	case "desc":
+	case "-index":
 		query = query.Order("pulse_number desc").Order("\"order\" desc")
 	default:
-		return nil, errors.New("query parameter 'sort' should be 'asc'' or 'desc'")
+		return nil, errors.New("query parameter 'sort' should be '-index'' or '+index'")
 	}
 	return query, nil
 }
@@ -148,11 +158,27 @@ func getRecords(query *gorm.DB, limit, offset int) ([]models.Record, int, error)
 	return records, total, nil
 }
 
+func getPulses(query *gorm.DB, limit, offset int) ([]models.Pulse, int, error) {
+	pulses := []models.Pulse{}
+	var total int
+	err := query.Limit(limit).Offset(offset).Find(&pulses).Error
+	if err != nil {
+		return nil, 0, err
+	}
+	err = query.Count(&total).Error
+	if err != nil {
+		return nil, 0, err
+	}
+	return pulses, total, nil
+}
+
 // GetLifeline returns records for provided object reference, ordered by pulse number and order fields.
-func (s *storage) GetLifeline(objRef []byte, fromIndex *string, pulseNumberLt, pulseNumberGt *int, limit, offset int, sort string) ([]models.Record, int, error) {
+func (s *storage) GetLifeline(objRef []byte, fromIndex *string, pulseNumberLt, pulseNumberGt, timestampLte, timestampGte *int, limit, offset int, sort string) ([]models.Record, int, error) {
 	query := s.db.Model(&models.Record{}).Where("object_reference = ?", objRef).Where("type = ?", models.State)
 
 	query = filterByPulse(query, pulseNumberLt, pulseNumberGt)
+
+	query = filterByTimestamp(query, timestampLte, timestampGte)
 
 	var err error
 	if fromIndex != nil {
@@ -206,6 +232,37 @@ func (s *storage) GetAmounts(pulseNumber int) (int64, int64, error) {
 	return int64(res.JetDrops), int64(res.Records), err
 }
 
+// GetPulses returns pulses from db.
+func (s *storage) GetPulses(fromPulse *int64, timestampLte, timestampGte *int, limit, offset int) ([]models.Pulse, int, error) {
+	query := s.db.Model(&models.Pulse{})
+
+	query = filterByTimestamp(query, timestampLte, timestampGte)
+
+	var err error
+	if fromPulse != nil {
+		query = query.Where("pulse_number <= ?", &fromPulse)
+	}
+
+	query = query.Order("pulse_number desc")
+
+	pulses, total, err := getPulses(query, limit, offset)
+	if err != nil {
+		return nil, 0, errors.Wrap(err, "error while select pulses from db")
+	}
+
+	// set real NextPulseNumber to every pulse (if we know it)
+	for i := 0; i < len(pulses)-1; i++ {
+		if pulses[i].PrevPulseNumber == pulses[i+1].PulseNumber {
+			pulses[i+1].NextPulseNumber = pulses[i].PulseNumber
+		}
+		if i == 0 {
+			pulses[i] = s.updateNextPulse(pulses[i])
+		}
+	}
+
+	return pulses, total, err
+}
+
 func (s *storage) updateNextPulse(pulse models.Pulse) models.Pulse {
 	var nextPulse models.Pulse
 	err := s.db.Where("prev_pulse_number = ?", pulse.PulseNumber).First(&nextPulse).Error
@@ -214,6 +271,34 @@ func (s *storage) updateNextPulse(pulse models.Pulse) models.Pulse {
 	}
 	pulse.NextPulseNumber = nextPulse.PulseNumber
 	return pulse
+}
+
+// GetRecordsByJetDrop returns records for provided jet drop, ordered by order field.
+func (s *storage) GetRecordsByJetDrop(jetDropID models.JetDropID, fromIndex, recordType *string, limit, offset int) ([]models.Record, int, error) {
+	query := s.db.Model(&models.Record{}).Where("pulse_number = ?", jetDropID.PulseNumber).Where("jet_id = ?", jetDropID.JetID)
+
+	if recordType != nil {
+		query = query.Where("type = ?", *recordType)
+	}
+
+	var err error
+	if fromIndex != nil {
+		query, err = filterRecordsByIndex(query, *fromIndex, "+index")
+		if err != nil {
+			return nil, 0, err
+		}
+	}
+
+	query, err = sortRecordsByDirection(query, "+index")
+	if err != nil {
+		return nil, 0, err
+	}
+
+	records, total, err := getRecords(query, limit, offset)
+	if err != nil {
+		return nil, 0, errors.Wrapf(err, "error while select records for pulse %v, jet %v from db", jetDropID.PulseNumber, jetDropID.JetID)
+	}
+	return records, total, nil
 }
 
 // GetIncompletePulses returns pulses that are not complete from db.
@@ -230,12 +315,11 @@ func (s *storage) GetJetDrops(pulse models.Pulse) ([]models.JetDrop, error) {
 	return jetDrops, err
 }
 
-func (s *storage) GetJetDropsWithParams(pulse models.Pulse, fromJetDropID *string, limit int, offset int) ([]models.JetDrop, int, error) {
+func (s *storage) GetJetDropsWithParams(pulse models.Pulse, fromJetDropID *models.JetDropID, limit int, offset int) ([]models.JetDrop, int, error) {
 	var jetDrops []models.JetDrop
 	q := s.db.Model(&jetDrops).Where("pulse_number = ?", pulse.PulseNumber).Order("jet_id asc")
 	if fromJetDropID != nil {
-		jetID := jetIDFromJetDropID(fromJetDropID)
-		q = q.Where("jet_id >= ?", []byte(jetID))
+		q = q.Where("jet_id >= ?", fromJetDropID.JetID)
 	}
 	err := q.Limit(limit).Offset(offset).Find(&jetDrops).Error
 	if err != nil {
@@ -247,6 +331,12 @@ func (s *storage) GetJetDropsWithParams(pulse models.Pulse, fromJetDropID *strin
 		return nil, 0, err
 	}
 	return jetDrops, int(total), err
+}
+
+func (s *storage) GetJetDropByID(id models.JetDropID) (models.JetDrop, error) {
+	var jetDrop models.JetDrop
+	err := s.db.Model(&jetDrop).Where("pulse_number = ? AND jet_id = ?", id.PulseNumber, id.JetID).Find(&jetDrop).Error
+	return jetDrop, err
 }
 
 func (s *storage) GetJetDropsByJetId(jetID string, fromJetDropID *string, limit int, offset int, jetDropIDGte, jetDropIDLte *string, sortByAsc bool) ([]models.JetDrop, int, error) {
