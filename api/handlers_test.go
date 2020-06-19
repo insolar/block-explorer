@@ -223,7 +223,7 @@ func TestObjectLifeline_NoRecords(t *testing.T) {
 	require.NoError(t, err)
 
 	require.EqualValues(t, 0, int(*received.Total))
-	require.Nil(t, received.Result)
+	require.Len(t, *received.Result, 0)
 }
 
 func TestObjectLifeline_ReferenceFormat_Error(t *testing.T) {
@@ -929,7 +929,7 @@ func TestServer_JetDropsByPulseNumber(t *testing.T) {
 		err = json.Unmarshal(bodyBytes, &received)
 		require.NoError(t, err)
 		require.EqualValues(t, 0, int(*received.Total))
-		require.Nil(t, received.Result)
+		require.Len(t, *received.Result, 0)
 	})
 }
 
@@ -1242,7 +1242,7 @@ func TestJetDropRecords(t *testing.T) {
 
 	t.Run("empty", func(t *testing.T) {
 		jetDropEmpty := testutils.InitJetDropDB(pulse)
-		jetDropIDEmpty := *models.NewJetDropID(jetDropEmpty.JetID, int64(pulse.PulseNumber))
+		jetDropIDEmpty := *models.NewJetDropID(jetDropEmpty.JetID, int64(pulse.PulseNumber+1000))
 		resp, err := http.Get("http://" + apihost + "/api/v1/jet-drops/" + jetDropIDEmpty.ToString() + "/records")
 		require.NoError(t, err)
 
@@ -1255,7 +1255,7 @@ func TestJetDropRecords(t *testing.T) {
 		err = json.Unmarshal(bodyBytes, &received)
 		require.NoError(t, err)
 		require.EqualValues(t, 0, *received.Total)
-		require.Nil(t, received.Result)
+		require.Len(t, *received.Result, 0)
 	})
 }
 
