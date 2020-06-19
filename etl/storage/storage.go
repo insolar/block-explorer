@@ -104,7 +104,7 @@ func filterByPulse(query *gorm.DB, pulseNumberLt, pulseNumberGt *int) *gorm.DB {
 	return query
 }
 
-func filterByJetDropId(query *gorm.DB, jetDropIDGte, jetDropIDLte *models.JetDropID) *gorm.DB {
+func filterByJetDropID(query *gorm.DB, jetDropIDGte, jetDropIDLte *models.JetDropID) *gorm.DB {
 	if jetDropIDGte != nil {
 		query = query.Where("(pulse_number >= ? and jet_id >= ?)", jetDropIDGte.PulseNumber, jetDropIDGte.JetID)
 	}
@@ -352,7 +352,7 @@ func (s *storage) GetJetDropByID(id models.JetDropID) (models.JetDrop, error) {
 	return jetDrop, err
 }
 
-func (s *storage) GetJetDropsByJetId(jetID []byte, fromJetDropID *models.JetDropID, jetDropIDGte, jetDropIDLte *models.JetDropID, limit int, offset int, sortByPnAsc bool) ([]models.JetDrop, int, error) {
+func (s *storage) GetJetDropsByJetID(jetID []byte, fromJetDropID *models.JetDropID, jetDropIDGte, jetDropIDLte *models.JetDropID, limit int, offset int, sortByPnAsc bool) ([]models.JetDrop, int, error) {
 	var jetDrops []models.JetDrop
 	var total int64
 
@@ -364,7 +364,7 @@ func (s *storage) GetJetDropsByJetId(jetID []byte, fromJetDropID *models.JetDrop
 
 	// s := "+pulse_number,-jet_id"
 	// s := "-pulse_number,+jet_id"
-	q = filterByJetDropId(q, jetDropIDGte, jetDropIDLte)
+	q = filterByJetDropID(q, jetDropIDGte, jetDropIDLte)
 
 	if sortByPnAsc {
 		q = q.Order("pulse_number asc").Order(" jet_id desc")
