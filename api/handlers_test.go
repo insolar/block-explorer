@@ -23,6 +23,7 @@ import (
 	"github.com/insolar/insolar/insolar"
 	"github.com/insolar/insolar/insolar/gen"
 	"github.com/insolar/insolar/insolar/jet"
+	"github.com/insolar/insolar/pulse"
 	"github.com/insolar/spec-insolar-block-explorer-api/v1/server"
 	"github.com/jinzhu/gorm"
 	"github.com/labstack/echo/v4"
@@ -363,14 +364,7 @@ func TestPulse_Pulse_NotExist(t *testing.T) {
 	// request pulse for not existed pulse number
 	resp, err := http.Get("http://" + apihost + fmt.Sprintf("/api/v1/pulses/%d", gen.PulseNumber()))
 	require.NoError(t, err)
-	require.Equal(t, http.StatusOK, resp.StatusCode)
-	bodyBytes, err := ioutil.ReadAll(resp.Body)
-	require.NoError(t, err)
-
-	var received server.PulseResponse
-	err = json.Unmarshal(bodyBytes, &received)
-	require.NoError(t, err)
-	require.Empty(t, received)
+	require.Equal(t, http.StatusNotFound, resp.StatusCode)
 }
 
 func TestPulse_Pulse_WrongFormat(t *testing.T) {
@@ -933,6 +927,139 @@ func TestServer_JetDropsByPulseNumber(t *testing.T) {
 	})
 }
 
+func TestSearch_Pulse(t *testing.T) {
+	pulseNumber := gen.PulseNumber()
+	// search by pulse
+	resp, err := http.Get("http://" + apihost + "/api/v1/search?value=" + pulseNumber.String())
+	require.NoError(t, err)
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+	bodyBytes, err := ioutil.ReadAll(resp.Body)
+	require.NoError(t, err)
+
+	var received server.SearchPulse
+	err = json.Unmarshal(bodyBytes, &received)
+	require.NoError(t, err)
+	require.EqualValues(t, "pulse", *received.Type)
+	require.EqualValues(t, pulseNumber, *received.Meta.PulseNumber)
+}
+
+func TestSearch_Pulse_WrongValue(t *testing.T) {
+	resp, err := http.Get("http://" + apihost + fmt.Sprintf("/api/v1/search?value=%d", pulse.MinTimePulse-1))
+	require.NoError(t, err)
+	require.Equal(t, http.StatusBadRequest, resp.StatusCode)
+	bodyBytes, err := ioutil.ReadAll(resp.Body)
+	require.NoError(t, err)
+
+	var received server.CodeValidationError
+	err = json.Unmarshal(bodyBytes, &received)
+	require.NoError(t, err)
+	require.Len(t, *received.ValidationFailures, 1)
+	require.EqualValues(t, "not valid pulse number", *(*received.ValidationFailures)[0].FailureReason)
+	require.EqualValues(t, "value", *(*received.ValidationFailures)[0].Property)
+}
+
+func TestSearch_JetDrop(t *testing.T) {
+	pulseNumber := gen.PulseNumber()
+	jetDropID := fmt.Sprintf("101010:%s", pulseNumber.String())
+	// search by jetDrop
+	resp, err := http.Get("http://" + apihost + "/api/v1/search?value=" + jetDropID)
+	require.NoError(t, err)
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+	bodyBytes, err := ioutil.ReadAll(resp.Body)
+	require.NoError(t, err)
+
+	var received server.SearchJetDrop
+	err = json.Unmarshal(bodyBytes, &received)
+	require.NoError(t, err)
+	require.EqualValues(t, "jet-drop", *received.Type)
+	require.EqualValues(t, jetDropID, *received.Meta.JetDropId)
+}
+
+func TestSearch_Object(t *testing.T) {
+	objRef := gen.Reference().String()
+	// search by object reference
+	resp, err := http.Get("http://" + apihost + "/api/v1/search?value=" + objRef)
+	require.NoError(t, err)
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+	bodyBytes, err := ioutil.ReadAll(resp.Body)
+	require.NoError(t, err)
+
+	var received server.SearchLifeline
+	err = json.Unmarshal(bodyBytes, &received)
+	require.NoError(t, err)
+	require.EqualValues(t, "lifeline", *received.Type)
+	require.EqualValues(t, objRef, *received.Meta.ObjectReference)
+}
+
+func TestSearch_Record(t *testing.T) {
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+
+	// insert records
+	pulse, err := testutils.InitPulseDB()
+	require.NoError(t, err)
+	err = testutils.CreatePulse(testDB, pulse)
+	require.NoError(t, err)
+	jetDrop := testutils.InitJetDropDB(pulse)
+	err = testutils.CreateJetDrop(testDB, jetDrop)
+	require.NoError(t, err)
+
+	objRef := gen.Reference()
+
+	genRecords := testutils.OrderedRecords(t, testDB, jetDrop, *objRef.GetLocal(), 3)
+	testutils.OrderedRecords(t, testDB, jetDrop, gen.ID(), 3)
+
+	recRef := genRecords[1]
+	// search by record reference
+	resp, err := http.Get("http://" + apihost + "/api/v1/search?value=" + insolar.NewRecordReference(*insolar.NewIDFromBytes(recRef.Reference)).String())
+	require.NoError(t, err)
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+	bodyBytes, err := ioutil.ReadAll(resp.Body)
+	require.NoError(t, err)
+
+	var received server.SearchRecord
+	err = json.Unmarshal(bodyBytes, &received)
+	require.NoError(t, err)
+	require.EqualValues(t, "record", *received.Type)
+	require.EqualValues(t, objRef.String(), *received.Meta.ObjectReference)
+	require.EqualValues(t, fmt.Sprintf("%d:%d", recRef.PulseNumber, recRef.Order), *received.Meta.Index)
+}
+
+func TestSearch_Record_NotExist(t *testing.T) {
+	resp, err := http.Get("http://" + apihost + "/api/v1/search?value=" + gen.RecordReference().String())
+	require.NoError(t, err)
+	require.Equal(t, http.StatusBadRequest, resp.StatusCode)
+	bodyBytes, err := ioutil.ReadAll(resp.Body)
+	require.NoError(t, err)
+
+	var received server.CodeValidationError
+	err = json.Unmarshal(bodyBytes, &received)
+	require.NoError(t, err)
+	require.Len(t, *received.ValidationFailures, 1)
+	require.EqualValues(t, "record reference not found", *(*received.ValidationFailures)[0].FailureReason)
+	require.EqualValues(t, "value", *(*received.ValidationFailures)[0].Property)
+}
+
+func TestSearch_NoValue(t *testing.T) {
+	resp, err := http.Get("http://" + apihost + "/api/v1/search")
+	require.NoError(t, err)
+	require.Equal(t, http.StatusBadRequest, resp.StatusCode)
+}
+
+func TestSearch_InvalidValue(t *testing.T) {
+	resp, err := http.Get("http://" + apihost + "/api/v1/search?value=not_valid_value")
+	require.NoError(t, err)
+	require.Equal(t, http.StatusBadRequest, resp.StatusCode)
+	bodyBytes, err := ioutil.ReadAll(resp.Body)
+	require.NoError(t, err)
+
+	var received server.CodeValidationError
+	err = json.Unmarshal(bodyBytes, &received)
+	require.NoError(t, err)
+	require.Len(t, *received.ValidationFailures, 1)
+	require.EqualValues(t, "is neither pulse number, jet drop id nor reference", *(*received.ValidationFailures)[0].FailureReason)
+	require.EqualValues(t, "value", *(*received.ValidationFailures)[0].Property)
+}
+
 func TestServer_JetDropsByID(t *testing.T) {
 	t.Run("happy", func(t *testing.T) {
 		defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
@@ -1241,9 +1368,7 @@ func TestJetDropRecords(t *testing.T) {
 	})
 
 	t.Run("empty", func(t *testing.T) {
-		jetDropEmpty := testutils.InitJetDropDB(pulse)
-		jetDropIDEmpty := *models.NewJetDropID(jetDropEmpty.JetID, int64(pulse.PulseNumber+1000))
-		resp, err := http.Get("http://" + apihost + "/api/v1/jet-drops/" + jetDropIDEmpty.ToString() + "/records")
+		resp, err := http.Get("http://" + apihost + "/api/v1/jet-drops/" + "00000:12121212" + "/records")
 		require.NoError(t, err)
 
 		require.NoError(t, err)
