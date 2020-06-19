@@ -362,8 +362,6 @@ func (s *storage) GetJetDropsByJetID(jetID []byte, fromJetDropID *models.JetDrop
 		q = q.Where("jet_id >= ?", fromJetDropID.JetID)
 	}
 
-	// s := "+pulse_number,-jet_id"
-	// s := "-pulse_number,+jet_id"
 	q = filterByJetDropID(q, jetDropIDGte, jetDropIDLte)
 
 	if sortByPnAsc {

@@ -7,6 +7,7 @@ package api
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -140,13 +141,7 @@ func (s *Server) JetDropRecords(ctx echo.Context, jetDropID server.JetDropIdPath
 
 func (s *Server) JetDropsByJetID(ctx echo.Context, jetID server.JetIdPathParam, params server.JetDropsByJetIDParams) error {
 	var failures []server.CodeValidationFailures
-	limit, offset, err := checkLimitOffset(params.Limit, params.Offset)
-	if err != nil {
-		failures = append(failures, server.CodeValidationFailures{
-			FailureReason: NullableString(err.Error()),
-			Property:      NullableString("limit or offset"),
-		})
-	}
+	limit, offset, failures := checkLimitOffset(params.Limit, params.Offset)
 
 	id, validationError := checkJetID(jetID)
 	if validationError != nil {
@@ -158,22 +153,43 @@ func (s *Server) JetDropsByJetID(ctx echo.Context, jetID server.JetIdPathParam, 
 		failures = append(failures, validationError...)
 	}
 
-	var fromJetDropId *string
-	var jetDropIdGt *string
-	var jetDropIdLt *string
-	var limit, offset int
-
-	fromJetDropId, err = checkJetDropID(params.FromJetDropId)
-	if err != nil {
-		failures = append(failures, server.CodeValidationFailures{
-			FailureReason: NullableString("invalid value"),
-			Property:      NullableString("from_jet_drop_id"),
-		})
+	fromJetDropID, failure := checkJetDropID(params.FromJetDropId)
+	if failure != nil {
+		failures = append(failures, *failure)
+	}
+	jetDropIDGt, failure := checkJetDropID(params.JetDropIdGt)
+	if failure != nil {
+		failures = append(failures, *failure)
+	}
+	jetDropIDLt, failure := checkJetDropID(params.JetDropIdLt)
+	if failure != nil {
+		failures = append(failures, *failure)
 	}
 
-	// todo: jetDropIdGt jetDropIdLt
-	s.storage.GetJetDropsByJetId()
-	return ctx.JSON(200, "")
+	if len(failures) > 0 {
+		apiErr := server.CodeValidationError{
+			Code:               NullableString(http.StatusText(http.StatusBadRequest)),
+			Message:            NullableString(InvalidParamsMessage),
+			ValidationFailures: &failures,
+		}
+		return ctx.JSON(http.StatusBadRequest, apiErr)
+	}
+
+	jetDrops, total, err := s.storage.GetJetDropsByJetID(id.Prefix(), fromJetDropID, jetDropIDGt, jetDropIDLt, limit, offset, sort)
+	if err != nil {
+		s.logger.Error(err)
+		return ctx.JSON(http.StatusInternalServerError, struct{}{})
+	}
+
+	cnt := int64(total)
+	drops := make([]server.JetDrop, len(jetDrops))
+	for i, jetDrop := range jetDrops {
+		drops[i] = JetDropToAPI(jetDrop)
+	}
+	return ctx.JSON(http.StatusOK, server.JetDropsResponse{
+		Total:  &cnt,
+		Result: &drops,
+	})
 }
 
 func (s *Server) Pulses(ctx echo.Context, params server.PulsesParams) error {
@@ -462,22 +478,26 @@ func checkLimitOffset(l *server.LimitParam, o *server.OffsetParam) (int, int, []
 	return limit, offset, failures
 }
 
-func checkSortByPulseParameter(sortBy *server.SortByPulse) (string, []server.CodeValidationFailures) {
-	sort := "+pulse_number"
+func checkSortByPulseParameter(sortBy *server.SortByPulse) (bool, []server.CodeValidationFailures) {
+	pnAsc := "+pulse_number,-jet_id"
+	pnDesc := "-pulse_number,+jet_id"
+	var sortByPnAsc bool
 	if sortBy != nil {
 		s := string(*sortBy)
-		if s != "+pulse_number" && s != "-pulse_number" {
+		if s != pnAsc && s != pnDesc {
 			errResponse := []server.CodeValidationFailures{
 				{
 					Property:      NullableString("sortBy"),
-					FailureReason: NullableString("query parameter 'sort_by' should be '+pulse_number' or '-pulse_number'"),
+					FailureReason: NullableString(fmt.Sprintf("query parameter 'sort_by' should be '%s' or '%s'", pnAsc, pnDesc)),
 				},
 			}
-			return "", errResponse
+			return false, errResponse
 		}
-		sort = s
+		if s == "+pulse_number" {
+			sortByPnAsc = true
+		}
 	}
-	return sort, nil
+	return sortByPnAsc, nil
 }
 
 func checkJetID(jetID server.JetIdPathParam) (*insolar.JetID, []server.CodeValidationFailures) {
@@ -512,4 +532,51 @@ func checkJetID(jetID server.JetIdPathParam) (*insolar.JetID, []server.CodeValid
 		return nil, failures
 	}
 	return id, nil
+}
+
+func checkJetDropID(value interface{}) (*models.JetDropID, *server.CodeValidationFailures) {
+	if value == nil {
+		return nil, nil
+	}
+	{
+		lt, ok := value.(*server.JetDropIdLt)
+		if ok && lt != nil {
+			jetDropID, err := models.NewJetDropIDFromString(string(*lt))
+			if err != nil {
+				return nil, &server.CodeValidationFailures{
+					FailureReason: NullableString("invalid value, " + err.Error()),
+					Property:      NullableString("jet_drop_id_lt"),
+				}
+			}
+			return jetDropID, nil
+		}
+	}
+	{
+		gt, ok := value.(*server.JetDropIdGt)
+		if ok && gt != nil {
+			jetDropID, err := models.NewJetDropIDFromString(string(*gt))
+			if err != nil {
+				return nil, &server.CodeValidationFailures{
+					FailureReason: NullableString("invalid value, " + err.Error()),
+					Property:      NullableString("jet_drop_id_gt"),
+				}
+			}
+			return jetDropID, nil
+		}
+	}
+	{
+		id, ok := value.(*server.FromJetDropId)
+		if ok && id != nil {
+			jetDropID, err := models.NewJetDropIDFromString(string(*id))
+			if err != nil {
+				return nil, &server.CodeValidationFailures{
+					FailureReason: NullableString("invalid value, " + err.Error()),
+					Property:      NullableString("jet_drop_id"),
+				}
+			}
+			return jetDropID, nil
+		}
+	}
+
+	return nil, nil
 }
