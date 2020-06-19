@@ -7,6 +7,7 @@ package api
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -188,7 +189,7 @@ func (s *Server) Pulses(ctx echo.Context, params server.PulsesParams) error {
 		return ctx.JSON(http.StatusInternalServerError, struct{}{})
 	}
 
-	var result []server.Pulse
+	result := []server.Pulse{}
 	for _, p := range pulses {
 		jetDrops, records, err := s.storage.GetAmounts(p.PulseNumber)
 		if err != nil {
@@ -208,7 +209,7 @@ func (s *Server) Pulse(ctx echo.Context, pulseNumber server.PulseNumberPathParam
 	pulse, jetDropAmount, recordAmount, err := s.storage.GetPulse(int(pulseNumber))
 	if err != nil {
 		if gorm.IsRecordNotFoundError(err) {
-			return ctx.JSON(http.StatusOK, struct{}{})
+			return ctx.JSON(http.StatusNotFound, struct{}{})
 		}
 		err = errors.Wrapf(err, "error while select pulse from db by pulse number %d", pulseNumber)
 		s.logger.Error(err)
@@ -275,7 +276,100 @@ func (s *Server) JetDropsByPulseNumber(ctx echo.Context, pulseNumber server.Puls
 }
 
 func (s *Server) Search(ctx echo.Context, params server.SearchParams) error {
-	panic("implement me")
+	value := params.Value
+	// check if value is pulse
+	pulseNumber, err := strconv.ParseInt(value, 10, 64)
+	if err == nil {
+		return s.searchResponsePulse(ctx, pulseNumber)
+	}
+	// check if value is jetDropID
+	_, err = models.NewJetDropIDFromString(value)
+	if err == nil {
+		return ctx.JSON(http.StatusOK, server.SearchJetDrop{
+			Meta: &struct {
+				JetDropId *string `json:"jet_drop_id,omitempty"` // nolint
+			}{
+				JetDropId: &value,
+			},
+			Type: NullableString("jet-drop"),
+		})
+	}
+	// check if value is reference
+	ref, err := checkReference(value)
+	if err == nil {
+		return s.searchReferencePulse(ctx, ref)
+	}
+	response := server.CodeValidationError{
+		Code:        NullableString(http.StatusText(http.StatusBadRequest)),
+		Description: NullableString(InvalidParamsMessage),
+		ValidationFailures: &[]server.CodeValidationFailures{{
+			FailureReason: NullableString("is neither pulse number, jet drop id nor reference"),
+			Property:      NullableString("value"),
+		}},
+	}
+	return ctx.JSON(http.StatusBadRequest, response)
+}
+
+func (s *Server) searchResponsePulse(ctx echo.Context, pulseNumber int64) error {
+	if !pulse.IsValidAsPulseNumber(int(pulseNumber)) {
+		response := server.CodeValidationError{
+			Code:        NullableString(http.StatusText(http.StatusBadRequest)),
+			Description: NullableString(InvalidParamsMessage),
+			ValidationFailures: &[]server.CodeValidationFailures{{
+				FailureReason: NullableString("not valid pulse number"),
+				Property:      NullableString("value"),
+			}},
+		}
+		return ctx.JSON(http.StatusBadRequest, response)
+	}
+	return ctx.JSON(http.StatusOK, server.SearchPulse{
+		Meta: &struct {
+			PulseNumber *int64 `json:"pulse_number,omitempty"`
+		}{
+			PulseNumber: &pulseNumber,
+		},
+		Type: NullableString("pulse"),
+	})
+}
+
+func (s *Server) searchReferencePulse(ctx echo.Context, ref *insolar.Reference) error {
+	if ref.IsObjectReference() {
+		return ctx.JSON(http.StatusOK, server.SearchLifeline{
+			Meta: &struct {
+				ObjectReference *string `json:"object_reference,omitempty"`
+			}{
+				ObjectReference: NullableString(ref.String()),
+			},
+			Type: NullableString("lifeline"),
+		})
+	}
+	// get record from db to provide information for response
+	record, err := s.storage.GetRecord(ref.GetLocal().Bytes())
+	if err != nil {
+		if gorm.IsRecordNotFoundError(err) {
+			response := server.CodeValidationError{
+				Code:        NullableString(http.StatusText(http.StatusBadRequest)),
+				Description: NullableString(InvalidParamsMessage),
+				ValidationFailures: &[]server.CodeValidationFailures{{
+					FailureReason: NullableString("record reference not found"),
+					Property:      NullableString("value"),
+				}},
+			}
+			return ctx.JSON(http.StatusBadRequest, response)
+		}
+		s.logger.Error(err)
+		return ctx.JSON(http.StatusInternalServerError, struct{}{})
+	}
+	return ctx.JSON(http.StatusOK, server.SearchRecord{
+		Meta: &struct {
+			Index           *string `json:"index,omitempty"`
+			ObjectReference *string `json:"object_reference,omitempty"`
+		}{
+			Index:           NullableString(fmt.Sprintf("%d:%d", record.PulseNumber, record.Order)),
+			ObjectReference: NullableString(insolar.NewReference(*insolar.NewIDFromBytes(record.ObjectReference)).String()),
+		},
+		Type: NullableString("record"),
+	})
 }
 
 func (s *Server) ObjectLifeline(ctx echo.Context, objectReference server.ObjectReferencePathParam, params server.ObjectLifelineParams) error {
