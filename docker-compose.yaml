@@ -47,9 +47,6 @@ services:
       - /bin/bash
       - -c
       - |
-        curl https://raw.githubusercontent.com/vishnubob/wait-for-it/master/wait-for-it.sh > wait.sh
-        chmod +x wait.sh
-        ./wait.sh "postgres:5432"
         sleep 15
         printenv
         ls -al
@@ -76,24 +73,7 @@ services:
       - /bin/bash
       - -c
       - |
-        curl https://raw.githubusercontent.com/vishnubob/wait-for-it/master/wait-for-it.sh > wait.sh
-        chmod +x wait.sh
-        ./wait.sh "postgres:5432"
         sleep 15
         printenv
         ls -al
         ./api --config=/opt/app/config/api.yaml
-
-  frontend:
-    container_name: frontend
-    image: gbe-frontend
-    depends_on:
-      - api
-    ports:
-      - 8888:80
-    network_mode: "bridge"
-    links:
-      - api
-    environment:
-      API_URL: 'http://api:8080'
-

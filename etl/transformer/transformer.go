@@ -142,7 +142,7 @@ func sortRecords(records []types.Record) ([]types.Record, error) {
 	}
 	lenAfter := len(sortedRecords)
 	if lenBefore != lenAfter {
-		// return nil, errors.Errorf("Number of records before sorting (%d) changes after (%d)", lenBefore, lenAfter)
+		return nil, errors.Errorf("Number of records before sorting (%d) changes after (%d)", lenBefore, lenAfter)
 	}
 
 	return sortedRecords, nil
