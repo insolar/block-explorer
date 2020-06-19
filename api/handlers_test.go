@@ -1116,6 +1116,36 @@ func TestServer_JetDropsByID(t *testing.T) {
 	})
 }
 
+func TestServer_JetDropsByJetID(t *testing.T) {
+	t.Run("happy", func(t *testing.T) {
+		defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+
+		totalCount := 5
+		someJetId, preparedJetDrops, preparedPulses := testutils.GenerateJetDropsWithSomeJetID(t, totalCount)
+		err := testutils.CreatePulses(testDB, preparedPulses)
+		require.NoError(t, err)
+		err = testutils.CreateJetDrops(testDB, preparedJetDrops)
+		require.NoError(t, err)
+		jetID := models.ExporterJetIDToString(someJetId)
+
+		resp, err := http.Get("http://" + apihost + "/api/v1/jets/" + jetID + "/jet-drops")
+		require.NoError(t, err)
+		require.Equal(t, http.StatusOK, resp.StatusCode)
+		bodyBytes, err := ioutil.ReadAll(resp.Body)
+		require.NoError(t, err)
+
+		var received server.JetDropsResponse
+		err = json.Unmarshal(bodyBytes, &received)
+		require.NoError(t, err)
+		require.EqualValues(t, totalCount, int(*received.Total))
+		require.Len(t, *received.Result, totalCount)
+		for _, drop := range preparedJetDrops {
+			require.Contains(t, *received.Result, JetDropToAPI(drop))
+		}
+	})
+
+}
+
 func TestJetDropRecords(t *testing.T) {
 	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
 

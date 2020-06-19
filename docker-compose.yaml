@@ -47,6 +47,9 @@ services:
       - /bin/bash
       - -c
       - |
+        curl https://raw.githubusercontent.com/vishnubob/wait-for-it/master/wait-for-it.sh > wait.sh
+        chmod +x wait.sh
+        ./wait.sh "postgres:5432"
         sleep 15
         printenv
         ls -al
@@ -73,6 +76,9 @@ services:
       - /bin/bash
       - -c
       - |
+        curl https://raw.githubusercontent.com/vishnubob/wait-for-it/master/wait-for-it.sh > wait.sh
+        chmod +x wait.sh
+        ./wait.sh "postgres:5432"
         sleep 15
         printenv
         ls -al
@@ -87,6 +93,7 @@ services:
       - 8888:80
     network_mode: "bridge"
     links:
-      - postgres
+      - api
     environment:
       API_URL: 'http://api:8080'
+

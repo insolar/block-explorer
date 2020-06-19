@@ -6,6 +6,7 @@
 package models
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -102,7 +103,7 @@ func (j *JetDropID) ToString() string {
 
 func ExporterJetIDToString(jetID []byte) string {
 	res := strings.Builder{}
-	for i := 0; i < 5; i++ {
+	for i := 0; i < len(jetID); i++ {
 		bytePos, bitPos := i/8, 7-i%8
 
 		byteValue := jetID[bytePos]
@@ -111,4 +112,12 @@ func ExporterJetIDToString(jetID []byte) string {
 		res.WriteString(bitString)
 	}
 	return res.String()
+}
+
+func NewJetIDFromString(value string) ([]byte, error) {
+	id := jet.NewIDFromString(value)
+	if !id.IsValid() {
+		return nil, errors.New("jetID is not valid")
+	}
+	return id.Prefix(), nil
 }

@@ -175,7 +175,7 @@ func (s *Server) JetDropsByJetID(ctx echo.Context, jetID server.JetIdPathParam, 
 		return ctx.JSON(http.StatusBadRequest, apiErr)
 	}
 
-	jetDrops, total, err := s.storage.GetJetDropsByJetID(id.Prefix(), fromJetDropID, jetDropIDGt, jetDropIDLt, limit, offset, sort)
+	jetDrops, total, err := s.storage.GetJetDropsByJetID(id, fromJetDropID, jetDropIDGt, jetDropIDLt, limit, offset, sort)
 	if err != nil {
 		s.logger.Error(err)
 		return ctx.JSON(http.StatusInternalServerError, struct{}{})
@@ -500,7 +500,7 @@ func checkSortByPulseParameter(sortBy *server.SortByPulse) (bool, []server.CodeV
 	return sortByPnAsc, nil
 }
 
-func checkJetID(jetID server.JetIdPathParam) (*insolar.JetID, []server.CodeValidationFailures) {
+func checkJetID(jetID server.JetIdPathParam) ([]byte, []server.CodeValidationFailures) {
 	var failures []server.CodeValidationFailures
 
 	value := strings.TrimSpace(string(jetID))
@@ -520,8 +520,8 @@ func checkJetID(jetID server.JetIdPathParam) (*insolar.JetID, []server.CodeValid
 		})
 	}
 
-	id := insolar.NewJetID(0, []byte(unescapedValue))
-	if id == nil {
+	id, err := models.NewJetIDFromString(unescapedValue)
+	if err != nil {
 		failures = append(failures, server.CodeValidationFailures{
 			Property:      NullableString("jet-id path parameter"),
 			FailureReason: NullableString(errors.Wrapf(err, "cannot cast to insolar.JetID").Error()),
