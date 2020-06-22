@@ -14,7 +14,6 @@ import (
 
 	"github.com/insolar/block-explorer/etl/models"
 	"github.com/insolar/insolar/insolar"
-	"github.com/insolar/insolar/insolar/jet"
 	ins_record "github.com/insolar/insolar/insolar/record"
 	"github.com/insolar/insolar/ledger/heavy/exporter"
 	"github.com/stretchr/testify/require"
@@ -161,14 +160,10 @@ func TestGenerateObjectLifeline(t *testing.T) {
 }
 
 func TestExporterJetIDToString(t *testing.T) {
-	// ноый id
 	jetID := GenerateUniqueJetID().Prefix()
-	// передаем строку на фронт через этот метод
 	toString := models.ExporterJetIDToString(jetID)
-	// на бэке эту строку конвертируем обратно вот так
-	fromString := jet.NewIDFromString(toString).Prefix()
-	// сейчас эти два массива байт jetID, fromString не равны
-	// второй массив преврашаю в строку. strFromString == toString
+	fromString, err := models.NewJetIDFromString(toString)
+	require.NoError(t, err)
 	strFromString := models.ExporterJetIDToString(fromString)
 	require.Equal(t, toString, strFromString)
 	require.Equal(t, jetID, fromString)
