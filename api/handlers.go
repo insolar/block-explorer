@@ -481,7 +481,7 @@ func checkLimitOffset(l *server.LimitParam, o *server.OffsetParam) (int, int, []
 func checkSortByPulseParameter(sortBy *server.SortByPulse) (bool, []server.CodeValidationFailures) {
 	pnAsc := "+pulse_number,-jet_id"
 	pnDesc := "-pulse_number,+jet_id"
-	var sortByPnAsc bool
+	var sortByPnAsc bool = true
 	if sortBy != nil {
 		s := string(*sortBy)
 		if s != pnAsc && s != pnDesc {
@@ -493,7 +493,7 @@ func checkSortByPulseParameter(sortBy *server.SortByPulse) (bool, []server.CodeV
 			}
 			return false, errResponse
 		}
-		if s == "+pulse_number" {
+		if s == pnAsc {
 			sortByPnAsc = true
 		}
 	}
