@@ -79,7 +79,7 @@ type Controller interface {
 	Starter
 	Stopper
 	// Save information about saved jetdrops
-	SetJetDropData(pulse types.Pulse, jetID []byte)
+	SetJetDropData(pulse types.Pulse, jetID string)
 }
 
 //go:generate minimock -i github.com/insolar/block-explorer/etl/interfaces.StorageSetter -o ./mock -s _mock.go -g

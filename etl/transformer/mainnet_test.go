@@ -9,11 +9,11 @@ package transformer
 
 import (
 	"context"
-	"encoding/binary"
 	"testing"
 
 	"github.com/insolar/block-explorer/etl/interfaces"
 	"github.com/insolar/block-explorer/etl/types"
+	"github.com/insolar/block-explorer/instrumentation/converter"
 	"github.com/insolar/block-explorer/testutils"
 	"github.com/stretchr/testify/require"
 )
@@ -36,7 +36,7 @@ func TestTransformer_withDifferentJetId(t *testing.T) {
 	require.NoError(t, err)
 	defer transformer.Stop(ctx)
 	dropsCh <- jetDrops
-	jetids := make(map[uint64][]types.Record)
+	jetids := make(map[string][]types.Record)
 
 	for i := 0; i < differentJetIdCount; i++ {
 		jd := <-transformer.GetJetDropsChannel()
@@ -46,7 +46,7 @@ func TestTransformer_withDifferentJetId(t *testing.T) {
 		mainSection := jd.MainSection
 		require.Len(t, mainSection.Records, 1)
 		// it's easy to compare integers for testing
-		id := binary.BigEndian.Uint64(mainSection.Start.JetDropPrefix)
+		id := mainSection.Start.JetDropPrefix
 		jetids[id] = mainSection.Records
 	}
 
@@ -56,7 +56,7 @@ func TestTransformer_withDifferentJetId(t *testing.T) {
 	// iterate the map and check with expected value
 	for i := 0; i < differentJetIdCount; i++ {
 		record := jetDrops.Records[i]
-		expectedID := binary.BigEndian.Uint64(record.Record.JetID.Prefix())
+		expectedID := converter.JetIDToString(record.Record.JetID)
 		value, hasKey := jetids[expectedID]
 		require.True(t, hasKey, "received data from transformer has not expected value")
 		require.Equal(t, record.Record.ID.Bytes(), []byte(value[0].Ref))

@@ -8,6 +8,7 @@ package testutils
 import (
 	"testing"
 
+	"github.com/insolar/block-explorer/instrumentation/converter"
 	"github.com/insolar/insolar/insolar"
 	"github.com/insolar/insolar/insolar/gen"
 	"github.com/jinzhu/gorm"
@@ -40,7 +41,7 @@ func InitRecordDB(jetDrop models.JetDrop) models.Record {
 // InitJetDropDB returns generated jet drop with provided pulse
 func InitJetDropDB(pulse models.Pulse) models.JetDrop {
 	return models.JetDrop{
-		JetID:          GenerateUniqueJetID().Prefix(),
+		JetID:          converter.JetIDToString(GenerateUniqueJetID()),
 		PulseNumber:    pulse.PulseNumber,
 		FirstPrevHash:  GenerateRandBytes(),
 		SecondPrevHash: GenerateRandBytes(),

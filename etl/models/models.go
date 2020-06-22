@@ -10,8 +10,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/insolar/insolar/insolar/jet"
-
 	"github.com/insolar/block-explorer/etl/types"
 )
 
@@ -42,14 +40,14 @@ type Record struct {
 	PrevRecordReference Reference
 	Hash                []byte
 	RawData             []byte
-	JetID               []byte
+	JetID               string
 	PulseNumber         int
 	Order               int
 	Timestamp           int64
 }
 
 type JetDrop struct {
-	JetID          []byte `gorm:"primary_key;auto_increment:false"`
+	JetID          string `gorm:"primary_key;auto_increment:false"`
 	PulseNumber    int    `gorm:"primary_key;auto_increment:false"`
 	FirstPrevHash  []byte
 	SecondPrevHash []byte
@@ -68,17 +66,16 @@ type Pulse struct {
 }
 
 type JetDropID struct {
-	JetID       []byte
+	JetID       string
 	PulseNumber int64
 }
 
-func NewJetDropID(jetID []byte, pulseNumber int64) *JetDropID {
+func NewJetDropID(jetID string, pulseNumber int64) *JetDropID {
 	return &JetDropID{JetID: jetID, PulseNumber: pulseNumber}
 }
 
 func NewJetDropIDFromString(jetDropID string) (*JetDropID, error) {
 	var pulse int64
-	var jetID []byte
 	s := strings.Split(jetDropID, ":")
 	if len(s) != 2 {
 		return nil, fmt.Errorf("wrong jet drop id format")
@@ -92,23 +89,9 @@ func NewJetDropIDFromString(jetDropID string) (*JetDropID, error) {
 		return nil, fmt.Errorf("wrong jet drop id format")
 	}
 
-	jetID = jet.NewIDFromString(s[0]).Prefix()
-	return &JetDropID{JetID: jetID, PulseNumber: pulse}, nil
+	return &JetDropID{JetID: s[0], PulseNumber: pulse}, nil
 }
 
 func (j *JetDropID) ToString() string {
-	return fmt.Sprintf("%s:%d", ExporterJetIDToString(j.JetID), j.PulseNumber)
-}
-
-func ExporterJetIDToString(jetID []byte) string {
-	res := strings.Builder{}
-	for i := 0; i < 5; i++ {
-		bytePos, bitPos := i/8, 7-i%8
-
-		byteValue := jetID[bytePos]
-		bitValue := byteValue >> uint(bitPos) & 0x01
-		bitString := strconv.Itoa(int(bitValue))
-		res.WriteString(bitString)
-	}
-	return res.String()
+	return fmt.Sprintf("%s:%d", j.JetID, j.PulseNumber)
 }

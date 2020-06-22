@@ -9,6 +9,7 @@ import (
 	"bytes"
 	"context"
 
+	"github.com/insolar/block-explorer/instrumentation/converter"
 	"github.com/ugorji/go/codec"
 	"golang.org/x/crypto/sha3"
 
@@ -60,9 +61,9 @@ func Transform(ctx context.Context, jd *types.PlatformJetDrops) ([]*types.JetDro
 
 func getJetDrop(ctx context.Context, jetID insolar.JetID, records []types.Record, pulseData types.Pulse) (*types.JetDrop, error) {
 	sections := make([]types.Section, 0)
-	var prefix []byte
+	var prefix string
 	if jetID.IsValid() {
-		prefix = jetID.Prefix()
+		prefix = converter.JetIDToString(jetID)
 	}
 
 	records, err := sortRecords(records)

@@ -51,7 +51,7 @@ func TestNewProcessor(t *testing.T) {
 	wgController := sync.WaitGroup{}
 	controllerCalls := int32(0)
 	contr := mock.NewControllerMock(t)
-	contr.SetJetDropDataMock.Set(func(pulse types.Pulse, jetID []byte) {
+	contr.SetJetDropDataMock.Set(func(pulse types.Pulse, jetID string) {
 		atomic.AddInt32(&controllerCalls, 1)
 		wgController.Done()
 	})
@@ -72,7 +72,7 @@ func TestNewProcessor(t *testing.T) {
 						NextPulseDelta: 10,
 						PrevPulseDelta: 10,
 					},
-					JetDropPrefix:       nil,
+					JetDropPrefix:       "",
 					JetDropPrefixLength: 0,
 				},
 				DropContinue: types.DropContinue{},
@@ -115,7 +115,7 @@ func TestProcessor_process_EmptyPrev(t *testing.T) {
 	})
 
 	contr := mock.NewControllerMock(t)
-	contr.SetJetDropDataMock.Set(func(pulse types.Pulse, jetID []byte) {
+	contr.SetJetDropDataMock.Set(func(pulse types.Pulse, jetID string) {
 		require.Equal(t, jd.MainSection.Start.PulseData, pulse)
 		require.Equal(t, jd.MainSection.Start.JetDropPrefix, jetID)
 	})
@@ -157,7 +157,7 @@ func TestProcessor_process_SeveralPrev(t *testing.T) {
 	})
 
 	contr := mock.NewControllerMock(t)
-	contr.SetJetDropDataMock.Set(func(pulse types.Pulse, jetID []byte) {
+	contr.SetJetDropDataMock.Set(func(pulse types.Pulse, jetID string) {
 		require.Equal(t, jd.MainSection.Start.PulseData, pulse)
 		require.Equal(t, jd.MainSection.Start.JetDropPrefix, jetID)
 	})
