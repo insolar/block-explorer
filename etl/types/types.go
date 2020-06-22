@@ -45,7 +45,7 @@ type AdditionalSection struct {
 
 type DropStart struct {
 	PulseData           Pulse
-	JetDropPrefix       []byte
+	JetDropPrefix       string
 	JetDropPrefixLength uint
 }
 

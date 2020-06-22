@@ -20,6 +20,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/insolar/block-explorer/instrumentation/converter"
 	"github.com/insolar/insolar/insolar"
 	"github.com/insolar/insolar/insolar/gen"
 	"github.com/insolar/insolar/insolar/jet"
@@ -633,19 +634,19 @@ func TestServer_JetDropsByPulseNumber(t *testing.T) {
 
 		jetDrop2 := testutils.InitJetDropDB(pulse)
 		jetID2 := jet.NewIDFromString("001")
-		jetDrop2.JetID = jetID2.Prefix()
+		jetDrop2.JetID = converter.JetIDToString(jetID2)
 		err = testutils.CreateJetDrop(testDB, jetDrop2)
 		require.NoError(t, err)
 
 		jetDrop1 := testutils.InitJetDropDB(pulse)
 		jetID1 := jet.NewIDFromString("000")
-		jetDrop1.JetID = jetID1.Prefix()
+		jetDrop1.JetID = converter.JetIDToString(jetID1)
 		err = testutils.CreateJetDrop(testDB, jetDrop1)
 		require.NoError(t, err)
 
 		jetDrop3 := testutils.InitJetDropDB(pulse)
 		jetID3 := jet.NewIDFromString("010")
-		jetDrop3.JetID = jetID3.Prefix()
+		jetDrop3.JetID = converter.JetIDToString(jetID3)
 		err = testutils.CreateJetDrop(testDB, jetDrop3)
 		require.NoError(t, err)
 
@@ -676,19 +677,19 @@ func TestServer_JetDropsByPulseNumber(t *testing.T) {
 		require.NoError(t, err)
 		jetDrop1 := testutils.InitJetDropDB(pulse)
 		jetID1 := jet.NewIDFromString("000")
-		jetDrop1.JetID = jetID1.Prefix()
+		jetDrop1.JetID = converter.JetIDToString(jetID1)
 		err = testutils.CreateJetDrop(testDB, jetDrop1)
 		require.NoError(t, err)
 
 		jetDrop2 := testutils.InitJetDropDB(pulse)
 		jetID2 := jet.NewIDFromString("001")
-		jetDrop2.JetID = jetID2.Prefix()
+		jetDrop2.JetID = converter.JetIDToString(jetID2)
 		err = testutils.CreateJetDrop(testDB, jetDrop2)
 		require.NoError(t, err)
 
 		jetDrop3 := testutils.InitJetDropDB(pulse)
 		jetID3 := jet.NewIDFromString("010")
-		jetDrop3.JetID = jetID3.Prefix()
+		jetDrop3.JetID = converter.JetIDToString(jetID3)
 		err = testutils.CreateJetDrop(testDB, jetDrop3)
 		require.NoError(t, err)
 
@@ -718,38 +719,38 @@ func TestServer_JetDropsByPulseNumber(t *testing.T) {
 		require.NoError(t, err)
 		jetDrop1 := testutils.InitJetDropDB(pulse)
 		jetID1 := jet.NewIDFromString("000")
-		jetDrop1.JetID = jetID1.Prefix()
+		jetDrop1.JetID = converter.JetIDToString(jetID1)
 		err = testutils.CreateJetDrop(testDB, jetDrop1)
 		require.NoError(t, err)
 
 		jetDrop2 := testutils.InitJetDropDB(pulse)
 		jetID2 := jet.NewIDFromString("001")
-		jetDrop2.JetID = jetID2.Prefix()
+		jetDrop2.JetID = converter.JetIDToString(jetID2)
 		err = testutils.CreateJetDrop(testDB, jetDrop2)
 		require.NoError(t, err)
 
 		jetDrop3 := testutils.InitJetDropDB(pulse)
 		jetID3 := jet.NewIDFromString("010")
-		jetDrop3.JetID = jetID3.Prefix()
+		jetDrop3.JetID = converter.JetIDToString(jetID3)
 		err = testutils.CreateJetDrop(testDB, jetDrop3)
 		require.NoError(t, err)
 		jetDropID3 := models.NewJetDropID(jetDrop3.JetID, int64(pulse.PulseNumber)).ToString()
 
 		jetDrop4 := testutils.InitJetDropDB(pulse)
 		jetID4 := jet.NewIDFromString("011")
-		jetDrop4.JetID = jetID4.Prefix()
+		jetDrop4.JetID = converter.JetIDToString(jetID4)
 		err = testutils.CreateJetDrop(testDB, jetDrop4)
 		require.NoError(t, err)
 
 		jetDrop5 := testutils.InitJetDropDB(pulse)
 		jetID5 := jet.NewIDFromString("100")
-		jetDrop5.JetID = jetID5.Prefix()
+		jetDrop5.JetID = converter.JetIDToString(jetID5)
 		err = testutils.CreateJetDrop(testDB, jetDrop5)
 		require.NoError(t, err)
 
 		jetDrop6 := testutils.InitJetDropDB(pulse)
 		jetID6 := jet.NewIDFromString("101")
-		jetDrop6.JetID = jetID6.Prefix()
+		jetDrop6.JetID = converter.JetIDToString(jetID6)
 		err = testutils.CreateJetDrop(testDB, jetDrop6)
 		require.NoError(t, err)
 
@@ -1072,20 +1073,20 @@ func TestServer_JetDropsByID(t *testing.T) {
 
 		jetDrop2 := testutils.InitJetDropDB(pulse)
 		jetID2 := jet.NewIDFromString("001")
-		jetDrop2.JetID = jetID2.Prefix()
+		jetDrop2.JetID = converter.JetIDToString(jetID2)
 		err = testutils.CreateJetDrop(testDB, jetDrop2)
 		require.NoError(t, err)
 
 		jetDrop1 := testutils.InitJetDropDB(pulse)
 		jetID1 := jet.NewIDFromString("000")
-		jetDrop1.JetID = jetID1.Prefix()
+		jetDrop1.JetID = converter.JetIDToString(jetID1)
 		err = testutils.CreateJetDrop(testDB, jetDrop1)
 		require.NoError(t, err)
 		jetDropID1 := models.NewJetDropID(jetDrop1.JetID, int64(pulse.PulseNumber)).ToString()
 
 		jetDrop3 := testutils.InitJetDropDB(pulse)
 		jetID3 := jet.NewIDFromString("010")
-		jetDrop3.JetID = jetID3.Prefix()
+		jetDrop3.JetID = converter.JetIDToString(jetID3)
 		err = testutils.CreateJetDrop(testDB, jetDrop3)
 		require.NoError(t, err)
 
@@ -1114,21 +1115,21 @@ func TestServer_JetDropsByID(t *testing.T) {
 
 		jetDrop2 := testutils.InitJetDropDB(pulse)
 		jetID2 := jet.NewIDFromString("001")
-		jetDrop2.JetID = jetID2.Prefix()
+		jetDrop2.JetID = converter.JetIDToString(jetID2)
 		err = testutils.CreateJetDrop(testDB, jetDrop2)
 		require.NoError(t, err)
 		jetDropID2 := models.NewJetDropID(jetDrop2.JetID, int64(pulse.PulseNumber)).ToString()
 
 		jetDrop1 := testutils.InitJetDropDB(pulse)
 		jetID1 := jet.NewIDFromString("000")
-		jetDrop1.JetID = jetID1.Prefix()
+		jetDrop1.JetID = converter.JetIDToString(jetID1)
 		err = testutils.CreateJetDrop(testDB, jetDrop1)
 		require.NoError(t, err)
 		jetDropID1 := models.NewJetDropID(jetDrop1.JetID, int64(pulse.PulseNumber)).ToString()
 
 		jetDrop3 := testutils.InitJetDropDB(pulse)
 		jetID3 := jet.NewIDFromString("010")
-		jetDrop3.JetID = jetID3.Prefix()
+		jetDrop3.JetID = converter.JetIDToString(jetID3)
 		err = testutils.CreateJetDrop(testDB, jetDrop3)
 		require.NoError(t, err)
 		jetDropID3 := models.NewJetDropID(jetDrop3.JetID, int64(pulse.PulseNumber)).ToString()
@@ -1140,21 +1141,21 @@ func TestServer_JetDropsByID(t *testing.T) {
 
 		jetDrop4 := testutils.InitJetDropDB(pulse)
 		jetID4 := jet.NewIDFromString("001")
-		jetDrop4.JetID = jetID4.Prefix()
+		jetDrop4.JetID = converter.JetIDToString(jetID4)
 		err = testutils.CreateJetDrop(testDB, jetDrop4)
 		require.NoError(t, err)
 		jetDropID4 := models.NewJetDropID(jetDrop4.JetID, int64(pulse.PulseNumber)).ToString()
 
 		jetDrop5 := testutils.InitJetDropDB(pulse)
 		jetID5 := jet.NewIDFromString("000")
-		jetDrop5.JetID = jetID5.Prefix()
+		jetDrop5.JetID = converter.JetIDToString(jetID5)
 		err = testutils.CreateJetDrop(testDB, jetDrop5)
 		require.NoError(t, err)
 		jetDropID5 := models.NewJetDropID(jetDrop5.JetID, int64(pulse.PulseNumber)).ToString()
 
 		jetDrop6 := testutils.InitJetDropDB(pulse)
 		jetID6 := jet.NewIDFromString("010")
-		jetDrop6.JetID = jetID6.Prefix()
+		jetDrop6.JetID = converter.JetIDToString(jetID6)
 		err = testutils.CreateJetDrop(testDB, jetDrop6)
 		require.NoError(t, err)
 		jetDropID6 := models.NewJetDropID(jetDrop6.JetID, int64(pulse.PulseNumber)).ToString()
@@ -1166,21 +1167,21 @@ func TestServer_JetDropsByID(t *testing.T) {
 
 		jetDrop7 := testutils.InitJetDropDB(pulse)
 		jetID7 := jet.NewIDFromString("001")
-		jetDrop7.JetID = jetID7.Prefix()
+		jetDrop7.JetID = converter.JetIDToString(jetID7)
 		err = testutils.CreateJetDrop(testDB, jetDrop7)
 		require.NoError(t, err)
 		jetDropID7 := models.NewJetDropID(jetDrop7.JetID, int64(pulse.PulseNumber)).ToString()
 
 		jetDrop8 := testutils.InitJetDropDB(pulse)
 		jetID8 := jet.NewIDFromString("000")
-		jetDrop8.JetID = jetID8.Prefix()
+		jetDrop8.JetID = converter.JetIDToString(jetID8)
 		err = testutils.CreateJetDrop(testDB, jetDrop8)
 		require.NoError(t, err)
 		jetDropID8 := models.NewJetDropID(jetDrop8.JetID, int64(pulse.PulseNumber)).ToString()
 
 		jetDrop9 := testutils.InitJetDropDB(pulse)
 		jetID9 := jet.NewIDFromString("010")
-		jetDrop9.JetID = jetID9.Prefix()
+		jetDrop9.JetID = converter.JetIDToString(jetID9)
 		err = testutils.CreateJetDrop(testDB, jetDrop9)
 		require.NoError(t, err)
 		jetDropID9 := models.NewJetDropID(jetDrop9.JetID, int64(pulse.PulseNumber)).ToString()
@@ -1251,7 +1252,7 @@ func TestJetDropRecords(t *testing.T) {
 	err = testutils.CreatePulse(testDB, pulse)
 	require.NoError(t, err)
 	jetDrop1 := testutils.InitJetDropDB(pulse)
-	jetDrop1.JetID = jet.NewIDFromString("10101").Prefix()
+	jetDrop1.JetID = "10101"
 	err = testutils.CreateJetDrop(testDB, jetDrop1)
 	require.NoError(t, err)
 	recordResult := testutils.InitRecordDB(jetDrop1)
@@ -1269,7 +1270,7 @@ func TestJetDropRecords(t *testing.T) {
 	require.NoError(t, err)
 
 	jetDrop2 := testutils.InitJetDropDB(pulse)
-	jetDrop2.JetID = jet.NewIDFromString("11111").Prefix()
+	jetDrop2.JetID = "11111"
 	err = testutils.CreateJetDrop(testDB, jetDrop2)
 	require.NoError(t, err)
 	err = testutils.CreateRecord(testDB, testutils.InitRecordDB(jetDrop2))

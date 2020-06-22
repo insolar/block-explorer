@@ -6,6 +6,7 @@
 package testutils
 
 import (
+	"github.com/insolar/block-explorer/instrumentation/converter"
 	"github.com/insolar/insolar/insolar/gen"
 
 	"github.com/insolar/block-explorer/etl/types"
@@ -21,7 +22,7 @@ func CreateJetDropCanonical(records []types.Record) types.JetDrop {
 					PrevPulseDelta: 10,
 					NextPulseDelta: 10,
 				},
-				JetDropPrefix:       gen.JetID().Prefix(),
+				JetDropPrefix:       converter.JetIDToString(gen.JetID()),
 				JetDropPrefixLength: uint(gen.JetID().Depth()),
 			},
 			DropContinue: types.DropContinue{},

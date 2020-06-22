@@ -41,9 +41,9 @@ func TestNewController_OneNotCompletePulse(t *testing.T) {
 	extractor := mock.NewJetDropsExtractorMock(t)
 
 	pulseNumber := 1
-	firstJetID := []byte{1, 2, 3}
-	secondJetID := []byte{3, 4, 5}
-	expectedData := map[types.Pulse][][]byte{{PulseNo: pulseNumber}: {firstJetID, secondJetID}}
+	firstJetID := "123"
+	secondJetID := "345"
+	expectedData := map[types.Pulse][]string{{PulseNo: pulseNumber}: {firstJetID, secondJetID}}
 
 	sm := mock.NewStorageMock(t)
 	sm.GetIncompletePulsesMock.Return([]models.Pulse{{PulseNumber: pulseNumber}}, nil)
@@ -65,11 +65,11 @@ func TestNewController_SeveralNotCompletePulses(t *testing.T) {
 
 	firstPulseNumber := 1
 	secondPulseNumber := 2
-	firstJetID := []byte{1, 2, 3}
-	secondJetID := []byte{3, 4, 5}
+	firstJetID := "123"
+	secondJetID := "345"
 	firstPulse := types.Pulse{PulseNo: firstPulseNumber}
 	secondPulse := types.Pulse{PulseNo: secondPulseNumber}
-	expectedData := map[types.Pulse][][]byte{firstPulse: {firstJetID}, secondPulse: {secondJetID}}
+	expectedData := map[types.Pulse][]string{firstPulse: {firstJetID}, secondPulse: {secondJetID}}
 
 	sm := mock.NewStorageMock(t)
 	getJetDrops := func(pulse models.Pulse) (ja1 []models.JetDrop, err error) {
@@ -128,12 +128,12 @@ func TestNewController_ErrorGetJetDrops(t *testing.T) {
 
 func TestController_SetJetDropData(t *testing.T) {
 	c := Controller{
-		jetDropRegister: make(map[types.Pulse][][]byte),
+		jetDropRegister: make(map[types.Pulse][]string),
 	}
 
 	pulse := types.Pulse{PulseNo: 12345}
-	jetID := []byte{1, 1, 1, 1, 2, 2, 2, 2}
-	expectedData := map[types.Pulse][][]byte{pulse: {jetID}}
+	jetID := "11112222"
+	expectedData := map[types.Pulse][]string{pulse: {jetID}}
 
 	c.SetJetDropData(pulse, jetID)
 
@@ -142,12 +142,12 @@ func TestController_SetJetDropData(t *testing.T) {
 
 func TestController_SetJetDropData_Multiple(t *testing.T) {
 	c := Controller{
-		jetDropRegister: make(map[types.Pulse][][]byte),
+		jetDropRegister: make(map[types.Pulse][]string),
 	}
 
 	pulse := types.Pulse{PulseNo: 12345}
-	firstJetID := []byte{1, 2, 3}
-	secondJetID := []byte{3, 4, 5}
+	firstJetID := "123"
+	secondJetID := "345"
 
 	wg := sync.WaitGroup{}
 	wg.Add(2)
