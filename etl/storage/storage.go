@@ -371,7 +371,7 @@ func (s *storage) GetJetDropsByJetID(jetID string, fromJetDropID *models.JetDrop
 		q = q.Order("pulse_number desc").Order("jet_id asc")
 	}
 
-	err := q.Debug().Limit(limit).Offset(offset).Find(&jetDrops).Error
+	err := q.Limit(limit).Offset(offset).Find(&jetDrops).Error
 	if err == sql.ErrNoRows {
 		return jetDrops, 0, nil
 	}
