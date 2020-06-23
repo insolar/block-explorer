@@ -52,8 +52,8 @@ func InitJetDropDB(pulse models.Pulse) models.JetDrop {
 }
 
 // GenerateJetDropsWithSomeJetID returns a list of JetDrops with some JetID and ascending pulseNumber
-func GenerateJetDropsWithSomeJetID(t *testing.T, jCount int) ([]byte, []models.JetDrop, []models.Pulse) {
-	var jID *[]byte
+func GenerateJetDropsWithSomeJetID(t *testing.T, jCount int) (string, []models.JetDrop, []models.Pulse) {
+	var jID *string
 	pulses := make([]models.Pulse, jCount)
 	pulse, err := InitPulseDB()
 	require.NoError(t, err)

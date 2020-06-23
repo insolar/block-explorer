@@ -7,6 +7,7 @@ package storage
 
 import (
 	"database/sql"
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -352,14 +353,14 @@ func (s *storage) GetJetDropByID(id models.JetDropID) (models.JetDrop, error) {
 	return jetDrop, err
 }
 
-func (s *storage) GetJetDropsByJetID(jetID []byte, fromJetDropID *models.JetDropID, jetDropIDGte, jetDropIDLte *models.JetDropID, limit int, offset int, sortByPnAsc bool) ([]models.JetDrop, int, error) {
+func (s *storage) GetJetDropsByJetID(jetID string, fromJetDropID *models.JetDropID, jetDropIDGte, jetDropIDLte *models.JetDropID, limit int, offset int, sortByPnAsc bool) ([]models.JetDrop, int, error) {
 	var jetDrops []models.JetDrop
 	var total int64
 
 	q := s.db.Model(&jetDrops).Where(&models.JetDrop{JetID: jetID})
 
 	if fromJetDropID != nil {
-		q = q.Where("jet_id >= ?", fromJetDropID.JetID)
+		q = q.Where("jet_id like ?", fmt.Sprintf("%s%%", fromJetDropID.JetID))
 	}
 
 	q = filterByJetDropID(q, jetDropIDGte, jetDropIDLte)
@@ -370,7 +371,7 @@ func (s *storage) GetJetDropsByJetID(jetID []byte, fromJetDropID *models.JetDrop
 		q = q.Order("pulse_number desc").Order("jet_id asc")
 	}
 
-	err := q.Limit(limit).Offset(offset).Find(&jetDrops).Error
+	err := q.Debug().Limit(limit).Offset(offset).Find(&jetDrops).Error
 	if err == sql.ErrNoRows {
 		return jetDrops, 0, nil
 	}

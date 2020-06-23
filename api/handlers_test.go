@@ -1246,12 +1246,11 @@ func TestServer_JetDropsByID(t *testing.T) {
 
 func TestServer_JetDropsByJetID(t *testing.T) {
 	totalCount := 5
-	someJetId, preparedJetDrops, preparedPulses := testutils.GenerateJetDropsWithSomeJetID(t, totalCount)
+	jetID, preparedJetDrops, preparedPulses := testutils.GenerateJetDropsWithSomeJetID(t, totalCount)
 	err := testutils.CreatePulses(testDB, preparedPulses)
 	require.NoError(t, err)
 	err = testutils.CreateJetDrops(testDB, preparedJetDrops)
 	require.NoError(t, err)
-	jetID := models.ExporterJetIDToString(someJetId)
 
 	t.Run("happy_no_query_params", func(t *testing.T) {
 		resp, err := http.Get("http://" + apihost + "/api/v1/jets/" + jetID + "/jet-drops")
@@ -1283,6 +1282,22 @@ func TestServer_JetDropsByJetID(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, 0, int(*received.Total))
 		require.Len(t, *received.Result, 0)
+	})
+
+	t.Run("jetIDIsNotCorrect", func(t *testing.T) {
+		wrongJetID := "1010102"
+		resp, err := http.Get("http://" + apihost + "/api/v1/jets/" + wrongJetID + "/jet-drops")
+		require.NoError(t, err)
+		require.Equal(t, http.StatusBadRequest, resp.StatusCode)
+		bodyBytes, err := ioutil.ReadAll(resp.Body)
+		require.NoError(t, err)
+
+		var received server.CodeValidationError
+		err = json.Unmarshal(bodyBytes, &received)
+		require.NoError(t, err)
+		falures := *received.ValidationFailures
+		require.Len(t, falures, 1)
+		require.Contains(t, *falures[0].FailureReason, "parameter does not match with jetID valid value")
 	})
 
 	t.Run("limit", func(t *testing.T) {
