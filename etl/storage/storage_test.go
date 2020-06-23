@@ -13,6 +13,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/insolar/block-explorer/instrumentation/converter"
 	"github.com/insolar/insolar/insolar/gen"
 	"github.com/jinzhu/gorm"
 	"github.com/stretchr/testify/require"
@@ -84,7 +85,7 @@ func TestStorage_SaveJetDropData_UpdateExistedRecord(t *testing.T) {
 	record.Payload = newPayload
 
 	err = s.SaveJetDropData(
-		models.JetDrop{PulseNumber: pulse.PulseNumber, JetID: testutils.GenerateUniqueJetID().Prefix()},
+		models.JetDrop{PulseNumber: pulse.PulseNumber, JetID: converter.JetIDToString(testutils.GenerateUniqueJetID())},
 		[]models.Record{record},
 	)
 	require.NoError(t, err)
@@ -150,7 +151,7 @@ func TestStorage_SaveJetDropData_JetDropError_NilPK(t *testing.T) {
 	require.NoError(t, err)
 
 	jetDrop := testutils.InitJetDropDB(pulse)
-	jetDrop.JetID = nil
+	jetDrop.JetID = ""
 	record := testutils.InitRecordDB(jetDrop)
 
 	err = s.SaveJetDropData(jetDrop, []models.Record{record})

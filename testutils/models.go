@@ -8,6 +8,7 @@ package testutils
 import (
 	"testing"
 
+	"github.com/insolar/block-explorer/instrumentation/converter"
 	"github.com/insolar/insolar/insolar"
 	"github.com/insolar/insolar/insolar/gen"
 	"github.com/jinzhu/gorm"
@@ -22,12 +23,12 @@ var pulseDelta = uint16(10)
 // InitRecordDB returns generated record
 func InitRecordDB(jetDrop models.JetDrop) models.Record {
 	return models.Record{
-		Reference:           gen.Reference().Bytes(),
+		Reference:           gen.ID().Bytes(),
 		Type:                models.State,
-		ObjectReference:     gen.Reference().Bytes(),
-		PrototypeReference:  gen.Reference().Bytes(),
+		ObjectReference:     gen.ID().Bytes(),
+		PrototypeReference:  gen.ID().Bytes(),
 		Payload:             GenerateRandBytes(),
-		PrevRecordReference: gen.Reference().Bytes(),
+		PrevRecordReference: gen.ID().Bytes(),
 		Hash:                GenerateRandBytes(),
 		RawData:             GenerateRandBytes(),
 		JetID:               jetDrop.JetID,
@@ -40,7 +41,7 @@ func InitRecordDB(jetDrop models.JetDrop) models.Record {
 // InitJetDropDB returns generated jet drop with provided pulse
 func InitJetDropDB(pulse models.Pulse) models.JetDrop {
 	return models.JetDrop{
-		JetID:          GenerateUniqueJetID().Prefix(),
+		JetID:          converter.JetIDToString(GenerateUniqueJetID()),
 		PulseNumber:    pulse.PulseNumber,
 		FirstPrevHash:  GenerateRandBytes(),
 		SecondPrevHash: GenerateRandBytes(),

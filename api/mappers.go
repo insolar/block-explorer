@@ -9,8 +9,6 @@ import (
 	"bytes"
 	"encoding/base64"
 	"fmt"
-	"strconv"
-	"strings"
 
 	"github.com/insolar/insolar/insolar"
 	"github.com/insolar/spec-insolar-block-explorer-api/v1/server"
@@ -24,7 +22,7 @@ func NullableString(s string) *string {
 
 func RecordToAPI(record models.Record) server.Record {
 	pulseNumber := int64(record.PulseNumber)
-	jetID := jetIDToString(record.JetID)
+	jetID := record.JetID
 	jetDropID := fmt.Sprintf("%s:%d", jetID, record.PulseNumber)
 	response := server.Record{
 		Hash:        NullableString(base64.StdEncoding.EncodeToString(record.Hash)),
@@ -86,7 +84,7 @@ func JetDropToAPI(jetDrop models.JetDrop) server.JetDrop {
 	result := server.JetDrop{
 		Hash:      NullableString(base64.StdEncoding.EncodeToString(jetDrop.Hash)),
 		JetDropId: NullableString(models.NewJetDropID(jetDrop.JetID, int64(jetDrop.PulseNumber)).ToString()),
-		JetId:     NullableString(models.ExporterJetIDToString(jetDrop.JetID)),
+		JetId:     NullableString(jetDrop.JetID),
 		// todo implement this if needed
 		NextJetDropId: &nextJetDropID,
 		PrevJetDropId: &prevJetDropID,
@@ -95,17 +93,4 @@ func JetDropToAPI(jetDrop models.JetDrop) server.JetDrop {
 		Timestamp:     &jetDrop.Timestamp,
 	}
 	return result
-}
-
-func jetIDToString(prefix []byte) string {
-	res := strings.Builder{}
-	for i := 0; i < 5; i++ {
-		bytePos, bitPos := i/8, 7-i%8
-
-		byteValue := prefix[bytePos]
-		bitValue := byteValue >> uint(bitPos) & 0x01
-		bitString := strconv.Itoa(int(bitValue))
-		res.WriteString(bitString)
-	}
-	return res.String()
 }

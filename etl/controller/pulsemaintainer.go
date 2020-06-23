@@ -44,7 +44,7 @@ func (c *Controller) pulseMaintainer(ctx context.Context) {
 	}
 }
 
-func pulseIsComplete(p types.Pulse, d [][]byte) bool {
+func pulseIsComplete(p types.Pulse, d []string) bool {
 	// TODO implement me
 	return true
 }
