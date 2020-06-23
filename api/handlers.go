@@ -180,6 +180,15 @@ func (s *Server) JetDropsByJetID(ctx echo.Context, jetID server.JetIdPathParam, 
 	}
 
 	jetDrops, total, err := s.storage.GetJetDropsByJetID(id, fromJetDropID, jetDropIDGt, jetDropIDLt, limit, offset, sortByAsc)
+	if gorm.IsRecordNotFoundError(err) {
+		s.logger.Error(err)
+		cnt := int64(0)
+		var drops []server.JetDrop
+		return ctx.JSON(http.StatusOK, server.JetDropsResponse{
+			Total:  &cnt,
+			Result: &drops,
+		})
+	}
 	if err != nil {
 		s.logger.Error(err)
 		return ctx.JSON(http.StatusInternalServerError, struct{}{})

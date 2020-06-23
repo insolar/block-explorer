@@ -6,7 +6,6 @@
 package storage
 
 import (
-	"database/sql"
 	"fmt"
 	"strconv"
 	"strings"
@@ -372,20 +371,13 @@ func (s *storage) GetJetDropsByJetID(jetID string, fromJetDropID *models.JetDrop
 	}
 
 	err := q.Limit(limit).Offset(offset).Find(&jetDrops).Error
-	if err == sql.ErrNoRows {
-		return jetDrops, 0, nil
-	}
-
 	if err != nil {
 		return nil, 0, err
 	}
+
 	err = q.Count(&total).Error
-
-	if err == sql.ErrNoRows {
-		return jetDrops, 0, nil
-	}
 	if err != nil {
-		return nil, 0, err
+		return nil, 0, nil
 	}
 
 	return jetDrops, int(total), nil
