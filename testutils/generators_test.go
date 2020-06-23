@@ -12,7 +12,6 @@ import (
 	"io"
 	"testing"
 
-	"github.com/insolar/block-explorer/etl/models"
 	"github.com/insolar/insolar/insolar"
 	ins_record "github.com/insolar/insolar/insolar/record"
 	"github.com/insolar/insolar/ledger/heavy/exporter"
@@ -157,14 +156,4 @@ func TestGenerateObjectLifeline(t *testing.T) {
 	require.Len(t, all, pulsesNumber*recordsNumber+2)
 	sr := lifeline.GetStateRecords()
 	require.Len(t, sr, pulsesNumber*recordsNumber)
-}
-
-func TestExporterJetIDToString(t *testing.T) {
-	jetID := GenerateUniqueJetID().Prefix()
-	toString := models.ExporterJetIDToString(jetID)
-	fromString, err := models.NewJetIDFromString(toString)
-	require.NoError(t, err)
-	strFromString := models.ExporterJetIDToString(fromString)
-	require.Equal(t, toString, strFromString)
-	require.Equal(t, jetID, fromString)
 }
