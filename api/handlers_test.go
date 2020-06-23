@@ -1368,6 +1368,42 @@ func TestServer_JetDropsByJetID(t *testing.T) {
 		require.Len(t, *received.Result, expectedCount)
 	})
 
+	t.Run("sort_by_asc_and_desc", func(t *testing.T) {
+		pnAsc := url.QueryEscape("+pulse_number,-jet_id")
+		pnDesc := url.QueryEscape("-pulse_number,+jet_id")
+
+		doReqFn := func(t *testing.T, jetID string, sortBy string, totalCount int) server.JetDropsResponse {
+			resp, err := http.Get("http://" + apihost + "/api/v1/jets/" + jetID + "/jet-drops?sort_by=" + sortBy)
+			require.NoError(t, err)
+			bodyBytes, err := ioutil.ReadAll(resp.Body)
+			require.Equal(t, http.StatusOK, resp.StatusCode, string(bodyBytes))
+			require.NoError(t, err)
+
+			var received server.JetDropsResponse
+			err = json.Unmarshal(bodyBytes, &received)
+			require.NoError(t, err)
+			require.Equal(t, totalCount, int(*received.Total))
+			require.Len(t, *received.Result, totalCount)
+			return received
+		}
+
+		receivedAsc := *doReqFn(t, jetID, pnAsc, totalCount).Result
+		receivedDesc := *doReqFn(t, jetID, pnDesc, totalCount).Result
+
+		for i := 0; i < totalCount; i++ {
+			dropAsc := receivedAsc[i]
+			dropDesc := receivedDesc[totalCount-1-i]
+			require.Equal(t, *dropAsc.Hash, *dropDesc.Hash)
+			require.Equal(t, *dropAsc.PulseNumber, *dropDesc.PulseNumber)
+			require.Equal(t, *dropAsc.JetId, *dropDesc.JetId)
+			require.Equal(t, *dropAsc.JetDropId, *dropDesc.JetDropId)
+			require.Equal(t, *dropAsc.NextJetDropId, *dropDesc.NextJetDropId)
+			require.Equal(t, *dropAsc.PrevJetDropId, *dropDesc.PrevJetDropId)
+			require.Equal(t, *dropAsc.RecordAmount, *dropDesc.RecordAmount)
+			require.Equal(t, *dropAsc.Timestamp, *dropDesc.Timestamp)
+		}
+	})
+
 }
 
 func TestJetDropRecords(t *testing.T) {

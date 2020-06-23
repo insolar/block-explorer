@@ -152,7 +152,7 @@ func (s *Server) JetDropsByJetID(ctx echo.Context, jetID server.JetIdPathParam, 
 		failures = append(failures, validationError...)
 	}
 
-	sort, validationError := checkSortByPulseParameter(params.SortBy)
+	sortByAsc, validationError := checkSortByPulseParameter(params.SortBy)
 	if validationError != nil {
 		failures = append(failures, validationError...)
 	}
@@ -179,7 +179,7 @@ func (s *Server) JetDropsByJetID(ctx echo.Context, jetID server.JetIdPathParam, 
 		return ctx.JSON(http.StatusBadRequest, apiErr)
 	}
 
-	jetDrops, total, err := s.storage.GetJetDropsByJetID(id, fromJetDropID, jetDropIDGt, jetDropIDLt, limit, offset, sort)
+	jetDrops, total, err := s.storage.GetJetDropsByJetID(id, fromJetDropID, jetDropIDGt, jetDropIDLt, limit, offset, sortByAsc)
 	if err != nil {
 		s.logger.Error(err)
 		return ctx.JSON(http.StatusInternalServerError, struct{}{})
@@ -578,13 +578,13 @@ func checkLimitOffset(l *server.LimitParam, o *server.OffsetParam) (int, int, []
 func checkSortByPulseParameter(sortBy *server.SortByPulse) (bool, []server.CodeValidationFailures) {
 	pnAsc := "+pulse_number,-jet_id"
 	pnDesc := "-pulse_number,+jet_id"
-	var sortByPnAsc bool = true
+	var sortByPnAsc bool
 	if sortBy != nil {
 		s := string(*sortBy)
 		if s != pnAsc && s != pnDesc {
 			errResponse := []server.CodeValidationFailures{
 				{
-					Property:      NullableString("sortBy"),
+					Property:      NullableString("sort_by"),
 					FailureReason: NullableString(fmt.Sprintf("query parameter 'sort_by' should be '%s' or '%s'", pnAsc, pnDesc)),
 				},
 			}
