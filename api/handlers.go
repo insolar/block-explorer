@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -29,6 +30,9 @@ import (
 )
 
 const InvalidParamsMessage = "Invalid query or path parameters"
+
+// jetIDRegexp uses for a validation of the JetID
+var jetIDRegexp = regexp.MustCompile(`^[0-1]{2,64}$`)
 
 type Server struct {
 	storage interfaces.StorageFetcher
@@ -593,7 +597,7 @@ func checkSortByPulseParameter(sortBy *server.SortByPulse) (bool, []server.CodeV
 	return sortByPnAsc, nil
 }
 
-func checkJetID(jetID server.JetIdPathParam) ([]byte, []server.CodeValidationFailures) {
+func checkJetID(jetID server.JetIdPathParam) (string, []server.CodeValidationFailures) {
 	var failures []server.CodeValidationFailures
 
 	value := strings.TrimSpace(string(jetID))
@@ -605,7 +609,7 @@ func checkJetID(jetID server.JetIdPathParam) ([]byte, []server.CodeValidationFai
 		})
 	}
 
-	unescapedValue, err := url.QueryUnescape(value)
+	id, err := url.QueryUnescape(value)
 	if err != nil {
 		failures = append(failures, server.CodeValidationFailures{
 			Property:      NullableString("jet-id path parameter"),
@@ -613,16 +617,15 @@ func checkJetID(jetID server.JetIdPathParam) ([]byte, []server.CodeValidationFai
 		})
 	}
 
-	id, err := models.NewJetIDFromString(unescapedValue)
-	if err != nil {
+	if !jetIDRegexp.MatchString(id) {
 		failures = append(failures, server.CodeValidationFailures{
 			Property:      NullableString("jet-id path parameter"),
-			FailureReason: NullableString(errors.Wrapf(err, "cannot cast to insolar.JetID").Error()),
+			FailureReason: NullableString("parameter does not match with jetID valid value"),
 		})
 	}
 
 	if failures != nil {
-		return nil, failures
+		return "", failures
 	}
 	return id, nil
 }
