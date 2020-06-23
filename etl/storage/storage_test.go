@@ -1376,8 +1376,7 @@ func TestStorage_GetJetDropsByJetId_Fail(t *testing.T) {
 	jetDropForSecondPulse := testutils.InitJetDropDB(secondPulse)
 
 	wrongJetID := jetDropForSecondPulse.JetID
-	fromJetID := models.NewJetDropID(jetDropForSecondPulse.JetID, int64(jetDropForFirstPulse1.PulseNumber))
-	jetDrops, total, err := s.GetJetDropsByJetID(wrongJetID, fromJetID, nil, nil, -1, 0, true)
+	jetDrops, total, err := s.GetJetDropsByJetID(wrongJetID, nil, nil, nil, -1, 0, true)
 	require.NoError(t, err)
 	require.Len(t, jetDrops, 0)
 	require.Equal(t, 0, total)

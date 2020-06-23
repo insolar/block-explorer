@@ -53,7 +53,6 @@ func InitJetDropDB(pulse models.Pulse) models.JetDrop {
 
 // GenerateJetDropsWithSomeJetID returns a list of JetDrops with some JetID and ascending pulseNumber
 func GenerateJetDropsWithSomeJetID(t *testing.T, jCount int) (string, []models.JetDrop, []models.Pulse) {
-	var jID *string
 	pulses := make([]models.Pulse, jCount)
 	pulse, err := InitPulseDB()
 	require.NoError(t, err)
@@ -62,12 +61,11 @@ func GenerateJetDropsWithSomeJetID(t *testing.T, jCount int) (string, []models.J
 	drops := make([]models.JetDrop, jCount)
 	jDrop := InitJetDropDB(pulse)
 	drops[0] = jDrop
-	if jID == nil {
-		jID = &jDrop.JetID
-	}
+	jID := &jDrop.JetID
+
 	pn := pulse.PulseNumber
 	for i := 1; i < jCount; i++ {
-		pulse, err := InitFromPulseDB(pn)
+		pulse, err := InitNextPulseDB(pn)
 		require.NoError(t, err)
 		pulses[i] = pulse
 		jd := InitJetDropDB(pulse)
@@ -94,8 +92,8 @@ func InitPulseDB() (models.Pulse, error) {
 	}, nil
 }
 
-// InitPulseDB returns generated pulse
-func InitFromPulseDB(pn int) (models.Pulse, error) {
+// InitNextPulseDB returns generated pulse after pn
+func InitNextPulseDB(pn int) (models.Pulse, error) {
 	pulseNumber := insolar.PulseNumber(pn + int(pulseDelta))
 	timestamp, err := pulseNumber.AsApproximateTime()
 	if err != nil {
