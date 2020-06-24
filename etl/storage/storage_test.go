@@ -1343,8 +1343,7 @@ func TestStorage_GetJetDropsByJetId_Success(t *testing.T) {
 	require.NoError(t, err)
 
 	jID := jetDropForFirstPulse1.JetID
-	jetDropID := models.NewJetDropID(jetDropForFirstPulse1.JetID, int64(jetDropForFirstPulse1.PulseNumber))
-	jetDrops, total, err := s.GetJetDropsByJetID(jID, jetDropID, nil, nil, -1, 0, true)
+	jetDrops, total, err := s.GetJetDropsByJetID(jID, nil, nil, nil, nil, -1, true)
 	require.NoError(t, err)
 	require.Len(t, jetDrops, 1)
 	require.EqualValues(t, jetDropForFirstPulse1, jetDrops[0])
@@ -1376,7 +1375,7 @@ func TestStorage_GetJetDropsByJetId_Fail(t *testing.T) {
 	jetDropForSecondPulse := testutils.InitJetDropDB(secondPulse)
 
 	wrongJetID := jetDropForSecondPulse.JetID
-	jetDrops, total, err := s.GetJetDropsByJetID(wrongJetID, nil, nil, nil, -1, 0, true)
+	jetDrops, total, err := s.GetJetDropsByJetID(wrongJetID, nil, nil, nil, nil, -1, true)
 	require.NoError(t, err)
 	require.Len(t, jetDrops, 0)
 	require.Equal(t, 0, total)
@@ -1393,37 +1392,108 @@ func TestStorage_GetJetDropsByJetId(t *testing.T) {
 	err = testutils.CreateJetDrops(testDB, preparedJetDrops)
 	require.NoError(t, err)
 
-	fromJetDropID := models.NewJetDropID(someJetId, int64(preparedJetDrops[0].PulseNumber))
 	t.Run("limit", func(t *testing.T) {
-		jetDrops, total, err := s.GetJetDropsByJetID(someJetId, fromJetDropID, nil, nil, 1, 0, true)
+		jetDrops, total, err := s.GetJetDropsByJetID(someJetId, nil, nil, nil, nil, 1, true)
 		require.NoError(t, err)
 		require.Len(t, jetDrops, 1)
 		require.Equal(t, someJetIDCount, total)
 	})
-	t.Run("offset", func(t *testing.T) {
-		jetDrops, total, err := s.GetJetDropsByJetID(someJetId, fromJetDropID, nil, nil, -1, someJetIDCount-1, true)
+	t.Run("pulseNumberLte", func(t *testing.T) {
+		expectedCount := 2
+		pulseNumberLte := preparedPulses[1].PulseNumber
+		jetDrops, total, err := s.GetJetDropsByJetID(someJetId, &pulseNumberLte, nil, nil, nil, -1, true)
 		require.NoError(t, err)
-		require.Len(t, jetDrops, 1)
-		require.Equal(t, someJetIDCount, total)
+		require.Len(t, jetDrops, expectedCount)
+		require.Equal(t, expectedCount, total)
+		for i := 0; i < expectedCount; i++ {
+			expected := preparedJetDrops[i]
+			received := jetDrops[i]
+			require.EqualValues(t, expected, received)
+		}
 	})
-	t.Run("jetDropIDGte", func(t *testing.T) {
-		// start searching from the second-to-last. So result should be 1
-		jetDropIDGte := &models.JetDropID{preparedJetDrops[someJetIDCount-1].JetID, int64(preparedJetDrops[someJetIDCount-1].PulseNumber)}
-		jetDrops, total, err := s.GetJetDropsByJetID(someJetId, fromJetDropID, jetDropIDGte, nil, -1, 0, true)
+	t.Run("pulseNumberLte-all", func(t *testing.T) {
+		expectedCount := someJetIDCount
+		pulseNumberLte := preparedPulses[someJetIDCount-1].PulseNumber
+		jetDrops, total, err := s.GetJetDropsByJetID(someJetId, &pulseNumberLte, nil, nil, nil, -1, true)
 		require.NoError(t, err)
-		require.Len(t, jetDrops, 1)
-		require.Equal(t, 1, total)
+		require.Len(t, jetDrops, expectedCount)
+		require.Equal(t, expectedCount, total)
+		for i := 0; i < expectedCount; i++ {
+			expected := preparedJetDrops[i]
+			received := jetDrops[i]
+			require.EqualValues(t, expected, received)
+		}
 	})
-	t.Run("jetDropIDLte", func(t *testing.T) {
-		// start searching from the third. So result should be 3
-		jetDropIDLte := &models.JetDropID{JetID: preparedJetDrops[2].JetID, PulseNumber: int64(preparedJetDrops[2].PulseNumber)}
-		jetDrops, total, err := s.GetJetDropsByJetID(someJetId, fromJetDropID, nil, jetDropIDLte, -1, 0, true)
+	t.Run("pulseNumberLt", func(t *testing.T) {
+		expectedCount := 1
+		pulseNumberLt := preparedPulses[1].PulseNumber
+		jetDrops, total, err := s.GetJetDropsByJetID(someJetId, nil, &pulseNumberLt, nil, nil, -1, true)
 		require.NoError(t, err)
-		require.Len(t, jetDrops, 3)
-		require.Equal(t, 3, total)
+		require.Len(t, jetDrops, expectedCount)
+		require.Equal(t, expectedCount, total)
+		for i := 0; i < expectedCount; i++ {
+			expected := preparedJetDrops[i]
+			received := jetDrops[i]
+			require.EqualValues(t, expected, received)
+		}
+	})
+	t.Run("pulseNumberLt-no-one", func(t *testing.T) {
+		expectedCount := 0
+		pulseNumberLt := preparedPulses[0].PulseNumber
+		jetDrops, total, err := s.GetJetDropsByJetID(someJetId, nil, &pulseNumberLt, nil, nil, -1, true)
+		require.NoError(t, err)
+		require.Len(t, jetDrops, expectedCount)
+		require.Equal(t, expectedCount, total)
+	})
+	t.Run("pulseNumberGte", func(t *testing.T) {
+		expectedCount := someJetIDCount - 1
+		pulseNumberGt := preparedPulses[1].PulseNumber
+		jetDrops, total, err := s.GetJetDropsByJetID(someJetId, nil, nil, &pulseNumberGt, nil, -1, true)
+		require.NoError(t, err)
+		require.Len(t, jetDrops, expectedCount)
+		require.Equal(t, expectedCount, total)
+		for i, j := 1, 0; i < expectedCount; i, j = i+1, j+1 {
+			expected := preparedJetDrops[i]
+			received := jetDrops[j]
+			require.EqualValues(t, expected, received)
+		}
+	})
+	t.Run("pulseNumberGte-all", func(t *testing.T) {
+		expectedCount := someJetIDCount
+		pulseNumberGt := preparedPulses[0].PulseNumber
+		jetDrops, total, err := s.GetJetDropsByJetID(someJetId, nil, nil, &pulseNumberGt, nil, -1, true)
+		require.NoError(t, err)
+		require.Len(t, jetDrops, expectedCount)
+		require.Equal(t, expectedCount, total)
+		for i := 0; i < expectedCount; i++ {
+			expected := preparedJetDrops[i]
+			received := jetDrops[i]
+			require.EqualValues(t, expected, received)
+		}
+	})
+	t.Run("pulseNumberGt", func(t *testing.T) {
+		expectedCount := someJetIDCount - 2
+		pulseNumberGt := preparedPulses[1].PulseNumber
+		jetDrops, total, err := s.GetJetDropsByJetID(someJetId, nil, nil, nil, &pulseNumberGt, -1, true)
+		require.NoError(t, err)
+		require.Len(t, jetDrops, expectedCount)
+		require.Equal(t, expectedCount, total)
+		for i, j := 2, 0; i < expectedCount; i, j = i+1, j+1 {
+			expected := preparedJetDrops[i]
+			received := jetDrops[j]
+			require.EqualValues(t, expected, received)
+		}
+	})
+	t.Run("pulseNumberGt-no-one", func(t *testing.T) {
+		expectedCount := 0
+		pulseNumberGt := preparedPulses[someJetIDCount-1].PulseNumber
+		jetDrops, total, err := s.GetJetDropsByJetID(someJetId, nil, nil, nil, &pulseNumberGt, -1, true)
+		require.NoError(t, err)
+		require.Len(t, jetDrops, expectedCount)
+		require.Equal(t, expectedCount, total)
 	})
 	t.Run("sortBy asc", func(t *testing.T) {
-		jetDrops, total, err := s.GetJetDropsByJetID(someJetId, fromJetDropID, nil, nil, -1, 0, true)
+		jetDrops, total, err := s.GetJetDropsByJetID(someJetId, nil, nil, nil, nil, -1, true)
 		require.NoError(t, err)
 		require.Len(t, jetDrops, total)
 		require.Equal(t, someJetIDCount, total)
@@ -1432,7 +1502,7 @@ func TestStorage_GetJetDropsByJetId(t *testing.T) {
 		}
 	})
 	t.Run("sortBy desc", func(t *testing.T) {
-		jetDrops, total, err := s.GetJetDropsByJetID(someJetId, fromJetDropID, nil, nil, -1, 0, false)
+		jetDrops, total, err := s.GetJetDropsByJetID(someJetId, nil, nil, nil, nil, -1, false)
 		require.NoError(t, err)
 		require.Len(t, jetDrops, total)
 		require.Equal(t, someJetIDCount, total)
@@ -1449,15 +1519,12 @@ func TestStorage_GetJetDropsByJetId_MultipleCounts(t *testing.T) {
 	tests := map[string]struct {
 		jetDropCount int
 		limit        int
-		offset       int
 	}{
-		"no jetDrop with limit 0":              {jetDropCount: 1, limit: 0, offset: 0},
-		"one jetDrop with limit 1":             {jetDropCount: 1, limit: 1, offset: 0},
-		"two jetDrop with limit 10":            {jetDropCount: 2, limit: 10, offset: 0},
-		"10 jetDrop with limit 10":             {jetDropCount: 10, limit: 10, offset: 0},
-		"15 jetDrop with limit 10, offset 10":  {jetDropCount: 15, limit: 10, offset: 10},
-		"15 jetDrop with limit 10, offset 15":  {jetDropCount: 15, limit: 10, offset: 10},
-		"15 jetDrop with limit 10, offset 150": {jetDropCount: 15, limit: 10, offset: 150},
+		"no jetDrop with limit 0":   {jetDropCount: 1, limit: 0},
+		"one jetDrop with limit 1":  {jetDropCount: 1, limit: 1},
+		"two jetDrop with limit 10": {jetDropCount: 2, limit: 10},
+		"10 jetDrop with limit 10":  {jetDropCount: 10, limit: 10},
+		"15 jetDrop with limit 10":  {jetDropCount: 15, limit: 10},
 	}
 
 	for testName, data := range tests {
@@ -1468,16 +1535,11 @@ func TestStorage_GetJetDropsByJetId_MultipleCounts(t *testing.T) {
 			err = testutils.CreateJetDrops(testDB, preparedJetDrops)
 			require.NoError(t, err)
 
-			fakePulseNumber := int64(1234)
-			fromJetDropID := models.NewJetDropID(someJetId, fakePulseNumber)
-			jetDropsFromDb, total, err := s.GetJetDropsByJetID(someJetId, fromJetDropID, nil, nil, data.limit, data.offset, true)
+			jetDropsFromDb, total, err := s.GetJetDropsByJetID(someJetId, nil, nil, nil, nil, data.limit, true)
 			require.NoError(t, err)
-			expectedCount := data.jetDropCount - data.offset
+			expectedCount := data.jetDropCount
 			if expectedCount > data.limit {
 				expectedCount = data.limit
-			}
-			if expectedCount < 0 {
-				expectedCount = 0
 			}
 			require.Len(t, jetDropsFromDb, expectedCount)
 			for i := 0; i < expectedCount; i++ {

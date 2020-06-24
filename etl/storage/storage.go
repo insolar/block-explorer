@@ -6,7 +6,6 @@
 package storage
 
 import (
-	"fmt"
 	"strconv"
 	"strings"
 
@@ -104,13 +103,21 @@ func filterByPulse(query *gorm.DB, pulseNumberLt, pulseNumberGt *int) *gorm.DB {
 	return query
 }
 
-func filterByJetDropID(query *gorm.DB, jetDropIDGte, jetDropIDLte *models.JetDropID) *gorm.DB {
-	if jetDropIDGte != nil {
-		query = query.Where("(pulse_number >= ? and jet_id >= ?)", jetDropIDGte.PulseNumber, jetDropIDGte.JetID)
+func filterByPulseNumber(query *gorm.DB, pulseNumberLte, pulseNumberLt, pulseNumberGte, pulseNumberGt *int) *gorm.DB {
+	if pulseNumberLte != nil {
+		query = query.Where("pulse_number <= ?", *pulseNumberLte)
 	}
 
-	if jetDropIDLte != nil {
-		query = query.Where("(pulse_number <= ? and jet_id <= ?)", jetDropIDLte.PulseNumber, jetDropIDLte.JetID)
+	if pulseNumberLt != nil {
+		query = query.Where("pulse_number < ?", *pulseNumberLt)
+	}
+
+	if pulseNumberGte != nil {
+		query = query.Where("pulse_number >= ?", *pulseNumberGte)
+	}
+
+	if pulseNumberGt != nil {
+		query = query.Where("pulse_number > ?", *pulseNumberGt)
 	}
 
 	return query
@@ -352,17 +359,13 @@ func (s *storage) GetJetDropByID(id models.JetDropID) (models.JetDrop, error) {
 	return jetDrop, err
 }
 
-func (s *storage) GetJetDropsByJetID(jetID string, fromJetDropID *models.JetDropID, jetDropIDGte, jetDropIDLte *models.JetDropID, limit int, offset int, sortByPnAsc bool) ([]models.JetDrop, int, error) {
+func (s *storage) GetJetDropsByJetID(jetID string, pulseNumberLte, pulseNumberLt, pulseNumberGte, pulseNumberGt *int, limit int, sortByPnAsc bool) ([]models.JetDrop, int, error) {
 	var jetDrops []models.JetDrop
 	var total int64
 
-	q := s.db.Model(&jetDrops).Where(&models.JetDrop{JetID: jetID})
+	q := s.db.Model(&jetDrops).Where("jet_id in (?)", GetJetIdParents(jetID))
 
-	if fromJetDropID != nil {
-		q = q.Where("jet_id like ?", fmt.Sprintf("%s%%", fromJetDropID.JetID))
-	}
-
-	q = filterByJetDropID(q, jetDropIDGte, jetDropIDLte)
+	q = filterByPulseNumber(q, pulseNumberLte, pulseNumberLt, pulseNumberGte, pulseNumberGt)
 
 	if sortByPnAsc {
 		q = q.Order("pulse_number asc").Order(" jet_id desc")
@@ -370,7 +373,7 @@ func (s *storage) GetJetDropsByJetID(jetID string, fromJetDropID *models.JetDrop
 		q = q.Order("pulse_number desc").Order("jet_id asc")
 	}
 
-	err := q.Limit(limit).Offset(offset).Find(&jetDrops).Error
+	err := q.Limit(limit).Find(&jetDrops).Error
 	if err != nil {
 		return nil, 0, err
 	}
