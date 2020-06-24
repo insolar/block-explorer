@@ -1,0 +1,20 @@
+name: build
+on:
+  push:
+    branches:
+    - OPS-283_gha-build-tag
+    # tags:
+    # - v[0-9]+.[0-9]+.[0-9]+
+
+jobs:
+  build:
+    name: build
+    runs-on: ubuntu-latest
+    steps:
+    - name: checkout sources
+      uses: actions/checkout@v2
+    - name: build docker image
+      run: |
+        docker build -t block-explorer .
+    # - name: log into registry
+    #   run: echo "${{ secrets.REGISTRY_PASSWORD }}" | docker login ${{ secrets.REGISTRY_URL }} -u ${{ secrets.REGISTRY_USERNAME }} --password-stdin
