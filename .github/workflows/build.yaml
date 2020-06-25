@@ -1,8 +1,6 @@
 name: build
 on:
   push:
-    branches:
-    - OPS-283_gha-build-tag
     tags:
     - v[0-9]+.[0-9]+.[0-9]+
 
@@ -30,4 +28,4 @@ jobs:
         [ "$VERSION" == "master" ] && VERSION=latest
 
         docker tag ${IMAGE_NAME} insolar/${IMAGE_NAME}:${VERSION}
-        # docker push insolar/${IMAGE_NAME}:${VERSION}
+        docker push insolar/${IMAGE_NAME}:${VERSION}
