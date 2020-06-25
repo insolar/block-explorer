@@ -381,7 +381,7 @@ func (s *storage) GetJetDropsByJetID(jetID string, pulseNumberLte, pulseNumberLt
 
 	err = q.Count(&total).Error
 	if err != nil {
-		return nil, 0, nil
+		return nil, 0, err
 	}
 
 	return jetDrops, int(total), nil
