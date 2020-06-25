@@ -27,7 +27,7 @@ func TestGetJetIdParents(t *testing.T) {
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			parents := GetJetIdParents(test.input)
+			parents := GetJetIDParents(test.input)
 			for i, output := range test.output {
 				require.Equal(t, output, parents[i])
 			}

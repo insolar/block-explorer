@@ -5,9 +5,9 @@
 
 package storage
 
-// GetJetIdParents returns parents of the jet id
+// GetJetIDParents returns parents of the jet id
 // "0010" -> [0 00 001 0010]
-func GetJetIdParents(jetID string) []string {
+func GetJetIDParents(jetID string) []string {
 	length := len(jetID)
 	parents := make([]string, length)
 	if length == 0 {

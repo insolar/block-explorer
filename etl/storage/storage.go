@@ -363,7 +363,7 @@ func (s *storage) GetJetDropsByJetID(jetID string, pulseNumberLte, pulseNumberLt
 	var jetDrops []models.JetDrop
 	var total int64
 
-	q := s.db.Model(&jetDrops).Where("jet_id in (?)", GetJetIdParents(jetID))
+	q := s.db.Model(&jetDrops).Where("jet_id in (?)", GetJetIDParents(jetID))
 
 	q = filterByPulseNumber(q, pulseNumberLte, pulseNumberLt, pulseNumberGte, pulseNumberGt)
 
