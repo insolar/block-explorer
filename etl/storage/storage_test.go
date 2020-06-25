@@ -1447,8 +1447,8 @@ func TestStorage_GetJetDropsByJetId(t *testing.T) {
 	})
 	t.Run("pulseNumberGte", func(t *testing.T) {
 		expectedCount := someJetIDCount - 1
-		pulseNumberGt := preparedPulses[1].PulseNumber
-		jetDrops, total, err := s.GetJetDropsByJetID(someJetId, nil, nil, &pulseNumberGt, nil, -1, true)
+		pulseNumberGte := preparedPulses[1].PulseNumber
+		jetDrops, total, err := s.GetJetDropsByJetID(someJetId, nil, nil, &pulseNumberGte, nil, -1, true)
 		require.NoError(t, err)
 		require.Len(t, jetDrops, expectedCount)
 		require.Equal(t, expectedCount, total)
@@ -1491,6 +1491,62 @@ func TestStorage_GetJetDropsByJetId(t *testing.T) {
 		require.NoError(t, err)
 		require.Len(t, jetDrops, expectedCount)
 		require.Equal(t, expectedCount, total)
+	})
+	t.Run("between pulseNumber with equals", func(t *testing.T) {
+		expectedCount := someJetIDCount - 2
+		pulseNumberGte := preparedPulses[1].PulseNumber
+		pulseNumberLte := preparedPulses[someJetIDCount-2].PulseNumber
+		jetDrops, total, err := s.GetJetDropsByJetID(someJetId, &pulseNumberLte, nil, &pulseNumberGte, nil, -1, true)
+		require.NoError(t, err)
+		require.Len(t, jetDrops, expectedCount)
+		require.Equal(t, expectedCount, total)
+		for i, j := 1, 0; i < expectedCount; i, j = i+1, j+1 {
+			expected := preparedJetDrops[i]
+			received := jetDrops[j]
+			require.EqualValues(t, expected, received)
+		}
+	})
+	t.Run("pulseNumberGte and pulseNumberLt", func(t *testing.T) {
+		expectedCount := someJetIDCount - 3
+		pulseNumberGte := preparedPulses[1].PulseNumber
+		pulseNumberLt := preparedPulses[someJetIDCount-2].PulseNumber
+		jetDrops, total, err := s.GetJetDropsByJetID(someJetId, nil, &pulseNumberLt, &pulseNumberGte, nil, -1, true)
+		require.NoError(t, err)
+		require.Len(t, jetDrops, expectedCount)
+		require.Equal(t, expectedCount, total)
+		for i, j := 1, 0; i < expectedCount; i, j = i+1, j+1 {
+			expected := preparedJetDrops[i]
+			received := jetDrops[j]
+			require.EqualValues(t, expected, received)
+		}
+	})
+	t.Run("pulseNumberGt and pulseNumberLt", func(t *testing.T) {
+		expectedCount := someJetIDCount - 4
+		pulseNumberGt := preparedPulses[1].PulseNumber
+		pulseNumberLt := preparedPulses[someJetIDCount-2].PulseNumber
+		jetDrops, total, err := s.GetJetDropsByJetID(someJetId, nil, &pulseNumberLt, nil, &pulseNumberGt, -1, true)
+		require.NoError(t, err)
+		require.Len(t, jetDrops, expectedCount)
+		require.Equal(t, expectedCount, total)
+		for i, j := 1, 0; i < expectedCount; i, j = i+1, j+1 {
+			expected := preparedJetDrops[i]
+			received := jetDrops[j]
+			require.EqualValues(t, expected, received)
+		}
+	})
+	t.Run("pulseNumberGt and pulseNumberLte", func(t *testing.T) {
+		expectedCount := someJetIDCount - 3
+		pulseNumberGt := preparedPulses[1].PulseNumber
+		pulseNumberLte := preparedPulses[someJetIDCount-2].PulseNumber
+		jetDrops, total, err := s.GetJetDropsByJetID(someJetId, &pulseNumberLte, nil, nil, &pulseNumberGt, -1, true)
+		require.NoError(t, err)
+		require.Len(t, jetDrops, expectedCount)
+		require.Equal(t, expectedCount, total)
+		for i, j := 2, 0; i < expectedCount; i, j = i+1, j+1 {
+			expected := preparedJetDrops[i]
+			received := jetDrops[j]
+			require.EqualValues(t, expected, received)
+		}
 	})
 	t.Run("sortBy asc", func(t *testing.T) {
 		jetDrops, total, err := s.GetJetDropsByJetID(someJetId, nil, nil, nil, nil, -1, true)
