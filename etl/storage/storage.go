@@ -6,6 +6,7 @@
 package storage
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -363,7 +364,7 @@ func (s *storage) GetJetDropsByJetID(jetID string, pulseNumberLte, pulseNumberLt
 	var jetDrops []models.JetDrop
 	var total int64
 
-	q := s.db.Model(&jetDrops).Where("jet_id in (?)", GetJetIDParents(jetID))
+	q := s.db.Model(&jetDrops).Where("jet_id in (?) or jet_id like ?", GetJetIDParents(jetID), fmt.Sprintf("%s%%", jetID))
 
 	q = filterByPulseNumber(q, pulseNumberLte, pulseNumberLt, pulseNumberGte, pulseNumberGt)
 

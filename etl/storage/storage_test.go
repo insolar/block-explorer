@@ -11,6 +11,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"regexp"
 	"testing"
 
 	"github.com/insolar/block-explorer/instrumentation/converter"
@@ -1566,6 +1567,114 @@ func TestStorage_GetJetDropsByJetId(t *testing.T) {
 			require.EqualValues(t, preparedJetDrops[total-i-1], drop)
 		}
 	})
+}
+
+func TestStorage_GetJetDropsByJetId_Splites(t *testing.T) {
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+	s := NewStorage(testDB)
+
+	// fnGetJetIDs returns the jetid with middle depth and all possible values fot that
+	// if we pass the jetid, then we expect that the db must contains all possible values
+	fnGetJetIDs := func(drops []models.JetDrop) (string, []string) {
+		deepest := drops[0].JetID
+		depthless := drops[0].JetID
+		middle := drops[0].JetID
+
+		for i := 1; i < len(drops); i++ {
+			id := drops[i].JetID
+			if len(id) > len(deepest) {
+				deepest = id
+			}
+			if len(id) < len(depthless) {
+				depthless = id
+			}
+		}
+		start := len(depthless)
+		end := len(deepest)
+		median := start + (end-start)/2
+
+		// try to find the middle
+		for i := 0; i < len(drops); i++ {
+			if len(drops[i].JetID) == median {
+				middle = drops[i].JetID
+			}
+		}
+
+		// find parents of middle
+		parents := GetJetIDParents(middle)
+		childrenRegexp := regexp.MustCompile(middle + ".*")
+		for i := 0; i < len(drops); i++ {
+			id := drops[i].JetID
+			if childrenRegexp.MatchString(id) && id != middle { // if it's child
+				parents = append(parents, id)
+			}
+		}
+
+		// true if array contains value
+		contains := func(data []models.JetDrop, find string) bool {
+			for _, v := range data {
+				if v.JetID == find {
+					return true
+				}
+			}
+			return false
+		}
+
+		// try to calculate all possible values
+		allPossible := make([]string, 0)
+		// delete non existing jetid
+		for _, id := range parents {
+			// if incoming jet drops contains generated values
+			if contains(drops, id) {
+				allPossible = append(allPossible, id)
+			}
+		}
+
+		return middle, allPossible
+	}
+
+	tests := map[string]struct {
+		pulseCount int
+		jDCount    int
+		depth      int
+		total      int
+	}{
+		"pc=1, jdc=1, depth=0, total=1":     {1, 1, 0, 1},
+		"pc=1, jdc=1, depth=1, total=3":     {1, 1, 1, 3},
+		"pc=2, jdc=1, depth=1, total=6":     {2, 1, 1, 6},
+		"pc=1, jdc=2, depth=2, total=14":    {1, 2, 2, 14},
+		"pc=2, jdc=2, depth=2, total=28":    {2, 2, 2, 28},
+		"pc=2, jdc=2, depth=4, total=124":   {2, 2, 4, 124},
+		"pc=4, jdc=10, depth=5, total=2520": {4, 10, 5, 2520},
+	}
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			pulseCount := test.pulseCount
+			jetDropCount := test.jDCount
+			depth := test.depth
+			total := test.total
+
+			preparedJetDrops, preparedPulses := testutils.GenerateJetDropsWithSplit(t, pulseCount, jetDropCount, depth)
+			require.Equal(t, total, len(preparedJetDrops))
+			err := testutils.CreatePulses(testDB, preparedPulses)
+			require.NoError(t, err)
+			err = testutils.CreateJetDrops(testDB, preparedJetDrops)
+			require.NoError(t, err)
+
+			// try to calculate all possible Jet IDs
+			middle, allPossible := fnGetJetIDs(preparedJetDrops)
+
+			jetDropsFromDb, totalFromDb, err := s.GetJetDropsByJetID(middle, nil, nil, nil, nil, -1, true)
+			require.NoError(t, err)
+
+			require.Equal(t, totalFromDb, len(allPossible))
+			for _, v := range jetDropsFromDb {
+				require.Contains(t, allPossible, v.JetID)
+			}
+
+		})
+	}
+
 }
 
 func TestStorage_GetJetDropsByJetId_MultipleCounts(t *testing.T) {
