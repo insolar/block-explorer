@@ -1492,7 +1492,7 @@ func TestStorage_GetJetDropsByJetId(t *testing.T) {
 		require.Len(t, jetDrops, expectedCount)
 		require.Equal(t, expectedCount, total)
 	})
-	t.Run("between pulseNumber with equals", func(t *testing.T) {
+	t.Run("pulseNumberGte and pulseNumberLte", func(t *testing.T) {
 		expectedCount := someJetIDCount - 2
 		pulseNumberGte := preparedPulses[1].PulseNumber
 		pulseNumberLte := preparedPulses[someJetIDCount-2].PulseNumber
