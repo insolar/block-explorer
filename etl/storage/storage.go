@@ -6,6 +6,7 @@
 package storage
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -118,6 +119,26 @@ func filterByPulse(query *gorm.DB, pulseNumberLt, pulseNumberGt *int) *gorm.DB {
 	if pulseNumberLt != nil {
 		query = query.Where("pulse_number < ?", *pulseNumberLt)
 	}
+	return query
+}
+
+func filterByPulseNumber(query *gorm.DB, pulseNumberLte, pulseNumberLt, pulseNumberGte, pulseNumberGt *int) *gorm.DB {
+	if pulseNumberLte != nil {
+		query = query.Where("pulse_number <= ?", *pulseNumberLte)
+	}
+
+	if pulseNumberLt != nil {
+		query = query.Where("pulse_number < ?", *pulseNumberLt)
+	}
+
+	if pulseNumberGte != nil {
+		query = query.Where("pulse_number >= ?", *pulseNumberGte)
+	}
+
+	if pulseNumberGt != nil {
+		query = query.Where("pulse_number > ?", *pulseNumberGt)
+	}
+
 	return query
 }
 
@@ -388,4 +409,31 @@ func (s *Storage) GetJetDropByID(id models.JetDropID) (models.JetDrop, error) {
 	var jetDrop models.JetDrop
 	err := s.db.Model(&jetDrop).Where("pulse_number = ? AND jet_id = ?", id.PulseNumber, id.JetID).Find(&jetDrop).Error
 	return jetDrop, err
+}
+
+func (s *Storage) GetJetDropsByJetID(jetID string, pulseNumberLte, pulseNumberLt, pulseNumberGte, pulseNumberGt *int, limit int, sortByPnAsc bool) ([]models.JetDrop, int, error) {
+	var jetDrops []models.JetDrop
+	var total int64
+
+	q := s.db.Model(&jetDrops).Where("jet_id in (?) or jet_id like ?", GetJetIDParents(jetID), fmt.Sprintf("%s%%", jetID))
+
+	q = filterByPulseNumber(q, pulseNumberLte, pulseNumberLt, pulseNumberGte, pulseNumberGt)
+
+	if sortByPnAsc {
+		q = q.Order("pulse_number asc").Order(" jet_id desc")
+	} else {
+		q = q.Order("pulse_number desc").Order("jet_id asc")
+	}
+
+	err := q.Limit(limit).Find(&jetDrops).Error
+	if err != nil {
+		return nil, 0, err
+	}
+
+	err = q.Count(&total).Error
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return jetDrops, int(total), nil
 }

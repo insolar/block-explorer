@@ -51,9 +51,50 @@ func InitJetDropDB(pulse models.Pulse) models.JetDrop {
 	}
 }
 
+// GenerateJetDropsWithSomeJetID returns a list of JetDrops with some JetID and ascending pulseNumber
+func GenerateJetDropsWithSomeJetID(t *testing.T, jCount int) (string, []models.JetDrop, []models.Pulse) {
+	pulses := make([]models.Pulse, jCount)
+	pulse, err := InitPulseDB()
+	require.NoError(t, err)
+	pulses[0] = pulse
+
+	drops := make([]models.JetDrop, jCount)
+	jDrop := InitJetDropDB(pulse)
+	drops[0] = jDrop
+	jID := &jDrop.JetID
+
+	pn := pulse.PulseNumber
+	for i := 1; i < jCount; i++ {
+		pulse, err := InitNextPulseDB(pn)
+		require.NoError(t, err)
+		pulses[i] = pulse
+		jd := InitJetDropDB(pulse)
+		jd.JetID = *jID
+		drops[i] = jd
+		pn = pulse.PulseNumber
+	}
+	return *jID, drops, pulses
+}
+
 // InitPulseDB returns generated pulse
 func InitPulseDB() (models.Pulse, error) {
 	pulseNumber := gen.PulseNumber()
+	timestamp, err := pulseNumber.AsApproximateTime()
+	if err != nil {
+		return models.Pulse{}, err
+	}
+	return models.Pulse{
+		PulseNumber:     int(pulseNumber.AsUint32()),
+		PrevPulseNumber: int(pulseNumber.Prev(pulseDelta)),
+		NextPulseNumber: int(pulseNumber.Next(pulseDelta)),
+		IsComplete:      false,
+		Timestamp:       timestamp.Unix(),
+	}, nil
+}
+
+// InitNextPulseDB returns generated pulse after pn
+func InitNextPulseDB(pn int) (models.Pulse, error) {
+	pulseNumber := insolar.PulseNumber(pn + int(pulseDelta))
 	timestamp, err := pulseNumber.AsApproximateTime()
 	if err != nil {
 		return models.Pulse{}, err
@@ -83,10 +124,32 @@ func CreateJetDrop(db *gorm.DB, jetDrop models.JetDrop) error {
 	return nil
 }
 
+// CreateJetDrops creates provided jet drop list to db
+func CreateJetDrops(db *gorm.DB, jetDrops []models.JetDrop) error {
+	for _, v := range jetDrops {
+		err := CreateJetDrop(db, v)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // CreatePulse creates provided pulse at db
 func CreatePulse(db *gorm.DB, pulse models.Pulse) error {
 	if err := db.Create(&pulse).Error; err != nil {
 		return errors.Wrap(err, "error while saving pulse")
+	}
+	return nil
+}
+
+// CreatePulses creates provided pulses to db
+func CreatePulses(db *gorm.DB, pulses []models.Pulse) error {
+	for _, p := range pulses {
+		err := CreatePulse(db, p)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
