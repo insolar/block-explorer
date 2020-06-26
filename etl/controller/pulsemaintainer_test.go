@@ -33,6 +33,7 @@ func TestController_pulseMaintainer(t *testing.T) {
 	sm := mock.NewStorageMock(t)
 	sm.GetIncompletePulsesMock.Return(nil, nil)
 	sm.GetFinalPulseMock.Return(models.Pulse{}, nil)
+	sm.GetPulseByPrevMock.Return(models.Pulse{}, errors.New("test error"))
 
 	defer leaktest.Check(t)()
 	c, err := NewController(cfg, extractor, sm)

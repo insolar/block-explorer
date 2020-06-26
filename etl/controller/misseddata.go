@@ -80,7 +80,7 @@ func (dm *MissedDataManager) Add(ctx context.Context, fromPulse, toPulse int) bo
 }
 
 func (dm *MissedDataManager) isExpired(ts time.Time) bool {
-	return time.Now().Sub(ts) > dm.ttl
+	return time.Since(ts) > dm.ttl
 }
 
 func (dm *MissedDataManager) deleteExpired() {

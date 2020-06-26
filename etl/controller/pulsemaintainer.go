@@ -93,13 +93,10 @@ func (c *Controller) pulseFinalizer(ctx context.Context) {
 	}
 }
 
-func pulseIsComplete(p types.Pulse, d []string) bool {
+func pulseIsComplete(p types.Pulse, d []string) bool { // nolint
 	// TODO implement me
 	// This if is here for test reason, delete it after implementation and update test data for expected behavior
-	if p.PulseNo < 0 {
-		return false
-	}
-	return true
+	return p.PulseNo >= 0
 }
 
 func (c *Controller) reloadData(ctx context.Context, fromPulseNumber int, toPulseNumber int) {
