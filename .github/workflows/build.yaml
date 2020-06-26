@@ -13,8 +13,10 @@ jobs:
       run: |
         REPO=$(echo "${{ github.repository }}" | cut -d/ -f2)
         IMAGE_NAME=${REPO}
+        VERSION=$(echo "${{ github.ref }}" | sed -e 's,.*/\(.*\),\1,')
         echo "::set-env name=REPO::${REPO}"
         echo "::set-env name=IMAGE_NAME::${IMAGE_NAME}"
+        echo "::set-env name=VERSION::${VERSION}"
     - name: checkout sources
       uses: actions/checkout@v2
     - name: build docker image
@@ -24,8 +26,7 @@ jobs:
       run: echo "${{ secrets.DOCKERHUB_PASSWORD }}" | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
     - name: Push image
       run: |
-        VERSION=$(echo "${{ github.ref }}" | sed -e 's,.*/\(.*\),\1,')
-        [ "$VERSION" == "master" ] && VERSION=latest
-
         docker tag ${IMAGE_NAME} insolar/${IMAGE_NAME}:${VERSION}
+        docker tag ${IMAGE_NAME} insolar/${IMAGE_NAME}:latest
         docker push insolar/${IMAGE_NAME}:${VERSION}
+        docker push insolar/${IMAGE_NAME}:latest
