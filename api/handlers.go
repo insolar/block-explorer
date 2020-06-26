@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -30,6 +31,9 @@ import (
 
 const InvalidParamsMessage = "Invalid query or path parameters"
 
+// jetIDRegexp uses for a validation of the JetID
+var jetIDRegexp = regexp.MustCompile(`^[0-1]{1,216}$`)
+
 type Server struct {
 	storage interfaces.StorageFetcher
 	logger  log.Logger
@@ -42,7 +46,7 @@ func NewServer(ctx context.Context, storage interfaces.StorageFetcher, config co
 	return &Server{storage: storage, logger: logger, config: config}
 }
 
-func (s *Server) JetDropByID(ctx echo.Context, jetDropID server.JetDropIdPathParam) error {
+func (s *Server) JetDropByID(ctx echo.Context, jetDropID server.JetDropIdPath) error {
 	exporterJetDropID, err := models.NewJetDropIDFromString(string(jetDropID))
 	if err != nil {
 		response := server.CodeValidationError{
@@ -51,7 +55,7 @@ func (s *Server) JetDropByID(ctx echo.Context, jetDropID server.JetDropIdPathPar
 			Link:        nil,
 			Message:     NullableString(InvalidParamsMessage),
 			ValidationFailures: &[]server.CodeValidationFailures{{
-				FailureReason: NullableString("invalid"),
+				FailureReason: NullableString(errors.Wrapf(err, "invalid").Error()),
 				Property:      NullableString("jet drop id"),
 			}},
 		}
@@ -72,7 +76,7 @@ func (s *Server) JetDropByID(ctx echo.Context, jetDropID server.JetDropIdPathPar
 	return ctx.JSON(http.StatusOK, server.JetDropResponse(apiJetDrop))
 }
 
-func (s *Server) JetDropRecords(ctx echo.Context, jetDropID server.JetDropIdPathParam, params server.JetDropRecordsParams) error {
+func (s *Server) JetDropRecords(ctx echo.Context, jetDropID server.JetDropIdPath, params server.JetDropRecordsParams) error {
 	limit, offset, failures := checkLimitOffset(params.Limit, params.Offset)
 
 	jetDrop, err := models.NewJetDropIDFromString(string(jetDropID))
@@ -139,8 +143,98 @@ func (s *Server) JetDropRecords(ctx echo.Context, jetDropID server.JetDropIdPath
 	})
 }
 
-func (s *Server) JetDropsByJetID(ctx echo.Context, jetID server.JetIdPathParam, params server.JetDropsByJetIDParams) error {
-	panic("implement me")
+func (s *Server) JetDropsByJetID(ctx echo.Context, jetID server.JetIdPath, params server.JetDropsByJetIDParams) error {
+	var failures []server.CodeValidationFailures
+	limit, _, failures := checkLimitOffset(params.Limit, nil)
+
+	id, validationError := checkJetID(jetID)
+	if validationError != nil {
+		failures = append(failures, validationError...)
+	}
+
+	sortByAsc, validationError := checkSortByPulseParameter(params.SortBy)
+	if validationError != nil {
+		failures = append(failures, validationError...)
+	}
+
+	var pulseNumberLte, pulseNumberLt, pulseNumberGte, pulseNumberGt *int
+	if params.PulseNumberGt != nil {
+		unptr := int(*params.PulseNumberGt)
+		pulseNumberGt = &unptr
+		if !pulse.IsValidAsPulseNumber(unptr) {
+			failures = append(failures, server.CodeValidationFailures{
+				FailureReason: NullableString("invalid value"),
+				Property:      NullableString("pulse_number_gt"),
+			})
+		}
+	}
+
+	if params.PulseNumberGte != nil {
+		unptr := int(*params.PulseNumberGte)
+		pulseNumberGte = &unptr
+		if !pulse.IsValidAsPulseNumber(unptr) {
+			failures = append(failures, server.CodeValidationFailures{
+				FailureReason: NullableString("invalid value"),
+				Property:      NullableString("pulse_number_gte"),
+			})
+		}
+	}
+
+	if params.PulseNumberLt != nil {
+		unptr := int(*params.PulseNumberLt)
+		pulseNumberLt = &unptr
+		if !pulse.IsValidAsPulseNumber(unptr) {
+			failures = append(failures, server.CodeValidationFailures{
+				FailureReason: NullableString("invalid value"),
+				Property:      NullableString("pulse_number_lt"),
+			})
+		}
+	}
+
+	if params.PulseNumberLte != nil {
+		unptr := int(*params.PulseNumberLte)
+		pulseNumberLte = &unptr
+		if !pulse.IsValidAsPulseNumber(unptr) {
+			failures = append(failures, server.CodeValidationFailures{
+				FailureReason: NullableString("invalid value"),
+				Property:      NullableString("pulse_number_lte"),
+			})
+		}
+	}
+
+	if len(failures) > 0 {
+		apiErr := server.CodeValidationError{
+			Code:               NullableString(http.StatusText(http.StatusBadRequest)),
+			Message:            NullableString(InvalidParamsMessage),
+			ValidationFailures: &failures,
+		}
+		return ctx.JSON(http.StatusBadRequest, apiErr)
+	}
+
+	jetDrops, total, err := s.storage.GetJetDropsByJetID(id, pulseNumberLte, pulseNumberLt, pulseNumberGte, pulseNumberGt, limit, sortByAsc)
+	if gorm.IsRecordNotFoundError(err) {
+		s.logger.Error(err)
+		cnt := int64(0)
+		var drops []server.JetDrop
+		return ctx.JSON(http.StatusOK, server.JetDropsResponse{
+			Total:  &cnt,
+			Result: &drops,
+		})
+	}
+	if err != nil {
+		s.logger.Error(err)
+		return ctx.JSON(http.StatusInternalServerError, struct{}{})
+	}
+
+	cnt := int64(total)
+	drops := make([]server.JetDrop, len(jetDrops))
+	for i, jetDrop := range jetDrops {
+		drops[i] = JetDropToAPI(jetDrop)
+	}
+	return ctx.JSON(http.StatusOK, server.JetDropsResponse{
+		Total:  &cnt,
+		Result: &drops,
+	})
 }
 
 func (s *Server) Pulses(ctx echo.Context, params server.PulsesParams) error {
@@ -205,7 +299,7 @@ func (s *Server) Pulses(ctx echo.Context, params server.PulsesParams) error {
 	})
 }
 
-func (s *Server) Pulse(ctx echo.Context, pulseNumber server.PulseNumberPathParam) error {
+func (s *Server) Pulse(ctx echo.Context, pulseNumber server.PulseNumberPath) error {
 	pulse, jetDropAmount, recordAmount, err := s.storage.GetPulse(int(pulseNumber))
 	if err != nil {
 		if gorm.IsRecordNotFoundError(err) {
@@ -220,7 +314,7 @@ func (s *Server) Pulse(ctx echo.Context, pulseNumber server.PulseNumberPathParam
 	return ctx.JSON(http.StatusOK, pulseResponse)
 }
 
-func (s *Server) JetDropsByPulseNumber(ctx echo.Context, pulseNumber server.PulseNumberPathParam, params server.JetDropsByPulseNumberParams) error {
+func (s *Server) JetDropsByPulseNumber(ctx echo.Context, pulseNumber server.PulseNumberPath, params server.JetDropsByPulseNumberParams) error {
 	limit, offset, failures := checkLimitOffset(params.Limit, params.Offset)
 
 	if !pulse.IsValidAsPulseNumber(int(pulseNumber)) {
@@ -372,7 +466,7 @@ func (s *Server) searchReferencePulse(ctx echo.Context, ref *insolar.Reference) 
 	})
 }
 
-func (s *Server) ObjectLifeline(ctx echo.Context, objectReference server.ObjectReferencePathParam, params server.ObjectLifelineParams) error {
+func (s *Server) ObjectLifeline(ctx echo.Context, objectReference server.ObjectReferencePath, params server.ObjectLifelineParams) error {
 	limit, offset, failures := checkLimitOffset(params.Limit, params.Offset)
 
 	ref, err := checkReference(string(objectReference))
@@ -495,7 +589,7 @@ func checkReference(referenceRow string) (*insolar.Reference, error) {
 	return ref, nil
 }
 
-func checkLimitOffset(l *server.LimitParam, o *server.OffsetParam) (int, int, []server.CodeValidationFailures) {
+func checkLimitOffset(l *server.Limit, o *server.OffsetParam) (int, int, []server.CodeValidationFailures) {
 	var failures []server.CodeValidationFailures
 	limit := 20
 	if l != nil {
@@ -520,4 +614,59 @@ func checkLimitOffset(l *server.LimitParam, o *server.OffsetParam) (int, int, []
 	}
 
 	return limit, offset, failures
+}
+
+func checkSortByPulseParameter(sortBy *server.SortByPulse) (bool, []server.CodeValidationFailures) {
+	pnAsc := string(server.SortByPulse_pulse_number_asc_jet_id_desc)
+	pnDesc := string(server.SortByPulse_pulse_number_desc_jet_id_asc)
+	var sortByPnAsc bool
+	if sortBy != nil {
+		s := string(*sortBy)
+		if s != pnAsc && s != pnDesc {
+			errResponse := []server.CodeValidationFailures{
+				{
+					Property:      NullableString("sort_by"),
+					FailureReason: NullableString(fmt.Sprintf("query parameter 'sort_by' should be '%s' or '%s'", pnAsc, pnDesc)),
+				},
+			}
+			return false, errResponse
+		}
+		if s == pnAsc {
+			sortByPnAsc = true
+		}
+	}
+	return sortByPnAsc, nil
+}
+
+func checkJetID(jetID server.JetIdPath) (string, []server.CodeValidationFailures) {
+	var failures []server.CodeValidationFailures
+
+	value := strings.TrimSpace(string(jetID))
+
+	if len(value) == 0 {
+		failures = append(failures, server.CodeValidationFailures{
+			Property:      NullableString("jet-id path parameter"),
+			FailureReason: NullableString("empty value of path parameter"),
+		})
+	}
+
+	id, err := url.QueryUnescape(value)
+	if err != nil {
+		failures = append(failures, server.CodeValidationFailures{
+			Property:      NullableString("jet-id path parameter"),
+			FailureReason: NullableString(errors.Wrapf(err, "cannot unescape path parameter jet-id").Error()),
+		})
+	}
+
+	if !jetIDRegexp.MatchString(id) {
+		failures = append(failures, server.CodeValidationFailures{
+			Property:      NullableString("jet-id path parameter"),
+			FailureReason: NullableString("parameter does not match with jetID valid value"),
+		})
+	}
+
+	if failures != nil {
+		return "", failures
+	}
+	return id, nil
 }

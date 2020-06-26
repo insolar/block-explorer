@@ -7,6 +7,7 @@ package models
 
 import (
 	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -74,17 +75,19 @@ func NewJetDropID(jetID string, pulseNumber int64) *JetDropID {
 	return &JetDropID{JetID: jetID, PulseNumber: pulseNumber}
 }
 
+// jetIDRegexp uses for a validation of the JetID
+var jetIDRegexp = regexp.MustCompile(`^[0-1]{1,216}$`)
+
 func NewJetDropIDFromString(jetDropID string) (*JetDropID, error) {
 	var pulse int64
 	s := strings.Split(jetDropID, ":")
 	if len(s) != 2 {
 		return nil, fmt.Errorf("wrong jet drop id format")
 	}
-	_, err := strconv.ParseInt(s[0], 2, 64)
-	if err != nil {
+	if !jetIDRegexp.MatchString(s[0]) {
 		return nil, fmt.Errorf("wrong jet drop id format")
 	}
-	pulse, err = strconv.ParseInt(s[1], 10, 64)
+	pulse, err := strconv.ParseInt(s[1], 10, 64)
 	if err != nil {
 		return nil, fmt.Errorf("wrong jet drop id format")
 	}

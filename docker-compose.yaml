@@ -9,9 +9,6 @@ services:
       - POSTGRES_PASSWORD=secret
     ports:
       - 5432:5432
-    volumes:
-      - ./postgres-data:/var/lib/postgresql/data
-    network_mode: "bridge"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
@@ -37,7 +34,6 @@ services:
       BLOCK_EXPLORER_REPLICATOR_ADDR: 'docker.for.mac.localhost:5678'
       BLOCK_EXPLORER_DB_URL: 'postgres://postgres:secret@postgres:5432/postgres?sslmode=disable'
       MIGRATE_URL: 'postgres://postgres:secret@postgres:5432/postgres?sslmode=disable'
-    network_mode: "bridge"
     links:
       - postgres
     volumes:
@@ -66,7 +62,6 @@ services:
     environment:
       BLOCK_EXPLORER_API_DB_URL: 'postgres://postgres:secret@postgres:5432/postgres?sslmode=disable'
       BLOCK_EXPLORER_API_LISTEN: ':8080'
-    network_mode: "bridge"
     links:
       - postgres
     volumes:
@@ -89,7 +84,6 @@ services:
       - api
     ports:
       - 8888:80
-    network_mode: "bridge"
     links:
       - api
     environment:

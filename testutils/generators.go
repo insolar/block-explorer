@@ -10,13 +10,16 @@ import (
 	"io"
 	"math/rand"
 	"sync"
+	"testing"
 	"time"
 
 	fuzz "github.com/google/gofuzz"
+	"github.com/insolar/block-explorer/etl/models"
 	"github.com/insolar/insolar/insolar"
 	"github.com/insolar/insolar/insolar/gen"
 	insrecord "github.com/insolar/insolar/insolar/record"
 	"github.com/insolar/insolar/ledger/heavy/exporter"
+	"github.com/stretchr/testify/require"
 )
 
 func init() {
@@ -293,6 +296,9 @@ func GenerateUniqueJetID() insolar.JetID {
 	for {
 		jetID := gen.JetID()
 		id := binary.BigEndian.Uint64(jetID.Prefix())
+		if id == 0 {
+			continue
+		}
 		mutex.Lock()
 		_, hasKey := uniqueJetID[id]
 		if !hasKey {
@@ -314,4 +320,47 @@ func GenerateRandBytes() []byte {
 	var hash []byte
 	fuzz.New().NilChance(0).Fuzz(&hash)
 	return hash
+}
+
+// GenerateJetDropsWithSplit returns a jetdrops with splited by depth in different pulse
+func GenerateJetDropsWithSplit(t *testing.T, pulseCount, jDCount int, depth int) ([]models.JetDrop, []models.Pulse) {
+	pulses := make([]models.Pulse, pulseCount)
+	pulse, err := InitPulseDB()
+	require.NoError(t, err)
+	pulses[0] = pulse
+	pn := pulse.PulseNumber
+	for i := 1; i < pulseCount; i++ {
+		pulse, err := InitNextPulseDB(pn)
+		require.NoError(t, err)
+		pulses[i] = pulse
+		pn = pulse.PulseNumber
+	}
+
+	drops := make([]models.JetDrop, 0)
+	for j := 0; j < pulseCount; j++ {
+		for i := 0; i < jDCount; i++ {
+			jDrop := InitJetDropDB(pulses[j])
+			drops = append(drops, jDrop)
+			drops = append(drops, createChildren(pulses[j], jDrop.JetID, depth)...)
+		}
+	}
+
+	return drops, pulses
+}
+
+// createChildren is the recursion function which prepare jetdrops where jetID will be splited
+func createChildren(pulse models.Pulse, jetID string, depth int) []models.JetDrop {
+	if depth == 0 {
+		return nil
+	}
+	drops := make([]models.JetDrop, 2)
+	left, right := jetID+"0", jetID+"1"
+
+	jDropLeft, jDropRight := InitJetDropDB(pulse), InitJetDropDB(pulse)
+	jDropLeft.JetID, jDropRight.JetID = left, right
+	drops[0], drops[1] = jDropLeft, jDropRight
+
+	drops = append(drops, createChildren(pulse, left, depth-1)...)
+	drops = append(drops, createChildren(pulse, right, depth-1)...)
+	return drops
 }
