@@ -22,6 +22,7 @@ func Migrations() []*gormigrate.Migration {
 					PrevPulseNumber int
 					NextPulseNumber int
 					IsComplete      bool
+					IsFinal         bool
 					Timestamp       int64
 				}
 				if err := tx.CreateTable(&Pulse{}).Error; err != nil {

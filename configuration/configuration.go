@@ -59,7 +59,10 @@ type Log struct {
 }
 
 type Controller struct {
-	PulsePeriod int `insconfig:"10| Seconds between pulse completion tries"`
+	PulsePeriod       int `insconfig:"10| Seconds between pulse completion tries"`
+	FinalizePeriod    int `insconfig:"1| Seconds between pulse finalization tries"`
+	ReloadPeriod      int `insconfig:"10| Seconds between reloading data for same pulse tries"`
+	ReloadCleanPeriod int `insconfig:"1| Seconds between launching cleaning for reloaded data map"`
 }
 
 // NewLog creates new default configuration for logging

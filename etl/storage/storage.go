@@ -12,23 +12,22 @@ import (
 	"github.com/jinzhu/gorm"
 	"github.com/pkg/errors"
 
-	"github.com/insolar/block-explorer/etl/interfaces"
 	"github.com/insolar/block-explorer/etl/models"
 )
 
-type storage struct {
+type Storage struct {
 	db *gorm.DB
 }
 
 // NewStorage returns implementation of interfaces.Storage
-func NewStorage(db *gorm.DB) interfaces.Storage {
-	return &storage{
+func NewStorage(db *gorm.DB) *Storage {
+	return &Storage{
 		db: db,
 	}
 }
 
 // SaveJetDropData saves provided jetDrop and records to db in one transaction.
-func (s *storage) SaveJetDropData(jetDrop models.JetDrop, records []models.Record) error {
+func (s *Storage) SaveJetDropData(jetDrop models.JetDrop, records []models.Record) error {
 	return s.db.Transaction(func(tx *gorm.DB) error {
 		if err := tx.Save(&jetDrop).Error; err != nil {
 			return errors.Wrap(err, "error while saving jetDrop")
@@ -45,12 +44,12 @@ func (s *storage) SaveJetDropData(jetDrop models.JetDrop, records []models.Recor
 }
 
 // SavePulse saves provided pulse to db.
-func (s *storage) SavePulse(pulse models.Pulse) error {
+func (s *Storage) SavePulse(pulse models.Pulse) error {
 	return errors.Wrap(s.db.Save(&pulse).Error, "error while saving pulse")
 }
 
 // CompletePulse update pulse with provided number to completeness in db.
-func (s *storage) CompletePulse(pulseNumber int) error {
+func (s *Storage) CompletePulse(pulseNumber int) error {
 	return s.db.Transaction(func(tx *gorm.DB) error {
 		pulse := models.Pulse{PulseNumber: pulseNumber}
 		update := tx.Model(&pulse).Update(models.Pulse{IsComplete: true})
@@ -62,14 +61,33 @@ func (s *storage) CompletePulse(pulseNumber int) error {
 			return errors.Errorf("try to complete not existing pulse with number %d", pulseNumber)
 		}
 		if rowsAffected != 1 {
-			return errors.Errorf("several rows were affected by update for pulse with number %d, it was not expected", pulseNumber)
+			return errors.Errorf("several rows were affected by update for pulse with number %d to complete, it was not expected", pulseNumber)
+		}
+		return nil
+	})
+}
+
+// FinalizePulse update pulse with provided number to finale in db.
+func (s *Storage) FinalizePulse(pulseNumber int) error {
+	return s.db.Transaction(func(tx *gorm.DB) error {
+		pulse := models.Pulse{PulseNumber: pulseNumber}
+		update := tx.Model(&pulse).Update(models.Pulse{IsFinal: true})
+		if update.Error != nil {
+			return errors.Wrap(update.Error, "error while updating pulse final")
+		}
+		rowsAffected := update.RowsAffected
+		if rowsAffected == 0 {
+			return errors.Errorf("try to final not existing pulse with number %d", pulseNumber)
+		}
+		if rowsAffected != 1 {
+			return errors.Errorf("several rows were affected by update for pulse with number %d to final, it was not expected", pulseNumber)
 		}
 		return nil
 	})
 }
 
 // GetJetDrops returns records with provided reference from db.
-func (s *storage) GetRecord(ref models.Reference) (models.Record, error) {
+func (s *Storage) GetRecord(ref models.Reference) (models.Record, error) {
 	record := models.Record{}
 	err := s.db.Where("reference = ?", []byte(ref)).First(&record).Error
 	return record, err
@@ -173,7 +191,7 @@ func getPulses(query *gorm.DB, limit, offset int) ([]models.Pulse, int, error) {
 }
 
 // GetLifeline returns records for provided object reference, ordered by pulse number and order fields.
-func (s *storage) GetLifeline(objRef []byte, fromIndex *string, pulseNumberLt, pulseNumberGt, timestampLte, timestampGte *int, limit, offset int, sort string) ([]models.Record, int, error) {
+func (s *Storage) GetLifeline(objRef []byte, fromIndex *string, pulseNumberLt, pulseNumberGt, timestampLte, timestampGte *int, limit, offset int, sort string) ([]models.Record, int, error) {
 	query := s.db.Model(&models.Record{}).Where("object_reference = ?", objRef).Where("type = ?", models.State)
 
 	query = filterByPulse(query, pulseNumberLt, pulseNumberGt)
@@ -201,7 +219,7 @@ func (s *storage) GetLifeline(objRef []byte, fromIndex *string, pulseNumberLt, p
 }
 
 // GetPulse returns pulse with provided pulse number from db.
-func (s *storage) GetPulse(pulseNumber int) (models.Pulse, int64, int64, error) {
+func (s *Storage) GetPulse(pulseNumber int) (models.Pulse, int64, int64, error) {
 	var pulse models.Pulse
 	err := s.db.Where("pulse_number = ?", pulseNumber).First(&pulse).Error
 	if err != nil {
@@ -219,7 +237,7 @@ func (s *storage) GetPulse(pulseNumber int) (models.Pulse, int64, int64, error) 
 }
 
 // GetAmounts return amount of jetDrops and records at provided pulse.
-func (s *storage) GetAmounts(pulseNumber int) (int64, int64, error) {
+func (s *Storage) GetAmounts(pulseNumber int) (int64, int64, error) {
 	res := struct {
 		JetDrops int
 		Records  int
@@ -233,7 +251,7 @@ func (s *storage) GetAmounts(pulseNumber int) (int64, int64, error) {
 }
 
 // GetPulses returns pulses from db.
-func (s *storage) GetPulses(fromPulse *int64, timestampLte, timestampGte *int, limit, offset int) ([]models.Pulse, int, error) {
+func (s *Storage) GetPulses(fromPulse *int64, timestampLte, timestampGte *int, limit, offset int) ([]models.Pulse, int, error) {
 	query := s.db.Model(&models.Pulse{})
 
 	query = filterByTimestamp(query, timestampLte, timestampGte)
@@ -263,7 +281,7 @@ func (s *storage) GetPulses(fromPulse *int64, timestampLte, timestampGte *int, l
 	return pulses, total, err
 }
 
-func (s *storage) updateNextPulse(pulse models.Pulse) models.Pulse {
+func (s *Storage) updateNextPulse(pulse models.Pulse) models.Pulse {
 	var nextPulse models.Pulse
 	err := s.db.Where("prev_pulse_number = ?", pulse.PulseNumber).First(&nextPulse).Error
 	if err != nil {
@@ -274,7 +292,7 @@ func (s *storage) updateNextPulse(pulse models.Pulse) models.Pulse {
 }
 
 // GetRecordsByJetDrop returns records for provided jet drop, ordered by order field.
-func (s *storage) GetRecordsByJetDrop(jetDropID models.JetDropID, fromIndex, recordType *string, limit, offset int) ([]models.Record, int, error) {
+func (s *Storage) GetRecordsByJetDrop(jetDropID models.JetDropID, fromIndex, recordType *string, limit, offset int) ([]models.Record, int, error) {
 	query := s.db.Model(&models.Record{}).Where("pulse_number = ?", jetDropID.PulseNumber).Where("jet_id = ?", jetDropID.JetID)
 
 	if recordType != nil {
@@ -302,20 +320,53 @@ func (s *storage) GetRecordsByJetDrop(jetDropID models.JetDropID, fromIndex, rec
 }
 
 // GetIncompletePulses returns pulses that are not complete from db.
-func (s *storage) GetIncompletePulses() ([]models.Pulse, error) {
+func (s *Storage) GetIncompletePulses() ([]models.Pulse, error) {
 	var pulses []models.Pulse
 	err := s.db.Where("is_complete = ?", false).Find(&pulses).Error
 	return pulses, err
 }
 
+// GetPulseByPrev returns pulse with provided prev pulse number from db.
+func (s *Storage) GetPulseByPrev(prevPulse models.Pulse) (models.Pulse, error) {
+	var pulse models.Pulse
+	err := s.db.Where("prev_pulse_number = ?", prevPulse.PulseNumber).First(&pulse).Error
+	return pulse, err
+}
+
+// GetFinalPulse returns max pulse that have is_final as true from db.
+func (s *Storage) GetFinalPulse() (models.Pulse, error) {
+	var pulses []models.Pulse
+	err := s.db.Where("is_final = ?", true).Order("pulse_number desc").Limit(1).Find(&pulses).Error
+	if err != nil {
+		return models.Pulse{}, err
+	}
+	if len(pulses) == 0 {
+		return models.Pulse{}, nil
+	}
+	return pulses[0], err
+}
+
+// GetNextSavedPulse returns first pulse with pulse number bigger then fromPulseNumber from db.
+func (s *Storage) GetNextSavedPulse(fromPulseNumber models.Pulse) (models.Pulse, error) {
+	var pulses []models.Pulse
+	err := s.db.Where("pulse_number > ?", fromPulseNumber.PulseNumber).Order("pulse_number asc").Limit(1).Find(&pulses).Error
+	if err != nil {
+		return models.Pulse{}, err
+	}
+	if len(pulses) == 0 {
+		return models.Pulse{}, nil
+	}
+	return pulses[0], err
+}
+
 // GetJetDrops returns jetDrops for provided pulse from db.
-func (s *storage) GetJetDrops(pulse models.Pulse) ([]models.JetDrop, error) {
+func (s *Storage) GetJetDrops(pulse models.Pulse) ([]models.JetDrop, error) {
 	var jetDrops []models.JetDrop
 	err := s.db.Where("pulse_number = ?", pulse.PulseNumber).Find(&jetDrops).Error
 	return jetDrops, err
 }
 
-func (s *storage) GetJetDropsWithParams(pulse models.Pulse, fromJetDropID *models.JetDropID, limit int, offset int) ([]models.JetDrop, int, error) {
+func (s *Storage) GetJetDropsWithParams(pulse models.Pulse, fromJetDropID *models.JetDropID, limit int, offset int) ([]models.JetDrop, int, error) {
 	var jetDrops []models.JetDrop
 	q := s.db.Model(&jetDrops).Where("pulse_number = ?", pulse.PulseNumber).Order("jet_id asc")
 	if fromJetDropID != nil {
@@ -333,7 +384,7 @@ func (s *storage) GetJetDropsWithParams(pulse models.Pulse, fromJetDropID *model
 	return jetDrops, int(total), err
 }
 
-func (s *storage) GetJetDropByID(id models.JetDropID) (models.JetDrop, error) {
+func (s *Storage) GetJetDropByID(id models.JetDropID) (models.JetDrop, error) {
 	var jetDrop models.JetDrop
 	err := s.db.Model(&jetDrop).Where("pulse_number = ? AND jet_id = ?", id.PulseNumber, id.JetID).Find(&jetDrop).Error
 	return jetDrop, err

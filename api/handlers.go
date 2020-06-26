@@ -31,13 +31,13 @@ import (
 const InvalidParamsMessage = "Invalid query or path parameters"
 
 type Server struct {
-	storage interfaces.StorageFetcher
+	storage interfaces.StorageAPIFetcher
 	logger  log.Logger
 	config  configuration.API
 }
 
 // NewServer returns instance of API server
-func NewServer(ctx context.Context, storage interfaces.StorageFetcher, config configuration.API) *Server {
+func NewServer(ctx context.Context, storage interfaces.StorageAPIFetcher, config configuration.API) *Server {
 	logger := belogger.FromContext(ctx)
 	return &Server{storage: storage, logger: logger, config: config}
 }

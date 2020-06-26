@@ -402,6 +402,89 @@ func TestStorage_CompletePulse_ErrorNotExist(t *testing.T) {
 	require.Empty(t, pulseInDB)
 }
 
+func TestStorage_FinalizePulse(t *testing.T) {
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Pulse{}})
+	s := NewStorage(testDB)
+
+	pulse, err := testutils.InitPulseDB()
+	require.NoError(t, err)
+	err = testutils.CreatePulse(testDB, pulse)
+	require.NoError(t, err)
+
+	err = s.FinalizePulse(pulse.PulseNumber)
+	require.NoError(t, err)
+
+	pulse.IsFinal = true
+	pulseInDB := []models.Pulse{}
+	err = testDB.Find(&pulseInDB).Error
+	require.NoError(t, err)
+	require.Len(t, pulseInDB, 1)
+	require.EqualValues(t, pulse, pulseInDB[0])
+}
+
+func TestStorage_FinalizePulse_ErrorUpdateSeveralRows(t *testing.T) {
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Pulse{}})
+	s := NewStorage(testDB)
+
+	pulse, err := testutils.InitPulseDB()
+	require.NoError(t, err)
+	err = testutils.CreatePulse(testDB, pulse)
+	require.NoError(t, err)
+	pulse, err = testutils.InitPulseDB()
+	require.NoError(t, err)
+	err = testutils.CreatePulse(testDB, pulse)
+	require.NoError(t, err)
+
+	err = s.FinalizePulse(0)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "several rows were affected")
+
+	pulseInDB := []models.Pulse{}
+	err = testDB.Find(&pulseInDB).Error
+	require.NoError(t, err)
+	require.Len(t, pulseInDB, 2)
+	require.EqualValues(t, false, pulseInDB[0].IsComplete)
+	require.EqualValues(t, false, pulseInDB[1].IsComplete)
+
+}
+
+func TestStorage_FinalizePulse_AlreadyCompleted(t *testing.T) {
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Pulse{}})
+	s := NewStorage(testDB)
+
+	pulse, err := testutils.InitPulseDB()
+	require.NoError(t, err)
+	pulse.IsFinal = true
+	err = testutils.CreatePulse(testDB, pulse)
+	require.NoError(t, err)
+
+	err = s.FinalizePulse(pulse.PulseNumber)
+	require.NoError(t, err)
+
+	pulseInDB := []models.Pulse{}
+	err = testDB.Find(&pulseInDB).Error
+	require.NoError(t, err)
+	require.Len(t, pulseInDB, 1)
+	require.EqualValues(t, pulse, pulseInDB[0])
+}
+
+func TestStorage_FinalizePulse_ErrorNotExist(t *testing.T) {
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Pulse{}})
+	s := NewStorage(testDB)
+
+	pulse, err := testutils.InitPulseDB()
+	require.NoError(t, err)
+
+	err = s.FinalizePulse(pulse.PulseNumber)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "try to final not existing pulse")
+
+	pulseInDB := []models.Pulse{}
+	err = testDB.Find(&pulseInDB).Error
+	require.NoError(t, err)
+	require.Empty(t, pulseInDB)
+}
+
 func TestStorage_SavePulse(t *testing.T) {
 	defer testutils.TruncateTables(t, testDB, []interface{}{models.Pulse{}})
 	s := NewStorage(testDB)
@@ -1322,4 +1405,108 @@ func TestStorage_GetRecordsByJetDrop(t *testing.T) {
 		require.Equal(t, 0, total)
 		require.Empty(t, records)
 	})
+}
+
+func TestStorage_GetPulseByPrev(t *testing.T) {
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+	s := NewStorage(testDB)
+
+	prevPulse, err := testutils.InitPulseDB()
+	require.NoError(t, err)
+	err = testutils.CreatePulse(testDB, prevPulse)
+	require.NoError(t, err)
+	expectedPulse, err := testutils.InitPulseDB()
+	require.NoError(t, err)
+	expectedPulse.PrevPulseNumber = prevPulse.PulseNumber
+	err = testutils.CreatePulse(testDB, expectedPulse)
+	require.NoError(t, err)
+	notExpectedPulse, err := testutils.InitPulseDB()
+	require.NoError(t, err)
+	err = testutils.CreatePulse(testDB, notExpectedPulse)
+	require.NoError(t, err)
+
+	pulse, err := s.GetPulseByPrev(prevPulse)
+	require.NoError(t, err)
+	require.Equal(t, expectedPulse, pulse)
+}
+
+func TestStorage_GetPulseByPrev_NotExistError(t *testing.T) {
+	s := NewStorage(testDB)
+
+	pulse, err := testutils.InitPulseDB()
+	require.NoError(t, err)
+	_, err = s.GetPulseByPrev(models.Pulse{PrevPulseNumber: pulse.PulseNumber})
+	require.Error(t, err)
+}
+
+func TestStorage_GetFinalPulse(t *testing.T) {
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+	s := NewStorage(testDB)
+
+	finalPulse, err := testutils.InitPulseDB()
+	require.NoError(t, err)
+	finalPulse.IsFinal = true
+	err = testutils.CreatePulse(testDB, finalPulse)
+	require.NoError(t, err)
+
+	lessFinalPulse, err := testutils.InitPulseDB()
+	require.NoError(t, err)
+	lessFinalPulse.IsFinal = true
+	lessFinalPulse.PulseNumber = finalPulse.PulseNumber - 10
+	err = testutils.CreatePulse(testDB, lessFinalPulse)
+	require.NoError(t, err)
+
+	notFinalPulse, err := testutils.InitPulseDB()
+	require.NoError(t, err)
+	err = testutils.CreatePulse(testDB, notFinalPulse)
+	require.NoError(t, err)
+
+	pulse, err := s.GetFinalPulse()
+	require.NoError(t, err)
+	require.Equal(t, finalPulse, pulse)
+}
+
+func TestStorage_GetFinalPulse_Empty(t *testing.T) {
+	s := NewStorage(testDB)
+
+	finalPulse, err := s.GetFinalPulse()
+	require.NoError(t, err)
+	require.Equal(t, models.Pulse{}, finalPulse)
+}
+
+func TestStorage_GetNextSavedPulse(t *testing.T) {
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+	s := NewStorage(testDB)
+
+	pulse := models.Pulse{
+		PulseNumber: int(gen.PulseNumber().AsUint32()),
+	}
+	expectedPulse := models.Pulse{
+		PulseNumber: pulse.PulseNumber + 10,
+	}
+	notExpectedPulse := models.Pulse{
+		PulseNumber: pulse.PulseNumber + 20,
+	}
+
+	err := testutils.CreatePulse(testDB, notExpectedPulse)
+	require.NoError(t, err)
+	err = testutils.CreatePulse(testDB, pulse)
+	require.NoError(t, err)
+	err = testutils.CreatePulse(testDB, expectedPulse)
+	require.NoError(t, err)
+
+	res, err := s.GetNextSavedPulse(pulse)
+	require.NoError(t, err)
+	require.Equal(t, expectedPulse, res)
+}
+
+func TestStorage_GetNextSavedPulse_Empty(t *testing.T) {
+	s := NewStorage(testDB)
+
+	pulse, err := testutils.InitPulseDB()
+	require.NoError(t, err)
+
+	finalPulse, err := s.GetNextSavedPulse(pulse)
+	require.NoError(t, err)
+	require.Equal(t, models.Pulse{}, finalPulse)
 }
