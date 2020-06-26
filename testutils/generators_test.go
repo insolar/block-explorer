@@ -157,3 +157,52 @@ func TestGenerateObjectLifeline(t *testing.T) {
 	sr := lifeline.GetStateRecords()
 	require.Len(t, sr, pulsesNumber*recordsNumber)
 }
+
+func TestChildren(t *testing.T) {
+	tests := map[string]struct {
+		jetID    string
+		depth    int
+		children []string
+	}{
+		"depth 1": {"0", 1, []string{"00", "01"}},
+		"depth 2": {"0", 2, []string{"00", "01", "000", "001", "010", "011"}},
+		"depth 3": {"0", 3, []string{
+			"00", "01",
+			"000", "001", "010", "011",
+			"0000", "0001", "0010", "0011", "0100", "0101", "0110", "0111"}},
+	}
+
+	pulse, err := InitPulseDB()
+	require.NoError(t, err)
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			result := createChildren(pulse, test.jetID, test.depth)
+			require.Len(t, result, len(test.children))
+			for i := 0; i < len(test.children); i++ {
+				require.Contains(t, test.children, result[i].JetID)
+			}
+		})
+	}
+}
+
+func TestGenerateJetDropsWithSplit(t *testing.T) {
+	tests := map[string]struct {
+		pulseCount int
+		jDCount    int
+		depth      int
+		total      int // (2^(depth + 1) - 1) * jc * pc
+	}{
+		"pc=1, jdc=1, depth=0, total=1":   {1, 1, 0, 1},
+		"pc=1, jdc=1, depth=1, total=3":   {1, 1, 1, 3},
+		"pc=2, jdc=1, depth=1, total=6":   {2, 1, 1, 6},
+		"pc=1, jdc=2, depth=2, total=14":  {1, 2, 2, 14},
+		"pc=2, jdc=2, depth=2, total=28":  {2, 2, 2, 28},
+		"pc=2, jdc=2, depth=4, total=124": {2, 2, 4, 124},
+	}
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			drops, _ := GenerateJetDropsWithSplit(t, test.pulseCount, test.jDCount, test.depth)
+			require.Len(t, drops, test.total)
+		})
+	}
+}

@@ -1219,7 +1219,7 @@ func TestServer_JetDropsByID(t *testing.T) {
 		err = json.Unmarshal(bodyBytes, &received)
 		require.NoError(t, err)
 		expected := server.CodeValidationFailures{
-			FailureReason: NullableString("invalid"),
+			FailureReason: NullableString("invalid: wrong jet drop id format"),
 			Property:      NullableString("jet drop id"),
 		}
 		e := *received.ValidationFailures
@@ -1240,8 +1240,271 @@ func TestServer_JetDropsByID(t *testing.T) {
 
 		resp, err := http.Get("http://" + apihost + "/api/v1/jet-drops/" + jetDropID1)
 		require.NoError(t, err)
-		require.Equal(t, http.StatusNotFound, resp.StatusCode)
+		bodyBytes, err := ioutil.ReadAll(resp.Body)
+		require.NoError(t, err)
+		require.Equal(t, http.StatusNotFound, resp.StatusCode, string(bodyBytes))
 	})
+}
+
+func TestServer_JetDropsByJetID(t *testing.T) {
+	totalCount := 5
+	jetID, preparedJetDrops, preparedPulses := testutils.GenerateJetDropsWithSomeJetID(t, totalCount)
+	err := testutils.CreatePulses(testDB, preparedPulses)
+	require.NoError(t, err)
+	err = testutils.CreateJetDrops(testDB, preparedJetDrops)
+	require.NoError(t, err)
+	checkOkReturningResponse := func(t *testing.T, resp *http.Response, respErr error) server.JetDropsResponse {
+		require.NoError(t, err)
+		bodyBytes, err := ioutil.ReadAll(resp.Body)
+		require.NoError(t, err)
+		require.Equal(t, http.StatusOK, resp.StatusCode, string(bodyBytes))
+		var received server.JetDropsResponse
+		err = json.Unmarshal(bodyBytes, &received)
+		require.NoError(t, err)
+		return received
+	}
+
+	checkJetDrops := func(t *testing.T, expected, received server.JetDrop) {
+		require.Equal(t, *expected.Hash, *received.Hash)
+		require.Equal(t, *expected.PulseNumber, *received.PulseNumber)
+		require.Equal(t, *expected.JetId, *received.JetId)
+		require.Equal(t, *expected.JetDropId, *received.JetDropId)
+		require.Equal(t, *expected.NextJetDropId, *received.NextJetDropId)
+		require.Equal(t, *expected.PrevJetDropId, *received.PrevJetDropId)
+		require.Equal(t, *expected.RecordAmount, *received.RecordAmount)
+		require.Equal(t, *expected.Timestamp, *received.Timestamp)
+	}
+
+	t.Run("happy_no_query_params", func(t *testing.T) {
+		resp, err := http.Get("http://" + apihost + "/api/v1/jets/" + jetID + "/jet-drops")
+		response := checkOkReturningResponse(t, resp, err)
+		require.EqualValues(t, totalCount, int(*response.Total))
+		require.Len(t, *response.Result, totalCount)
+		for _, drop := range preparedJetDrops {
+			require.Contains(t, *response.Result, JetDropToAPI(drop))
+		}
+	})
+
+	t.Run("jetIDNotFound", func(t *testing.T) {
+		wrongJetID := "00000000000000000000001"
+		resp, err := http.Get("http://" + apihost + "/api/v1/jets/" + wrongJetID + "/jet-drops")
+		response := checkOkReturningResponse(t, resp, err)
+		require.Equal(t, 0, int(*response.Total))
+		require.Len(t, *response.Result, 0)
+	})
+
+	t.Run("jetIDIsNotCorrect", func(t *testing.T) {
+		wrongJetID := "1010102"
+		resp, err := http.Get("http://" + apihost + "/api/v1/jets/" + wrongJetID + "/jet-drops")
+		require.NoError(t, err)
+		require.Equal(t, http.StatusBadRequest, resp.StatusCode)
+		bodyBytes, err := ioutil.ReadAll(resp.Body)
+		require.NoError(t, err)
+
+		var response server.CodeValidationError
+		err = json.Unmarshal(bodyBytes, &response)
+		require.NoError(t, err)
+		falures := *response.ValidationFailures
+		require.Len(t, falures, 1)
+		require.Contains(t, *falures[0].FailureReason, "parameter does not match with jetID valid value")
+	})
+
+	t.Run("limit", func(t *testing.T) {
+		resp, err := http.Get("http://" + apihost + "/api/v1/jets/" + jetID + "/jet-drops?limit=1")
+		received := checkOkReturningResponse(t, resp, err)
+		limit := 1
+		require.Equal(t, totalCount, int(*received.Total))
+		require.Len(t, *received.Result, limit)
+	})
+
+	t.Run("pulseNumberLte", func(t *testing.T) {
+		expectedCount := 2
+		pulseNumberLte := strconv.Itoa(preparedPulses[1].PulseNumber)
+		resp, err := http.Get("http://" + apihost + "/api/v1/jets/" + jetID + "/jet-drops?pulse_number_lte=" + pulseNumberLte)
+		response := checkOkReturningResponse(t, resp, err)
+
+		require.Equal(t, expectedCount, int(*response.Total))
+		require.Len(t, *response.Result, expectedCount)
+		for i := 0; i < expectedCount; i++ {
+			expected := JetDropToAPI(preparedJetDrops[expectedCount-i-1])
+			received := (*response.Result)[i]
+			checkJetDrops(t, expected, received)
+		}
+	})
+	t.Run("pulseNumberLte-all", func(t *testing.T) {
+		expectedCount := totalCount
+		pulseNumberLte := strconv.Itoa(preparedPulses[totalCount-1].PulseNumber)
+		resp, err := http.Get("http://" + apihost + "/api/v1/jets/" + jetID + "/jet-drops?pulse_number_lte=" + pulseNumberLte)
+		response := checkOkReturningResponse(t, resp, err)
+
+		require.Equal(t, expectedCount, int(*response.Total))
+		require.Len(t, *response.Result, expectedCount)
+		for i := 0; i < expectedCount; i++ {
+			expected := JetDropToAPI(preparedJetDrops[expectedCount-i-1])
+			received := (*response.Result)[i]
+			checkJetDrops(t, expected, received)
+		}
+	})
+	t.Run("pulseNumberLt", func(t *testing.T) {
+		expectedCount := 1
+		pulseNumberLte := strconv.Itoa(preparedPulses[1].PulseNumber)
+		resp, err := http.Get("http://" + apihost + "/api/v1/jets/" + jetID + "/jet-drops?pulse_number_lt=" + pulseNumberLte)
+		response := checkOkReturningResponse(t, resp, err)
+
+		require.Equal(t, expectedCount, int(*response.Total))
+		require.Len(t, *response.Result, expectedCount)
+		for i := 0; i < expectedCount; i++ {
+			expected := JetDropToAPI(preparedJetDrops[expectedCount-i-1])
+			received := (*response.Result)[i]
+			checkJetDrops(t, expected, received)
+		}
+	})
+	t.Run("pulseNumberLt-no-one", func(t *testing.T) {
+		expectedCount := 0
+		pulseNumberLt := strconv.Itoa(preparedPulses[0].PulseNumber)
+		resp, err := http.Get("http://" + apihost + "/api/v1/jets/" + jetID + "/jet-drops?pulse_number_lt=" + pulseNumberLt)
+		response := checkOkReturningResponse(t, resp, err)
+
+		require.Equal(t, expectedCount, int(*response.Total))
+		require.Len(t, *response.Result, expectedCount)
+	})
+	t.Run("pulseNumberGte", func(t *testing.T) {
+		expectedCount := totalCount - 1
+		pulseNumberGte := strconv.Itoa(preparedPulses[1].PulseNumber)
+		resp, err := http.Get("http://" + apihost + "/api/v1/jets/" + jetID + "/jet-drops?pulse_number_gte=" + pulseNumberGte)
+		response := checkOkReturningResponse(t, resp, err)
+
+		require.Equal(t, expectedCount, int(*response.Total))
+		require.Len(t, *response.Result, expectedCount)
+		for i, j := 1, 0; i < expectedCount; i, j = i+1, j+1 {
+			expected := JetDropToAPI(preparedJetDrops[totalCount-j-1])
+			received := (*response.Result)[j]
+			checkJetDrops(t, expected, received)
+		}
+	})
+	t.Run("pulseNumberGte-all", func(t *testing.T) {
+		expectedCount := totalCount
+		pulseNumberGte := strconv.Itoa(preparedPulses[0].PulseNumber)
+		resp, err := http.Get("http://" + apihost + "/api/v1/jets/" + jetID + "/jet-drops?pulse_number_gte=" + pulseNumberGte)
+		response := checkOkReturningResponse(t, resp, err)
+
+		require.Equal(t, expectedCount, int(*response.Total))
+		require.Len(t, *response.Result, expectedCount)
+		for i := 0; i < expectedCount; i++ {
+			expected := JetDropToAPI(preparedJetDrops[expectedCount-i-1])
+			received := (*response.Result)[i]
+			checkJetDrops(t, expected, received)
+		}
+	})
+	t.Run("pulseNumberGt", func(t *testing.T) {
+		expectedCount := totalCount - 2
+		pulseNumberGt := strconv.Itoa(preparedPulses[1].PulseNumber)
+		resp, err := http.Get("http://" + apihost + "/api/v1/jets/" + jetID + "/jet-drops?pulse_number_gt=" + pulseNumberGt)
+		response := checkOkReturningResponse(t, resp, err)
+
+		require.Equal(t, expectedCount, int(*response.Total))
+		require.Len(t, *response.Result, expectedCount)
+		for i := 0; i < expectedCount; i++ {
+			expected := JetDropToAPI(preparedJetDrops[totalCount-i-1])
+			received := (*response.Result)[i]
+			checkJetDrops(t, expected, received)
+		}
+	})
+	t.Run("pulseNumberGt-no-one", func(t *testing.T) {
+		expectedCount := 0
+		pulseNumberGt := strconv.Itoa(preparedPulses[totalCount-1].PulseNumber)
+		resp, err := http.Get("http://" + apihost + "/api/v1/jets/" + jetID + "/jet-drops?pulse_number_gt=" + pulseNumberGt)
+		received := checkOkReturningResponse(t, resp, err)
+
+		require.Equal(t, expectedCount, int(*received.Total))
+		require.Len(t, *received.Result, expectedCount)
+	})
+	t.Run("pulseNumberGte and pulseNumberLte", func(t *testing.T) {
+		expectedCount := totalCount - 2
+		pulseNumberGte := preparedPulses[1].PulseNumber
+		pulseNumberLte := preparedPulses[totalCount-2].PulseNumber
+		query := fmt.Sprintf("pulse_number_gte=%d&pulse_number_lte=%d", pulseNumberGte, pulseNumberLte)
+		resp, err := http.Get("http://" + apihost + "/api/v1/jets/" + jetID + "/jet-drops?" + query)
+		response := checkOkReturningResponse(t, resp, err)
+
+		require.Equal(t, expectedCount, int(*response.Total))
+		require.Len(t, *response.Result, expectedCount)
+		for i, j := 1, 0; i < expectedCount; i, j = i+1, j+1 {
+			expected := JetDropToAPI(preparedJetDrops[totalCount-i-1])
+			received := (*response.Result)[j]
+			checkJetDrops(t, expected, received)
+		}
+	})
+	t.Run("pulseNumberGte and pulseNumberLt", func(t *testing.T) {
+		expectedCount := totalCount - 3
+		pulseNumberGte := preparedPulses[1].PulseNumber
+		pulseNumberLt := preparedPulses[totalCount-2].PulseNumber
+		query := fmt.Sprintf("pulse_number_gte=%d&pulse_number_lt=%d", pulseNumberGte, pulseNumberLt)
+		resp, err := http.Get("http://" + apihost + "/api/v1/jets/" + jetID + "/jet-drops?" + query)
+		response := checkOkReturningResponse(t, resp, err)
+
+		require.Equal(t, expectedCount, int(*response.Total))
+		require.Len(t, *response.Result, expectedCount)
+		for i, j := 1, 0; i < expectedCount; i, j = i+1, j+1 {
+			expected := JetDropToAPI(preparedJetDrops[i])
+			received := (*response.Result)[expectedCount-j-1]
+			checkJetDrops(t, expected, received)
+		}
+	})
+	t.Run("pulseNumberGt and pulseNumberLt", func(t *testing.T) {
+		expectedCount := totalCount - 4
+		pulseNumberGt := preparedPulses[1].PulseNumber
+		pulseNumberLt := preparedPulses[totalCount-2].PulseNumber
+		query := fmt.Sprintf("pulse_number_gt=%d&pulse_number_lt=%d", pulseNumberGt, pulseNumberLt)
+		resp, err := http.Get("http://" + apihost + "/api/v1/jets/" + jetID + "/jet-drops?" + query)
+		response := checkOkReturningResponse(t, resp, err)
+
+		require.Equal(t, expectedCount, int(*response.Total))
+		require.Len(t, *response.Result, expectedCount)
+		for i, j := 1, 0; i < expectedCount; i, j = i+1, j+1 {
+			expected := JetDropToAPI(preparedJetDrops[i])
+			received := (*response.Result)[expectedCount-j-1]
+			checkJetDrops(t, expected, received)
+		}
+	})
+	t.Run("pulseNumberGt and pulseNumberLte", func(t *testing.T) {
+		expectedCount := totalCount - 3
+		pulseNumberGt := preparedPulses[1].PulseNumber
+		pulseNumberLte := preparedPulses[totalCount-2].PulseNumber
+		query := fmt.Sprintf("pulse_number_gt=%d&pulse_number_lte=%d", pulseNumberGt, pulseNumberLte)
+		resp, err := http.Get("http://" + apihost + "/api/v1/jets/" + jetID + "/jet-drops?" + query)
+		response := checkOkReturningResponse(t, resp, err)
+
+		require.Equal(t, expectedCount, int(*response.Total))
+		require.Len(t, *response.Result, expectedCount)
+		for i, j := 2, 0; i < expectedCount; i, j = i+1, j+1 {
+			expected := JetDropToAPI(preparedJetDrops[i])
+			received := (*response.Result)[expectedCount-j-1]
+			checkJetDrops(t, expected, received)
+		}
+	})
+	t.Run("sort_by_asc_and_desc", func(t *testing.T) {
+		pnAsc := url.QueryEscape(string(server.SortByPulse_pulse_number_asc_jet_id_desc))
+		pnDesc := url.QueryEscape(string(server.SortByPulse_pulse_number_desc_jet_id_asc))
+
+		doReqFn := func(t *testing.T, jetID string, sortBy string, totalCount int) server.JetDropsResponse {
+			resp, err := http.Get("http://" + apihost + "/api/v1/jets/" + jetID + "/jet-drops?sort_by=" + sortBy)
+			received := checkOkReturningResponse(t, resp, err)
+			require.Equal(t, totalCount, int(*received.Total))
+			require.Len(t, *received.Result, totalCount)
+			return received
+		}
+
+		receivedAsc := *doReqFn(t, jetID, pnAsc, totalCount).Result
+		receivedDesc := *doReqFn(t, jetID, pnDesc, totalCount).Result
+
+		for i := 0; i < totalCount; i++ {
+			dropAsc := receivedAsc[i]
+			dropDesc := receivedDesc[totalCount-1-i]
+			checkJetDrops(t, dropAsc, dropDesc)
+		}
+	})
+
 }
 
 func TestJetDropRecords(t *testing.T) {

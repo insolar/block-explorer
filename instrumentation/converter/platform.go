@@ -14,9 +14,9 @@ import (
 
 // JetIDToString returns the string representation of JetID
 func JetIDToString(id insolar.JetID) string {
-	prefix := id.Prefix()
+	depth, prefix := id.Depth(), id.Prefix()
 	res := strings.Builder{}
-	for i := 0; i < len(prefix); i++ {
+	for i := uint8(0); i < depth; i++ {
 		bytePos, bitPos := i/8, 7-i%8
 
 		byteValue := prefix[bytePos]
