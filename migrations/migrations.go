@@ -53,14 +53,14 @@ func Migrations() []*gormigrate.Migration {
 				if err := tx.CreateTable(&Pulse{}).Error; err != nil {
 					return err
 				}
-				if err := tx.Model(Pulse{}).AddIndex("idx_prevpulsenumber", "prev_pulse_number").Error; err != nil {
+				if err := tx.Model(Pulse{}).AddIndex("idx_pulse_prevpulsenumber", "prev_pulse_number").Error; err != nil {
 					return err
 				}
 
 				if err := tx.CreateTable(&JetDrop{}).Error; err != nil {
 					return err
 				}
-				if err := tx.Model(JetDrop{}).AddIndex("idx_pulsenumber_jetid", "pulse_number", "jet_id").Error; err != nil {
+				if err := tx.Model(JetDrop{}).AddIndex("idx_jetdrop_pulsenumber_jetid", "pulse_number", "jet_id").Error; err != nil {
 					return err
 				}
 				if err := tx.Model(&JetDrop{}).AddForeignKey("pulse_number", "pulses(pulse_number)", "CASCADE", "CASCADE").Error; err != nil {
@@ -71,11 +71,11 @@ func Migrations() []*gormigrate.Migration {
 					return err
 				}
 				if err := tx.Model(Record{}).AddIndex(
-					"idx_objectreference_type_pulsenumber_order", "object_reference", "type", "pulse_number", "order").Error; err != nil {
+					"idx_record_objectreference_type_pulsenumber_order", "object_reference", "type", "pulse_number", "order").Error; err != nil {
 					return err
 				}
 				if err := tx.Model(Record{}).AddIndex(
-					"idx_jetid_pulsenumber_order", "jet_id", "pulse_number", "order").Error; err != nil {
+					"idx_record_jetid_pulsenumber_order", "jet_id", "pulse_number", "order").Error; err != nil {
 					return err
 				}
 				if err := tx.Model(&Record{}).AddForeignKey("jet_id, pulse_number", "jet_drops(jet_id, pulse_number)", "CASCADE", "CASCADE").Error; err != nil {
