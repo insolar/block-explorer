@@ -150,9 +150,6 @@ func (p *Processor) process(ctx context.Context, jd *types.JetDrop) {
 		Timestamp:      pd.PulseTimestamp,
 		RecordAmount:   len(ms.Records),
 	}
-	if mjd.JetID == "" {
-		mjd.JetID = "0"
-	}
 
 	var mrs []models.Record
 	for i, r := range ms.Records {
@@ -173,7 +170,7 @@ func (p *Processor) process(ctx context.Context, jd *types.JetDrop) {
 	}
 	err = p.storage.SaveJetDropData(mjd, mrs)
 	if err != nil {
-		logger.Errorf("cannot save jetDrop data: %s. jetDrop = %v,%v,%v", err.Error(), mjd.JetID, jd.MainSection.Start.JetDropPrefix, jd.MainSection.Start.JetDropPrefixLength)
+		logger.Errorf("cannot save jetDrop data: %s. jetDrop = %v, records = %v", err.Error(), mjd, mrs)
 		return
 	}
 	p.controller.SetJetDropData(pd, mjd.JetID)

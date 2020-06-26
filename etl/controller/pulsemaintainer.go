@@ -9,8 +9,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/jinzhu/gorm"
-
 	"github.com/insolar/block-explorer/etl/models"
 	"github.com/insolar/block-explorer/etl/types"
 	"github.com/insolar/block-explorer/instrumentation/belogger"
@@ -68,10 +66,8 @@ func (c *Controller) pulseFinalizer(ctx context.Context) {
 
 			nextFinal, err = c.storage.GetPulseByPrev(c.finalPulse)
 			if err != nil {
-				if !gorm.IsRecordNotFoundError(err) {
-					log.Errorf("During loading next final pulse: %s", err.Error())
-					return
-				}
+				log.Errorf("During loading next final pulse: %s", err.Error())
+				return
 			}
 
 			if nextFinal == emptyPulse {
