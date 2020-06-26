@@ -90,6 +90,7 @@ func (m *PlatformExtractor) getJetDrops(ctx context.Context, request *exporter.G
 			}
 
 			var log = logger.WithField("request_pulse_number", request.PulseNumber)
+			log.Debugf("export data for pulseNumber:%d, recordNumber:%d", request.PulseNumber, request.RecordNumber)
 			stream, err := client.Export(ctx, request)
 
 			if err != nil {
@@ -115,6 +116,11 @@ func (m *PlatformExtractor) getJetDrops(ctx context.Context, request *exporter.G
 					if receivedPulseNumber == resp.ShouldIterateFrom.AsUint32() {
 						log.Warnf("no data in the pulse. waiting for pulse will be changed. sleep %v", pulseDelta)
 						time.Sleep(time.Second * pulseDelta)
+					}
+					// if we have received all data for topSyncPulse and the pulse didn't change yet, we need to continue
+					// when it happened it means that we need to request again without resetting the pulse number
+					if lastPulseNumber == receivedPulseNumber {
+						continue
 					}
 					request.PulseNumber = *resp.ShouldIterateFrom
 					request.RecordNumber = 0
