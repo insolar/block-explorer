@@ -120,6 +120,8 @@ func (m *PlatformExtractor) getJetDrops(ctx context.Context, request *exporter.G
 					// if we have received all data for topSyncPulse and the pulse didn't change yet, we need to continue
 					// when it happened it means that we need to request again without resetting the pulse number
 					if lastPulseNumber == receivedPulseNumber {
+						// wait a bit to prevent multiple callings
+						time.Sleep(time.Second)
 						continue
 					}
 					request.PulseNumber = *resp.ShouldIterateFrom
