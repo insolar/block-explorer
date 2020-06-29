@@ -403,6 +403,89 @@ func TestStorage_CompletePulse_ErrorNotExist(t *testing.T) {
 	require.Empty(t, pulseInDB)
 }
 
+func TestStorage_SequencePulse(t *testing.T) {
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Pulse{}})
+	s := NewStorage(testDB)
+
+	pulse, err := testutils.InitPulseDB()
+	require.NoError(t, err)
+	err = testutils.CreatePulse(testDB, pulse)
+	require.NoError(t, err)
+
+	err = s.SequencePulse(pulse.PulseNumber)
+	require.NoError(t, err)
+
+	pulse.IsSequential = true
+	pulseInDB := []models.Pulse{}
+	err = testDB.Find(&pulseInDB).Error
+	require.NoError(t, err)
+	require.Len(t, pulseInDB, 1)
+	require.EqualValues(t, pulse, pulseInDB[0])
+}
+
+func TestStorage_SequencePulse_ErrorUpdateSeveralRows(t *testing.T) {
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Pulse{}})
+	s := NewStorage(testDB)
+
+	pulse, err := testutils.InitPulseDB()
+	require.NoError(t, err)
+	err = testutils.CreatePulse(testDB, pulse)
+	require.NoError(t, err)
+	pulse, err = testutils.InitPulseDB()
+	require.NoError(t, err)
+	err = testutils.CreatePulse(testDB, pulse)
+	require.NoError(t, err)
+
+	err = s.SequencePulse(0)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "several rows were affected")
+
+	pulseInDB := []models.Pulse{}
+	err = testDB.Find(&pulseInDB).Error
+	require.NoError(t, err)
+	require.Len(t, pulseInDB, 2)
+	require.EqualValues(t, false, pulseInDB[0].IsComplete)
+	require.EqualValues(t, false, pulseInDB[1].IsComplete)
+
+}
+
+func TestStorage_SequencePulse_AlreadyCompleted(t *testing.T) {
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Pulse{}})
+	s := NewStorage(testDB)
+
+	pulse, err := testutils.InitPulseDB()
+	require.NoError(t, err)
+	pulse.IsSequential = true
+	err = testutils.CreatePulse(testDB, pulse)
+	require.NoError(t, err)
+
+	err = s.SequencePulse(pulse.PulseNumber)
+	require.NoError(t, err)
+
+	pulseInDB := []models.Pulse{}
+	err = testDB.Find(&pulseInDB).Error
+	require.NoError(t, err)
+	require.Len(t, pulseInDB, 1)
+	require.EqualValues(t, pulse, pulseInDB[0])
+}
+
+func TestStorage_SequencePulse_ErrorNotExist(t *testing.T) {
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Pulse{}})
+	s := NewStorage(testDB)
+
+	pulse, err := testutils.InitPulseDB()
+	require.NoError(t, err)
+
+	err = s.SequencePulse(pulse.PulseNumber)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "try to sequence not existing pulse")
+
+	pulseInDB := []models.Pulse{}
+	err = testDB.Find(&pulseInDB).Error
+	require.NoError(t, err)
+	require.Empty(t, pulseInDB)
+}
+
 func TestStorage_SavePulse(t *testing.T) {
 	defer testutils.TruncateTables(t, testDB, []interface{}{models.Pulse{}})
 	s := NewStorage(testDB)
@@ -1323,6 +1406,110 @@ func TestStorage_GetRecordsByJetDrop(t *testing.T) {
 		require.Equal(t, 0, total)
 		require.Empty(t, records)
 	})
+}
+
+func TestStorage_GetPulseByPrev(t *testing.T) {
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+	s := NewStorage(testDB)
+
+	prevPulse, err := testutils.InitPulseDB()
+	require.NoError(t, err)
+	err = testutils.CreatePulse(testDB, prevPulse)
+	require.NoError(t, err)
+	expectedPulse, err := testutils.InitPulseDB()
+	require.NoError(t, err)
+	expectedPulse.PrevPulseNumber = prevPulse.PulseNumber
+	err = testutils.CreatePulse(testDB, expectedPulse)
+	require.NoError(t, err)
+	notExpectedPulse, err := testutils.InitPulseDB()
+	require.NoError(t, err)
+	err = testutils.CreatePulse(testDB, notExpectedPulse)
+	require.NoError(t, err)
+
+	pulse, err := s.GetPulseByPrev(prevPulse)
+	require.NoError(t, err)
+	require.Equal(t, expectedPulse, pulse)
+}
+
+func TestStorage_GetPulseByPrev_NotExistError(t *testing.T) {
+	s := NewStorage(testDB)
+
+	pulse, err := testutils.InitPulseDB()
+	require.NoError(t, err)
+	_, err = s.GetPulseByPrev(models.Pulse{PrevPulseNumber: pulse.PulseNumber})
+	require.Error(t, err)
+}
+
+func TestStorage_GetSequentialPulse(t *testing.T) {
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+	s := NewStorage(testDB)
+
+	sequentialPulse, err := testutils.InitPulseDB()
+	require.NoError(t, err)
+	sequentialPulse.IsSequential = true
+	err = testutils.CreatePulse(testDB, sequentialPulse)
+	require.NoError(t, err)
+
+	lessSequentialPulse, err := testutils.InitPulseDB()
+	require.NoError(t, err)
+	lessSequentialPulse.IsSequential = true
+	lessSequentialPulse.PulseNumber = sequentialPulse.PulseNumber - 10
+	err = testutils.CreatePulse(testDB, lessSequentialPulse)
+	require.NoError(t, err)
+
+	notSequentialPulse, err := testutils.InitPulseDB()
+	require.NoError(t, err)
+	err = testutils.CreatePulse(testDB, notSequentialPulse)
+	require.NoError(t, err)
+
+	pulse, err := s.GetSequentialPulse()
+	require.NoError(t, err)
+	require.Equal(t, sequentialPulse, pulse)
+}
+
+func TestStorage_GetSequentialPulse_Empty(t *testing.T) {
+	s := NewStorage(testDB)
+
+	sequentialPulse, err := s.GetSequentialPulse()
+	require.NoError(t, err)
+	require.Equal(t, models.Pulse{}, sequentialPulse)
+}
+
+func TestStorage_GetNextSavedPulse(t *testing.T) {
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+	s := NewStorage(testDB)
+
+	pulse := models.Pulse{
+		PulseNumber: int(gen.PulseNumber().AsUint32()),
+	}
+	expectedPulse := models.Pulse{
+		PulseNumber: pulse.PulseNumber + 10,
+	}
+	notExpectedPulse := models.Pulse{
+		PulseNumber: pulse.PulseNumber + 20,
+	}
+
+	err := testutils.CreatePulse(testDB, notExpectedPulse)
+	require.NoError(t, err)
+	err = testutils.CreatePulse(testDB, pulse)
+	require.NoError(t, err)
+	err = testutils.CreatePulse(testDB, expectedPulse)
+	require.NoError(t, err)
+
+	res, err := s.GetNextSavedPulse(pulse)
+	require.NoError(t, err)
+	require.Equal(t, expectedPulse, res)
+}
+
+func TestStorage_GetNextSavedPulse_Empty(t *testing.T) {
+	s := NewStorage(testDB)
+
+	pulse, err := testutils.InitPulseDB()
+	require.NoError(t, err)
+
+	sequentialPulse, err := s.GetNextSavedPulse(pulse)
+	require.NoError(t, err)
+	require.Equal(t, models.Pulse{}, sequentialPulse)
 }
 
 func TestStorage_GetJetDropsByJetId_Success(t *testing.T) {
