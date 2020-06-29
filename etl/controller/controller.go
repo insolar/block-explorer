@@ -34,9 +34,9 @@ type Controller struct {
 	// missedDataManager stores pulses that were reloaded
 	missedDataManager *MissedDataManager
 
-	// finalPulse is greatest complete pulse after which all pulses complete too
-	finalPulse     models.Pulse
-	finalPulseLock sync.RWMutex
+	// sequentialPulse is greatest complete pulse after which all pulses complete too
+	sequentialPulse     models.Pulse
+	sequentialPulseLock sync.RWMutex
 }
 
 // NewController returns implementation of interfaces.Controller
@@ -62,15 +62,15 @@ func NewController(cfg configuration.Controller, extractor interfaces.JetDropsEx
 			c.SetJetDropData(key, jd.JetID)
 		}
 	}
-	c.finalPulseLock.Lock()
-	defer c.finalPulseLock.Unlock()
-	c.finalPulse, err = c.storage.GetFinalPulse()
+	c.sequentialPulseLock.Lock()
+	defer c.sequentialPulseLock.Unlock()
+	c.sequentialPulse, err = c.storage.GetSequentialPulse()
 	if err != nil {
-		return nil, errors.Wrap(err, "can't get final pulse from storage")
+		return nil, errors.Wrap(err, "can't get sequential pulse from storage")
 	}
 	emptyPulse := models.Pulse{}
-	if c.finalPulse == emptyPulse {
-		c.finalPulse = models.Pulse{
+	if c.sequentialPulse == emptyPulse {
+		c.sequentialPulse = models.Pulse{
 			PulseNumber: 0,
 		}
 	}
@@ -81,7 +81,7 @@ func NewController(cfg configuration.Controller, extractor interfaces.JetDropsEx
 func (c *Controller) Start(ctx context.Context) error {
 	ctx, c.cancelFunc = context.WithCancel(ctx)
 	go c.pulseMaintainer(ctx)
-	go c.pulseFinalizer(ctx)
+	go c.pulseSequence(ctx)
 	return nil
 }
 

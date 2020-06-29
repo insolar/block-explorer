@@ -30,7 +30,7 @@ type MissedDataManager struct {
 
 // NewMissedDataManager creates new missed data manager with custom params
 func NewMissedDataManager(ttl time.Duration, cleanPeriod time.Duration) *MissedDataManager {
-	dm := MissedDataManager{
+	mdm := MissedDataManager{
 		ttl:     ttl,
 		stopped: make(chan struct{}),
 	}
@@ -42,36 +42,36 @@ func NewMissedDataManager(ttl time.Duration, cleanPeriod time.Duration) *MissedD
 		for !stop {
 			select {
 			case <-ticker.C:
-				dm.deleteExpired()
-			case <-dm.stopped:
+				mdm.deleteExpired()
+			case <-mdm.stopped:
 				stop = true
 				ticker.Stop()
 			}
 		}
-		dm.stopped <- struct{}{}
+		mdm.stopped <- struct{}{}
 	}()
 
-	return &dm
+	return &mdm
 }
 
-func (dm *MissedDataManager) Stop() {
-	dm.stopped <- struct{}{}
-	<-dm.stopped
+func (mdm *MissedDataManager) Stop() {
+	mdm.stopped <- struct{}{}
+	<-mdm.stopped
 }
 
 // Add adds missed data to pool
-func (dm *MissedDataManager) Add(ctx context.Context, fromPulse, toPulse int) bool {
-	dm.mutex.Lock()
-	defer dm.mutex.Unlock()
+func (mdm *MissedDataManager) Add(ctx context.Context, fromPulse, toPulse int) bool {
+	mdm.mutex.Lock()
+	defer mdm.mutex.Unlock()
 
-	for _, missed := range dm.missedDataPool {
+	for _, missed := range mdm.missedDataPool {
 		if missed.fromPulse <= fromPulse && missed.toPulse >= toPulse {
 			belogger.FromContext(ctx).Infof("Data from pulse %d to %d was already reload", fromPulse, toPulse)
 			return false
 		}
 	}
 
-	dm.missedDataPool = append(dm.missedDataPool, missedData{
+	mdm.missedDataPool = append(mdm.missedDataPool, missedData{
 		ts:        time.Now(),
 		fromPulse: fromPulse,
 		toPulse:   toPulse,
@@ -79,19 +79,19 @@ func (dm *MissedDataManager) Add(ctx context.Context, fromPulse, toPulse int) bo
 	return true
 }
 
-func (dm *MissedDataManager) isExpired(ts time.Time) bool {
-	return time.Since(ts) > dm.ttl
+func (mdm *MissedDataManager) isExpired(ts time.Time) bool {
+	return time.Since(ts) > mdm.ttl
 }
 
-func (dm *MissedDataManager) deleteExpired() {
-	dm.mutex.Lock()
-	defer dm.mutex.Unlock()
+func (mdm *MissedDataManager) deleteExpired() {
+	mdm.mutex.Lock()
+	defer mdm.mutex.Unlock()
 
-	for i, missed := range dm.missedDataPool {
-		if dm.isExpired(missed.ts) {
-			dm.missedDataPool[i] = dm.missedDataPool[len(dm.missedDataPool)-1] // Copy last element to index i.
-			dm.missedDataPool[len(dm.missedDataPool)-1] = missedData{}         // Erase last element (write zero value).
-			dm.missedDataPool = dm.missedDataPool[:len(dm.missedDataPool)-1]
+	for i, missed := range mdm.missedDataPool {
+		if mdm.isExpired(missed.ts) {
+			mdm.missedDataPool[i] = mdm.missedDataPool[len(mdm.missedDataPool)-1] // Copy last element to index i.
+			mdm.missedDataPool[len(mdm.missedDataPool)-1] = missedData{}          // Erase last element (write zero value).
+			mdm.missedDataPool = mdm.missedDataPool[:len(mdm.missedDataPool)-1]
 		}
 	}
 }

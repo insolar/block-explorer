@@ -60,7 +60,7 @@ type Log struct {
 
 type Controller struct {
 	PulsePeriod       int `insconfig:"10| Seconds between pulse completion tries"`
-	FinalizePeriod    int `insconfig:"1| Seconds between pulse finalization tries"`
+	SequentialPeriod  int `insconfig:"1| Seconds between pulse sequential tries"`
 	ReloadPeriod      int `insconfig:"10| Seconds between reloading data for same pulse tries"`
 	ReloadCleanPeriod int `insconfig:"1| Seconds between launching cleaning for reloaded data map"`
 }

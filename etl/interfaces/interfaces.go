@@ -91,8 +91,8 @@ type StorageSetter interface {
 	SavePulse(pulse models.Pulse) error
 	// CompletePulse update pulse with provided number to completeness in db.
 	CompletePulse(pulseNumber int) error
-	// FinalizePulse update pulse with provided number to finale in db.
-	FinalizePulse(pulseNumber int) error
+	// SequencePulse update pulse with provided number to sequential in db.
+	SequencePulse(pulseNumber int) error
 }
 
 // StorageAPIFetcher gets data from database
@@ -120,8 +120,8 @@ type StorageAPIFetcher interface {
 type StorageFetcher interface {
 	// GetIncompletePulses returns pulses that are not complete from db.
 	GetIncompletePulses() ([]models.Pulse, error)
-	// GetFinalPulse returns max pulse that have is_final as true from db.
-	GetFinalPulse() (models.Pulse, error)
+	// GetSequentialPulse returns max pulse that have is_sequential as true from db.
+	GetSequentialPulse() (models.Pulse, error)
 	// GetPulseByPrev returns pulse with provided prev pulse number from db.
 	GetPulseByPrev(prevPulse models.Pulse) (models.Pulse, error)
 	// GetNextSavedPulse returns first pulse with pulse number bigger then fromPulseNumber from db.

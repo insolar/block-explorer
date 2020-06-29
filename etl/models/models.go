@@ -63,7 +63,7 @@ type Pulse struct {
 	PrevPulseNumber int
 	NextPulseNumber int
 	IsComplete      bool
-	IsFinal         bool
+	IsSequential    bool
 	Timestamp       int64
 }
 

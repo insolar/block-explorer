@@ -47,7 +47,7 @@ func (c *Controller) pulseMaintainer(ctx context.Context) {
 	}
 }
 
-func (c *Controller) pulseFinalizer(ctx context.Context) {
+func (c *Controller) pulseSequence(ctx context.Context) {
 	log := belogger.FromContext(ctx)
 	emptyPulse := models.Pulse{}
 	for {
@@ -55,38 +55,38 @@ func (c *Controller) pulseFinalizer(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		default:
-			time.Sleep(time.Second * time.Duration(c.cfg.FinalizePeriod))
+			time.Sleep(time.Second * time.Duration(c.cfg.SequentialPeriod))
 		}
 		var err error
-		var nextFinal models.Pulse
+		var nextSequential models.Pulse
 		func() {
-			c.finalPulseLock.Lock()
-			defer c.finalPulseLock.Unlock()
-			log.WithField("final_pulse", c.finalPulse)
+			c.sequentialPulseLock.Lock()
+			defer c.sequentialPulseLock.Unlock()
+			log.WithField("sequential_pulse", c.sequentialPulse)
 
-			nextFinal, err = c.storage.GetPulseByPrev(c.finalPulse)
+			nextSequential, err = c.storage.GetPulseByPrev(c.sequentialPulse)
 			if err != nil {
-				log.Errorf("During loading next final pulse: %s", err.Error())
+				log.Errorf("During loading next sequential pulse: %s", err.Error())
 				return
 			}
 
-			if nextFinal == emptyPulse {
-				toPulse, err := c.storage.GetNextSavedPulse(c.finalPulse)
+			if nextSequential == emptyPulse {
+				toPulse, err := c.storage.GetNextSavedPulse(c.sequentialPulse)
 				if err != nil {
 					log.Errorf("During loading next existing pulse: %s", err.Error())
 					return
 				}
-				c.reloadData(ctx, c.finalPulse.PulseNumber, toPulse.PulseNumber)
+				c.reloadData(ctx, c.sequentialPulse.PulseNumber, toPulse.PulseNumber)
 				return
 			}
-			if nextFinal.IsComplete {
-				err = c.storage.FinalizePulse(nextFinal.PulseNumber)
+			if nextSequential.IsComplete {
+				err = c.storage.SequencePulse(nextSequential.PulseNumber)
 				if err != nil {
-					log.Errorf("During finalizing next final pulse: %s", err.Error())
+					log.Errorf("During sequence next sequential pulse: %s", err.Error())
 					return
 				}
-				c.finalPulse = nextFinal
-				log.Infof("Pulse %d finalized", nextFinal.PulseNumber)
+				c.sequentialPulse = nextSequential
+				log.Infof("Pulse %d sequenced", nextSequential.PulseNumber)
 				return
 			}
 		}()

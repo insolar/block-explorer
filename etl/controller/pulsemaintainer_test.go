@@ -26,13 +26,13 @@ import (
 )
 
 func TestController_pulseMaintainer(t *testing.T) {
-	var cfg = configuration.Controller{PulsePeriod: 0, ReloadPeriod: 10, ReloadCleanPeriod: 1, FinalizePeriod: 0}
+	var cfg = configuration.Controller{PulsePeriod: 0, ReloadPeriod: 10, ReloadCleanPeriod: 1, SequentialPeriod: 0}
 
 	extractor := mock.NewJetDropsExtractorMock(t)
 
 	sm := mock.NewStorageMock(t)
 	sm.GetIncompletePulsesMock.Return(nil, nil)
-	sm.GetFinalPulseMock.Return(models.Pulse{}, nil)
+	sm.GetSequentialPulseMock.Return(models.Pulse{}, nil)
 	sm.GetPulseByPrevMock.Return(models.Pulse{}, errors.New("test error"))
 
 	defer leaktest.Check(t)()
@@ -48,19 +48,19 @@ func Test_pulseIsComplete(t *testing.T) {
 	require.True(t, pulseIsComplete(types.Pulse{}, nil))
 }
 
-// final is 0, pulses in db: [1000110], expect loading data from 0 to 1000110
-// final is 0, pulses in db: [1000110], expect don't load already loaded data
-// final is 0, pulses in db: [MinTimePulse, 1000110], expect nothing happens
-// final is 0, pulses in db: [MinTimePulse, 1000110], MinTimePulse is complete, expect final to change
-// final is MinTimePulse, pulses in db: [MinTimePulse, 1000110], expect don't load already loaded data
-func TestController_pulseFinalizer_StartFromNothing(t *testing.T) {
-	var cfg = configuration.Controller{PulsePeriod: 0, ReloadPeriod: 10, ReloadCleanPeriod: 1, FinalizePeriod: 0}
+// sequential is 0, pulses in db: [1000110], expect loading data from 0 to 1000110
+// sequential is 0, pulses in db: [1000110], expect don't load already loaded data
+// sequential is 0, pulses in db: [MinTimePulse, 1000110], expect nothing happens
+// sequential is 0, pulses in db: [MinTimePulse, 1000110], MinTimePulse is complete, expect sequential to change
+// sequential is MinTimePulse, pulses in db: [MinTimePulse, 1000110], expect don't load already loaded data
+func TestController_pulseSequence_StartFromNothing(t *testing.T) {
+	var cfg = configuration.Controller{PulsePeriod: 0, ReloadPeriod: 10, ReloadCleanPeriod: 1, SequentialPeriod: 0}
 
 	extractor := mock.NewJetDropsExtractorMock(t)
 
 	sm := mock.NewStorageMock(t)
 	sm.GetIncompletePulsesMock.Return(nil, nil)
-	sm.GetFinalPulseMock.Return(models.Pulse{}, nil)
+	sm.GetSequentialPulseMock.Return(models.Pulse{}, nil)
 	wg := sync.WaitGroup{}
 	wg.Add(5)
 	sm.GetPulseByPrevMock.Set(func(prevPulse models.Pulse) (p1 models.Pulse, err error) {
@@ -103,8 +103,8 @@ func TestController_pulseFinalizer_StartFromNothing(t *testing.T) {
 		}
 		return nil
 	})
-	sm.FinalizePulseMock.Set(func(pulseNumber int) (err error) {
-		if sm.FinalizePulseBeforeCounter() == 1 {
+	sm.SequencePulseMock.Set(func(pulseNumber int) (err error) {
+		if sm.SequencePulseBeforeCounter() == 1 {
 			require.Equal(t, pulse.MinTimePulse, pulseNumber)
 		}
 		return nil
@@ -121,19 +121,19 @@ func TestController_pulseFinalizer_StartFromNothing(t *testing.T) {
 	time.Sleep(time.Millisecond)
 }
 
-// final is 1000000, pulses in db: [1000000, 1000020], expect loading data from 1000000 to 1000020
-// final is 1000000, pulses in db: [1000000, 1000010, 1000020], expect don't load already loaded data
-// final is 1000000, pulses in db: [1000000, 1000010, 1000020], 1000010 is complete, expect final to change
-// final is 1000010, pulses in db: [1000000, 1000010, 1000020], 1000020 is complete, expect final to change
-// final is 1000020, pulses in db: [1000000, 1000010, 1000020], expect nothing happens
-func TestController_pulseFinalizer_StartFromSomething(t *testing.T) {
-	var cfg = configuration.Controller{PulsePeriod: 0, ReloadPeriod: 10, ReloadCleanPeriod: 1, FinalizePeriod: 0}
+// sequential is 1000000, pulses in db: [1000000, 1000020], expect loading data from 1000000 to 1000020
+// sequential is 1000000, pulses in db: [1000000, 1000010, 1000020], expect don't load already loaded data
+// sequential is 1000000, pulses in db: [1000000, 1000010, 1000020], 1000010 is complete, expect sequential to change
+// sequential is 1000010, pulses in db: [1000000, 1000010, 1000020], 1000020 is complete, expect sequential to change
+// sequential is 1000020, pulses in db: [1000000, 1000010, 1000020], expect nothing happens
+func TestController_pulseSequence_StartFromSomething(t *testing.T) {
+	var cfg = configuration.Controller{PulsePeriod: 0, ReloadPeriod: 10, ReloadCleanPeriod: 1, SequentialPeriod: 0}
 
 	extractor := mock.NewJetDropsExtractorMock(t)
 
 	sm := mock.NewStorageMock(t)
 	sm.GetIncompletePulsesMock.Return(nil, nil)
-	sm.GetFinalPulseMock.Return(models.Pulse{PulseNumber: 1000000}, nil)
+	sm.GetSequentialPulseMock.Return(models.Pulse{PulseNumber: 1000000}, nil)
 	wg := sync.WaitGroup{}
 	wg.Add(5)
 	sm.GetPulseByPrevMock.Set(func(prevPulse models.Pulse) (p1 models.Pulse, err error) {
@@ -172,11 +172,11 @@ func TestController_pulseFinalizer_StartFromSomething(t *testing.T) {
 		}
 		return nil
 	})
-	sm.FinalizePulseMock.Set(func(pulseNumber int) (err error) {
-		if sm.FinalizePulseBeforeCounter() == 1 {
+	sm.SequencePulseMock.Set(func(pulseNumber int) (err error) {
+		if sm.SequencePulseBeforeCounter() == 1 {
 			require.Equal(t, 1000010, pulseNumber)
 		}
-		if sm.FinalizePulseBeforeCounter() == 2 {
+		if sm.SequencePulseBeforeCounter() == 2 {
 			require.Equal(t, 1000020, pulseNumber)
 		}
 		return nil
@@ -193,17 +193,17 @@ func TestController_pulseFinalizer_StartFromSomething(t *testing.T) {
 	time.Sleep(time.Millisecond)
 }
 
-// final is 1000000, pulses in db: [1000000, 1000010, 1000020], 1000010 is complete, expect final to change
-// final is 1000010, pulses in db: [1000000, 1000010, 1000020], 1000020 is complete, expect final to change
-// final is 1000020, pulses in db: [1000000, 1000010, 1000020], expect nothing happens
-func TestController_pulseFinalizer_Start_NoMissedData(t *testing.T) {
-	var cfg = configuration.Controller{PulsePeriod: 0, ReloadPeriod: 10, ReloadCleanPeriod: 1, FinalizePeriod: 0}
+// sequential is 1000000, pulses in db: [1000000, 1000010, 1000020], 1000010 is complete, expect sequential to change
+// sequential is 1000010, pulses in db: [1000000, 1000010, 1000020], 1000020 is complete, expect sequential to change
+// sequential is 1000020, pulses in db: [1000000, 1000010, 1000020], expect nothing happens
+func TestController_pulseSequence_Start_NoMissedData(t *testing.T) {
+	var cfg = configuration.Controller{PulsePeriod: 0, ReloadPeriod: 10, ReloadCleanPeriod: 1, SequentialPeriod: 0}
 
 	extractor := mock.NewJetDropsExtractorMock(t)
 
 	sm := mock.NewStorageMock(t)
 	sm.GetIncompletePulsesMock.Return(nil, nil)
-	sm.GetFinalPulseMock.Return(models.Pulse{PulseNumber: 1000000}, nil)
+	sm.GetSequentialPulseMock.Return(models.Pulse{PulseNumber: 1000000}, nil)
 	wg := sync.WaitGroup{}
 	wg.Add(3)
 	sm.GetPulseByPrevMock.Set(func(prevPulse models.Pulse) (p1 models.Pulse, err error) {
@@ -221,11 +221,11 @@ func TestController_pulseFinalizer_Start_NoMissedData(t *testing.T) {
 		require.Equal(t, 1000020, prevPulse.PulseNumber)
 		return models.Pulse{PrevPulseNumber: 1000020, PulseNumber: 1000030, NextPulseNumber: 1000040, IsComplete: false}, nil
 	})
-	sm.FinalizePulseMock.Set(func(pulseNumber int) (err error) {
-		if sm.FinalizePulseBeforeCounter() == 1 {
+	sm.SequencePulseMock.Set(func(pulseNumber int) (err error) {
+		if sm.SequencePulseBeforeCounter() == 1 {
 			require.Equal(t, 1000010, pulseNumber)
 		}
-		if sm.FinalizePulseBeforeCounter() == 2 {
+		if sm.SequencePulseBeforeCounter() == 2 {
 			require.Equal(t, 1000020, pulseNumber)
 		}
 		return nil
@@ -243,12 +243,12 @@ func TestController_pulseFinalizer_Start_NoMissedData(t *testing.T) {
 }
 
 func TestController_pulseMaintainer_Start_PulsesCompleteAndNot(t *testing.T) {
-	var cfg = configuration.Controller{PulsePeriod: 0, ReloadPeriod: 10, ReloadCleanPeriod: 1, FinalizePeriod: 0}
+	var cfg = configuration.Controller{PulsePeriod: 0, ReloadPeriod: 10, ReloadCleanPeriod: 1, SequentialPeriod: 0}
 
 	extractor := mock.NewJetDropsExtractorMock(t)
 
 	sm := mock.NewStorageMock(t)
-	sm.GetFinalPulseMock.Return(models.Pulse{PulseNumber: 0}, nil)
+	sm.GetSequentialPulseMock.Return(models.Pulse{PulseNumber: 0}, nil)
 	sm.GetPulseByPrevMock.Set(func(prevPulse models.Pulse) (p1 models.Pulse, err error) {
 		return models.Pulse{}, errors.New("some test error")
 	})
@@ -287,18 +287,18 @@ func TestController_pulseMaintainer_Start_PulsesCompleteAndNot(t *testing.T) {
 	time.Sleep(time.Millisecond)
 }
 
-// final is 1000000, pulses in db: [1000000, 1000020], expect loading data from 1000000 to 1000020
-// final is 1000000, pulses in db: [1000000, 1000020], expect don't load already loaded data
+// sequential is 1000000, pulses in db: [1000000, 1000020], expect loading data from 1000000 to 1000020
+// sequential is 1000000, pulses in db: [1000000, 1000020], expect don't load already loaded data
 // wait ReloadPeriod seconds
-// final is 1000000, pulses in db: [1000000, 1000020], expect loading data from 1000000 to 1000020
-func TestController_pulseFinalizer_ReloadPeriodExpired(t *testing.T) {
-	var cfg = configuration.Controller{PulsePeriod: 0, ReloadPeriod: 2, ReloadCleanPeriod: 1, FinalizePeriod: 0}
+// sequential is 1000000, pulses in db: [1000000, 1000020], expect loading data from 1000000 to 1000020
+func TestController_pulseSequence_ReloadPeriodExpired(t *testing.T) {
+	var cfg = configuration.Controller{PulsePeriod: 0, ReloadPeriod: 2, ReloadCleanPeriod: 1, SequentialPeriod: 0}
 
 	extractor := mock.NewJetDropsExtractorMock(t)
 
 	sm := mock.NewStorageMock(t)
 	sm.GetIncompletePulsesMock.Return(nil, nil)
-	sm.GetFinalPulseMock.Return(models.Pulse{PulseNumber: 1000000}, nil)
+	sm.GetSequentialPulseMock.Return(models.Pulse{PulseNumber: 1000000}, nil)
 	wg := sync.WaitGroup{}
 	wg.Add(2)
 	sm.GetPulseByPrevMock.Set(func(prevPulse models.Pulse) (p1 models.Pulse, err error) {

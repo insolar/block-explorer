@@ -68,20 +68,20 @@ func (s *Storage) CompletePulse(pulseNumber int) error {
 	})
 }
 
-// FinalizePulse update pulse with provided number to finale in db.
-func (s *Storage) FinalizePulse(pulseNumber int) error {
+// SequencePulse update pulse with provided number to sequential in db.
+func (s *Storage) SequencePulse(pulseNumber int) error {
 	return s.db.Transaction(func(tx *gorm.DB) error {
 		pulse := models.Pulse{PulseNumber: pulseNumber}
-		update := tx.Model(&pulse).Update(models.Pulse{IsFinal: true})
+		update := tx.Model(&pulse).Update(models.Pulse{IsSequential: true})
 		if update.Error != nil {
-			return errors.Wrap(update.Error, "error while updating pulse final")
+			return errors.Wrap(update.Error, "error while updating pulse to sequential")
 		}
 		rowsAffected := update.RowsAffected
 		if rowsAffected == 0 {
-			return errors.Errorf("try to final not existing pulse with number %d", pulseNumber)
+			return errors.Errorf("try to sequence not existing pulse with number %d", pulseNumber)
 		}
 		if rowsAffected != 1 {
-			return errors.Errorf("several rows were affected by update for pulse with number %d to final, it was not expected", pulseNumber)
+			return errors.Errorf("several rows were affected by update for pulse with number %d to sequential, it was not expected", pulseNumber)
 		}
 		return nil
 	})
@@ -354,10 +354,10 @@ func (s *Storage) GetPulseByPrev(prevPulse models.Pulse) (models.Pulse, error) {
 	return pulse, err
 }
 
-// GetFinalPulse returns max pulse that have is_final as true from db.
-func (s *Storage) GetFinalPulse() (models.Pulse, error) {
+// GetSequentialPulse returns max pulse that have is_sequential as true from db.
+func (s *Storage) GetSequentialPulse() (models.Pulse, error) {
 	var pulses []models.Pulse
-	err := s.db.Where("is_final = ?", true).Order("pulse_number desc").Limit(1).Find(&pulses).Error
+	err := s.db.Where("is_sequential = ?", true).Order("pulse_number desc").Limit(1).Find(&pulses).Error
 	if err != nil {
 		return models.Pulse{}, err
 	}

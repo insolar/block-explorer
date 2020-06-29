@@ -43,7 +43,7 @@ func NewBlockExplorer(exporterClient exporter.RecordExporterClient, db *gorm.DB)
 
 var cfg = configuration.Controller{
 	PulsePeriod:       10,
-	FinalizePeriod:    1,
+	SequentialPeriod:  1,
 	ReloadPeriod:      10,
 	ReloadCleanPeriod: 1,
 }
