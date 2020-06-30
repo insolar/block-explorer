@@ -142,21 +142,17 @@ func filterByPulseNumber(query *gorm.DB, pulseNumberLte, pulseNumberLt, pulseNum
 	return query
 }
 
-func filterRecordsByIndex(query *gorm.DB, fromIndex string, sort string) (*gorm.DB, error) {
+func filterRecordsByIndex(query *gorm.DB, fromIndex string, sortByIndexAsc bool) (*gorm.DB, error) {
 	pulseNumber, order, err := CheckIndex(fromIndex)
 	if err != nil {
 		return nil, err
 	}
-	switch sort {
-	case "+index":
+	if sortByIndexAsc {
 		query = query.Where("(pulse_number > ?", pulseNumber)
 		query = query.Or("pulse_number = ? AND \"order\" >= ?)", pulseNumber, order)
-	case "-index":
+	} else {
 		query = query.Where("(pulse_number < ?", pulseNumber)
 		query = query.Or("pulse_number = ? AND \"order\" <= ?)", pulseNumber, order)
-
-	default:
-		return nil, errors.New("query parameter 'sort' should be 'asc'' or 'desc'")
 	}
 	return query, nil
 }
@@ -171,14 +167,11 @@ func filterByTimestamp(query *gorm.DB, timestampLte, timestampGte *int) *gorm.DB
 	return query
 }
 
-func sortRecordsByDirection(query *gorm.DB, sort string) (*gorm.DB, error) {
-	switch sort {
-	case "+index":
+func sortRecordsByDirection(query *gorm.DB, sortByIndexAsc bool) (*gorm.DB, error) {
+	if sortByIndexAsc {
 		query = query.Order("pulse_number asc").Order("\"order\" asc")
-	case "-index":
+	} else {
 		query = query.Order("pulse_number desc").Order("\"order\" desc")
-	default:
-		return nil, errors.New("query parameter 'sort' should be '-index'' or '+index'")
 	}
 	return query, nil
 }
@@ -212,7 +205,7 @@ func getPulses(query *gorm.DB, limit, offset int) ([]models.Pulse, int, error) {
 }
 
 // GetLifeline returns records for provided object reference, ordered by pulse number and order fields.
-func (s *Storage) GetLifeline(objRef []byte, fromIndex *string, pulseNumberLt, pulseNumberGt, timestampLte, timestampGte *int, limit, offset int, sort string) ([]models.Record, int, error) {
+func (s *Storage) GetLifeline(objRef []byte, fromIndex *string, pulseNumberLt, pulseNumberGt, timestampLte, timestampGte *int, limit, offset int, sortByIndexAsc bool) ([]models.Record, int, error) {
 	query := s.db.Model(&models.Record{}).Where("object_reference = ?", objRef).Where("type = ?", models.State)
 
 	query = filterByPulse(query, pulseNumberLt, pulseNumberGt)
@@ -221,13 +214,13 @@ func (s *Storage) GetLifeline(objRef []byte, fromIndex *string, pulseNumberLt, p
 
 	var err error
 	if fromIndex != nil {
-		query, err = filterRecordsByIndex(query, *fromIndex, sort)
+		query, err = filterRecordsByIndex(query, *fromIndex, sortByIndexAsc)
 		if err != nil {
 			return nil, 0, err
 		}
 	}
 
-	query, err = sortRecordsByDirection(query, sort)
+	query, err = sortRecordsByDirection(query, sortByIndexAsc)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -322,13 +315,13 @@ func (s *Storage) GetRecordsByJetDrop(jetDropID models.JetDropID, fromIndex, rec
 
 	var err error
 	if fromIndex != nil {
-		query, err = filterRecordsByIndex(query, *fromIndex, "+index")
+		query, err = filterRecordsByIndex(query, *fromIndex, true)
 		if err != nil {
 			return nil, 0, err
 		}
 	}
 
-	query, err = sortRecordsByDirection(query, "+index")
+	query, err = sortRecordsByDirection(query, true)
 	if err != nil {
 		return nil, 0, err
 	}
