@@ -106,10 +106,10 @@ func log(ctx context.Context, transform []*types.JetDrop) {
 		for _, r := range t.MainSection.Records {
 			data.records = append(data.records, customRecord{
 				Type:                string(models.RecordTypeFromTypes(r.Type)),
-				Ref:                 restoreInsolarID(r.Ref),
-				ObjectReference:     restoreInsolarID(r.ObjectReference),
-				PrototypeReference:  restoreInsolarID(r.PrototypeReference),
-				PrevRecordReference: restoreInsolarID(r.PrevRecordReference),
+				Ref:                 string(models.ReferenceFromTypes(r.Ref)),
+				ObjectReference:     string(models.ReferenceFromTypes(r.ObjectReference)),
+				PrototypeReference:  string(models.ReferenceFromTypes(r.PrototypeReference)),
+				PrevRecordReference: string(models.ReferenceFromTypes(r.PrevRecordReference)),
 				Order:               r.Order,
 			})
 		}
