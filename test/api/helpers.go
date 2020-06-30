@@ -19,8 +19,8 @@ func LogHTTP(t *testing.T, http *http.Response, requestBody interface{}, respons
 	var buf strings.Builder
 	buf.WriteString("\n")
 	buf.WriteString("Request:")
-	buf.WriteString(fmt.Sprintf("%v %v://%v%v \n",
-		http.Request.Method, http.Request.URL.Scheme, http.Request.URL.Host, http.Request.URL.Path))
+	buf.WriteString(fmt.Sprintf("%v %v://%v%v?%v \n",
+		http.Request.Method, http.Request.URL.Scheme, http.Request.URL.Host, http.Request.URL.Path, http.Request.URL.RawQuery))
 
 	headers := http.Request.Header
 	if len(headers) > 0 {
