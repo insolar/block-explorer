@@ -477,16 +477,20 @@ func (s *Server) ObjectLifeline(ctx echo.Context, objectReference server.ObjectR
 		})
 	}
 
-	sort := "-index"
+	sortAsc := string(server.SortByIndex_index_asc)
+	sortDesc := string(server.SortByIndex_index_desc)
+	var sortByIndexAsc bool
 	if params.SortBy != nil {
 		s := string(*params.SortBy)
-		if s != "-index" && s != "+index" {
+		if s != sortDesc && s != sortAsc {
 			failures = append(failures, server.CodeValidationFailures{
-				FailureReason: NullableString("should be '-index' or '+index'"),
+				FailureReason: NullableString(fmt.Sprintf("should be '%s' or '%s'", sortDesc, sortAsc)),
 				Property:      NullableString("sort_by"),
 			})
 		}
-		sort = s
+		if s == sortAsc {
+			sortByIndexAsc = true
+		}
 	}
 
 	var fromIndexString *string
@@ -551,7 +555,7 @@ func (s *Server) ObjectLifeline(ctx echo.Context, objectReference server.ObjectR
 		pulseNumberLtString, pulseNumberGtString,
 		timestampLteString, timestampGteString,
 		limit, offset,
-		sort,
+		sortByIndexAsc,
 	)
 	if err != nil {
 		s.logger.Error(err)

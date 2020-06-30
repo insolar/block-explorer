@@ -585,7 +585,7 @@ func TestStorage_GetLifeline(t *testing.T) {
 
 	expectedRecords := []models.Record{genRecords[2], genRecords[1], genRecords[0]}
 
-	records, total, err := s.GetLifeline(objRef.Bytes(), nil, nil, nil, nil, nil, 20, 0, "-index")
+	records, total, err := s.GetLifeline(objRef.Bytes(), nil, nil, nil, nil, nil, 20, 0, false)
 	require.NoError(t, err)
 	require.Equal(t, 3, total)
 	require.Equal(t, expectedRecords, records)
@@ -594,7 +594,7 @@ func TestStorage_GetLifeline(t *testing.T) {
 func TestStorage_GetLifeline_ObjNotExist(t *testing.T) {
 	s := NewStorage(testDB)
 
-	records, total, err := s.GetLifeline(gen.Reference().Bytes(), nil, nil, nil, nil, nil, 20, 0, "-index")
+	records, total, err := s.GetLifeline(gen.Reference().Bytes(), nil, nil, nil, nil, nil, 20, 0, false)
 	require.NoError(t, err)
 	require.Equal(t, 0, total)
 	require.Empty(t, records)
@@ -619,7 +619,7 @@ func TestStorage_GetLifeline_Index(t *testing.T) {
 	expectedRecords := []models.Record{genRecords[1], genRecords[0]}
 
 	index := fmt.Sprintf("%d:%d", pulse.PulseNumber, genRecords[1].Order)
-	records, total, err := s.GetLifeline(objRef.Bytes(), &index, nil, nil, nil, nil, 20, 0, "-index")
+	records, total, err := s.GetLifeline(objRef.Bytes(), &index, nil, nil, nil, nil, 20, 0, false)
 	require.NoError(t, err)
 	require.Equal(t, 2, total)
 	require.Equal(t, expectedRecords, records)
@@ -633,7 +633,7 @@ func TestStorage_GetLifeline_Index_NotExist(t *testing.T) {
 	objRef := gen.Reference()
 
 	index := fmt.Sprintf("%d:%d", pulseNumber, 10)
-	records, total, err := s.GetLifeline(objRef.Bytes(), &index, nil, nil, nil, nil, 20, 0, "-index")
+	records, total, err := s.GetLifeline(objRef.Bytes(), &index, nil, nil, nil, nil, 20, 0, false)
 	require.NoError(t, err)
 	require.Equal(t, 0, total)
 	require.Empty(t, records)
@@ -659,7 +659,7 @@ func TestStorage_GetLifeline_IndexLimit(t *testing.T) {
 
 	limit := 2
 	index := fmt.Sprintf("%d:%d", pulse.PulseNumber, genRecords[3].Order)
-	records, total, err := s.GetLifeline(objRef.Bytes(), &index, nil, nil, nil, nil, limit, 0, "-index")
+	records, total, err := s.GetLifeline(objRef.Bytes(), &index, nil, nil, nil, nil, limit, 0, false)
 	require.NoError(t, err)
 	require.Equal(t, 4, total)
 	require.Equal(t, expectedRecords, records)
@@ -685,7 +685,7 @@ func TestStorage_GetLifeline_IndexOffset(t *testing.T) {
 
 	offset := 2
 	index := fmt.Sprintf("%d:%d", pulse.PulseNumber, genRecords[3].Order)
-	records, total, err := s.GetLifeline(objRef.Bytes(), &index, nil, nil, nil, nil, 20, offset, "-index")
+	records, total, err := s.GetLifeline(objRef.Bytes(), &index, nil, nil, nil, nil, 20, offset, false)
 	require.NoError(t, err)
 	require.Equal(t, 4, total)
 	require.Equal(t, expectedRecords, records)
@@ -711,7 +711,7 @@ func TestStorage_GetLifeline_IndexLimit_Asc(t *testing.T) {
 
 	limit := 2
 	index := fmt.Sprintf("%d:%d", pulse.PulseNumber, genRecords[2].Order)
-	records, total, err := s.GetLifeline(objRef.Bytes(), &index, nil, nil, nil, nil, limit, 0, "+index")
+	records, total, err := s.GetLifeline(objRef.Bytes(), &index, nil, nil, nil, nil, limit, 0, true)
 	require.NoError(t, err)
 	require.Equal(t, 3, total)
 	require.Equal(t, expectedRecords, records)
@@ -736,7 +736,7 @@ func TestStorage_GetLifeline_IndexOffset_Asc(t *testing.T) {
 	expectedRecords := []models.Record{genRecords[3], genRecords[4]}
 
 	index := fmt.Sprintf("%d:%d", pulse.PulseNumber, genRecords[1].Order)
-	records, total, err := s.GetLifeline(objRef.Bytes(), &index, nil, nil, nil, nil, 20, 2, "+index")
+	records, total, err := s.GetLifeline(objRef.Bytes(), &index, nil, nil, nil, nil, 20, 2, true)
 	require.NoError(t, err)
 	require.Equal(t, 4, total)
 	require.Equal(t, expectedRecords, records)
@@ -754,7 +754,7 @@ func TestStorage_GetLifeline_TimestampRange(t *testing.T) {
 	timestampGte := int(pulses[0].pulse.Timestamp)
 	records, total, err := s.GetLifeline(
 		pulses[1].records[0].ObjectReference, nil,
-		nil, nil, &timestampLte, &timestampGte, 20, 0, "-index")
+		nil, nil, &timestampLte, &timestampGte, 20, 0, false)
 	require.NoError(t, err)
 	require.Equal(t, 4, total)
 	require.Equal(t, expectedRecords, records)
@@ -770,7 +770,7 @@ func TestStorage_GetLifeline_PulseRange(t *testing.T) {
 
 	records, total, err := s.GetLifeline(
 		pulses[1].records[0].ObjectReference, nil,
-		&pulses[2].pulse.PulseNumber, &pulses[0].pulse.PulseNumber, nil, nil, 20, 0, "-index")
+		&pulses[2].pulse.PulseNumber, &pulses[0].pulse.PulseNumber, nil, nil, 20, 0, false)
 	require.NoError(t, err)
 	require.Equal(t, 3, total)
 	require.Equal(t, expectedRecords, records)
@@ -784,7 +784,7 @@ func TestStorage_GetLifeline_PulseRange_SamePulse(t *testing.T) {
 
 	records, total, err := s.GetLifeline(
 		pulses[1].records[0].ObjectReference, nil,
-		&pulses[2].pulse.PulseNumber, &pulses[2].pulse.PulseNumber, nil, nil, 20, 0, "-index")
+		&pulses[2].pulse.PulseNumber, &pulses[2].pulse.PulseNumber, nil, nil, 20, 0, false)
 	require.NoError(t, err)
 	require.Equal(t, 0, total)
 	require.Empty(t, records)
@@ -800,7 +800,7 @@ func TestStorage_GetLifeline_PulseRange_Limit(t *testing.T) {
 
 	records, total, err := s.GetLifeline(
 		pulses[1].records[0].ObjectReference, nil,
-		&pulses[2].pulse.PulseNumber, &pulses[0].pulse.PulseNumber, nil, nil, 2, 0, "-index")
+		&pulses[2].pulse.PulseNumber, &pulses[0].pulse.PulseNumber, nil, nil, 2, 0, false)
 	require.NoError(t, err)
 	require.Equal(t, 3, total)
 	require.Equal(t, expectedRecords, records)
@@ -816,7 +816,7 @@ func TestStorage_GetLifeline_PulseRange_LimitOffset(t *testing.T) {
 
 	records, total, err := s.GetLifeline(
 		pulses[1].records[0].ObjectReference, nil,
-		&pulses[2].pulse.PulseNumber, &pulses[0].pulse.PulseNumber, nil, nil, 2, 1, "-index")
+		&pulses[2].pulse.PulseNumber, &pulses[0].pulse.PulseNumber, nil, nil, 2, 1, false)
 	require.NoError(t, err)
 	require.Equal(t, 4, total)
 	require.Equal(t, expectedRecords, records)
@@ -832,7 +832,7 @@ func TestStorage_GetLifeline_PulseRange_Limit_Asc(t *testing.T) {
 
 	records, total, err := s.GetLifeline(
 		pulses[1].records[0].ObjectReference, nil,
-		&pulses[2].pulse.PulseNumber, &pulses[0].pulse.PulseNumber, nil, nil, 2, 0, "+index")
+		&pulses[2].pulse.PulseNumber, &pulses[0].pulse.PulseNumber, nil, nil, 2, 0, true)
 	require.NoError(t, err)
 	require.Equal(t, 3, total)
 	require.Equal(t, expectedRecords, records)
@@ -849,7 +849,7 @@ func TestStorage_GetLifeline_Index_PulseRange(t *testing.T) {
 	index := fmt.Sprintf("%d:%d", pulses[2].pulse.PulseNumber, pulses[2].records[1].Order)
 	records, total, err := s.GetLifeline(
 		pulses[1].records[0].ObjectReference, &index,
-		&pulses[3].pulse.PulseNumber, &pulses[0].pulse.PulseNumber, nil, nil, 20, 0, "-index")
+		&pulses[3].pulse.PulseNumber, &pulses[0].pulse.PulseNumber, nil, nil, 20, 0, false)
 	require.NoError(t, err)
 	require.Equal(t, 5, total)
 	require.Equal(t, expectedRecords, records)
@@ -866,7 +866,7 @@ func TestStorage_GetLifeline_AllParams(t *testing.T) {
 	index := fmt.Sprintf("%d:%d", pulses[2].pulse.PulseNumber, pulses[2].records[1].Order)
 	records, total, err := s.GetLifeline(
 		pulses[1].records[0].ObjectReference, &index,
-		&pulses[3].pulse.PulseNumber, &pulses[0].pulse.PulseNumber, nil, nil, 3, 1, "-index")
+		&pulses[3].pulse.PulseNumber, &pulses[0].pulse.PulseNumber, nil, nil, 3, 1, false)
 	require.NoError(t, err)
 	require.Equal(t, 5, total)
 	require.Equal(t, expectedRecords, records)
@@ -880,7 +880,7 @@ func TestStorage_GetLifeline_PulseRange_Empty(t *testing.T) {
 
 	records, total, err := s.GetLifeline(
 		pulses[1].records[0].ObjectReference, nil,
-		&pulses[0].pulse.PulseNumber, &pulses[3].pulse.PulseNumber, nil, nil, 20, 0, "-index")
+		&pulses[0].pulse.PulseNumber, &pulses[3].pulse.PulseNumber, nil, nil, 20, 0, false)
 	require.NoError(t, err)
 	require.Equal(t, 0, total)
 	require.Empty(t, records)
@@ -1836,6 +1836,7 @@ func TestStorage_GetJetDropsByJetId_Splites(t *testing.T) {
 	}
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
+			testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
 			pulseCount := test.pulseCount
 			jetDropCount := test.jDCount
 			depth := test.depth
@@ -1854,7 +1855,7 @@ func TestStorage_GetJetDropsByJetId_Splites(t *testing.T) {
 			jetDropsFromDb, totalFromDb, err := s.GetJetDropsByJetID(middle, nil, nil, nil, nil, -1, true)
 			require.NoError(t, err)
 
-			require.Equal(t, totalFromDb, len(allPossible))
+			require.Equal(t, len(allPossible), totalFromDb)
 			for _, v := range jetDropsFromDb {
 				require.Contains(t, allPossible, v.JetID)
 			}

@@ -125,7 +125,8 @@ func TestObjectLifeline_SortAsc(t *testing.T) {
 	testutils.OrderedRecords(t, testDB, jetDrop, gen.ID(), 3)
 
 	// request records for objRef
-	resp, err := http.Get("http://" + apihost + "/api/v1/lifeline/" + objRef.String() + "/records?sort_by=" + url.QueryEscape("+index"))
+	sortAsc := string(server.SortByIndex_index_asc)
+	resp, err := http.Get("http://" + apihost + "/api/v1/lifeline/" + objRef.String() + "/records?sort_by=" + url.QueryEscape(sortAsc))
 	require.NoError(t, err)
 	require.Equal(t, http.StatusOK, resp.StatusCode)
 	bodyBytes, err := ioutil.ReadAll(resp.Body)
@@ -205,7 +206,7 @@ func TestObjectLifeline_Sort_Error(t *testing.T) {
 		Code:    NullableString(http.StatusText(http.StatusBadRequest)),
 		Message: NullableString(InvalidParamsMessage),
 		ValidationFailures: &[]server.CodeValidationFailures{{
-			FailureReason: NullableString("should be '-index' or '+index'"),
+			FailureReason: NullableString("should be 'index_desc' or 'index_asc'"),
 			Property:      NullableString("sort_by"),
 		}},
 	}
