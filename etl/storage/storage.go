@@ -167,13 +167,13 @@ func filterByTimestamp(query *gorm.DB, timestampLte, timestampGte *int) *gorm.DB
 	return query
 }
 
-func sortRecordsByDirection(query *gorm.DB, sortByIndexAsc bool) (*gorm.DB, error) {
+func sortRecordsByDirection(query *gorm.DB, sortByIndexAsc bool) *gorm.DB {
 	if sortByIndexAsc {
 		query = query.Order("pulse_number asc").Order("\"order\" asc")
 	} else {
 		query = query.Order("pulse_number desc").Order("\"order\" desc")
 	}
-	return query, nil
+	return query
 }
 
 func getRecords(query *gorm.DB, limit, offset int) ([]models.Record, int, error) {
@@ -220,10 +220,7 @@ func (s *Storage) GetLifeline(objRef []byte, fromIndex *string, pulseNumberLt, p
 		}
 	}
 
-	query, err = sortRecordsByDirection(query, sortByIndexAsc)
-	if err != nil {
-		return nil, 0, err
-	}
+	query = sortRecordsByDirection(query, sortByIndexAsc)
 
 	records, total, err := getRecords(query, limit, offset)
 	if err != nil {
@@ -321,10 +318,7 @@ func (s *Storage) GetRecordsByJetDrop(jetDropID models.JetDropID, fromIndex, rec
 		}
 	}
 
-	query, err = sortRecordsByDirection(query, true)
-	if err != nil {
-		return nil, 0, err
-	}
+	query = sortRecordsByDirection(query, true)
 
 	records, total, err := getRecords(query, limit, offset)
 	if err != nil {
