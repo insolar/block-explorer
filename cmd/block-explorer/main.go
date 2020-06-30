@@ -83,7 +83,7 @@ func main() {
 	defer func() {
 		err := db.DB().Close()
 		if err != nil {
-			logger.Error(errors.Wrap(err, "failed to close database"))
+			logger.Error(errors.Wrap(err, "failed to close database").Error())
 		}
 	}()
 
