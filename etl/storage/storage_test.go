@@ -1836,6 +1836,7 @@ func TestStorage_GetJetDropsByJetId_Splites(t *testing.T) {
 	}
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
+			testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
 			pulseCount := test.pulseCount
 			jetDropCount := test.jDCount
 			depth := test.depth
@@ -1854,7 +1855,7 @@ func TestStorage_GetJetDropsByJetId_Splites(t *testing.T) {
 			jetDropsFromDb, totalFromDb, err := s.GetJetDropsByJetID(middle, nil, nil, nil, nil, -1, true)
 			require.NoError(t, err)
 
-			require.Equal(t, totalFromDb, len(allPossible))
+			require.Equal(t, len(allPossible), totalFromDb)
 			for _, v := range jetDropsFromDb {
 				require.Contains(t, allPossible, v.JetID)
 			}
