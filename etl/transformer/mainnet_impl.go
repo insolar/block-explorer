@@ -8,7 +8,6 @@ package transformer
 import (
 	"context"
 
-	"github.com/insolar/block-explorer/etl/models"
 	"github.com/insolar/block-explorer/etl/types"
 	"github.com/insolar/block-explorer/instrumentation/belogger"
 )
@@ -70,52 +69,18 @@ func (m *MainNetTransformer) run(ctx context.Context) {
 			return
 		}
 		go func() {
-			go log(ctx, transform)
-			for _, t := range transform {
-				m.transformerChan <- t
+			if len(transform) == 0 {
+				belogger.FromContext(ctx).Warn("no transformed data to logging")
+			} else {
+				belogger.FromContext(ctx).
+					Infof("transformed jet drop to canonical for pulse: %d", transform[0].MainSection.Start.PulseData.PulseNo)
+				for _, t := range transform {
+					m.transformerChan <- t
+				}
 			}
 		}()
 	case <-m.stopSignal:
 		m.stopSignal <- true
 		return
 	}
-}
-
-func log(ctx context.Context, transform []*types.JetDrop) {
-	if len(transform) == 0 {
-		belogger.FromContext(ctx).Warn("no transformed data to log")
-		return
-	}
-
-	type customRecord struct {
-		Type                string
-		Ref                 string
-		ObjectReference     string
-		PrototypeReference  string
-		PrevRecordReference string
-		Order               uint32
-	}
-	type customJetDrop struct {
-		Start   types.DropStart
-		records []customRecord
-	}
-
-	data := customJetDrop{}
-	for _, t := range transform {
-		data.Start = t.MainSection.Start
-		for _, r := range t.MainSection.Records {
-			data.records = append(data.records, customRecord{
-				Type:                string(models.RecordTypeFromTypes(r.Type)),
-				Ref:                 restoreInsolarID(r.Ref),
-				ObjectReference:     restoreInsolarID(r.ObjectReference),
-				PrototypeReference:  restoreInsolarID(r.PrototypeReference),
-				PrevRecordReference: restoreInsolarID(r.PrevRecordReference),
-				Order:               r.Order,
-			})
-		}
-	}
-	pn := transform[0].MainSection.Start.PulseData.PulseNo
-	logger := belogger.FromContext(ctx).WithField("pulse_number", pn)
-	logger.Infof("transformed jet drop to canonical for pulse: %d", pn)
-	logger.Debugf("transformed data: %+v", data)
 }
