@@ -177,17 +177,17 @@ func TestPulsesAPI(t *testing.T) {
 		response, err := c.Pulses(t, &opts)
 		require.NoError(t, err)
 		require.Len(t, response.Result, 0)
-		require.Equal(t, int64(fromPulse), response.Result[0].PulseNumber)
 	})
 	t.Run("FromPulseNumber value between existing pulses", func(t *testing.T) {
 		t.Log("C5215 Get pulses, FromPulseNumber value between existing pulses")
-		limit, fromPulse := 20, int(pulses[2]-5)
-		opts := client.PulsesOpts{Limit: optional.NewInt32(int32(limit)), FromPulseNumber: optional.NewInt64(int64(fromPulse))}
+		fromPulse := int(pulses[2])
+		limit := 20
+		opts := client.PulsesOpts{Limit: optional.NewInt32(int32(limit)), FromPulseNumber: optional.NewInt64(int64(fromPulse + 5))}
 		response, err := c.Pulses(t, &opts)
 		require.NoError(t, err)
-		require.Equal(t, int64(2), response.Total)
-		require.Len(t, response.Result, 2)
-		require.Equal(t, fromPulse, response.Result[0].PulseNumber)
+		require.Equal(t, int64(3), response.Total)
+		require.Len(t, response.Result, 3)
+		require.Equal(t, int64(fromPulse), response.Result[0].PulseNumber)
 	})
 	t.Run("from TimestampGte", func(t *testing.T) {
 		t.Log("C5216 Get pulses with parameter TimestampGte")
@@ -215,6 +215,6 @@ func TestPulsesAPI(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, int64(11), response.Total)
 		require.Len(t, response.Result, 11)
-		require.Equal(t, ts, response.Result[0].Timestamp)
+		require.Equal(t, ts, response.Result[10].Timestamp)
 	})
 }
