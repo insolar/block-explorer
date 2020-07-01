@@ -88,10 +88,11 @@ func (mdm *MissedDataManager) deleteExpired() {
 	defer mdm.mutex.Unlock()
 
 	for i, missed := range mdm.missedDataPool {
-		if mdm.isExpired(missed.ts) {
-			mdm.missedDataPool[i] = mdm.missedDataPool[len(mdm.missedDataPool)-1] // Copy last element to index i.
-			mdm.missedDataPool[len(mdm.missedDataPool)-1] = missedData{}          // Erase last element (write zero value).
-			mdm.missedDataPool = mdm.missedDataPool[:len(mdm.missedDataPool)-1]
+		length := len(mdm.missedDataPool)
+		if i < length && mdm.isExpired(missed.ts) {
+			mdm.missedDataPool[i] = mdm.missedDataPool[length-1] // Copy last element to index i.
+			mdm.missedDataPool[length-1] = missedData{}          // Erase last element (write zero value).
+			mdm.missedDataPool = mdm.missedDataPool[:length-1]
 		}
 	}
 }
