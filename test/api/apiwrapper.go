@@ -11,7 +11,6 @@ import (
 	"testing"
 
 	"github.com/insolar/spec-insolar-block-explorer-api/v1/client"
-	"github.com/stretchr/testify/require"
 )
 
 type BEApiClient struct {
@@ -30,7 +29,12 @@ func NewBeAPIClient(basePath string) *BEApiClient {
 
 func (c *BEApiClient) ObjectLifeline(t *testing.T, objectRef string, localVarOptionals *client.ObjectLifelineOpts) (response client.ObjectLifelineResponse200, err error) {
 	response, rawResponse, err := c.client.RecordApi.ObjectLifeline(context.Background(), objectRef, localVarOptionals)
-	require.NoError(t, err, "Error while executing http request")
+	LogHTTP(t, rawResponse, nil, response)
+	return response, err
+}
+
+func (c *BEApiClient) Pulses(t *testing.T, localVarOptionals *client.PulsesOpts) (response client.GetPulsesResponse200, err error) {
+	response, rawResponse, err := c.client.PulseApi.Pulses(context.Background(), localVarOptionals)
 	LogHTTP(t, rawResponse, nil, response)
 	return response, err
 }
