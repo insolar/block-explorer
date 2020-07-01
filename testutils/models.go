@@ -127,8 +127,8 @@ func CreateJetDrop(db *gorm.DB, jetDrop models.JetDrop) error {
 // CreateJetDrops creates provided jet drop list to db
 func CreateJetDrops(db *gorm.DB, jetDrops []models.JetDrop) error {
 	return db.Transaction(func(tx *gorm.DB) error {
-		for _, v := range jetDrops {
-			if err := tx.Create(&v).Error; err != nil {
+		for _, drop := range jetDrops {
+			if err := tx.Create(&drop).Error; err != nil { // nolint
 				return errors.Wrap(err, "error while saving jetDrop")
 			}
 		}
@@ -147,8 +147,8 @@ func CreatePulse(db *gorm.DB, pulse models.Pulse) error {
 // CreatePulses creates provided pulses to db
 func CreatePulses(db *gorm.DB, pulses []models.Pulse) error {
 	return db.Transaction(func(tx *gorm.DB) error {
-		for _, p := range pulses {
-			if err := tx.Create(&p).Error; err != nil {
+		for _, pulse := range pulses {
+			if err := tx.Create(&pulse).Error; err != nil { // nolint
 				return errors.Wrap(err, "error while saving pulse")
 			}
 		}
