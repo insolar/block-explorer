@@ -32,6 +32,12 @@ type StorageSetterMock struct {
 	afterSavePulseCounter  uint64
 	beforeSavePulseCounter uint64
 	SavePulseMock          mStorageSetterMockSavePulse
+
+	funcSequencePulse          func(pulseNumber int) (err error)
+	inspectFuncSequencePulse   func(pulseNumber int)
+	afterSequencePulseCounter  uint64
+	beforeSequencePulseCounter uint64
+	SequencePulseMock          mStorageSetterMockSequencePulse
 }
 
 // NewStorageSetterMock returns a mock for interfaces.StorageSetter
@@ -49,6 +55,9 @@ func NewStorageSetterMock(t minimock.Tester) *StorageSetterMock {
 
 	m.SavePulseMock = mStorageSetterMockSavePulse{mock: m}
 	m.SavePulseMock.callArgs = []*StorageSetterMockSavePulseParams{}
+
+	m.SequencePulseMock = mStorageSetterMockSequencePulse{mock: m}
+	m.SequencePulseMock.callArgs = []*StorageSetterMockSequencePulseParams{}
 
 	return m
 }
@@ -699,6 +708,221 @@ func (m *StorageSetterMock) MinimockSavePulseInspect() {
 	}
 }
 
+type mStorageSetterMockSequencePulse struct {
+	mock               *StorageSetterMock
+	defaultExpectation *StorageSetterMockSequencePulseExpectation
+	expectations       []*StorageSetterMockSequencePulseExpectation
+
+	callArgs []*StorageSetterMockSequencePulseParams
+	mutex    sync.RWMutex
+}
+
+// StorageSetterMockSequencePulseExpectation specifies expectation struct of the StorageSetter.SequencePulse
+type StorageSetterMockSequencePulseExpectation struct {
+	mock    *StorageSetterMock
+	params  *StorageSetterMockSequencePulseParams
+	results *StorageSetterMockSequencePulseResults
+	Counter uint64
+}
+
+// StorageSetterMockSequencePulseParams contains parameters of the StorageSetter.SequencePulse
+type StorageSetterMockSequencePulseParams struct {
+	pulseNumber int
+}
+
+// StorageSetterMockSequencePulseResults contains results of the StorageSetter.SequencePulse
+type StorageSetterMockSequencePulseResults struct {
+	err error
+}
+
+// Expect sets up expected params for StorageSetter.SequencePulse
+func (mmSequencePulse *mStorageSetterMockSequencePulse) Expect(pulseNumber int) *mStorageSetterMockSequencePulse {
+	if mmSequencePulse.mock.funcSequencePulse != nil {
+		mmSequencePulse.mock.t.Fatalf("StorageSetterMock.SequencePulse mock is already set by Set")
+	}
+
+	if mmSequencePulse.defaultExpectation == nil {
+		mmSequencePulse.defaultExpectation = &StorageSetterMockSequencePulseExpectation{}
+	}
+
+	mmSequencePulse.defaultExpectation.params = &StorageSetterMockSequencePulseParams{pulseNumber}
+	for _, e := range mmSequencePulse.expectations {
+		if minimock.Equal(e.params, mmSequencePulse.defaultExpectation.params) {
+			mmSequencePulse.mock.t.Fatalf("Expectation set by When has same params: %#v", *mmSequencePulse.defaultExpectation.params)
+		}
+	}
+
+	return mmSequencePulse
+}
+
+// Inspect accepts an inspector function that has same arguments as the StorageSetter.SequencePulse
+func (mmSequencePulse *mStorageSetterMockSequencePulse) Inspect(f func(pulseNumber int)) *mStorageSetterMockSequencePulse {
+	if mmSequencePulse.mock.inspectFuncSequencePulse != nil {
+		mmSequencePulse.mock.t.Fatalf("Inspect function is already set for StorageSetterMock.SequencePulse")
+	}
+
+	mmSequencePulse.mock.inspectFuncSequencePulse = f
+
+	return mmSequencePulse
+}
+
+// Return sets up results that will be returned by StorageSetter.SequencePulse
+func (mmSequencePulse *mStorageSetterMockSequencePulse) Return(err error) *StorageSetterMock {
+	if mmSequencePulse.mock.funcSequencePulse != nil {
+		mmSequencePulse.mock.t.Fatalf("StorageSetterMock.SequencePulse mock is already set by Set")
+	}
+
+	if mmSequencePulse.defaultExpectation == nil {
+		mmSequencePulse.defaultExpectation = &StorageSetterMockSequencePulseExpectation{mock: mmSequencePulse.mock}
+	}
+	mmSequencePulse.defaultExpectation.results = &StorageSetterMockSequencePulseResults{err}
+	return mmSequencePulse.mock
+}
+
+//Set uses given function f to mock the StorageSetter.SequencePulse method
+func (mmSequencePulse *mStorageSetterMockSequencePulse) Set(f func(pulseNumber int) (err error)) *StorageSetterMock {
+	if mmSequencePulse.defaultExpectation != nil {
+		mmSequencePulse.mock.t.Fatalf("Default expectation is already set for the StorageSetter.SequencePulse method")
+	}
+
+	if len(mmSequencePulse.expectations) > 0 {
+		mmSequencePulse.mock.t.Fatalf("Some expectations are already set for the StorageSetter.SequencePulse method")
+	}
+
+	mmSequencePulse.mock.funcSequencePulse = f
+	return mmSequencePulse.mock
+}
+
+// When sets expectation for the StorageSetter.SequencePulse which will trigger the result defined by the following
+// Then helper
+func (mmSequencePulse *mStorageSetterMockSequencePulse) When(pulseNumber int) *StorageSetterMockSequencePulseExpectation {
+	if mmSequencePulse.mock.funcSequencePulse != nil {
+		mmSequencePulse.mock.t.Fatalf("StorageSetterMock.SequencePulse mock is already set by Set")
+	}
+
+	expectation := &StorageSetterMockSequencePulseExpectation{
+		mock:   mmSequencePulse.mock,
+		params: &StorageSetterMockSequencePulseParams{pulseNumber},
+	}
+	mmSequencePulse.expectations = append(mmSequencePulse.expectations, expectation)
+	return expectation
+}
+
+// Then sets up StorageSetter.SequencePulse return parameters for the expectation previously defined by the When method
+func (e *StorageSetterMockSequencePulseExpectation) Then(err error) *StorageSetterMock {
+	e.results = &StorageSetterMockSequencePulseResults{err}
+	return e.mock
+}
+
+// SequencePulse implements interfaces.StorageSetter
+func (mmSequencePulse *StorageSetterMock) SequencePulse(pulseNumber int) (err error) {
+	mm_atomic.AddUint64(&mmSequencePulse.beforeSequencePulseCounter, 1)
+	defer mm_atomic.AddUint64(&mmSequencePulse.afterSequencePulseCounter, 1)
+
+	if mmSequencePulse.inspectFuncSequencePulse != nil {
+		mmSequencePulse.inspectFuncSequencePulse(pulseNumber)
+	}
+
+	mm_params := &StorageSetterMockSequencePulseParams{pulseNumber}
+
+	// Record call args
+	mmSequencePulse.SequencePulseMock.mutex.Lock()
+	mmSequencePulse.SequencePulseMock.callArgs = append(mmSequencePulse.SequencePulseMock.callArgs, mm_params)
+	mmSequencePulse.SequencePulseMock.mutex.Unlock()
+
+	for _, e := range mmSequencePulse.SequencePulseMock.expectations {
+		if minimock.Equal(e.params, mm_params) {
+			mm_atomic.AddUint64(&e.Counter, 1)
+			return e.results.err
+		}
+	}
+
+	if mmSequencePulse.SequencePulseMock.defaultExpectation != nil {
+		mm_atomic.AddUint64(&mmSequencePulse.SequencePulseMock.defaultExpectation.Counter, 1)
+		mm_want := mmSequencePulse.SequencePulseMock.defaultExpectation.params
+		mm_got := StorageSetterMockSequencePulseParams{pulseNumber}
+		if mm_want != nil && !minimock.Equal(*mm_want, mm_got) {
+			mmSequencePulse.t.Errorf("StorageSetterMock.SequencePulse got unexpected parameters, want: %#v, got: %#v%s\n", *mm_want, mm_got, minimock.Diff(*mm_want, mm_got))
+		}
+
+		mm_results := mmSequencePulse.SequencePulseMock.defaultExpectation.results
+		if mm_results == nil {
+			mmSequencePulse.t.Fatal("No results are set for the StorageSetterMock.SequencePulse")
+		}
+		return (*mm_results).err
+	}
+	if mmSequencePulse.funcSequencePulse != nil {
+		return mmSequencePulse.funcSequencePulse(pulseNumber)
+	}
+	mmSequencePulse.t.Fatalf("Unexpected call to StorageSetterMock.SequencePulse. %v", pulseNumber)
+	return
+}
+
+// SequencePulseAfterCounter returns a count of finished StorageSetterMock.SequencePulse invocations
+func (mmSequencePulse *StorageSetterMock) SequencePulseAfterCounter() uint64 {
+	return mm_atomic.LoadUint64(&mmSequencePulse.afterSequencePulseCounter)
+}
+
+// SequencePulseBeforeCounter returns a count of StorageSetterMock.SequencePulse invocations
+func (mmSequencePulse *StorageSetterMock) SequencePulseBeforeCounter() uint64 {
+	return mm_atomic.LoadUint64(&mmSequencePulse.beforeSequencePulseCounter)
+}
+
+// Calls returns a list of arguments used in each call to StorageSetterMock.SequencePulse.
+// The list is in the same order as the calls were made (i.e. recent calls have a higher index)
+func (mmSequencePulse *mStorageSetterMockSequencePulse) Calls() []*StorageSetterMockSequencePulseParams {
+	mmSequencePulse.mutex.RLock()
+
+	argCopy := make([]*StorageSetterMockSequencePulseParams, len(mmSequencePulse.callArgs))
+	copy(argCopy, mmSequencePulse.callArgs)
+
+	mmSequencePulse.mutex.RUnlock()
+
+	return argCopy
+}
+
+// MinimockSequencePulseDone returns true if the count of the SequencePulse invocations corresponds
+// the number of defined expectations
+func (m *StorageSetterMock) MinimockSequencePulseDone() bool {
+	for _, e := range m.SequencePulseMock.expectations {
+		if mm_atomic.LoadUint64(&e.Counter) < 1 {
+			return false
+		}
+	}
+
+	// if default expectation was set then invocations count should be greater than zero
+	if m.SequencePulseMock.defaultExpectation != nil && mm_atomic.LoadUint64(&m.afterSequencePulseCounter) < 1 {
+		return false
+	}
+	// if func was set then invocations count should be greater than zero
+	if m.funcSequencePulse != nil && mm_atomic.LoadUint64(&m.afterSequencePulseCounter) < 1 {
+		return false
+	}
+	return true
+}
+
+// MinimockSequencePulseInspect logs each unmet expectation
+func (m *StorageSetterMock) MinimockSequencePulseInspect() {
+	for _, e := range m.SequencePulseMock.expectations {
+		if mm_atomic.LoadUint64(&e.Counter) < 1 {
+			m.t.Errorf("Expected call to StorageSetterMock.SequencePulse with params: %#v", *e.params)
+		}
+	}
+
+	// if default expectation was set then invocations count should be greater than zero
+	if m.SequencePulseMock.defaultExpectation != nil && mm_atomic.LoadUint64(&m.afterSequencePulseCounter) < 1 {
+		if m.SequencePulseMock.defaultExpectation.params == nil {
+			m.t.Error("Expected call to StorageSetterMock.SequencePulse")
+		} else {
+			m.t.Errorf("Expected call to StorageSetterMock.SequencePulse with params: %#v", *m.SequencePulseMock.defaultExpectation.params)
+		}
+	}
+	// if func was set then invocations count should be greater than zero
+	if m.funcSequencePulse != nil && mm_atomic.LoadUint64(&m.afterSequencePulseCounter) < 1 {
+		m.t.Error("Expected call to StorageSetterMock.SequencePulse")
+	}
+}
+
 // MinimockFinish checks that all mocked methods have been called the expected number of times
 func (m *StorageSetterMock) MinimockFinish() {
 	if !m.minimockDone() {
@@ -707,6 +931,8 @@ func (m *StorageSetterMock) MinimockFinish() {
 		m.MinimockSaveJetDropDataInspect()
 
 		m.MinimockSavePulseInspect()
+
+		m.MinimockSequencePulseInspect()
 		m.t.FailNow()
 	}
 }
@@ -732,5 +958,6 @@ func (m *StorageSetterMock) minimockDone() bool {
 	return done &&
 		m.MinimockCompletePulseDone() &&
 		m.MinimockSaveJetDropDataDone() &&
-		m.MinimockSavePulseDone()
+		m.MinimockSavePulseDone() &&
+		m.MinimockSequencePulseDone()
 }

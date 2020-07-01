@@ -91,22 +91,20 @@ type StorageSetter interface {
 	SavePulse(pulse models.Pulse) error
 	// CompletePulse update pulse with provided number to completeness in db.
 	CompletePulse(pulseNumber int) error
+	// SequencePulse update pulse with provided number to sequential in db.
+	SequencePulse(pulseNumber int) error
 }
 
-// StorageFetcher gets data from database
-type StorageFetcher interface {
-	// GetJetDrops returns records with provided reference from db.
+// StorageAPIFetcher gets data from database
+type StorageAPIFetcher interface {
+	// GetRecord returns record with provided reference from db.
 	GetRecord(ref models.Reference) (models.Record, error)
-	// GetIncompletePulses returns pulses that are not complete from db.
-	GetIncompletePulses() ([]models.Pulse, error)
 	// GetPulse returns pulse with provided pulse number from db.
 	GetPulse(pulseNumber int) (models.Pulse, int64, int64, error)
 	// GetAmounts return amount of jetDrops and records at provided pulse.
 	GetAmounts(pulseNumber int) (jdAmount int64, rAmount int64, err error)
 	// GetPulse returns pulses from db.
 	GetPulses(fromPulse *int64, timestampLte, timestampGte *int, limit, offset int) ([]models.Pulse, int, error)
-	// GetJetDrops returns jetDrops for provided pulse from db.
-	GetJetDrops(pulse models.Pulse) ([]models.JetDrop, error)
 	// GetJetDropsWithParams returns jetDrops for provided pulse with limit and offset.
 	GetJetDropsWithParams(pulse models.Pulse, fromJetDropID *models.JetDropID, limit int, offset int) ([]models.JetDrop, int, error)
 	// GetJetDropByID returns JetDrop by JetDropID
@@ -114,9 +112,22 @@ type StorageFetcher interface {
 	// GetJetDropsByJetID returns jetDrops for provided jetID sorting and filtering by pulseNumber.
 	GetJetDropsByJetID(jetID string, pulseNumberLte, pulseNumberLt, pulseNumberGte, pulseNumberGt *int, limit int, sortByPnAsc bool) ([]models.JetDrop, int, error)
 	// GetLifeline returns records for provided object reference, ordered by desc by pulse number and order fields.
-	GetLifeline(objRef []byte, fromIndex *string, pulseNumberLt, pulseNumberGt, timestampLte, timestampGte *int, limit, offset int, sort string) ([]models.Record, int, error)
+	GetLifeline(objRef []byte, fromIndex *string, pulseNumberLt, pulseNumberGt, timestampLte, timestampGte *int, limit, offset int, sortByIndexAsc bool) ([]models.Record, int, error)
 	// GetRecordsByJetDrop returns records for provided jet drop, ordered by order field.
 	GetRecordsByJetDrop(jetDropID models.JetDropID, fromIndex, recordType *string, limit, offset int) ([]models.Record, int, error)
+}
+
+type StorageFetcher interface {
+	// GetIncompletePulses returns pulses that are not complete from db.
+	GetIncompletePulses() ([]models.Pulse, error)
+	// GetSequentialPulse returns max pulse that have is_sequential as true from db.
+	GetSequentialPulse() (models.Pulse, error)
+	// GetPulseByPrev returns pulse with provided prev pulse number from db.
+	GetPulseByPrev(prevPulse models.Pulse) (models.Pulse, error)
+	// GetNextSavedPulse returns first pulse with pulse number bigger then fromPulseNumber from db.
+	GetNextSavedPulse(fromPulseNumber models.Pulse) (models.Pulse, error)
+	// GetJetDrops returns jetDrops for provided pulse from db.
+	GetJetDrops(pulse models.Pulse) ([]models.JetDrop, error)
 }
 
 //go:generate minimock -i github.com/insolar/block-explorer/etl/interfaces.Storage -o ./mock -s _mock.go -g

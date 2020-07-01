@@ -69,9 +69,14 @@ func (m *MainNetTransformer) run(ctx context.Context) {
 			return
 		}
 		go func() {
-			belogger.FromContext(ctx).Infof("transformed jet drop to canonical: %v", transform)
-			for _, t := range transform {
-				m.transformerChan <- t
+			if len(transform) == 0 {
+				belogger.FromContext(ctx).Warn("no transformed data to logging")
+			} else {
+				belogger.FromContext(ctx).
+					Infof("transformed jet drop to canonical for pulse: %d", transform[0].MainSection.Start.PulseData.PulseNo)
+				for _, t := range transform {
+					m.transformerChan <- t
+				}
 			}
 		}()
 	case <-m.stopSignal:

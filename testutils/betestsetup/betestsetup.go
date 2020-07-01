@@ -11,14 +11,14 @@ import (
 	"github.com/insolar/block-explorer/configuration"
 	"github.com/insolar/block-explorer/testutils/clients"
 
+	"github.com/insolar/insolar/ledger/heavy/exporter"
+	"github.com/jinzhu/gorm"
+
 	"github.com/insolar/block-explorer/etl/controller"
 	"github.com/insolar/block-explorer/etl/extractor"
-	"github.com/insolar/block-explorer/etl/interfaces"
 	"github.com/insolar/block-explorer/etl/processor"
 	"github.com/insolar/block-explorer/etl/storage"
 	"github.com/insolar/block-explorer/etl/transformer"
-	"github.com/insolar/insolar/ledger/heavy/exporter"
-	"github.com/jinzhu/gorm"
 )
 
 // used in tests to quickly initialize block-explorer processes
@@ -30,7 +30,7 @@ type BlockExplorerTestSetUp struct {
 	cont *controller.Controller
 	proc *processor.Processor
 	trsf *transformer.MainNetTransformer
-	strg interfaces.Storage
+	strg *storage.Storage
 	ctx  context.Context
 }
 
@@ -41,7 +41,12 @@ func NewBlockExplorer(exporterClient exporter.RecordExporterClient, db *gorm.DB)
 	}
 }
 
-var cfg = configuration.Controller{PulsePeriod: 10}
+var cfg = configuration.Controller{
+	PulsePeriod:       10,
+	SequentialPeriod:  1,
+	ReloadPeriod:      10,
+	ReloadCleanPeriod: 1,
+}
 
 // start Extractor, Transformer, Controller and Processor
 func (b *BlockExplorerTestSetUp) Start() error {
@@ -105,6 +110,6 @@ func (b *BlockExplorerTestSetUp) Transformer() *transformer.MainNetTransformer {
 	return b.trsf
 }
 
-func (b *BlockExplorerTestSetUp) Storage() interfaces.Storage {
+func (b *BlockExplorerTestSetUp) Storage() *storage.Storage {
 	return b.strg
 }

@@ -21,19 +21,20 @@ import (
 	"github.com/insolar/block-explorer/etl/types"
 )
 
-var cfg = configuration.Controller{PulsePeriod: 10}
+var cfg = configuration.Controller{PulsePeriod: 10, ReloadPeriod: 10, ReloadCleanPeriod: 1, SequentialPeriod: 1}
 
 func TestNewController_NoPulses(t *testing.T) {
 	extractor := mock.NewJetDropsExtractorMock(t)
 
 	sm := mock.NewStorageMock(t)
 	sm.GetIncompletePulsesMock.Return(nil, nil)
+	sm.GetSequentialPulseMock.Return(models.Pulse{}, nil)
 
 	c, err := NewController(cfg, extractor, sm)
 	require.NoError(t, err)
 	require.NotNil(t, c)
 	require.Empty(t, c.jetDropRegister)
-	require.Empty(t, c.missedDataRequestsQueue)
+	require.NotNil(t, c.missedDataManager)
 	require.Equal(t, uint64(1), sm.GetIncompletePulsesAfterCounter())
 }
 
@@ -48,11 +49,12 @@ func TestNewController_OneNotCompletePulse(t *testing.T) {
 	sm := mock.NewStorageMock(t)
 	sm.GetIncompletePulsesMock.Return([]models.Pulse{{PulseNumber: pulseNumber}}, nil)
 	sm.GetJetDropsMock.Return([]models.JetDrop{{JetID: firstJetID}, {JetID: secondJetID}}, nil)
+	sm.GetSequentialPulseMock.Return(models.Pulse{}, nil)
 
 	c, err := NewController(cfg, extractor, sm)
 	require.NoError(t, err)
 	require.NotNil(t, c)
-	require.Empty(t, c.missedDataRequestsQueue)
+	require.NotNil(t, c.missedDataManager)
 
 	require.Equal(t, expectedData, c.jetDropRegister)
 
@@ -84,11 +86,12 @@ func TestNewController_SeveralNotCompletePulses(t *testing.T) {
 	}
 	sm.GetIncompletePulsesMock.Return([]models.Pulse{{PulseNumber: firstPulseNumber}, {PulseNumber: secondPulseNumber}}, nil)
 	sm.GetJetDropsMock.Set(getJetDrops)
+	sm.GetSequentialPulseMock.Return(models.Pulse{}, nil)
 
 	c, err := NewController(cfg, extractor, sm)
 	require.NoError(t, err)
 	require.NotNil(t, c)
-	require.Empty(t, c.missedDataRequestsQueue)
+	require.NotNil(t, c.missedDataManager)
 
 	require.Equal(t, expectedData, c.jetDropRegister)
 
@@ -101,6 +104,7 @@ func TestNewController_ErrorGetPulses(t *testing.T) {
 
 	sm := mock.NewStorageMock(t)
 	sm.GetIncompletePulsesMock.Return(nil, errors.New("test error"))
+	sm.GetSequentialPulseMock.Return(models.Pulse{}, nil)
 
 	c, err := NewController(cfg, extractor, sm)
 	require.Error(t, err)
@@ -117,6 +121,7 @@ func TestNewController_ErrorGetJetDrops(t *testing.T) {
 	sm := mock.NewStorageMock(t)
 	sm.GetIncompletePulsesMock.Return([]models.Pulse{{PulseNumber: pulseNumber}}, nil)
 	sm.GetJetDropsMock.Return(nil, errors.New("test error"))
+	sm.GetSequentialPulseMock.Return(models.Pulse{}, nil)
 
 	c, err := NewController(cfg, extractor, sm)
 	require.Error(t, err)

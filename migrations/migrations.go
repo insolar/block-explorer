@@ -23,6 +23,7 @@ func Migrations() []*gormigrate.Migration {
 					PrevPulseNumber int
 					NextPulseNumber int
 					IsComplete      bool
+					IsSequential    bool
 					Timestamp       int64
 				}
 				type JetDrop struct {

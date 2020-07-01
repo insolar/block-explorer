@@ -192,7 +192,7 @@ func logGRPCError(ctx context.Context, err error) {
 	log := belogger.FromContext(ctx)
 	if err != nil {
 		log.Debug("Data request failed: ", err)
-		log.Error(errors.Wrapf(err, "failed to get gRPC stream from exporter.Export method"))
+		log.Error(errors.Wrapf(err, "failed to get gRPC stream from exporter.Export method").Error())
 	}
 }
 
