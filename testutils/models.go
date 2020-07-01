@@ -126,13 +126,14 @@ func CreateJetDrop(db *gorm.DB, jetDrop models.JetDrop) error {
 
 // CreateJetDrops creates provided jet drop list to db
 func CreateJetDrops(db *gorm.DB, jetDrops []models.JetDrop) error {
-	for _, v := range jetDrops {
-		err := CreateJetDrop(db, v)
-		if err != nil {
-			return err
+	return db.Transaction(func(tx *gorm.DB) error {
+		for _, v := range jetDrops {
+			if err := tx.Create(&v).Error; err != nil {
+				return errors.Wrap(err, "error while saving jetDrop")
+			}
 		}
-	}
-	return nil
+		return nil
+	})
 }
 
 // CreatePulse creates provided pulse at db
@@ -145,13 +146,14 @@ func CreatePulse(db *gorm.DB, pulse models.Pulse) error {
 
 // CreatePulses creates provided pulses to db
 func CreatePulses(db *gorm.DB, pulses []models.Pulse) error {
-	for _, p := range pulses {
-		err := CreatePulse(db, p)
-		if err != nil {
-			return err
+	return db.Transaction(func(tx *gorm.DB) error {
+		for _, p := range pulses {
+			if err := tx.Create(&p).Error; err != nil {
+				return errors.Wrap(err, "error while saving pulse")
+			}
 		}
-	}
-	return nil
+		return nil
+	})
 }
 
 func OrderedRecords(t *testing.T, db *gorm.DB, jetDrop models.JetDrop, objRef insolar.ID, amount int) []models.Record {
