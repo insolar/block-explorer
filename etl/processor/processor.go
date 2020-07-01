@@ -127,7 +127,7 @@ func (p *Processor) process(ctx context.Context, jd *types.JetDrop) {
 	}
 	err := p.storage.SavePulse(mp)
 	if err != nil {
-		logger.Errorf("cannot save pulse data: %s. pulse = %v", err.Error(), mp)
+		logger.Errorf("cannot save pulse data: %s. pulse = %+v", err.Error(), mp)
 		return
 	}
 
@@ -170,7 +170,8 @@ func (p *Processor) process(ctx context.Context, jd *types.JetDrop) {
 	}
 	err = p.storage.SaveJetDropData(mjd, mrs)
 	if err != nil {
-		logger.Errorf("cannot save jetDrop data: %s. jetDrop = %v, records = %v", err.Error(), mjd, mrs)
+		logger.Errorf("cannot save jetDrop data: %s. jetDrop:{jetID: %s, pulseNumber: %d}, record amount = %d\n",
+			err.Error(), mjd.JetID, mjd.PulseNumber, len(mrs))
 		return
 	}
 	p.controller.SetJetDropData(pd, mjd.JetID)

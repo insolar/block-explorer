@@ -173,7 +173,8 @@ func initRecordsMapsByObj(records []types.Record) (
 }
 
 func restoreInsolarID(b []byte) string {
-	if bytes.Equal(b, []byte{}) {
+	emptyByte := make([]byte, len(b))
+	if bytes.Equal(b, []byte{}) || bytes.Equal(b, emptyByte) {
 		b = nil
 	}
 	return insolar.NewIDFromBytes(b).String()
