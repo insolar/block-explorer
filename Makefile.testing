@@ -35,15 +35,15 @@ bench: ## run benchmarks
 	go test -v ./... -tags bench -bench=. -benchmem -benchtime=1000x
 
 .PHONY: bench-compare
-bench-compare: vendor ## run benchmarks compare for last two commits
+bench-compare: ## run benchmarks compare for last two commits
 	cob -bench-cmd make -bench-args bench -threshold 0.7
 
 .PHONY: bench-integration
-bench-integration: vendor ## run integration benchmarks
+bench-integration: ## run integration benchmarks
 	go test -v ./... -tags bench_integration -bench=. -benchmem -benchtime=1x
 
 .PHONY: bench-compare-integration
-bench-compare-integration: vendor ## run integration benchmarks
+bench-compare-integration: ## run integration benchmarks
 	cob -bench-cmd make -bench-args bench-integration -threshold 0.7
 
 ##@ Test utils
