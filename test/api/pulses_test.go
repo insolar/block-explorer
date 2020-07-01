@@ -117,7 +117,7 @@ func TestPulsesAPI(t *testing.T) {
 	})
 	t.Run("negative limit", func(t *testing.T) {
 		t.Log("C5210 Error limit validation, limit = -1")
-		limit, offset := 10, -1
+		limit, offset := -1, 10
 		opts := client.PulsesOpts{Offset: optional.NewInt32(int32(offset)), Limit: optional.NewInt32(int32(limit))}
 		_, err := c.Pulses(t, &opts)
 		require.Error(t, err)
