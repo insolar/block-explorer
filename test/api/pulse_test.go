@@ -22,15 +22,12 @@ func TestOnePulse(t *testing.T) {
 	ts := integration.NewBlockExplorerTestSetup(t).WithHTTPServer(t)
 	defer ts.Stop(t)
 
-	record := testutils.GenerateRecordsSilence(1)[0]
-	pulse := record.Record.ID.GetPulseNumber()
-	println(pulse)
-	next := testutils.GenerateRecordInNextPulse(pulse)
-	println(next.Record.ID.GetPulseNumber())
-	next2 := testutils.GenerateRecordInNextPulse(next.Record.ID.GetPulseNumber())
-	println(next2.Record.ID.GetPulseNumber())
+	records := testutils.GenerateRecordsWithDifferencePulsesSilence(4, 1)
+	for _, r := range records {
+		println(r.Record.ID.GetPulseNumber())
+	}
 
-	err := heavymock.ImportRecords(ts.ConMngr.ImporterClient, []*exporter.Record{record, next, next2})
+	err := heavymock.ImportRecords(ts.ConMngr.ImporterClient, records)
 	require.NoError(t, err)
 
 	ts.WaitRecordsCount(t, 1, 5000)
@@ -38,7 +35,7 @@ func TestOnePulse(t *testing.T) {
 	c := GetHTTPClient()
 	_, err = c.Pulses(t, nil)
 
-	_, err = c.Pulse(t, int64(pulse.AsUint32()))
+	_, err = c.Pulse(t, int64(records[2].Record.ID.GetPulseNumber().AsUint32()))
 	require.NoError(t, err)
 }
 
