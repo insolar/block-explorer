@@ -3,6 +3,8 @@ on:
   push:
     tags:
     - v[0-9]+.[0-9]+.[0-9]+
+    branches:
+    - master
 
 jobs:
   build:
@@ -26,7 +28,6 @@ jobs:
       run: echo "${{ secrets.DOCKERHUB_PASSWORD }}" | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
     - name: Push image
       run: |
+        [ "$VERSION" == "master" ] && VERSION=latest
         docker tag ${IMAGE_NAME} insolar/${IMAGE_NAME}:${VERSION}
-        docker tag ${IMAGE_NAME} insolar/${IMAGE_NAME}:latest
         docker push insolar/${IMAGE_NAME}:${VERSION}
-        docker push insolar/${IMAGE_NAME}:latest
