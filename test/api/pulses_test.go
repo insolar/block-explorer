@@ -123,6 +123,14 @@ func TestPulsesAPI(t *testing.T) {
 		require.Error(t, err)
 		require.Equal(t, "400 Bad Request", err.Error())
 	})
+	t.Run("negative limit", func(t *testing.T) {
+		t.Log("C5210 Error limit validation, limit = 0")
+		limit, offset := -1, 10
+		opts := client.PulsesOpts{Offset: optional.NewInt32(int32(offset)), Limit: optional.NewInt32(int32(limit))}
+		_, err := c.Pulses(t, &opts)
+		require.Error(t, err)
+		require.Equal(t, "400 Bad Request", err.Error())
+	})
 	t.Run("offset min", func(t *testing.T) {
 		t.Log("C5175 Success offset validation, offset = 1")
 		limit, offset := 10, 1
@@ -180,14 +188,15 @@ func TestPulsesAPI(t *testing.T) {
 	})
 	t.Run("FromPulseNumber value between existing pulses", func(t *testing.T) {
 		t.Log("C5215 Get pulses, FromPulseNumber value between existing pulses")
-		fromPulse := int(pulses[2])
+		fromPulse := pulses[2]
 		limit := 20
 		opts := client.PulsesOpts{Limit: optional.NewInt32(int32(limit)), FromPulseNumber: optional.NewInt64(int64(fromPulse + 5))}
 		response, err := c.Pulses(t, &opts)
 		require.NoError(t, err)
 		require.Equal(t, int64(3), response.Total)
 		require.Len(t, response.Result, 3)
-		require.Equal(t, int64(fromPulse), response.Result[0].PulseNumber)
+		require.Equal(t, fromPulse, response.Result[0].PulseNumber)
+		require.Greater(t, response.Result[0].PulseNumber, response.Result[1].PulseNumber)
 	})
 	t.Run("from TimestampGte", func(t *testing.T) {
 		t.Log("C5216 Get pulses with parameter TimestampGte")
@@ -203,6 +212,7 @@ func TestPulsesAPI(t *testing.T) {
 		require.Equal(t, int64(10), response.Total)
 		require.Len(t, response.Result, 10)
 		require.Equal(t, ts, response.Result[0].Timestamp)
+		require.Greater(t, response.Result[0].Timestamp, response.Result[1].Timestamp)
 	})
 	t.Run("until TimestampLte", func(t *testing.T) {
 		t.Log("C5217 Get pulses with parameter TimestampLte")
@@ -216,5 +226,6 @@ func TestPulsesAPI(t *testing.T) {
 		require.Equal(t, int64(11), response.Total)
 		require.Len(t, response.Result, 11)
 		require.Equal(t, ts, response.Result[10].Timestamp)
+		require.Greater(t, response.Result[9].Timestamp, response.Result[10].Timestamp)
 	})
 }
