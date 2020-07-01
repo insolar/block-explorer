@@ -12,6 +12,7 @@ import (
 	"github.com/insolar/block-explorer/etl/models"
 	"github.com/insolar/block-explorer/etl/types"
 	"github.com/insolar/block-explorer/instrumentation/belogger"
+	"github.com/jinzhu/gorm"
 )
 
 func (c *Controller) pulseMaintainer(ctx context.Context) {
@@ -65,15 +66,19 @@ func (c *Controller) pulseSequence(ctx context.Context) {
 			log.WithField("sequential_pulse", c.sequentialPulse)
 
 			nextSequential, err = c.storage.GetPulseByPrev(c.sequentialPulse)
-			if err != nil {
+			if err != nil && !gorm.IsRecordNotFoundError(err) {
 				log.Errorf("During loading next sequential pulse: %s", err.Error())
 				return
 			}
 
 			if nextSequential == emptyPulse {
 				toPulse, err := c.storage.GetNextSavedPulse(c.sequentialPulse)
-				if err != nil {
+				if err != nil && !gorm.IsRecordNotFoundError(err) {
 					log.Errorf("During loading next existing pulse: %s", err.Error())
+					return
+				}
+				if toPulse == emptyPulse {
+					log.Info("no next saved pulse. skipping")
 					return
 				}
 				c.reloadData(ctx, c.sequentialPulse.PulseNumber, toPulse.PulseNumber)
