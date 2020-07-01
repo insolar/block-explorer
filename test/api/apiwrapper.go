@@ -38,3 +38,9 @@ func (c *BEApiClient) Pulses(t *testing.T, localVarOptionals *client.PulsesOpts)
 	LogHTTP(t, rawResponse, nil, response)
 	return response, err
 }
+
+func (c *BEApiClient) Pulse(t *testing.T, pulse int64) (response client.PulseResponse200, err error) {
+	response, rawResponse, err := c.client.PulseApi.Pulse(context.Background(), pulse)
+	LogHTTP(t, rawResponse, nil, response)
+	return response, err
+}
