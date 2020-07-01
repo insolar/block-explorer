@@ -33,7 +33,7 @@ func (c *BEApiClient) ObjectLifeline(t *testing.T, objectRef string, localVarOpt
 	return response, err
 }
 
-func (c *BEApiClient) Pulses(t *testing.T, localVarOptionals *client.PulsesOpts) (response client.PulsesResponse200, err error) {
+func (c *BEApiClient) Pulses(t *testing.T, localVarOptionals *client.PulsesOpts) (response client.GetPulsesResponse200, err error) {
 	response, rawResponse, err := c.client.PulseApi.Pulses(context.Background(), localVarOptionals)
 	LogHTTP(t, rawResponse, nil, response)
 	return response, err

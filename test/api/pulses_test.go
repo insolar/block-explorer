@@ -90,14 +90,14 @@ func TestPulsesAPI(t *testing.T) {
 		require.Len(t, response.Result, limit)
 	})
 	t.Run("limit max", func(t *testing.T) {
-		t.Log("C5174 Success limit validation, limit = 100")
-		limit := 100
+		t.Log("C5174 Success limit validation, limit = 1000")
+		limit := 1000
 		opts := client.PulsesOpts{Limit: optional.NewInt32(int32(limit))}
 		response, err := c.Pulses(t, &opts)
 		require.NoError(t, err)
 		require.Equal(t, response.Total, int64(pulsesNumber))
 		require.Equal(t, pulses[len(pulses)-1], response.Result[0].PulseNumber)
-		require.Len(t, response.Result, limit)
+		require.Len(t, response.Result, pulsesNumber)
 	})
 	t.Run("zero limit", func(t *testing.T) {
 		t.Log("C5172 Error limit validation, limit = 0")
@@ -108,8 +108,8 @@ func TestPulsesAPI(t *testing.T) {
 		require.Equal(t, "400 Bad Request", err.Error())
 	})
 	t.Run("too big limit", func(t *testing.T) {
-		t.Log("C5173 Error limit validation, limit = 101")
-		limit, offset := 101, 10
+		t.Log("C5173 Error limit validation, limit = 1001")
+		limit, offset := 1001, 10
 		opts := client.PulsesOpts{Offset: optional.NewInt32(int32(offset)), Limit: optional.NewInt32(int32(limit))}
 		_, err := c.Pulses(t, &opts)
 		require.Error(t, err)
