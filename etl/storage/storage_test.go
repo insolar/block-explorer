@@ -1789,7 +1789,7 @@ func TestStorage_GetJetDropsByJetId_Splites(t *testing.T) {
 
 		// find parents of middle
 		parents := GetJetIDParents(middle)
-		childrenRegexp := regexp.MustCompile(middle + ".*")
+		childrenRegexp := regexp.MustCompile(fmt.Sprintf("^%s.*", middle))
 		for i := 0; i < len(drops); i++ {
 			id := drops[i].JetID
 			if childrenRegexp.MatchString(id) && id != middle { // if it's child
