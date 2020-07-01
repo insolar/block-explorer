@@ -77,6 +77,10 @@ func (c *Controller) pulseSequence(ctx context.Context) {
 					log.Errorf("During loading next existing pulse: %s", err.Error())
 					return
 				}
+				if toPulse == emptyPulse {
+					log.Info("no next saved pulse. skipping")
+					return
+				}
 				c.reloadData(ctx, c.sequentialPulse.PulseNumber, toPulse.PulseNumber)
 				return
 			}
@@ -102,13 +106,6 @@ func pulseIsComplete(p types.Pulse, d []string) bool { // nolint
 
 func (c *Controller) reloadData(ctx context.Context, fromPulseNumber int, toPulseNumber int) {
 	log := belogger.FromContext(ctx)
-	if fromPulseNumber < 0 {
-		fromPulseNumber = 0
-	}
-
-	if toPulseNumber < 1 {
-		toPulseNumber = 1
-	}
 	if c.missedDataManager.Add(ctx, fromPulseNumber, toPulseNumber) {
 		err := c.extractor.LoadJetDrops(ctx, fromPulseNumber, toPulseNumber)
 		if err != nil {
