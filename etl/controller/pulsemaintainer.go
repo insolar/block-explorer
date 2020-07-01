@@ -12,6 +12,7 @@ import (
 	"github.com/insolar/block-explorer/etl/models"
 	"github.com/insolar/block-explorer/etl/types"
 	"github.com/insolar/block-explorer/instrumentation/belogger"
+	"github.com/jinzhu/gorm"
 )
 
 func (c *Controller) pulseMaintainer(ctx context.Context) {
@@ -65,14 +66,14 @@ func (c *Controller) pulseSequence(ctx context.Context) {
 			log.WithField("sequential_pulse", c.sequentialPulse)
 
 			nextSequential, err = c.storage.GetPulseByPrev(c.sequentialPulse)
-			if err != nil {
+			if err != nil && !gorm.IsRecordNotFoundError(err) {
 				log.Errorf("During loading next sequential pulse: %s", err.Error())
 				return
 			}
 
 			if nextSequential == emptyPulse {
 				toPulse, err := c.storage.GetNextSavedPulse(c.sequentialPulse)
-				if err != nil {
+				if err != nil && !gorm.IsRecordNotFoundError(err) {
 					log.Errorf("During loading next existing pulse: %s", err.Error())
 					return
 				}
@@ -101,6 +102,13 @@ func pulseIsComplete(p types.Pulse, d []string) bool { // nolint
 
 func (c *Controller) reloadData(ctx context.Context, fromPulseNumber int, toPulseNumber int) {
 	log := belogger.FromContext(ctx)
+	if fromPulseNumber < 1 {
+		fromPulseNumber = 1
+	}
+
+	if toPulseNumber < 2 {
+		toPulseNumber = 2
+	}
 	if c.missedDataManager.Add(ctx, fromPulseNumber, toPulseNumber) {
 		err := c.extractor.LoadJetDrops(ctx, fromPulseNumber, toPulseNumber)
 		if err != nil {
