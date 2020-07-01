@@ -599,9 +599,9 @@ func checkLimitOffset(l *server.Limit, o *server.OffsetParam) (int, int, []serve
 	if l != nil {
 		limit = int(*l)
 	}
-	if limit <= 0 || limit > 100 {
+	if limit <= 0 || limit > 1000 {
 		failures = append(failures, server.CodeValidationFailures{
-			FailureReason: NullableString("should be in range [1, 100]"),
+			FailureReason: NullableString("should be in range [1, 1000]"),
 			Property:      NullableString("limit"),
 		})
 	}

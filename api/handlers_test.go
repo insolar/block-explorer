@@ -160,7 +160,7 @@ func TestObjectLifeline_Limit_Error(t *testing.T) {
 		Code:    NullableString(http.StatusText(http.StatusBadRequest)),
 		Message: NullableString(InvalidParamsMessage),
 		ValidationFailures: &[]server.CodeValidationFailures{{
-			FailureReason: NullableString("should be in range [1, 100]"),
+			FailureReason: NullableString("should be in range [1, 1000]"),
 			Property:      NullableString("limit"),
 		}},
 	}
@@ -481,7 +481,7 @@ func TestPulses_Limit_Error(t *testing.T) {
 		Code:    NullableString(http.StatusText(http.StatusBadRequest)),
 		Message: NullableString(InvalidParamsMessage),
 		ValidationFailures: &[]server.CodeValidationFailures{{
-			FailureReason: NullableString("should be in range [1, 100]"),
+			FailureReason: NullableString("should be in range [1, 1000]"),
 			Property:      NullableString("limit"),
 		}},
 	}
@@ -527,7 +527,7 @@ func TestPulses_Several_Errors(t *testing.T) {
 		Code:    NullableString(http.StatusText(http.StatusBadRequest)),
 		Message: NullableString(InvalidParamsMessage),
 		ValidationFailures: &[]server.CodeValidationFailures{{
-			FailureReason: NullableString("should be in range [1, 100]"),
+			FailureReason: NullableString("should be in range [1, 1000]"),
 			Property:      NullableString("limit"),
 		}, {
 			FailureReason: NullableString("should not be negative"),
@@ -853,7 +853,7 @@ func TestServer_JetDropsByPulseNumber(t *testing.T) {
 		require.NoError(t, err)
 		expected := []server.CodeValidationFailures{
 			{
-				FailureReason: NullableString("should be in range [1, 100]"),
+				FailureReason: NullableString("should be in range [1, 1000]"),
 				Property:      NullableString("limit"),
 			},
 			{
@@ -1664,7 +1664,7 @@ func TestJetDropRecords_Several_Errors(t *testing.T) {
 		Code:    NullableString(http.StatusText(http.StatusBadRequest)),
 		Message: NullableString(InvalidParamsMessage),
 		ValidationFailures: &[]server.CodeValidationFailures{{
-			FailureReason: NullableString("should be in range [1, 100]"),
+			FailureReason: NullableString("should be in range [1, 1000]"),
 			Property:      NullableString("limit"),
 		}, {
 			FailureReason: NullableString("should not be negative"),
