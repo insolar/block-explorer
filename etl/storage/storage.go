@@ -22,7 +22,6 @@ type Storage struct {
 
 // NewStorage returns implementation of interfaces.Storage
 func NewStorage(db *gorm.DB) *Storage {
-	db.LogMode(true)
 	return &Storage{
 		db: db,
 	}

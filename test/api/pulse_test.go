@@ -8,71 +8,88 @@
 package api
 
 import (
+	"math"
 	"testing"
 
-	"github.com/gogo/protobuf/sortkeys"
 	"github.com/insolar/block-explorer/test/heavymock"
 	"github.com/insolar/block-explorer/test/integration"
 	"github.com/insolar/block-explorer/testutils"
+	"github.com/insolar/insolar/insolar/gen"
 	"github.com/insolar/insolar/ledger/heavy/exporter"
+	"github.com/insolar/insolar/pulse"
 	"github.com/stretchr/testify/require"
 )
 
-func TestOnePulse(t *testing.T) {
+func TestGetPulse(t *testing.T) {
 	ts := integration.NewBlockExplorerTestSetup(t).WithHTTPServer(t)
 	defer ts.Stop(t)
 
-	size := 3
-	records := testutils.GenerateRecordsWithDifferencePulsesSilence(size, 1)
-	for _, r := range records {
-		println(r.Record.ID.GetPulseNumber())
+	size := 5
+	recordsCount := 1
+	records := testutils.GenerateRecordsWithDifferencePulsesSilence(size, recordsCount)
+	pulses := make([]pulse.Number, size)
+	for i, r := range records {
+		pulses[i] = r.Record.ID.GetPulseNumber()
 	}
 
 	err := heavymock.ImportRecords(ts.ConMngr.ImporterClient, records)
 	require.NoError(t, err)
-
 	ts.WaitRecordsCount(t, size-1, 5000)
 
-	// time.Sleep(3*time.Second)
 	c := GetHTTPClient()
-	_, err = c.Pulses(t, nil)
+	pulsesResp, err := c.Pulses(t, nil)
+	require.Len(t, pulsesResp.Result, size-1)
 
-	_, err = c.Pulse(t, int64(records[1].Record.ID.GetPulseNumber().AsUint32()))
-	require.NoError(t, err)
-}
+	t.Run("existing pulses", func(t *testing.T) {
+		t.Log("C5218 Get pulse data")
+		for i, p := range pulses[:len(pulses)-1] {
+			response, err := c.Pulse(t, int64(p))
+			require.NoError(t, err)
+			require.Equal(t, pulsesResp.Result[len(pulsesResp.Result)-1-i].PulseNumber, response.PulseNumber)
+			require.Equal(t, int64(p), response.PulseNumber)
+			require.Equal(t, response.PulseNumber-10, response.PrevPulseNumber)
+			require.Equal(t, response.PulseNumber+10, response.NextPulseNumber)
+			require.Equal(t, recordsCount, int(response.JetDropAmount))
+			require.Equal(t, recordsCount, int(response.RecordAmount))
+			require.NotEmpty(t, response.Timestamp)
+			require.Empty(t, response.Message)
+			require.Empty(t, response.ValidationFailures)
+		}
+	})
+	t.Run("non existing pulse", func(t *testing.T) {
+		t.Log("C5219 Get pulse, not found non existing pulse")
+		_, err := c.Pulse(t, int64(gen.PulseNumber()))
+		require.Error(t, err)
+		require.Equal(t, "404 Not Found", err.Error())
+	})
+	t.Run("non existing pulse, invalid value", func(t *testing.T) {
+		t.Skip("https://insolar.atlassian.net/browse/PENV-414")
+		t.Log("C5220 Get pulse, not found invalid pulse")
+		_, err := c.Pulse(t, math.MaxInt64)
+		require.Error(t, err)
+		require.Equal(t, "400 Bad Request", err.Error())
+	})
+	t.Run("zero pulse", func(t *testing.T) {
+		t.Log("C5221 Get pulse, pulse is zero value")
+		_, err := c.Pulse(t, 0)
+		require.Error(t, err)
+		require.Equal(t, "404 Not Found", err.Error())
+	})
+	t.Run("empty pulse", func(t *testing.T) {
+		t.Skip("waiting for PENV-347")
+		t.Log("C5222 Get pulse, pulse is an empty pulse")
+		newRecords := []*exporter.Record{testutils.GenerateRecordInNextPulse(pulses[size-1]),
+			testutils.GenerateRecordInNextPulse(pulses[size-1] + 10),
+			testutils.GenerateRecordInNextPulse(pulses[size-1] + 20)}
 
-func TestPulseAPI(t *testing.T) {
-	ts := integration.NewBlockExplorerTestSetup(t).WithHTTPServer(t)
-	defer ts.Stop(t)
+		err := heavymock.ImportRecords(ts.ConMngr.ImporterClient, newRecords[1:])
+		ts.WaitRecordsCount(t, size+1, 5000)
 
-	pulsesNumber := 10
-	recordsInPulse := 1
-	lifeline := testutils.GenerateObjectLifeline(pulsesNumber, recordsInPulse)
-	lastPulseRecord := testutils.GenerateRecordInNextPulse(lifeline.StateRecords[0].Pn)
-	records := lifeline.GetAllRecords()
-	pulses := make([]int64, pulsesNumber)
-	for i, l := range lifeline.StateRecords {
-		pulses[i] = int64(l.Pn.AsUint32())
-	}
-	sortkeys.Int64s(pulses)
-
-	err := heavymock.ImportRecords(ts.ConMngr.ImporterClient, records)
-	require.NoError(t, err)
-	err = heavymock.ImportRecords(ts.ConMngr.ImporterClient, []*exporter.Record{lastPulseRecord})
-	require.NoError(t, err)
-
-	ts.WaitRecordsCount(t, len(records), 1000)
-
-	c := GetHTTPClient()
-
-	t.Run("default query params", func(t *testing.T) {
-		t.Log("T9341 Get pulses, default limit and offset")
-		response, err := c.Pulse(t, pulses[1])
+		_, err = c.Pulses(t, nil)
 		require.NoError(t, err)
-		require.Equal(t, response.PulseNumber-10, response.PrevPulseNumber)
-		require.Equal(t, response.PulseNumber+10, response.NextPulseNumber)
-		require.Equal(t, recordsInPulse, int(response.JetDropAmount))
-		require.Equal(t, recordsInPulse, int(response.RecordAmount))
-		require.NotEmpty(t, response.Timestamp)
+
+		p := int64(newRecords[1].Record.ID.Pulse())
+		r, err := c.Pulse(t, p)
+		require.Equal(t, p, r.PulseNumber)
 	})
 }
