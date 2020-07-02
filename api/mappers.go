@@ -6,10 +6,10 @@
 package api
 
 import (
-	"bytes"
 	"encoding/base64"
 	"fmt"
 
+	"github.com/insolar/block-explorer/instrumentation"
 	"github.com/insolar/insolar/insolar"
 	"github.com/insolar/spec-insolar-block-explorer-api/v1/server"
 
@@ -34,19 +34,19 @@ func RecordToAPI(record models.Record) server.Record {
 		Timestamp:   &record.Timestamp,
 		Type:        NullableString(string(record.Type)),
 	}
-	if !bytes.Equal([]byte{}, record.ObjectReference) {
+	if !instrumentation.IsEmpty(record.ObjectReference) {
 		objectID := insolar.NewIDFromBytes(record.ObjectReference)
 		if objectID != nil {
 			response.ObjectReference = NullableString(insolar.NewReference(*objectID).String())
 		}
 	}
-	if !bytes.Equal([]byte{}, record.PrevRecordReference) {
+	if !instrumentation.IsEmpty(record.PrevRecordReference) {
 		prevRecordReference := insolar.NewIDFromBytes(record.PrevRecordReference)
 		if prevRecordReference != nil {
 			response.PrevRecordReference = NullableString(prevRecordReference.String())
 		}
 	}
-	if !bytes.Equal([]byte{}, record.PrototypeReference) {
+	if !instrumentation.IsEmpty(record.PrototypeReference) {
 		prototypeReference := insolar.NewIDFromBytes(record.PrototypeReference)
 		if prototypeReference != nil {
 			response.PrototypeReference = NullableString(prototypeReference.String())

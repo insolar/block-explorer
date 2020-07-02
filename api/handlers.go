@@ -32,7 +32,7 @@ import (
 const InvalidParamsMessage = "Invalid query or path parameters"
 
 // jetIDRegexp uses for a validation of the JetID
-var jetIDRegexp = regexp.MustCompile(`^[0-1]{1,216}$`)
+var jetIDRegexp = regexp.MustCompile(`^(\*|([0-1]{1,216}))$`)
 
 type Server struct {
 	storage interfaces.StorageAPIFetcher

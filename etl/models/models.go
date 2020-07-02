@@ -77,7 +77,7 @@ func NewJetDropID(jetID string, pulseNumber int64) *JetDropID {
 }
 
 // jetIDRegexp uses for a validation of the JetID
-var jetIDRegexp = regexp.MustCompile(`^[0-1]{1,216}$`)
+var jetIDRegexp = regexp.MustCompile(`^(\*|([0-1]{1,216}))$`)
 
 func NewJetDropIDFromString(jetDropID string) (*JetDropID, error) {
 	var pulse int64
