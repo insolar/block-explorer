@@ -14,7 +14,6 @@ import (
 	"github.com/insolar/block-explorer/test/heavymock"
 	"github.com/insolar/block-explorer/test/integration"
 	"github.com/insolar/block-explorer/testutils"
-	"github.com/insolar/insolar/insolar/gen"
 	"github.com/insolar/insolar/ledger/heavy/exporter"
 	"github.com/insolar/insolar/pulse"
 	"github.com/stretchr/testify/require"
@@ -58,7 +57,7 @@ func TestGetPulse(t *testing.T) {
 	})
 	t.Run("non existing pulse", func(t *testing.T) {
 		t.Log("C5219 Get pulse, not found non existing pulse")
-		_, err := c.Pulse(t, int64(gen.PulseNumber()))
+		_, err := c.Pulse(t, int64(pulses[len(pulses)-1]+1000))
 		require.Error(t, err)
 		require.Equal(t, "404 Not Found", err.Error())
 	})
