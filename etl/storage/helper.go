@@ -14,8 +14,14 @@ func GetJetIDParents(jetID string) []string {
 		return parents
 	}
 
+	if jetID == "*" {
+		parents[0] = jetID
+		return parents
+	}
+
 	for i := 0; i < length; i++ {
 		parents[i] = jetID[:i+1]
 	}
+	parents = append([]string{"*"}, parents...)
 	return parents
 }
