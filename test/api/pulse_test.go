@@ -84,11 +84,12 @@ func TestGetPulse(t *testing.T) {
 		err := heavymock.ImportRecords(ts.ConMngr.ImporterClient, newRecords[1:])
 		ts.WaitRecordsCount(t, size+1, 5000)
 
+		emptyPulse := int64(newRecords[0].Record.ID.Pulse())
+		// TODO check if emptyPulse exists or not in the pulses list
 		_, err = c.Pulses(t, nil)
 		require.NoError(t, err)
 
-		p := int64(newRecords[1].Record.ID.Pulse())
-		r, err := c.Pulse(t, p)
-		require.Equal(t, p, r.PulseNumber)
+		r, err := c.Pulse(t, emptyPulse)
+		require.Equal(t, emptyPulse, r.PulseNumber)
 	})
 }
