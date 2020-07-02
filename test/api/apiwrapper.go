@@ -39,8 +39,14 @@ func (c *BEApiClient) Pulses(t *testing.T, localVarOptionals *client.PulsesOpts)
 	return response, err
 }
 
-func (c *BEApiClient) Pulse(t *testing.T, pulse int64) (response client.PulseResponse200, err error) {
-	response, rawResponse, err := c.client.PulseApi.Pulse(context.Background(), pulse)
+func (c *BEApiClient) Pulse(t *testing.T, pulseNumber int64) (response client.PulseResponse200, err error) {
+	response, rawResponse, err := c.client.PulseApi.Pulse(context.Background(), pulseNumber)
+	LogHTTP(t, rawResponse, nil, response)
+	return response, err
+}
+
+func (c *BEApiClient) JetDropsByPulseNumber(t *testing.T, pulseNumber int64, localVarOptionals *client.JetDropsByPulseNumberOpts) (response client.JetDropsByJetIdResponse200, err error) {
+	response, rawResponse, err := c.client.JetDropApi.JetDropsByPulseNumber(context.Background(), pulseNumber, localVarOptionals)
 	LogHTTP(t, rawResponse, nil, response)
 	return response, err
 }
