@@ -62,8 +62,8 @@ func TestGetPulse(t *testing.T) {
 		require.Equal(t, "404 Not Found", err.Error())
 	})
 	t.Run("non existing pulse, invalid value", func(t *testing.T) {
-		t.Skip("https://insolar.atlassian.net/browse/PENV-414")
 		t.Log("C5220 Get pulse, not found invalid pulse")
+		t.Skip("https://insolar.atlassian.net/browse/PENV-414")
 		_, err := c.Pulse(t, math.MaxInt64)
 		require.Error(t, err)
 		require.Equal(t, "400 Bad Request", err.Error())
@@ -75,8 +75,8 @@ func TestGetPulse(t *testing.T) {
 		require.Equal(t, "404 Not Found", err.Error())
 	})
 	t.Run("empty pulse", func(t *testing.T) {
-		t.Skip("waiting for PENV-347")
 		t.Log("C5222 Get pulse, pulse is an empty pulse")
+		t.Skip("waiting for PENV-347")
 		newRecords := []*exporter.Record{testutils.GenerateRecordInNextPulse(pulses[size-1]),
 			testutils.GenerateRecordInNextPulse(pulses[size-1] + 10),
 			testutils.GenerateRecordInNextPulse(pulses[size-1] + 20)}
