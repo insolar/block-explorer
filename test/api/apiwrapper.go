@@ -50,3 +50,9 @@ func (c *BEApiClient) JetDropsByPulseNumber(t *testing.T, pulseNumber int64, loc
 	LogHTTP(t, rawResponse, nil, response)
 	return response, err
 }
+
+func (c *BEApiClient) JetDropsByID(t *testing.T, jetDropID string) (response client.JetDropByIdResponse200, err error) {
+	response, rawResponse, err := c.client.JetDropApi.JetDropByID(context.Background(), jetDropID)
+	LogHTTP(t, rawResponse, nil, response)
+	return response, err
+}
