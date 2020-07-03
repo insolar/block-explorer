@@ -672,5 +672,8 @@ func checkJetID(jetID server.JetIdPath) (string, []server.CodeValidationFailures
 	if failures != nil {
 		return "", failures
 	}
+	if id == "*" {
+		return "", nil
+	}
 	return id, nil
 }
