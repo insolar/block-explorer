@@ -16,7 +16,7 @@ import (
 func JetIDToString(id insolar.JetID) string {
 	depth, prefix := id.Depth(), id.Prefix()
 	if depth == 0 {
-		return "*"
+		return ""
 	}
 	res := strings.Builder{}
 	for i := uint8(0); i < depth; i++ {

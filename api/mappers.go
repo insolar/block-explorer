@@ -81,10 +81,11 @@ func JetDropToAPI(jetDrop models.JetDrop) server.JetDrop {
 	// TODO: set correct prev and next after PENV-348
 	nextJetDropID := []string{"test_next_jet_drop"}
 	prevJetDropID := []string{"test_prev_jet_drop"}
+	jetDropID := models.NewJetDropID(jetDrop.JetID, int64(jetDrop.PulseNumber))
 	result := server.JetDrop{
 		Hash:      NullableString(base64.StdEncoding.EncodeToString(jetDrop.Hash)),
-		JetDropId: NullableString(models.NewJetDropID(jetDrop.JetID, int64(jetDrop.PulseNumber)).ToString()),
-		JetId:     NullableString(jetDrop.JetID),
+		JetDropId: NullableString(jetDropID.ToString()),
+		JetId:     NullableString(jetDropID.JetID),
 		// todo implement this if needed
 		NextJetDropId: &nextJetDropID,
 		PrevJetDropId: &prevJetDropID,

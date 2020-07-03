@@ -142,25 +142,6 @@ func TestStorage_SaveJetDropData_RecordError_NilPK(t *testing.T) {
 	require.Contains(t, err.Error(), "error while saving record")
 }
 
-func TestStorage_SaveJetDropData_JetDropError_NilPK(t *testing.T) {
-	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
-	s := NewStorage(testDB)
-
-	pulse, err := testutils.InitPulseDB()
-	require.NoError(t, err)
-	err = testutils.CreatePulse(testDB, pulse)
-	require.NoError(t, err)
-
-	jetDrop := testutils.InitJetDropDB(pulse)
-	jetDrop.JetID = ""
-	record := testutils.InitRecordDB(jetDrop)
-
-	err = s.SaveJetDropData(jetDrop, []models.Record{record})
-	require.Error(t, err)
-	require.Contains(t, err.Error(), "violates not-null constraint")
-	require.Contains(t, err.Error(), "error while saving jetDrop")
-}
-
 func TestStorage_SaveJetDropData_ErrorAtTransaction(t *testing.T) {
 	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
 	s := NewStorage(testDB)

@@ -6,22 +6,14 @@
 package storage
 
 // GetJetIDParents returns parents of the jet id
-// "0010" -> [0 00 001 0010]
+// "0010" -> ['' 0 00 001 0010]
 func GetJetIDParents(jetID string) []string {
 	length := len(jetID)
 	parents := make([]string, length)
-	if length == 0 {
-		return parents
-	}
-
-	if jetID == "*" {
-		parents[0] = jetID
-		return parents
-	}
 
 	for i := 0; i < length; i++ {
 		parents[i] = jetID[:i+1]
 	}
-	parents = append([]string{"*"}, parents...)
+	parents = append([]string{""}, parents...)
 	return parents
 }

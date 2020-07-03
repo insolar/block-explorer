@@ -18,11 +18,11 @@ func TestGetJetIdParents(t *testing.T) {
 		input  string
 		output []string
 	}{
-		"empty input": {"", []string{}},
-		"0":           {"0", []string{"*", "0"}},
-		"01":          {"01", []string{"*", "0", "01"}},
-		"010":         {"010", []string{"*", "0", "01", "010"}},
-		"0010":        {"0010", []string{"*", "0", "00", "001", "0010"}},
+		"empty input": {"", []string{""}},
+		"0":           {"0", []string{"", "0"}},
+		"01":          {"01", []string{"", "0", "01"}},
+		"010":         {"010", []string{"", "0", "01", "010"}},
+		"0010":        {"0010", []string{"", "0", "00", "001", "0010"}},
 	}
 
 	for name, test := range tests {

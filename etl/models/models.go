@@ -48,7 +48,7 @@ type Record struct {
 }
 
 type JetDrop struct {
-	JetID          string `gorm:"primary_key;auto_increment:false"`
+	JetID          string `gorm:"primary_key;auto_increment:false;default:''"`
 	PulseNumber    int    `gorm:"primary_key;auto_increment:false"`
 	FirstPrevHash  []byte
 	SecondPrevHash []byte
@@ -73,7 +73,11 @@ type JetDropID struct {
 }
 
 func NewJetDropID(jetID string, pulseNumber int64) *JetDropID {
-	return &JetDropID{JetID: jetID, PulseNumber: pulseNumber}
+	tmp := jetID
+	if jetID == "" {
+		tmp = "*"
+	}
+	return &JetDropID{JetID: tmp, PulseNumber: pulseNumber}
 }
 
 // jetIDRegexp uses for a validation of the JetID
@@ -93,7 +97,7 @@ func NewJetDropIDFromString(jetDropID string) (*JetDropID, error) {
 		return nil, fmt.Errorf("wrong jet drop id format")
 	}
 
-	return &JetDropID{JetID: s[0], PulseNumber: pulse}, nil
+	return NewJetDropID(s[0], pulse), nil
 }
 
 func (j *JetDropID) ToString() string {
