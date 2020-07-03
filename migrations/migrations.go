@@ -27,7 +27,7 @@ func Migrations() []*gormigrate.Migration {
 					Timestamp       int64
 				}
 				type JetDrop struct {
-					JetID          string `gorm:"type:varchar(255);primary_key;auto_increment:false"`
+					JetID          string `gorm:"type:varchar(255);primary_key;auto_increment:false;default:''"`
 					PulseNumber    int    `gorm:"primary_key;auto_increment:false"`
 					FirstPrevHash  []byte
 					SecondPrevHash []byte

@@ -9,6 +9,7 @@ import (
 	"bytes"
 	"context"
 
+	"github.com/insolar/block-explorer/instrumentation"
 	"github.com/insolar/block-explorer/instrumentation/converter"
 	"github.com/ugorji/go/codec"
 	"golang.org/x/crypto/sha3"
@@ -173,8 +174,7 @@ func initRecordsMapsByObj(records []types.Record) (
 }
 
 func restoreInsolarID(b []byte) string {
-	emptyByte := make([]byte, len(b))
-	if bytes.Equal(b, []byte{}) || bytes.Equal(b, emptyByte) {
+	if instrumentation.IsEmpty(b) {
 		b = nil
 	}
 	return insolar.NewIDFromBytes(b).String()
