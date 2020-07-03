@@ -22,12 +22,11 @@ func NullableString(s string) *string {
 
 func RecordToAPI(record models.Record) server.Record {
 	pulseNumber := int64(record.PulseNumber)
-	jetID := record.JetID
-	jetDropID := fmt.Sprintf("%s:%d", jetID, record.PulseNumber)
+	jetDropID := models.NewJetDropID(record.JetID, pulseNumber)
 	response := server.Record{
 		Hash:        NullableString(base64.StdEncoding.EncodeToString(record.Hash)),
-		JetDropId:   NullableString(jetDropID),
-		JetId:       NullableString(jetID),
+		JetDropId:   NullableString(jetDropID.ToString()),
+		JetId:       NullableString(jetDropID.JetID),
 		Index:       NullableString(fmt.Sprintf("%d:%d", record.PulseNumber, record.Order)),
 		Payload:     NullableString(base64.StdEncoding.EncodeToString(record.Payload)),
 		PulseNumber: &pulseNumber,
