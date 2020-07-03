@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"math"
 	"strconv"
+	"strings"
 	"testing"
 
 	"github.com/antihax/optional"
@@ -118,6 +119,24 @@ func TestGetJetDropsByPulse(t *testing.T) {
 	})
 }
 
+func TestGetJetDropsByPulse_severalRecordsInJD(t *testing.T) {
+	t.Log("C5236 Get Jet drops by Pulse number, JetDrop contains several records")
+	ts := integration.NewBlockExplorerTestSetup(t).WithHTTPServer(t)
+	defer ts.Stop(t)
+
+	pulsesCount, recordsCount := 2, 10
+	records := testutils.GenerateRecordsFromOneJetSilence(pulsesCount, recordsCount)
+	require.NoError(t, heavymock.ImportRecords(ts.ConMngr.ImporterClient, records))
+
+	ts.WaitRecordsCount(t, recordsCount*(pulsesCount-1), 1000)
+	c := GetHTTPClient()
+	response, err := c.JetDropsByPulseNumber(t, int64(records[0].Record.ID.Pulse()), nil)
+	require.NoError(t, err)
+	require.Equal(t, int64(1), response.Total)
+	require.Len(t, response.Result, 1)
+	require.Equal(t, int64(recordsCount), response.Result[0].RecordAmount)
+}
+
 func TestGetJetDropsByPulse_queryParams(t *testing.T) {
 	ts := integration.NewBlockExplorerTestSetup(t).WithHTTPServer(t)
 	defer ts.Stop(t)
@@ -215,9 +234,7 @@ func TestGetJetDropsByPulse_queryParams(t *testing.T) {
 		t.Log("C5235 Get Jet drops by Pulse number with too big FromJetDropId")
 
 		s := strconv.FormatInt(testutils.RandNumberOverRange(math.MaxInt32, math.MaxInt32+1), 10)
-		for i := 0; i < 10; i++ {
-			s += s
-		}
+		s = strings.Repeat(s, 100)
 		queryParams := client.JetDropsByPulseNumberOpts{
 			FromJetDropId: optional.NewString(s),
 		}
