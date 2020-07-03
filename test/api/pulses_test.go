@@ -48,7 +48,7 @@ func TestPulsesAPI(t *testing.T) {
 		t.Log("T9341 Get pulses, default limit and offset")
 		response, err := c.Pulses(t, nil)
 		require.NoError(t, err)
-		require.Len(t, response.Result, 20)
+		require.Len(t, response.Result, defaultLimit)
 		require.Equal(t, pulsesNumber, int(response.Total))
 		for _, res := range response.Result {
 			require.Contains(t, pulses, res.PulseNumber)
