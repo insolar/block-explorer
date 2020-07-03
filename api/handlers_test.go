@@ -1209,6 +1209,36 @@ func TestServer_JetDropsByID(t *testing.T) {
 		require.Contains(t, expectedNext, *received.NextJetDropId)
 	})
 
+	t.Run("url encoded", func(t *testing.T) {
+		defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+
+		// insert records
+		pulse, err := testutils.InitPulseDB()
+		require.NoError(t, err)
+		err = testutils.CreatePulse(testDB, pulse)
+		require.NoError(t, err)
+
+		jetDrop1 := testutils.InitJetDropDB(pulse)
+		jetID1 := jet.NewIDFromString("000100")
+		jetDrop1.JetID = converter.JetIDToString(jetID1)
+		err = testutils.CreateJetDrop(testDB, jetDrop1)
+		require.NoError(t, err)
+		jetDropID1 := models.NewJetDropID(jetDrop1.JetID, int64(pulse.PulseNumber)).ToString()
+
+		urlencoded := url.QueryEscape(jetDropID1)
+		resp, err := http.Get("http://" + apihost + "/api/v1/jet-drops/" + urlencoded)
+		require.NoError(t, err)
+		require.Equal(t, http.StatusOK, resp.StatusCode)
+		bodyBytes, err := ioutil.ReadAll(resp.Body)
+		require.NoError(t, err)
+
+		var received server.JetDropResponse
+		err = json.Unmarshal(bodyBytes, &received)
+		require.NoError(t, err)
+		require.Equal(t, jetDropID1, *received.JetDropId)
+		require.Equal(t, base64.StdEncoding.EncodeToString(jetDrop1.Hash), *received.Hash)
+	})
+
 	t.Run("error wrong id", func(t *testing.T) {
 		resp, err := http.Get("http://" + apihost + "/api/v1/jet-drops/1000:dfg")
 		require.NoError(t, err)
