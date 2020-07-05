@@ -17,6 +17,7 @@ func init() {
 
 // PlatformJetDrops represents on the missing struct in the Platform
 type PlatformJetDrops struct {
+	Pulse   *exporter.FullPulse
 	Records []*exporter.Record
 }
 

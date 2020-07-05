@@ -17,6 +17,10 @@ type TestPulseClient struct {
 	topSyncPulse func(ctx context.Context, in *exporter.GetTopSyncPulse, opts ...grpc.CallOption) (*exporter.TopSyncPulseResponse, error)
 }
 
+func (c *TestPulseClient) NextFinalizedPulse(ctx context.Context, in *exporter.GetNextFinalizedPulse, opts ...grpc.CallOption) (*exporter.FullPulse, error) {
+	panic("implement me")
+}
+
 func (c *TestPulseClient) Export(ctx context.Context, in *exporter.GetPulses, opts ...grpc.CallOption) (exporter.PulseExporter_ExportClient, error) {
 	return c.export(ctx, in, opts...)
 }

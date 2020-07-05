@@ -20,3 +20,8 @@ generate-protobuf: ## generate protobuf structs
 		exit 1; \
 	fi
 	protoc -I./vendor -I./ --gogoslick_out=plugins=grpc:./ test/heavymock/import_records.proto
+
+.PHONY: install-dev
+install-dev:
+	go get github.com/gogo/protobuf
+	go get github.com/gojuno/minimock
