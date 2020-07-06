@@ -22,11 +22,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const (
-	notFound404   = "404 Not Found"
-	badRequest400 = "400 Bad Request"
-)
-
 func TestGetJetDropsByID(t *testing.T) {
 	ts := integration.NewBlockExplorerTestSetup(t).WithHTTPServer(t)
 	defer ts.Stop(t)
@@ -70,13 +65,6 @@ func TestGetJetDropsByID(t *testing.T) {
 			require.NotEmpty(t, response.Hash)
 		}
 	})
-}
-
-type testCases struct {
-	trTestCaseName string
-	value          string
-	expResult      string
-	testName       string
 }
 
 func TestGetJetDropsByID_negativeCases(t *testing.T) {
