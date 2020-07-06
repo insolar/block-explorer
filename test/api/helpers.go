@@ -15,11 +15,13 @@ import (
 	"github.com/insolar/block-explorer/testutils/connectionmanager"
 )
 
+// nolint
 const (
 	notFound404   = "404 Not Found"
 	badRequest400 = "400 Bad Request"
 )
 
+// nolint
 type testCases struct {
 	trTestCaseName string
 	value          string
