@@ -7,6 +7,7 @@ package models
 
 import (
 	"fmt"
+	"net/url"
 	"regexp"
 	"strconv"
 	"strings"
@@ -85,6 +86,10 @@ var jetIDRegexp = regexp.MustCompile(`^(\*|([0-1]{1,216}))$`)
 
 func NewJetDropIDFromString(jetDropID string) (*JetDropID, error) {
 	var pulse int64
+	jetDropID, err := url.QueryUnescape(jetDropID)
+	if err != nil {
+		return nil, fmt.Errorf("wrong jet drop id format")
+	}
 	s := strings.Split(jetDropID, ":")
 	if len(s) != 2 {
 		return nil, fmt.Errorf("wrong jet drop id format")
@@ -92,7 +97,7 @@ func NewJetDropIDFromString(jetDropID string) (*JetDropID, error) {
 	if !jetIDRegexp.MatchString(s[0]) {
 		return nil, fmt.Errorf("wrong jet drop id format")
 	}
-	pulse, err := strconv.ParseInt(s[1], 10, 64)
+	pulse, err = strconv.ParseInt(s[1], 10, 64)
 	if err != nil {
 		return nil, fmt.Errorf("wrong jet drop id format")
 	}

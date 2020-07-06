@@ -52,7 +52,6 @@ func TestGetJetDropsByPulse(t *testing.T) {
 	pulsesResp, err := c.Pulses(t, nil)
 	require.NoError(t, err)
 	require.Len(t, pulsesResp.Result, pulsesCount)
-	var i int
 
 	t.Run("check received data in jetdrops", func(t *testing.T) {
 		t.Log("C5223 Get Jet drops by Pulse number")
@@ -72,7 +71,6 @@ func TestGetJetDropsByPulse(t *testing.T) {
 				// fill expected map with received values, then check outside the loop
 				jds[jd.JetId] = true
 			}
-			i++
 		}
 		result := make([]string, 0)
 		for k, v := range jds {
