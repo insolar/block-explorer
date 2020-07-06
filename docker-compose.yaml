@@ -2,7 +2,6 @@ version: '3.7'
 
 services:
   postgres:
-    container_name: postgres
     image: postgres:12.0
     environment:
       - POSTGRES_USER=postgres
@@ -14,28 +13,18 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-  base:
+
+  gbe:
     build:
       context: ./
       dockerfile: Dockerfile
-    image: generic-block-explorer:latest
-    command:
-      - /bin/bash
-      - -c
-      - |
-        echo ok
-  gbe:
-    container_name: gbe
-    image: generic-block-explorer:latest
+    image: generic-block-explorer:local
     depends_on:
       - postgres
-      - base
     environment:
       BLOCK_EXPLORER_REPLICATOR_ADDR: 'docker.for.mac.localhost:5678'
       BLOCK_EXPLORER_DB_URL: 'postgres://postgres:secret@postgres:5432/postgres?sslmode=disable'
       MIGRATE_URL: 'postgres://postgres:secret@postgres:5432/postgres?sslmode=disable'
-    links:
-      - postgres
     volumes:
       - .artifacts/block-explorer.yaml:/opt/app/config/block-explorer.yaml
       - .artifacts/migrate.yaml:/opt/app/config/migrate.yaml
@@ -46,24 +35,21 @@ services:
         curl https://raw.githubusercontent.com/vishnubob/wait-for-it/master/wait-for-it.sh > wait.sh
         chmod +x wait.sh
         ./wait.sh "postgres:5432"
-        printenv
-        ls -al
         ./migrate --config=/opt/app/config/migrate.yaml
         ./block-explorer --config=/opt/app/config/block-explorer.yaml
 
   api:
-    container_name: api
-    image: generic-block-explorer:latest
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    image: generic-block-explorer:local
     depends_on:
       - postgres
-      - base
     ports:
       - 8080:8080
     environment:
       BLOCK_EXPLORER_API_DB_URL: 'postgres://postgres:secret@postgres:5432/postgres?sslmode=disable'
       BLOCK_EXPLORER_API_LISTEN: ':8080'
-    links:
-      - postgres
     volumes:
       - .artifacts/api.yaml:/opt/app/config/api.yaml
     command:
@@ -73,18 +59,13 @@ services:
         curl https://raw.githubusercontent.com/vishnubob/wait-for-it/master/wait-for-it.sh > wait.sh
         chmod +x wait.sh
         ./wait.sh "postgres:5432"
-        printenv
-        ls -al
         ./api --config=/opt/app/config/api.yaml
 
   frontend:
-    container_name: frontend
-    image: gbe-frontend
+    image: insolar/frontend-block-explorer
     depends_on:
       - api
     ports:
       - 8888:80
-    links:
-      - api
     environment:
       API_URL: 'http://api:8080'
