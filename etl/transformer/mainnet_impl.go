@@ -7,6 +7,7 @@ package transformer
 
 import (
 	"context"
+	"sync"
 
 	"github.com/insolar/block-explorer/etl/types"
 	"github.com/insolar/block-explorer/instrumentation/belogger"
@@ -69,8 +70,11 @@ func (m *MainNetTransformer) run(ctx context.Context) {
 			return
 		}
 		go func() {
-			belogger.FromContext(ctx).Infof("transformed jet drop to canonical: %v", transform)
+			once := sync.Once{}
 			for _, t := range transform {
+				once.Do(func() {
+					belogger.FromContext(ctx).Infof("transformed jet drop to canonical: %v", transform)
+				})
 				m.transformerChan <- t
 			}
 		}()

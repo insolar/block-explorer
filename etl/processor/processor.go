@@ -11,8 +11,6 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/insolar/insolar/pulse"
-
 	"github.com/insolar/block-explorer/etl/interfaces"
 	"github.com/insolar/block-explorer/etl/models"
 	"github.com/insolar/block-explorer/etl/types"
@@ -109,19 +107,10 @@ func (p *Processor) process(ctx context.Context, jd *types.JetDrop) {
 	logger := belogger.FromContext(ctx)
 	logger.Infof("pulse = %d, jetDrop = %v, record amount = %d", pd.PulseNo, ms.Start.JetDropPrefix, len(jd.MainSection.Records))
 
-	pn := pulse.Number(pd.PulseNo)
-	prevPN, ok := pn.TryPrev(uint16(pd.PrevPulseDelta))
-	if !ok {
-		prevPN = 0
-	}
-	nextPN, ok := pn.TryNext(uint16(pd.NextPulseDelta))
-	if !ok {
-		nextPN = 0
-	}
 	mp := models.Pulse{
 		PulseNumber:     pd.PulseNo,
-		PrevPulseNumber: int(prevPN),
-		NextPulseNumber: int(nextPN),
+		PrevPulseNumber: pd.PrevPulseNumber,
+		NextPulseNumber: pd.NextPulseNumber,
 		IsComplete:      false,
 		Timestamp:       pd.PulseTimestamp,
 	}

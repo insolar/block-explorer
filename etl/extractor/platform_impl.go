@@ -9,6 +9,7 @@ import (
 	"context"
 	"io"
 	"math"
+	"strings"
 	"sync"
 	"time"
 
@@ -16,6 +17,7 @@ import (
 	"github.com/insolar/block-explorer/etl/types"
 	"github.com/insolar/block-explorer/instrumentation/belogger"
 	"github.com/insolar/insolar/insolar"
+	"github.com/insolar/insolar/insolar/pulse"
 	"github.com/insolar/insolar/ledger/heavy/exporter"
 	"github.com/pkg/errors"
 )
@@ -259,11 +261,18 @@ func (e *PlatformExtractor) retrievePulses(ctx context.Context) {
 		default:
 		}
 		time.Sleep(5 * time.Second)
-		before := pu.PulseNumber
+		var before insolar.PulseNumber
+
+		if pu != nil {
+			before = pu.PulseNumber
+		}
 		pu, err = e.pulseExtractor.GetNextFinalizedPulse(ctx, int64(before))
-		log := logger.WithField("pulse_number", pu.PulseNumber)
 		if err != nil {
-			log.Error("GetNextFinalizedPulse(): ", err)
+			if strings.Contains(err.Error(), pulse.ErrNotFound.Error()) {
+				time.Sleep(time.Second)
+				continue
+			}
+			logger.Error("GetNextFinalizedPulse(): before=%d", before, err)
 			pu.PulseNumber = 0
 			continue
 		}
@@ -271,6 +280,7 @@ func (e *PlatformExtractor) retrievePulses(ctx context.Context) {
 			continue
 		}
 
+		log := logger.WithField("pulse_number", pu.PulseNumber)
 		log.Info("retrieved")
 		go e.retrieveRecords(ctx, pu)
 	}
@@ -283,7 +293,7 @@ func (e *PlatformExtractor) retrieveRecords(ctx context.Context, pu *exporter.Fu
 		log := logger.WithField("request_pulse_number", pu.PulseNumber)
 		stream, err := e.client.Export(ctx, &exporter.GetRecords{PulseNumber: pu.PulseNumber, Count: 1 << 31})
 		if err != nil {
-			log.Error(err)
+			log.Error("retrieveRecords: ", err.Error())
 			continue
 		}
 
@@ -296,10 +306,21 @@ func (e *PlatformExtractor) retrieveRecords(ctx context.Context, pu *exporter.Fu
 			}
 
 			resp, err := stream.Recv()
+			// 1. eof
+			// 2. trying to get a non-finalized pulse data
+			//
 			if isEOF(ctx, err) {
 				break
 			} else if err != nil {
-				log.Error(err)
+				if strings.Contains(err.Error(), exporter.ErrNotFinalPulseData.Error()) {
+					if err == exporter.ErrNotFinalPulseData {
+						println("yes")
+					}
+					log.Warn("not EOF ErrNotFinalPulseData: ", err)
+					time.Sleep(time.Second)
+					break
+				}
+				log.Error("not EOF: ", err)
 				break
 			}
 

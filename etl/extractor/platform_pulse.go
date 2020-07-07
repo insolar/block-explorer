@@ -51,9 +51,10 @@ func (ppe *PlatformPulseExtractor) GetNextFinalizedPulse(ctx context.Context, p 
 	log := belogger.FromContext(ctx)
 	log.Debug("GetNextFinalizedPulse")
 
+	// fatal error: signal_recv: inconsistent state
 	ret, err := c.NextFinalizedPulse(ctx, req)
 	if err != nil {
-		log.WithField("request", req).Error(errors.Wrapf(err, "failed to GetNextFinalizedPulse()"))
+		log.WithField("request", req).Error(errors.Wrap(err, "failed to GetNextFinalizedPulse()"))
 		return nil, err
 	}
 	return ret, nil

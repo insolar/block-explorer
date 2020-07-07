@@ -8,6 +8,7 @@ package transformer
 import (
 	"bytes"
 	"context"
+	"fmt"
 
 	"github.com/ugorji/go/codec"
 	"golang.org/x/crypto/sha3"
@@ -33,7 +34,7 @@ func Transform(ctx context.Context, jd *types.PlatformJetDrops) ([]*types.JetDro
 		return make([]*types.JetDrop, 0), nil
 	}
 
-	pulseData, err := getPulseData(jd.Records[0])
+	pulseData, err := getPulseData(jd.Pulse)
 	if err != nil {
 		return nil, errors.Wrapf(err, "cannot get pulse data from record")
 	}
@@ -43,8 +44,12 @@ func Transform(ctx context.Context, jd *types.PlatformJetDrops) ([]*types.JetDro
 		return nil, err
 	}
 
+	jets := jd.Pulse.Jets
 	result := make([]*types.JetDrop, 0)
 	for jetID, records := range m {
+		if !jetIDContains(&jets, jetID) {
+			panic(fmt.Sprintf("cannot find jetID %s", jetID.DebugString()))
+		}
 		localJetDrop, err := getJetDrop(ctx, jetID, records, pulseData)
 		if err != nil {
 			return nil, errors.Wrapf(err, "cannot create jet drop for jetID %s", jetID.DebugString())
@@ -55,7 +60,23 @@ func Transform(ctx context.Context, jd *types.PlatformJetDrops) ([]*types.JetDro
 		result = append(result, localJetDrop)
 	}
 
+	if len(jets) > 0 {
+		panic(fmt.Sprintf("not all records. jet tree %v", jets))
+	}
+
 	return result, nil
+}
+
+func jetIDContains(jets *[]insolar.JetID, jet insolar.JetID) bool {
+	noPinterJets := *jets
+	for i, v := range noPinterJets {
+		if v.Equal(jet) {
+			noPinterJets = append(noPinterJets[:i], noPinterJets[i+1:]...)
+			jets = &noPinterJets
+			return true
+		}
+	}
+	return false
 }
 
 func getJetDrop(ctx context.Context, jetID insolar.JetID, records []types.Record, pulseData types.Pulse) (*types.JetDrop, error) {
@@ -178,19 +199,20 @@ func restoreInsolarID(b []byte) string {
 	return insolar.NewIDFromBytes(b).String()
 }
 
-func getPulseData(rec *exporter.Record) (types.Pulse, error) {
-	r := rec.GetRecord()
-	pulse := r.ID.Pulse()
-	time, err := pulse.AsApproximateTime()
-	if err != nil {
-		return types.Pulse{}, errors.Wrapf(err, "could not get pulse ApproximateTime. pulse: %v", pulse.String())
-	}
+func getPulseData(pn *exporter.FullPulse) (types.Pulse, error) {
+	pulse := pn.PulseNumber
+	// time, err := pulse.AsApproximateTime()
+	// if err != nil {
+	// 	return types.Pulse{}, errors.Wrapf(err, "could not get pulse ApproximateTime. pulse: %v", pulse.String())
+	// }
 	return types.Pulse{
-		PulseNo:        int(pulse.AsUint32()),
-		EpochPulseNo:   int(pulse.AsEpoch()),
-		PulseTimestamp: time.Unix(),
-		NextPulseDelta: int(pulseDelta),
-		PrevPulseDelta: int(pulseDelta),
+		PulseNo:         int(pulse.AsUint32()),
+		EpochPulseNo:    int(pulse.AsEpoch()),
+		PulseTimestamp:  pn.GetPulseTimestamp(),
+		NextPulseNumber: int(pn.NextPulseNumber.AsUint32()),
+		PrevPulseNumber: int(pn.PrevPulseNumber.AsUint32()),
+		// NextPulseDelta: int(pn.NextPulseNumber.AsUint32() - pn.PulseNumber.AsUint32()),
+		// PrevPulseDelta: int(pn.PulseNumber.AsUint32() - pn.PrevPulseNumber.AsUint32()),
 	}, nil
 }
 
