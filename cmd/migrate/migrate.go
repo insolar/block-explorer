@@ -45,7 +45,10 @@ func main() {
 	db = db.LogMode(true)
 	db.SetLogger(belogger.NewGORMLogAdapter(log))
 
-	m := gormigrate.New(db, gormigrate.DefaultOptions, migrations.Migrations())
+	options := gormigrate.DefaultOptions
+	options.UseTransaction = true
+	options.ValidateUnknownMigrations = true
+	m := gormigrate.New(db, options, migrations.Migrations())
 
 	if err = m.Migrate(); err != nil {
 		log.Fatalf("Could not migrate: %v", err)
