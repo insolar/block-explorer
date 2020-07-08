@@ -90,3 +90,10 @@ func Migrations() []*gormigrate.Migration {
 		},
 	}
 }
+
+func MigrationOptions() *gormigrate.Options {
+	options := gormigrate.DefaultOptions
+	options.UseTransaction = true
+	options.ValidateUnknownMigrations = true
+	return options
+}
