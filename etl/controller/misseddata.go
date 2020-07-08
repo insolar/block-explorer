@@ -15,8 +15,8 @@ import (
 
 type missedData struct {
 	ts        time.Time
-	fromPulse int
-	toPulse   int
+	fromPulse int64
+	toPulse   int64
 }
 
 // MissedDataManager manages working with missed data pool
@@ -60,7 +60,7 @@ func (mdm *MissedDataManager) Stop() {
 }
 
 // Add adds missed data to pool
-func (mdm *MissedDataManager) Add(ctx context.Context, fromPulse, toPulse int) bool {
+func (mdm *MissedDataManager) Add(ctx context.Context, fromPulse, toPulse int64) bool {
 	mdm.mutex.Lock()
 	defer mdm.mutex.Unlock()
 

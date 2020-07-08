@@ -102,9 +102,9 @@ func TestIntegrationWithDb_GetJetDrops(t *testing.T) {
 	expRecords = append(expRecords, expRecordsJet1...)
 	expRecords = append(expRecords, expRecordsJet2...)
 
-	pulseNumbers := map[int]bool{}
+	pulseNumbers := map[int64]bool{}
 	for _, r := range expRecords {
-		pulseNumbers[int(r.Record.ID.Pulse())] = true
+		pulseNumbers[int64(r.Record.ID.Pulse())] = true
 	}
 
 	err := heavymock.ImportRecords(ts.ConMngr.ImporterClient, expRecords)

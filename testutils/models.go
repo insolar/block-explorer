@@ -84,25 +84,25 @@ func InitPulseDB() (models.Pulse, error) {
 		return models.Pulse{}, err
 	}
 	return models.Pulse{
-		PulseNumber:     int(pulseNumber.AsUint32()),
-		PrevPulseNumber: int(pulseNumber.Prev(pulseDelta)),
-		NextPulseNumber: int(pulseNumber.Next(pulseDelta)),
+		PulseNumber:     int64(pulseNumber.AsUint32()),
+		PrevPulseNumber: int64(pulseNumber.Prev(pulseDelta)),
+		NextPulseNumber: int64(pulseNumber.Next(pulseDelta)),
 		IsComplete:      false,
 		Timestamp:       timestamp.Unix(),
 	}, nil
 }
 
 // InitNextPulseDB returns generated pulse after pn
-func InitNextPulseDB(pn int) (models.Pulse, error) {
-	pulseNumber := insolar.PulseNumber(pn + int(pulseDelta))
+func InitNextPulseDB(pn int64) (models.Pulse, error) {
+	pulseNumber := insolar.PulseNumber(pn + int64(pulseDelta))
 	timestamp, err := pulseNumber.AsApproximateTime()
 	if err != nil {
 		return models.Pulse{}, err
 	}
 	return models.Pulse{
-		PulseNumber:     int(pulseNumber.AsUint32()),
-		PrevPulseNumber: int(pulseNumber.Prev(pulseDelta)),
-		NextPulseNumber: int(pulseNumber.Next(pulseDelta)),
+		PulseNumber:     int64(pulseNumber.AsUint32()),
+		PrevPulseNumber: int64(pulseNumber.Prev(pulseDelta)),
+		NextPulseNumber: int64(pulseNumber.Next(pulseDelta)),
 		IsComplete:      false,
 		Timestamp:       timestamp.Unix(),
 	}, nil

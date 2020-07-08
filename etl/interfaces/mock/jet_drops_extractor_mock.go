@@ -22,8 +22,8 @@ type JetDropsExtractorMock struct {
 	beforeGetJetDropsCounter uint64
 	GetJetDropsMock          mJetDropsExtractorMockGetJetDrops
 
-	funcLoadJetDrops          func(ctx context.Context, fromPulseNumber int, toPulseNumber int) (err error)
-	inspectFuncLoadJetDrops   func(ctx context.Context, fromPulseNumber int, toPulseNumber int)
+	funcLoadJetDrops          func(ctx context.Context, fromPulseNumber int64, toPulseNumber int64) (err error)
+	inspectFuncLoadJetDrops   func(ctx context.Context, fromPulseNumber int64, toPulseNumber int64)
 	afterLoadJetDropsCounter  uint64
 	beforeLoadJetDropsCounter uint64
 	LoadJetDropsMock          mJetDropsExtractorMockLoadJetDrops
@@ -298,8 +298,8 @@ type JetDropsExtractorMockLoadJetDropsExpectation struct {
 // JetDropsExtractorMockLoadJetDropsParams contains parameters of the JetDropsExtractor.LoadJetDrops
 type JetDropsExtractorMockLoadJetDropsParams struct {
 	ctx             context.Context
-	fromPulseNumber int
-	toPulseNumber   int
+	fromPulseNumber int64
+	toPulseNumber   int64
 }
 
 // JetDropsExtractorMockLoadJetDropsResults contains results of the JetDropsExtractor.LoadJetDrops
@@ -308,7 +308,7 @@ type JetDropsExtractorMockLoadJetDropsResults struct {
 }
 
 // Expect sets up expected params for JetDropsExtractor.LoadJetDrops
-func (mmLoadJetDrops *mJetDropsExtractorMockLoadJetDrops) Expect(ctx context.Context, fromPulseNumber int, toPulseNumber int) *mJetDropsExtractorMockLoadJetDrops {
+func (mmLoadJetDrops *mJetDropsExtractorMockLoadJetDrops) Expect(ctx context.Context, fromPulseNumber int64, toPulseNumber int64) *mJetDropsExtractorMockLoadJetDrops {
 	if mmLoadJetDrops.mock.funcLoadJetDrops != nil {
 		mmLoadJetDrops.mock.t.Fatalf("JetDropsExtractorMock.LoadJetDrops mock is already set by Set")
 	}
@@ -328,7 +328,7 @@ func (mmLoadJetDrops *mJetDropsExtractorMockLoadJetDrops) Expect(ctx context.Con
 }
 
 // Inspect accepts an inspector function that has same arguments as the JetDropsExtractor.LoadJetDrops
-func (mmLoadJetDrops *mJetDropsExtractorMockLoadJetDrops) Inspect(f func(ctx context.Context, fromPulseNumber int, toPulseNumber int)) *mJetDropsExtractorMockLoadJetDrops {
+func (mmLoadJetDrops *mJetDropsExtractorMockLoadJetDrops) Inspect(f func(ctx context.Context, fromPulseNumber int64, toPulseNumber int64)) *mJetDropsExtractorMockLoadJetDrops {
 	if mmLoadJetDrops.mock.inspectFuncLoadJetDrops != nil {
 		mmLoadJetDrops.mock.t.Fatalf("Inspect function is already set for JetDropsExtractorMock.LoadJetDrops")
 	}
@@ -352,7 +352,7 @@ func (mmLoadJetDrops *mJetDropsExtractorMockLoadJetDrops) Return(err error) *Jet
 }
 
 //Set uses given function f to mock the JetDropsExtractor.LoadJetDrops method
-func (mmLoadJetDrops *mJetDropsExtractorMockLoadJetDrops) Set(f func(ctx context.Context, fromPulseNumber int, toPulseNumber int) (err error)) *JetDropsExtractorMock {
+func (mmLoadJetDrops *mJetDropsExtractorMockLoadJetDrops) Set(f func(ctx context.Context, fromPulseNumber int64, toPulseNumber int64) (err error)) *JetDropsExtractorMock {
 	if mmLoadJetDrops.defaultExpectation != nil {
 		mmLoadJetDrops.mock.t.Fatalf("Default expectation is already set for the JetDropsExtractor.LoadJetDrops method")
 	}
@@ -367,7 +367,7 @@ func (mmLoadJetDrops *mJetDropsExtractorMockLoadJetDrops) Set(f func(ctx context
 
 // When sets expectation for the JetDropsExtractor.LoadJetDrops which will trigger the result defined by the following
 // Then helper
-func (mmLoadJetDrops *mJetDropsExtractorMockLoadJetDrops) When(ctx context.Context, fromPulseNumber int, toPulseNumber int) *JetDropsExtractorMockLoadJetDropsExpectation {
+func (mmLoadJetDrops *mJetDropsExtractorMockLoadJetDrops) When(ctx context.Context, fromPulseNumber int64, toPulseNumber int64) *JetDropsExtractorMockLoadJetDropsExpectation {
 	if mmLoadJetDrops.mock.funcLoadJetDrops != nil {
 		mmLoadJetDrops.mock.t.Fatalf("JetDropsExtractorMock.LoadJetDrops mock is already set by Set")
 	}
@@ -387,7 +387,7 @@ func (e *JetDropsExtractorMockLoadJetDropsExpectation) Then(err error) *JetDrops
 }
 
 // LoadJetDrops implements interfaces.JetDropsExtractor
-func (mmLoadJetDrops *JetDropsExtractorMock) LoadJetDrops(ctx context.Context, fromPulseNumber int, toPulseNumber int) (err error) {
+func (mmLoadJetDrops *JetDropsExtractorMock) LoadJetDrops(ctx context.Context, fromPulseNumber int64, toPulseNumber int64) (err error) {
 	mm_atomic.AddUint64(&mmLoadJetDrops.beforeLoadJetDropsCounter, 1)
 	defer mm_atomic.AddUint64(&mmLoadJetDrops.afterLoadJetDropsCounter, 1)
 

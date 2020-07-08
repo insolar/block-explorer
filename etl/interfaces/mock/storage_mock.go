@@ -15,8 +15,8 @@ import (
 type StorageMock struct {
 	t minimock.Tester
 
-	funcCompletePulse          func(pulseNumber int) (err error)
-	inspectFuncCompletePulse   func(pulseNumber int)
+	funcCompletePulse          func(pulseNumber int64) (err error)
+	inspectFuncCompletePulse   func(pulseNumber int64)
 	afterCompletePulseCounter  uint64
 	beforeCompletePulseCounter uint64
 	CompletePulseMock          mStorageMockCompletePulse
@@ -63,8 +63,8 @@ type StorageMock struct {
 	beforeSavePulseCounter uint64
 	SavePulseMock          mStorageMockSavePulse
 
-	funcSequencePulse          func(pulseNumber int) (err error)
-	inspectFuncSequencePulse   func(pulseNumber int)
+	funcSequencePulse          func(pulseNumber int64) (err error)
+	inspectFuncSequencePulse   func(pulseNumber int64)
 	afterSequencePulseCounter  uint64
 	beforeSequencePulseCounter uint64
 	SequencePulseMock          mStorageMockSequencePulse
@@ -124,7 +124,7 @@ type StorageMockCompletePulseExpectation struct {
 
 // StorageMockCompletePulseParams contains parameters of the Storage.CompletePulse
 type StorageMockCompletePulseParams struct {
-	pulseNumber int
+	pulseNumber int64
 }
 
 // StorageMockCompletePulseResults contains results of the Storage.CompletePulse
@@ -133,7 +133,7 @@ type StorageMockCompletePulseResults struct {
 }
 
 // Expect sets up expected params for Storage.CompletePulse
-func (mmCompletePulse *mStorageMockCompletePulse) Expect(pulseNumber int) *mStorageMockCompletePulse {
+func (mmCompletePulse *mStorageMockCompletePulse) Expect(pulseNumber int64) *mStorageMockCompletePulse {
 	if mmCompletePulse.mock.funcCompletePulse != nil {
 		mmCompletePulse.mock.t.Fatalf("StorageMock.CompletePulse mock is already set by Set")
 	}
@@ -153,7 +153,7 @@ func (mmCompletePulse *mStorageMockCompletePulse) Expect(pulseNumber int) *mStor
 }
 
 // Inspect accepts an inspector function that has same arguments as the Storage.CompletePulse
-func (mmCompletePulse *mStorageMockCompletePulse) Inspect(f func(pulseNumber int)) *mStorageMockCompletePulse {
+func (mmCompletePulse *mStorageMockCompletePulse) Inspect(f func(pulseNumber int64)) *mStorageMockCompletePulse {
 	if mmCompletePulse.mock.inspectFuncCompletePulse != nil {
 		mmCompletePulse.mock.t.Fatalf("Inspect function is already set for StorageMock.CompletePulse")
 	}
@@ -177,7 +177,7 @@ func (mmCompletePulse *mStorageMockCompletePulse) Return(err error) *StorageMock
 }
 
 //Set uses given function f to mock the Storage.CompletePulse method
-func (mmCompletePulse *mStorageMockCompletePulse) Set(f func(pulseNumber int) (err error)) *StorageMock {
+func (mmCompletePulse *mStorageMockCompletePulse) Set(f func(pulseNumber int64) (err error)) *StorageMock {
 	if mmCompletePulse.defaultExpectation != nil {
 		mmCompletePulse.mock.t.Fatalf("Default expectation is already set for the Storage.CompletePulse method")
 	}
@@ -192,7 +192,7 @@ func (mmCompletePulse *mStorageMockCompletePulse) Set(f func(pulseNumber int) (e
 
 // When sets expectation for the Storage.CompletePulse which will trigger the result defined by the following
 // Then helper
-func (mmCompletePulse *mStorageMockCompletePulse) When(pulseNumber int) *StorageMockCompletePulseExpectation {
+func (mmCompletePulse *mStorageMockCompletePulse) When(pulseNumber int64) *StorageMockCompletePulseExpectation {
 	if mmCompletePulse.mock.funcCompletePulse != nil {
 		mmCompletePulse.mock.t.Fatalf("StorageMock.CompletePulse mock is already set by Set")
 	}
@@ -212,7 +212,7 @@ func (e *StorageMockCompletePulseExpectation) Then(err error) *StorageMock {
 }
 
 // CompletePulse implements interfaces.Storage
-func (mmCompletePulse *StorageMock) CompletePulse(pulseNumber int) (err error) {
+func (mmCompletePulse *StorageMock) CompletePulse(pulseNumber int64) (err error) {
 	mm_atomic.AddUint64(&mmCompletePulse.beforeCompletePulseCounter, 1)
 	defer mm_atomic.AddUint64(&mmCompletePulse.afterCompletePulseCounter, 1)
 
@@ -1706,7 +1706,7 @@ type StorageMockSequencePulseExpectation struct {
 
 // StorageMockSequencePulseParams contains parameters of the Storage.SequencePulse
 type StorageMockSequencePulseParams struct {
-	pulseNumber int
+	pulseNumber int64
 }
 
 // StorageMockSequencePulseResults contains results of the Storage.SequencePulse
@@ -1715,7 +1715,7 @@ type StorageMockSequencePulseResults struct {
 }
 
 // Expect sets up expected params for Storage.SequencePulse
-func (mmSequencePulse *mStorageMockSequencePulse) Expect(pulseNumber int) *mStorageMockSequencePulse {
+func (mmSequencePulse *mStorageMockSequencePulse) Expect(pulseNumber int64) *mStorageMockSequencePulse {
 	if mmSequencePulse.mock.funcSequencePulse != nil {
 		mmSequencePulse.mock.t.Fatalf("StorageMock.SequencePulse mock is already set by Set")
 	}
@@ -1735,7 +1735,7 @@ func (mmSequencePulse *mStorageMockSequencePulse) Expect(pulseNumber int) *mStor
 }
 
 // Inspect accepts an inspector function that has same arguments as the Storage.SequencePulse
-func (mmSequencePulse *mStorageMockSequencePulse) Inspect(f func(pulseNumber int)) *mStorageMockSequencePulse {
+func (mmSequencePulse *mStorageMockSequencePulse) Inspect(f func(pulseNumber int64)) *mStorageMockSequencePulse {
 	if mmSequencePulse.mock.inspectFuncSequencePulse != nil {
 		mmSequencePulse.mock.t.Fatalf("Inspect function is already set for StorageMock.SequencePulse")
 	}
@@ -1759,7 +1759,7 @@ func (mmSequencePulse *mStorageMockSequencePulse) Return(err error) *StorageMock
 }
 
 //Set uses given function f to mock the Storage.SequencePulse method
-func (mmSequencePulse *mStorageMockSequencePulse) Set(f func(pulseNumber int) (err error)) *StorageMock {
+func (mmSequencePulse *mStorageMockSequencePulse) Set(f func(pulseNumber int64) (err error)) *StorageMock {
 	if mmSequencePulse.defaultExpectation != nil {
 		mmSequencePulse.mock.t.Fatalf("Default expectation is already set for the Storage.SequencePulse method")
 	}
@@ -1774,7 +1774,7 @@ func (mmSequencePulse *mStorageMockSequencePulse) Set(f func(pulseNumber int) (e
 
 // When sets expectation for the Storage.SequencePulse which will trigger the result defined by the following
 // Then helper
-func (mmSequencePulse *mStorageMockSequencePulse) When(pulseNumber int) *StorageMockSequencePulseExpectation {
+func (mmSequencePulse *mStorageMockSequencePulse) When(pulseNumber int64) *StorageMockSequencePulseExpectation {
 	if mmSequencePulse.mock.funcSequencePulse != nil {
 		mmSequencePulse.mock.t.Fatalf("StorageMock.SequencePulse mock is already set by Set")
 	}
@@ -1794,7 +1794,7 @@ func (e *StorageMockSequencePulseExpectation) Then(err error) *StorageMock {
 }
 
 // SequencePulse implements interfaces.Storage
-func (mmSequencePulse *StorageMock) SequencePulse(pulseNumber int) (err error) {
+func (mmSequencePulse *StorageMock) SequencePulse(pulseNumber int64) (err error) {
 	mm_atomic.AddUint64(&mmSequencePulse.beforeSequencePulseCounter, 1)
 	defer mm_atomic.AddUint64(&mmSequencePulse.afterSequencePulseCounter, 1)
 

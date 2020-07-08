@@ -53,7 +53,7 @@ func (m *PlatformExtractor) GetJetDrops(ctx context.Context) <-chan *types.Platf
 	return m.mainJetDropsChan
 }
 
-func (m *PlatformExtractor) LoadJetDrops(ctx context.Context, fromPulseNumber int, toPulseNumber int) error {
+func (m *PlatformExtractor) LoadJetDrops(ctx context.Context, fromPulseNumber int64, toPulseNumber int64) error {
 	if fromPulseNumber < 0 {
 		return errors.New("fromPulseNumber cannot be negative")
 	}
@@ -73,7 +73,7 @@ func (m *PlatformExtractor) LoadJetDrops(ctx context.Context, fromPulseNumber in
 	return nil
 }
 
-func (m *PlatformExtractor) getJetDrops(ctx context.Context, request *exporter.GetRecords, fromPulseNumber int, toPulseNumber int, shouldReload bool) {
+func (m *PlatformExtractor) getJetDrops(ctx context.Context, request *exporter.GetRecords, fromPulseNumber int64, toPulseNumber int64, shouldReload bool) {
 	unsignedToPulseNumber := uint32(toPulseNumber)
 
 	client := m.client

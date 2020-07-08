@@ -104,7 +104,7 @@ func pulseIsComplete(p types.Pulse, d []string) bool { // nolint
 	return p.PulseNo >= 0
 }
 
-func (c *Controller) reloadData(ctx context.Context, fromPulseNumber int, toPulseNumber int) {
+func (c *Controller) reloadData(ctx context.Context, fromPulseNumber int64, toPulseNumber int64) {
 	log := belogger.FromContext(ctx)
 	if c.missedDataManager.Add(ctx, fromPulseNumber, toPulseNumber) {
 		err := c.extractor.LoadJetDrops(ctx, fromPulseNumber, toPulseNumber)

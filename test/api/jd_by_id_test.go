@@ -87,7 +87,7 @@ func TestGetJetDropsByID_negativeCases(t *testing.T) {
 		records[2].Record.ID.Pulse())
 	invalidJetID := "0qwerty123:!@#$%^"
 	withBigLengthPrefix := fmt.Sprintf("%v:%v",
-		strings.Repeat(jetDropID, 20),
+		strings.Repeat("01", 130),
 		records[0].Record.ID.Pulse())
 	withBigLengthPulse := fmt.Sprintf("%v:%v",
 		strings.Split(converter.JetIDToString(records[0].Record.JetID), ":")[0],

@@ -120,8 +120,8 @@ func (p *Processor) process(ctx context.Context, jd *types.JetDrop) {
 	}
 	mp := models.Pulse{
 		PulseNumber:     pd.PulseNo,
-		PrevPulseNumber: int(prevPN),
-		NextPulseNumber: int(nextPN),
+		PrevPulseNumber: int64(prevPN),
+		NextPulseNumber: int64(nextPN),
 		IsComplete:      false,
 		Timestamp:       pd.PulseTimestamp,
 	}
