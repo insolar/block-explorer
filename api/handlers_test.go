@@ -13,6 +13,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"math"
 	"net/http"
 	"net/url"
 	"os"
@@ -371,6 +372,12 @@ func TestPulse_Pulse_NotExist(t *testing.T) {
 
 func TestPulse_Pulse_WrongFormat(t *testing.T) {
 	resp, err := http.Get("http://" + apihost + "/api/v1/pulses/" + "wrong_type")
+	require.NoError(t, err)
+	require.Equal(t, http.StatusBadRequest, resp.StatusCode)
+}
+
+func TestPulse_Pulse_GreaterThanMax(t *testing.T) {
+	resp, err := http.Get("http://" + apihost + "/api/v1/pulses/" + string(math.MaxInt64) + "1")
 	require.NoError(t, err)
 	require.Equal(t, http.StatusBadRequest, resp.StatusCode)
 }
