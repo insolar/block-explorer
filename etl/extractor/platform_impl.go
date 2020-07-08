@@ -249,51 +249,54 @@ func (e *PlatformExtractor) Start(ctx context.Context) error {
 	return nil
 }
 
+// retrievePulses - initiates full pulse retrieving from current pulse till forever
 func (e *PlatformExtractor) retrievePulses(ctx context.Context) {
 	pu := new(exporter.FullPulse)
 	var err error
 	logger := belogger.FromContext(ctx)
 
+	halfPulse := 5 * time.Second // guess a real half of pulse, but we do not known it from the platform
 	for {
 		select {
-		case <-ctx.Done():
+		case <-ctx.Done(): // we need context with cancel
 			return
 		default:
 		}
-		time.Sleep(5 * time.Second)
-		var before insolar.PulseNumber
+		time.Sleep(halfPulse)
+		var before insolar.PulseNumber // already processed pulse
 
-		if pu != nil {
+		if pu != nil { // not a first iteration
 			before = pu.PulseNumber
 		}
 		pu, err = e.pulseExtractor.GetNextFinalizedPulse(ctx, int64(before))
-		if err != nil {
-			if strings.Contains(err.Error(), pulse.ErrNotFound.Error()) {
-				time.Sleep(time.Second)
+		if err != nil { // network error ?
+			if strings.Contains(err.Error(), pulse.ErrNotFound.Error()) { // seems this pulse already last
+				time.Sleep(halfPulse)
 				continue
 			}
-			logger.Error("GetNextFinalizedPulse(): before=%d", before, err)
+			logger.Error("retrievePulses(): before=%d", before, err)
 			pu.PulseNumber = 0
 			continue
 		}
-		if pu.PulseNumber == before {
+		if pu.PulseNumber == before { // no new pulse happens
 			continue
 		}
 
 		log := logger.WithField("pulse_number", pu.PulseNumber)
-		log.Info("retrieved")
+		log.Info("retrievePulses(): successfully retrieved")
 		go e.retrieveRecords(ctx, pu)
 	}
 }
 
+// retrieveRecords - retrieves all records for specified pulse
 func (e *PlatformExtractor) retrieveRecords(ctx context.Context, pu *exporter.FullPulse) {
 	logger := belogger.FromContext(ctx)
-	for { // per request
-		jetDrops := &types.PlatformJetDrops{Pulse: pu}
+	for { // each pulse
+		jetDrops := &types.PlatformJetDrops{Pulse: pu} // save pulse info
 		log := logger.WithField("request_pulse_number", pu.PulseNumber)
 		stream, err := e.client.Export(ctx, &exporter.GetRecords{PulseNumber: pu.PulseNumber, Count: 1 << 31})
 		if err != nil {
-			log.Error("retrieveRecords: ", err.Error())
+			log.Error("retrieveRecords(): ", err.Error())
 			continue
 		}
 
@@ -301,37 +304,37 @@ func (e *PlatformExtractor) retrieveRecords(ctx context.Context, pu *exporter.Fu
 			select {
 			case <-ctx.Done():
 				closeStream(ctx, stream)
-				break
+				return
 			default:
 			}
 
 			resp, err := stream.Recv()
-			// 1. eof
-			// 2. trying to get a non-finalized pulse data
-			//
-			if isEOF(ctx, err) {
+			if isEOF(ctx, err) { // stream ended, assume we have whole pulse (we have no other information of it content)
+				log.Info("retrievePulses(): stream finished")
 				break
-			} else if err != nil {
+			}
+			if resp.ShouldIterateFrom != nil || resp.Record.ID.Pulse() != pu.PulseNumber { // next pulse packet
+				closeStream(ctx, stream)
+				return
+			}
+			if err != nil {
 				if strings.Contains(err.Error(), exporter.ErrNotFinalPulseData.Error()) {
+					// let's check again, we jumped into next pulse
 					if err == exporter.ErrNotFinalPulseData {
-						println("yes")
+						log.Warn("ErrNotFinalPulseData: jump into next pulse", err)
 					}
 					log.Warn("not EOF ErrNotFinalPulseData: ", err)
-					time.Sleep(time.Second)
 					break
 				}
 				log.Error("not EOF: ", err)
-				break
-			}
-
-			if resp.ShouldIterateFrom != nil || resp.Record.ID.Pulse() != pu.PulseNumber {
-				closeStream(ctx, stream)
-				break
+				return // something bad happens, let's think we have broken pulse
 			}
 
 			jetDrops.Records = append(jetDrops.Records, resp)
 		}
-
-		e.mainJetDropsChan <- jetDrops
+		if len(jetDrops.Records) > 0 { // we actually grabbed pulse, assume it full.
+			e.mainJetDropsChan <- jetDrops
+		}
 	}
+
 }
