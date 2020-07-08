@@ -50,7 +50,7 @@ func (s *Storage) SavePulse(pulse models.Pulse) error {
 }
 
 // CompletePulse update pulse with provided number to completeness in db.
-func (s *Storage) CompletePulse(pulseNumber int) error {
+func (s *Storage) CompletePulse(pulseNumber int64) error {
 	return s.db.Transaction(func(tx *gorm.DB) error {
 		pulse := models.Pulse{PulseNumber: pulseNumber}
 		update := tx.Model(&pulse).Update(models.Pulse{IsComplete: true})
@@ -69,7 +69,7 @@ func (s *Storage) CompletePulse(pulseNumber int) error {
 }
 
 // SequencePulse update pulse with provided number to sequential in db.
-func (s *Storage) SequencePulse(pulseNumber int) error {
+func (s *Storage) SequencePulse(pulseNumber int64) error {
 	return s.db.Transaction(func(tx *gorm.DB) error {
 		pulse := models.Pulse{PulseNumber: pulseNumber}
 		update := tx.Model(&pulse).Update(models.Pulse{IsSequential: true})
@@ -112,7 +112,7 @@ func CheckIndex(i string) (int, int, error) {
 	return int(pulseNumber), int(order), nil
 }
 
-func filterByPulse(query *gorm.DB, pulseNumberLt, pulseNumberGt *int) *gorm.DB {
+func filterByPulse(query *gorm.DB, pulseNumberLt, pulseNumberGt *int64) *gorm.DB {
 	if pulseNumberGt != nil {
 		query = query.Where("pulse_number > ?", *pulseNumberGt)
 	}
@@ -122,7 +122,7 @@ func filterByPulse(query *gorm.DB, pulseNumberLt, pulseNumberGt *int) *gorm.DB {
 	return query
 }
 
-func filterByPulseNumber(query *gorm.DB, pulseNumberLte, pulseNumberLt, pulseNumberGte, pulseNumberGt *int) *gorm.DB {
+func filterByPulseNumber(query *gorm.DB, pulseNumberLte, pulseNumberLt, pulseNumberGte, pulseNumberGt *int64) *gorm.DB {
 	if pulseNumberLte != nil {
 		query = query.Where("pulse_number <= ?", *pulseNumberLte)
 	}
@@ -157,7 +157,7 @@ func filterRecordsByIndex(query *gorm.DB, fromIndex string, sortByIndexAsc bool)
 	return query, nil
 }
 
-func filterByTimestamp(query *gorm.DB, timestampLte, timestampGte *int) *gorm.DB {
+func filterByTimestamp(query *gorm.DB, timestampLte, timestampGte *int64) *gorm.DB {
 	if timestampGte != nil {
 		query = query.Where("timestamp >= ?", *timestampGte)
 	}
@@ -205,7 +205,7 @@ func getPulses(query *gorm.DB, limit, offset int) ([]models.Pulse, int, error) {
 }
 
 // GetLifeline returns records for provided object reference, ordered by pulse number and order fields.
-func (s *Storage) GetLifeline(objRef []byte, fromIndex *string, pulseNumberLt, pulseNumberGt, timestampLte, timestampGte *int, limit, offset int, sortByIndexAsc bool) ([]models.Record, int, error) {
+func (s *Storage) GetLifeline(objRef []byte, fromIndex *string, pulseNumberLt, pulseNumberGt, timestampLte, timestampGte *int64, limit, offset int, sortByIndexAsc bool) ([]models.Record, int, error) {
 	query := s.db.Model(&models.Record{}).Where("object_reference = ?", objRef).Where("type = ?", models.State)
 
 	query = filterByPulse(query, pulseNumberLt, pulseNumberGt)
@@ -230,7 +230,7 @@ func (s *Storage) GetLifeline(objRef []byte, fromIndex *string, pulseNumberLt, p
 }
 
 // GetPulse returns pulse with provided pulse number from db.
-func (s *Storage) GetPulse(pulseNumber int) (models.Pulse, int64, int64, error) {
+func (s *Storage) GetPulse(pulseNumber int64) (models.Pulse, int64, int64, error) {
 	var pulse models.Pulse
 	err := s.db.Where("pulse_number = ?", pulseNumber).First(&pulse).Error
 	if err != nil {
@@ -248,7 +248,7 @@ func (s *Storage) GetPulse(pulseNumber int) (models.Pulse, int64, int64, error) 
 }
 
 // GetAmounts return amount of jetDrops and records at provided pulse.
-func (s *Storage) GetAmounts(pulseNumber int) (int64, int64, error) {
+func (s *Storage) GetAmounts(pulseNumber int64) (int64, int64, error) {
 	res := struct {
 		JetDrops int
 		Records  int
@@ -262,7 +262,7 @@ func (s *Storage) GetAmounts(pulseNumber int) (int64, int64, error) {
 }
 
 // GetPulses returns pulses from db.
-func (s *Storage) GetPulses(fromPulse *int64, timestampLte, timestampGte *int, limit, offset int) ([]models.Pulse, int, error) {
+func (s *Storage) GetPulses(fromPulse *int64, timestampLte, timestampGte *int64, limit, offset int) ([]models.Pulse, int, error) {
 	query := s.db.Model(&models.Pulse{})
 
 	query = filterByTimestamp(query, timestampLte, timestampGte)
@@ -398,7 +398,7 @@ func (s *Storage) GetJetDropByID(id models.JetDropID) (models.JetDrop, error) {
 	return jetDrop, err
 }
 
-func (s *Storage) GetJetDropsByJetID(jetID string, pulseNumberLte, pulseNumberLt, pulseNumberGte, pulseNumberGt *int, limit int, sortByPnAsc bool) ([]models.JetDrop, int, error) {
+func (s *Storage) GetJetDropsByJetID(jetID string, pulseNumberLte, pulseNumberLt, pulseNumberGte, pulseNumberGt *int64, limit int, sortByPnAsc bool) ([]models.JetDrop, int, error) {
 	var jetDrops []models.JetDrop
 	var total int64
 

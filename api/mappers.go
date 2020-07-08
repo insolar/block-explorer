@@ -21,7 +21,7 @@ func NullableString(s string) *string {
 }
 
 func RecordToAPI(record models.Record) server.Record {
-	pulseNumber := int64(record.PulseNumber)
+	pulseNumber := record.PulseNumber
 	jetDropID := models.NewJetDropID(record.JetID, pulseNumber)
 	response := server.Record{
 		Hash:        NullableString(base64.StdEncoding.EncodeToString(record.Hash)),
@@ -59,9 +59,9 @@ func RecordToAPI(record models.Record) server.Record {
 }
 
 func PulseToAPI(pulse models.Pulse, jetDropAmount, recordAmount int64) server.Pulse {
-	pulseNumber := int64(pulse.PulseNumber)
-	prevPulseNumber := int64(pulse.PrevPulseNumber)
-	nextPulseNumber := int64(pulse.NextPulseNumber)
+	pulseNumber := pulse.PulseNumber
+	prevPulseNumber := pulse.PrevPulseNumber
+	nextPulseNumber := pulse.NextPulseNumber
 	response := server.Pulse{
 		IsComplete:      &pulse.IsComplete,
 		JetDropAmount:   &jetDropAmount,
@@ -75,7 +75,7 @@ func PulseToAPI(pulse models.Pulse, jetDropAmount, recordAmount int64) server.Pu
 }
 
 func JetDropToAPI(jetDrop models.JetDrop) server.JetDrop {
-	pulseNumber := int64(jetDrop.PulseNumber)
+	pulseNumber := jetDrop.PulseNumber
 	recordAmount := int64(jetDrop.RecordAmount)
 	// TODO: set correct prev and next after PENV-348
 	nextJetDropID := []server.NextPrevJetDrop{{
@@ -84,7 +84,7 @@ func JetDropToAPI(jetDrop models.JetDrop) server.JetDrop {
 	}}
 	prevJetDropID := []server.NextPrevJetDrop{{}}
 
-	jetDropID := models.NewJetDropID(jetDrop.JetID, int64(jetDrop.PulseNumber))
+	jetDropID := models.NewJetDropID(jetDrop.JetID, jetDrop.PulseNumber)
 	result := server.JetDrop{
 		Hash:      NullableString(base64.StdEncoding.EncodeToString(jetDrop.Hash)),
 		JetDropId: NullableString(jetDropID.ToString()),

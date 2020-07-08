@@ -41,7 +41,7 @@ func TestNewController_NoPulses(t *testing.T) {
 func TestNewController_OneNotCompletePulse(t *testing.T) {
 	extractor := mock.NewJetDropsExtractorMock(t)
 
-	pulseNumber := 1
+	pulseNumber := int64(1)
 	firstJetID := "123"
 	secondJetID := "345"
 	expectedData := map[types.Pulse][]string{{PulseNo: pulseNumber}: {firstJetID, secondJetID}}
@@ -65,8 +65,8 @@ func TestNewController_OneNotCompletePulse(t *testing.T) {
 func TestNewController_SeveralNotCompletePulses(t *testing.T) {
 	extractor := mock.NewJetDropsExtractorMock(t)
 
-	firstPulseNumber := 1
-	secondPulseNumber := 2
+	firstPulseNumber := int64(1)
+	secondPulseNumber := int64(2)
 	firstJetID := "123"
 	secondJetID := "345"
 	firstPulse := types.Pulse{PulseNo: firstPulseNumber}
@@ -116,7 +116,7 @@ func TestNewController_ErrorGetPulses(t *testing.T) {
 func TestNewController_ErrorGetJetDrops(t *testing.T) {
 	extractor := mock.NewJetDropsExtractorMock(t)
 
-	pulseNumber := 1
+	pulseNumber := int64(1)
 
 	sm := mock.NewStorageMock(t)
 	sm.GetIncompletePulsesMock.Return([]models.Pulse{{PulseNumber: pulseNumber}}, nil)

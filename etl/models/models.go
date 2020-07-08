@@ -43,13 +43,13 @@ type Record struct {
 	Hash                []byte
 	RawData             []byte
 	JetID               string
-	PulseNumber         int
+	PulseNumber         int64
 	Order               int
 	Timestamp           int64
 }
 
 type JetDrop struct {
-	PulseNumber    int    `gorm:"primary_key;auto_increment:false"`
+	PulseNumber    int64  `gorm:"primary_key;auto_increment:false"`
 	JetID          string `gorm:"primary_key;auto_increment:false;default:''"`
 	FirstPrevHash  []byte
 	SecondPrevHash []byte
@@ -60,9 +60,9 @@ type JetDrop struct {
 }
 
 type Pulse struct {
-	PulseNumber     int `gorm:"primary_key;auto_increment:false"`
-	PrevPulseNumber int
-	NextPulseNumber int
+	PulseNumber     int64 `gorm:"primary_key;auto_increment:false"`
+	PrevPulseNumber int64
+	NextPulseNumber int64
 	IsComplete      bool
 	IsSequential    bool
 	Timestamp       int64

@@ -157,10 +157,11 @@ func (s *Server) JetDropsByJetID(ctx echo.Context, jetID server.JetIdPath, param
 		failures = append(failures, validationError...)
 	}
 
-	var pulseNumberLte, pulseNumberLt, pulseNumberGte, pulseNumberGt *int
+	var pulseNumberLte, pulseNumberLt, pulseNumberGte, pulseNumberGt *int64
 	if params.PulseNumberGt != nil {
 		unptr := int(*params.PulseNumberGt)
-		pulseNumberGt = &unptr
+		_int64 := int64(unptr)
+		pulseNumberGt = &_int64
 		if !pulse.IsValidAsPulseNumber(unptr) {
 			failures = append(failures, server.CodeValidationFailures{
 				FailureReason: NullableString("invalid value"),
@@ -171,7 +172,8 @@ func (s *Server) JetDropsByJetID(ctx echo.Context, jetID server.JetIdPath, param
 
 	if params.PulseNumberGte != nil {
 		unptr := int(*params.PulseNumberGte)
-		pulseNumberGte = &unptr
+		_int64 := int64(unptr)
+		pulseNumberGte = &_int64
 		if !pulse.IsValidAsPulseNumber(unptr) {
 			failures = append(failures, server.CodeValidationFailures{
 				FailureReason: NullableString("invalid value"),
@@ -182,7 +184,8 @@ func (s *Server) JetDropsByJetID(ctx echo.Context, jetID server.JetIdPath, param
 
 	if params.PulseNumberLt != nil {
 		unptr := int(*params.PulseNumberLt)
-		pulseNumberLt = &unptr
+		_int64 := int64(unptr)
+		pulseNumberLt = &_int64
 		if !pulse.IsValidAsPulseNumber(unptr) {
 			failures = append(failures, server.CodeValidationFailures{
 				FailureReason: NullableString("invalid value"),
@@ -193,7 +196,8 @@ func (s *Server) JetDropsByJetID(ctx echo.Context, jetID server.JetIdPath, param
 
 	if params.PulseNumberLte != nil {
 		unptr := int(*params.PulseNumberLte)
-		pulseNumberLte = &unptr
+		_int64 := int64(unptr)
+		pulseNumberLte = &_int64
 		if !pulse.IsValidAsPulseNumber(unptr) {
 			failures = append(failures, server.CodeValidationFailures{
 				FailureReason: NullableString("invalid value"),
@@ -241,8 +245,8 @@ func (s *Server) Pulses(ctx echo.Context, params server.PulsesParams) error {
 	limit, offset, failures := checkLimitOffset(params.Limit, params.Offset)
 
 	var fromPulseString *int64
-	var timestampLte *int
-	var timestampGte *int
+	var timestampLte *int64
+	var timestampGte *int64
 
 	if params.FromPulseNumber != nil {
 		i := int64(*params.FromPulseNumber)
@@ -265,11 +269,11 @@ func (s *Server) Pulses(ctx echo.Context, params server.PulsesParams) error {
 	}
 
 	if params.TimestampLte != nil {
-		str := int(*params.TimestampLte)
+		str := int64(*params.TimestampLte)
 		timestampLte = &str
 	}
 	if params.TimestampGte != nil {
-		str := int(*params.TimestampGte)
+		str := int64(*params.TimestampGte)
 		timestampGte = &str
 	}
 
@@ -300,7 +304,7 @@ func (s *Server) Pulses(ctx echo.Context, params server.PulsesParams) error {
 }
 
 func (s *Server) Pulse(ctx echo.Context, pulseNumber server.PulseNumberPath) error {
-	pulse, jetDropAmount, recordAmount, err := s.storage.GetPulse(int(pulseNumber))
+	pulse, jetDropAmount, recordAmount, err := s.storage.GetPulse(int64(pulseNumber))
 	if err != nil {
 		if gorm.IsRecordNotFoundError(err) {
 			return ctx.JSON(http.StatusNotFound, struct{}{})
@@ -347,7 +351,7 @@ func (s *Server) JetDropsByPulseNumber(ctx echo.Context, pulseNumber server.Puls
 	}
 
 	jetDrops, total, err := s.storage.GetJetDropsWithParams(
-		models.Pulse{PulseNumber: int(pulseNumber)},
+		models.Pulse{PulseNumber: int64(pulseNumber)},
 		exporterJetDropID,
 		limit,
 		offset,
@@ -494,10 +498,10 @@ func (s *Server) ObjectLifeline(ctx echo.Context, objectReference server.ObjectR
 	}
 
 	var fromIndexString *string
-	var pulseNumberLtString *int
-	var pulseNumberGtString *int
-	var timestampLteString *int
-	var timestampGteString *int
+	var pulseNumberLt *int64
+	var pulseNumberGt *int64
+	var timestampLte *int64
+	var timestampGte *int64
 
 	if params.FromIndex != nil {
 		str := string(*params.FromIndex)
@@ -511,9 +515,10 @@ func (s *Server) ObjectLifeline(ctx echo.Context, objectReference server.ObjectR
 		}
 	}
 	if params.PulseNumberLt != nil {
-		str := int(*params.PulseNumberLt)
-		pulseNumberLtString = &str
-		if !pulse.IsValidAsPulseNumber(str) {
+		unptr := int(*params.PulseNumberLt)
+		_int64 := int64(unptr)
+		pulseNumberLt = &_int64
+		if !pulse.IsValidAsPulseNumber(unptr) {
 			failures = append(failures, server.CodeValidationFailures{
 				FailureReason: NullableString("invalid"),
 				Property:      NullableString("pulse_number_lt"),
@@ -521,9 +526,10 @@ func (s *Server) ObjectLifeline(ctx echo.Context, objectReference server.ObjectR
 		}
 	}
 	if params.PulseNumberGt != nil {
-		str := int(*params.PulseNumberGt)
-		pulseNumberGtString = &str
-		if !pulse.IsValidAsPulseNumber(str) {
+		unptr := int(*params.PulseNumberGt)
+		_int64 := int64(unptr)
+		pulseNumberGt = &_int64
+		if !pulse.IsValidAsPulseNumber(unptr) {
 			failures = append(failures, server.CodeValidationFailures{
 				FailureReason: NullableString("invalid"),
 				Property:      NullableString("pulse_number_gt"),
@@ -541,19 +547,19 @@ func (s *Server) ObjectLifeline(ctx echo.Context, objectReference server.ObjectR
 	}
 
 	if params.TimestampLte != nil {
-		str := int(*params.TimestampLte)
-		timestampLteString = &str
+		unptr := int64(*params.TimestampLte)
+		pulseNumberGt = &unptr
 	}
 	if params.TimestampGte != nil {
-		str := int(*params.TimestampGte)
-		timestampGteString = &str
+		unptr := int64(*params.TimestampGte)
+		timestampGte = &unptr
 	}
 
 	records, count, err := s.storage.GetLifeline(
 		ref.GetLocal().Bytes(),
 		fromIndexString,
-		pulseNumberLtString, pulseNumberGtString,
-		timestampLteString, timestampGteString,
+		pulseNumberLt, pulseNumberGt,
+		timestampLte, timestampGte,
 		limit, offset,
 		sortByIndexAsc,
 	)

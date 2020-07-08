@@ -15,20 +15,20 @@ import (
 func Migrations() []*gormigrate.Migration {
 	return []*gormigrate.Migration{
 		{
-			ID: "202005180423",
+			ID: "202005180421",
 			Migrate: func(tx *gorm.DB) error {
 				// the initial database tables. Do not delete it's
 				type Pulse struct {
-					PulseNumber     int `gorm:"primary_key;auto_increment:false"`
-					PrevPulseNumber int
-					NextPulseNumber int
+					PulseNumber     int64 `gorm:"primary_key;auto_increment:false"`
+					PrevPulseNumber int64
+					NextPulseNumber int64
 					IsComplete      bool
 					IsSequential    bool
 					Timestamp       int64
 				}
 				type JetDrop struct {
 					JetID          string `gorm:"type:varchar(255);primary_key;auto_increment:false;default:''"`
-					PulseNumber    int    `gorm:"primary_key;auto_increment:false"`
+					PulseNumber    int64  `gorm:"primary_key;auto_increment:false"`
 					FirstPrevHash  []byte
 					SecondPrevHash []byte
 					Hash           []byte
@@ -46,7 +46,7 @@ func Migrations() []*gormigrate.Migration {
 					Hash                []byte
 					RawData             []byte
 					JetID               string
-					PulseNumber         int
+					PulseNumber         int64
 					Order               int
 					Timestamp           int64
 				}

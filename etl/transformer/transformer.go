@@ -188,7 +188,7 @@ func getPulseData(rec *exporter.Record) (types.Pulse, error) {
 		return types.Pulse{}, errors.Wrapf(err, "could not get pulse ApproximateTime. pulse: %v", pulse.String())
 	}
 	return types.Pulse{
-		PulseNo:        int(pulse.AsUint32()),
+		PulseNo:        int64(pulse.AsUint32()),
 		EpochPulseNo:   int(pulse.AsEpoch()),
 		PulseTimestamp: time.Unix(),
 		NextPulseDelta: int(pulseDelta),
