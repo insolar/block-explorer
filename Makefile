@@ -51,6 +51,10 @@ config: ## generate config
 migrate: ## migrate
 	go run ./cmd/migrate/migrate.go --config=.artifacts/migrate.yaml
 
+.PHONY: migrate_loadtest
+migrate_loadtest: ## migrate_loadtest
+	go run ./cmd/migrate/migrate_loadtest.go --config=.artifacts/migrate.yaml
+
 help: ## display help screen
 	@awk 'BEGIN {FS = ":.*##"; printf "Usage: make \033[36m<target>\033[0m\n"}  \
 		/^[a-zA-Z_-]+:.*?##/ { printf "  \033[36m%-30s\033[0m %s\n", $$1, $$2 } \

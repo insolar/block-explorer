@@ -1,0 +1,54 @@
+version: '3.7'
+
+services:
+  postgres:
+    container_name: postgres
+    image: postgres:12.0
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=secret
+    ports:
+      - 5432:5432
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  base:
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    image: generic-block-explorer:latest
+    command:
+      - /bin/bash
+      - -c
+      - |
+        echo ok
+  api:
+    container_name: api
+    image: generic-block-explorer:latest
+    depends_on:
+      - postgres
+      - base
+    ports:
+      - 8080:8080
+    environment:
+      BLOCK_EXPLORER_API_DB_URL: 'postgres://postgres:secret@postgres:5432/postgres?sslmode=disable'
+      MIGRATE_URL: 'postgres://postgres:secret@postgres:5432/postgres?sslmode=disable'
+      BLOCK_EXPLORER_API_LISTEN: ':8080'
+    links:
+      - postgres
+    volumes:
+      - .artifacts/api.yaml:/opt/app/config/api.yaml
+      - .artifacts/migrate.yaml:/opt/app/config/migrate.yaml
+    command:
+      - /bin/bash
+      - -c
+      - |
+        curl https://raw.githubusercontent.com/vishnubob/wait-for-it/master/wait-for-it.sh > wait.sh
+        chmod +x wait.sh
+        ./wait.sh "postgres:5432"
+        printenv
+        ls -al
+        ./migrate_loadtest --config=/opt/app/config/migrate.yaml
+        ./api --config=/opt/app/config/api.yaml
