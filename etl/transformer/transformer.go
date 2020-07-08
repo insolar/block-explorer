@@ -260,7 +260,6 @@ func transferToCanonicalRecord(r *exporter.Record) (types.Record, error) {
 	case *ins_record.Virtual_Deactivate:
 		recordType = types.STATE
 		deactivate := virtual.GetDeactivate()
-		prototypeReference = deactivate.GetImage().Bytes()
 		prevRecordReference = deactivate.PrevStateID().Bytes()
 
 	case *ins_record.Virtual_Result:

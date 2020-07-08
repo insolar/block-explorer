@@ -49,8 +49,8 @@ type Record struct {
 }
 
 type JetDrop struct {
+	PulseNumber    int64    `gorm:"primary_key;auto_increment:false"`
 	JetID          string `gorm:"primary_key;auto_increment:false;default:''"`
-	PulseNumber    int64  `gorm:"primary_key;auto_increment:false"`
 	FirstPrevHash  []byte
 	SecondPrevHash []byte
 	Hash           []byte
