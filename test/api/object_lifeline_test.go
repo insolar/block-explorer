@@ -70,7 +70,7 @@ func TestLifeline_severalPulses(t *testing.T) {
 	err := heavymock.ImportRecords(ts.ConMngr.ImporterClient, records)
 	require.NoError(t, err)
 
-	ts.WaitRecordsCount(t, len(lifelineRecords), 1000)
+	ts.WaitRecordsCount(t, len(lifelineRecords), 5000)
 
 	c := GetHTTPClient()
 	response, err := c.ObjectLifeline(t, lifeline.ObjID.String(), &client.ObjectLifelineOpts{Limit: optional.NewInt32(100)})

@@ -8,7 +8,6 @@
 package api
 
 import (
-	"math"
 	"testing"
 
 	"github.com/insolar/block-explorer/test/heavymock"
@@ -60,13 +59,6 @@ func TestGetPulse(t *testing.T) {
 		_, err := c.Pulse(t, int64(pulses[len(pulses)-1]+1000))
 		require.Error(t, err)
 		require.Equal(t, "404 Not Found", err.Error())
-	})
-	t.Run("non existing pulse, invalid value", func(t *testing.T) {
-		t.Log("C5220 Get pulse, not found invalid pulse")
-		t.Skip("https://insolar.atlassian.net/browse/PENV-414")
-		_, err := c.Pulse(t, math.MaxInt64)
-		require.Error(t, err)
-		require.Equal(t, "400 Bad Request", err.Error())
 	})
 	t.Run("zero pulse", func(t *testing.T) {
 		t.Log("C5221 Get pulse, pulse is zero value")

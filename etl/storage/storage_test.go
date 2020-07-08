@@ -142,25 +142,6 @@ func TestStorage_SaveJetDropData_RecordError_NilPK(t *testing.T) {
 	require.Contains(t, err.Error(), "error while saving record")
 }
 
-func TestStorage_SaveJetDropData_JetDropError_NilPK(t *testing.T) {
-	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
-	s := NewStorage(testDB)
-
-	pulse, err := testutils.InitPulseDB()
-	require.NoError(t, err)
-	err = testutils.CreatePulse(testDB, pulse)
-	require.NoError(t, err)
-
-	jetDrop := testutils.InitJetDropDB(pulse)
-	jetDrop.JetID = ""
-	record := testutils.InitRecordDB(jetDrop)
-
-	err = s.SaveJetDropData(jetDrop, []models.Record{record})
-	require.Error(t, err)
-	require.Contains(t, err.Error(), "violates not-null constraint")
-	require.Contains(t, err.Error(), "error while saving jetDrop")
-}
-
 func TestStorage_SaveJetDropData_ErrorAtTransaction(t *testing.T) {
 	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
 	s := NewStorage(testDB)
@@ -553,7 +534,7 @@ func pulseSequenceOneObject(t *testing.T, pulseAmount, recordsAmount int) []puls
 	for i := 0; i < pulseAmount; i++ {
 		timestamp, err := pulseNumber.AsApproximateTime()
 		require.NoError(t, err)
-		pulse := models.Pulse{PulseNumber: int(pulseNumber), Timestamp: timestamp.Unix()}
+		pulse := models.Pulse{PulseNumber: int64(pulseNumber), Timestamp: timestamp.Unix()}
 		err = testutils.CreatePulse(testDB, pulse)
 		require.NoError(t, err)
 		jetDrop := testutils.InitJetDropDB(pulse)
@@ -750,8 +731,8 @@ func TestStorage_GetLifeline_TimestampRange(t *testing.T) {
 
 	expectedRecords := []models.Record{pulses[1].records[1], pulses[1].records[0], pulses[0].records[1], pulses[0].records[0]}
 
-	timestampLte := int(pulses[1].pulse.Timestamp)
-	timestampGte := int(pulses[0].pulse.Timestamp)
+	timestampLte := int64(pulses[1].pulse.Timestamp)
+	timestampGte := int64(pulses[0].pulse.Timestamp)
 	records, total, err := s.GetLifeline(
 		pulses[1].records[0].ObjectReference, nil,
 		nil, nil, &timestampLte, &timestampGte, 20, 0, false)
@@ -955,7 +936,7 @@ func TestStorage_GetPulse_PulseWithRecords(t *testing.T) {
 func TestStorage_GetPulse_NotExist(t *testing.T) {
 	s := NewStorage(testDB)
 
-	_, _, _, err := s.GetPulse(int(gen.PulseNumber()))
+	_, _, _, err := s.GetPulse(int64(gen.PulseNumber()))
 	require.Error(t, err)
 	require.True(t, gorm.IsRecordNotFoundError(err))
 }
@@ -1480,7 +1461,7 @@ func TestStorage_GetNextSavedPulse(t *testing.T) {
 	s := NewStorage(testDB)
 
 	pulse := models.Pulse{
-		PulseNumber: int(gen.PulseNumber().AsUint32()),
+		PulseNumber: int64(gen.PulseNumber().AsUint32()),
 	}
 	expectedPulse := models.Pulse{
 		PulseNumber: pulse.PulseNumber + 10,

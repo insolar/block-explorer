@@ -25,7 +25,7 @@ func TestNewClient_readyToConnect(t *testing.T) {
 
 func testConfig() configuration.Replicator {
 	return configuration.Replicator{
-		Addr:            "127.0.0.1:5678",
+		Addr:            "127.0.0.1:0",
 		MaxTransportMsg: 1073741824,
 	}
 }

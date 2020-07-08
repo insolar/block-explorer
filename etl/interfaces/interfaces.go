@@ -34,7 +34,7 @@ type JetDropsExtractor interface {
 	// GetJetDrops stores JetDrop data in the main JetDrop channel
 	GetJetDrops(ctx context.Context) <-chan *types.PlatformJetDrops
 	// LoadJetDrops loads JetDrop data between pulse numbers
-	LoadJetDrops(ctx context.Context, fromPulseNumber int, toPulseNumber int) error
+	LoadJetDrops(ctx context.Context, fromPulseNumber int64, toPulseNumber int64) error
 }
 
 //go:generate minimock -i github.com/insolar/block-explorer/etl/interfaces.PulseExtractor -o ./mock -s _mock.go -g
@@ -90,9 +90,9 @@ type StorageSetter interface {
 	// SavePulse saves provided pulse to db.
 	SavePulse(pulse models.Pulse) error
 	// CompletePulse update pulse with provided number to completeness in db.
-	CompletePulse(pulseNumber int) error
+	CompletePulse(pulseNumber int64) error
 	// SequencePulse update pulse with provided number to sequential in db.
-	SequencePulse(pulseNumber int) error
+	SequencePulse(pulseNumber int64) error
 }
 
 // StorageAPIFetcher gets data from database
@@ -100,19 +100,19 @@ type StorageAPIFetcher interface {
 	// GetRecord returns record with provided reference from db.
 	GetRecord(ref models.Reference) (models.Record, error)
 	// GetPulse returns pulse with provided pulse number from db.
-	GetPulse(pulseNumber int) (models.Pulse, int64, int64, error)
+	GetPulse(pulseNumber int64) (models.Pulse, int64, int64, error)
 	// GetAmounts return amount of jetDrops and records at provided pulse.
-	GetAmounts(pulseNumber int) (jdAmount int64, rAmount int64, err error)
+	GetAmounts(pulseNumber int64) (jdAmount int64, rAmount int64, err error)
 	// GetPulse returns pulses from db.
-	GetPulses(fromPulse *int64, timestampLte, timestampGte *int, limit, offset int) ([]models.Pulse, int, error)
+	GetPulses(fromPulse *int64, timestampLte, timestampGte *int64, limit, offset int) ([]models.Pulse, int, error)
 	// GetJetDropsWithParams returns jetDrops for provided pulse with limit and offset.
 	GetJetDropsWithParams(pulse models.Pulse, fromJetDropID *models.JetDropID, limit int, offset int) ([]models.JetDrop, int, error)
 	// GetJetDropByID returns JetDrop by JetDropID
 	GetJetDropByID(id models.JetDropID) (models.JetDrop, error)
 	// GetJetDropsByJetID returns jetDrops for provided jetID sorting and filtering by pulseNumber.
-	GetJetDropsByJetID(jetID string, pulseNumberLte, pulseNumberLt, pulseNumberGte, pulseNumberGt *int, limit int, sortByPnAsc bool) ([]models.JetDrop, int, error)
+	GetJetDropsByJetID(jetID string, pulseNumberLte, pulseNumberLt, pulseNumberGte, pulseNumberGt *int64, limit int, sortByPnAsc bool) ([]models.JetDrop, int, error)
 	// GetLifeline returns records for provided object reference, ordered by desc by pulse number and order fields.
-	GetLifeline(objRef []byte, fromIndex *string, pulseNumberLt, pulseNumberGt, timestampLte, timestampGte *int, limit, offset int, sortByIndexAsc bool) ([]models.Record, int, error)
+	GetLifeline(objRef []byte, fromIndex *string, pulseNumberLt, pulseNumberGt, timestampLte, timestampGte *int64, limit, offset int, sortByIndexAsc bool) ([]models.Record, int, error)
 	// GetRecordsByJetDrop returns records for provided jet drop, ordered by order field.
 	GetRecordsByJetDrop(jetDropID models.JetDropID, fromIndex, recordType *string, limit, offset int) ([]models.Record, int, error)
 }

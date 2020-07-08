@@ -68,44 +68,44 @@ func TestController_pulseSequence_StartFromNothing(t *testing.T) {
 			wg.Done()
 		}
 		if sm.GetPulseByPrevBeforeCounter() == 1 || sm.GetPulseByPrevBeforeCounter() == 2 {
-			require.Equal(t, 0, prevPulse.PulseNumber)
+			require.Equal(t, int64(0), prevPulse.PulseNumber)
 			return models.Pulse{}, nil
 		}
 		if sm.GetPulseByPrevBeforeCounter() == 3 {
-			require.Equal(t, 0, prevPulse.PulseNumber)
+			require.Equal(t, int64(0), prevPulse.PulseNumber)
 			return models.Pulse{PrevPulseNumber: 0, PulseNumber: pulse.MinTimePulse, NextPulseNumber: 1000000, IsComplete: false}, nil
 		}
 		if sm.GetPulseByPrevBeforeCounter() == 4 {
-			require.Equal(t, 0, prevPulse.PulseNumber)
+			require.Equal(t, int64(0), prevPulse.PulseNumber)
 			return models.Pulse{PrevPulseNumber: 0, PulseNumber: pulse.MinTimePulse, NextPulseNumber: 1000000, IsComplete: true}, nil
 		}
-		require.Equal(t, pulse.MinTimePulse, prevPulse.PulseNumber)
+		require.Equal(t, int64(pulse.MinTimePulse), prevPulse.PulseNumber)
 		return models.Pulse{}, nil
 	})
 	sm.GetNextSavedPulseMock.Set(func(fromPulseNumber models.Pulse) (p1 models.Pulse, err error) {
 		if sm.GetNextSavedPulseBeforeCounter() == 1 || sm.GetPulseByPrevBeforeCounter() == 2 {
-			require.Equal(t, 0, fromPulseNumber.PulseNumber)
+			require.Equal(t, int64(0), fromPulseNumber.PulseNumber)
 			return models.Pulse{PrevPulseNumber: 1000100, PulseNumber: 1000110, NextPulseNumber: 1000120}, nil
 		}
 		if sm.GetNextSavedPulseBeforeCounter() == 3 {
-			require.Equal(t, pulse.MinTimePulse, fromPulseNumber.PulseNumber)
+			require.Equal(t, int64(pulse.MinTimePulse), fromPulseNumber.PulseNumber)
 			return models.Pulse{PrevPulseNumber: 1000100, PulseNumber: 1000110, NextPulseNumber: 1000120}, nil
 		}
-		require.Equal(t, pulse.MinTimePulse, fromPulseNumber.PulseNumber)
+		require.Equal(t, int64(pulse.MinTimePulse), fromPulseNumber.PulseNumber)
 		return models.Pulse{}, nil
 	})
-	extractor.LoadJetDropsMock.Set(func(ctx context.Context, fromPulseNumber int, toPulseNumber int) (err error) {
+	extractor.LoadJetDropsMock.Set(func(ctx context.Context, fromPulseNumber int64, toPulseNumber int64) (err error) {
 		if extractor.LoadJetDropsBeforeCounter() == 1 {
-			require.Equal(t, 0, fromPulseNumber)
-			require.Equal(t, 1000110, toPulseNumber)
+			require.Equal(t, int64(0), fromPulseNumber)
+			require.Equal(t, int64(1000110), toPulseNumber)
 		} else {
 			require.Fail(t, "LoadJetDrops was called more than once")
 		}
 		return nil
 	})
-	sm.SequencePulseMock.Set(func(pulseNumber int) (err error) {
+	sm.SequencePulseMock.Set(func(pulseNumber int64) (err error) {
 		if sm.SequencePulseBeforeCounter() == 1 {
-			require.Equal(t, pulse.MinTimePulse, pulseNumber)
+			require.Equal(t, int64(pulse.MinTimePulse), pulseNumber)
 		}
 		return nil
 	})
@@ -141,43 +141,43 @@ func TestController_pulseSequence_StartFromSomething(t *testing.T) {
 			wg.Done()
 		}
 		if sm.GetPulseByPrevBeforeCounter() == 1 || sm.GetPulseByPrevBeforeCounter() == 2 {
-			require.Equal(t, 1000000, prevPulse.PulseNumber)
+			require.Equal(t, int64(1000000), prevPulse.PulseNumber)
 			return models.Pulse{}, nil
 		}
 		if sm.GetPulseByPrevBeforeCounter() == 3 {
-			require.Equal(t, 1000000, prevPulse.PulseNumber)
+			require.Equal(t, int64(1000000), prevPulse.PulseNumber)
 			return models.Pulse{PrevPulseNumber: 1000000, PulseNumber: 1000010, NextPulseNumber: 1000020, IsComplete: true}, nil
 		}
 		if sm.GetPulseByPrevBeforeCounter() == 4 {
-			require.Equal(t, 1000010, prevPulse.PulseNumber)
+			require.Equal(t, int64(1000010), prevPulse.PulseNumber)
 			return models.Pulse{PrevPulseNumber: 1000010, PulseNumber: 1000020, NextPulseNumber: 1000030, IsComplete: true}, nil
 		}
-		require.Equal(t, 1000020, prevPulse.PulseNumber)
+		require.Equal(t, int64(1000020), prevPulse.PulseNumber)
 		return models.Pulse{PrevPulseNumber: 1000020, PulseNumber: 1000030, NextPulseNumber: 1000040, IsComplete: false}, nil
 	})
 	sm.GetNextSavedPulseMock.Set(func(fromPulseNumber models.Pulse) (p1 models.Pulse, err error) {
 		if sm.GetNextSavedPulseBeforeCounter() == 1 || sm.GetPulseByPrevBeforeCounter() == 2 {
-			require.Equal(t, 1000000, fromPulseNumber.PulseNumber)
+			require.Equal(t, int64(1000000), fromPulseNumber.PulseNumber)
 			return models.Pulse{PrevPulseNumber: 1000010, PulseNumber: 1000020, NextPulseNumber: 1000030}, nil
 		}
-		require.Equal(t, 1000020, fromPulseNumber.PulseNumber)
+		require.Equal(t, int64(1000020), fromPulseNumber.PulseNumber)
 		return models.Pulse{}, nil
 	})
-	extractor.LoadJetDropsMock.Set(func(ctx context.Context, fromPulseNumber int, toPulseNumber int) (err error) {
+	extractor.LoadJetDropsMock.Set(func(ctx context.Context, fromPulseNumber int64, toPulseNumber int64) (err error) {
 		if extractor.LoadJetDropsBeforeCounter() == 1 {
-			require.Equal(t, 1000000, fromPulseNumber)
-			require.Equal(t, 1000020, toPulseNumber)
+			require.Equal(t, int64(1000000), fromPulseNumber)
+			require.Equal(t, int64(1000020), toPulseNumber)
 		} else {
 			require.Fail(t, "LoadJetDrops was called more than once")
 		}
 		return nil
 	})
-	sm.SequencePulseMock.Set(func(pulseNumber int) (err error) {
+	sm.SequencePulseMock.Set(func(pulseNumber int64) (err error) {
 		if sm.SequencePulseBeforeCounter() == 1 {
-			require.Equal(t, 1000010, pulseNumber)
+			require.Equal(t, int64(1000010), pulseNumber)
 		}
 		if sm.SequencePulseBeforeCounter() == 2 {
-			require.Equal(t, 1000020, pulseNumber)
+			require.Equal(t, int64(1000020), pulseNumber)
 		}
 		return nil
 	})
@@ -211,22 +211,22 @@ func TestController_pulseSequence_Start_NoMissedData(t *testing.T) {
 			wg.Done()
 		}
 		if sm.GetPulseByPrevBeforeCounter() == 1 {
-			require.Equal(t, 1000000, prevPulse.PulseNumber)
+			require.Equal(t, int64(1000000), prevPulse.PulseNumber)
 			return models.Pulse{PrevPulseNumber: 1000000, PulseNumber: 1000010, NextPulseNumber: 1000020, IsComplete: true}, nil
 		}
 		if sm.GetPulseByPrevBeforeCounter() == 2 {
-			require.Equal(t, 1000010, prevPulse.PulseNumber)
+			require.Equal(t, int64(1000010), prevPulse.PulseNumber)
 			return models.Pulse{PrevPulseNumber: 1000010, PulseNumber: 1000020, NextPulseNumber: 1000030, IsComplete: true}, nil
 		}
-		require.Equal(t, 1000020, prevPulse.PulseNumber)
+		require.Equal(t, int64(1000020), prevPulse.PulseNumber)
 		return models.Pulse{PrevPulseNumber: 1000020, PulseNumber: 1000030, NextPulseNumber: 1000040, IsComplete: false}, nil
 	})
-	sm.SequencePulseMock.Set(func(pulseNumber int) (err error) {
+	sm.SequencePulseMock.Set(func(pulseNumber int64) (err error) {
 		if sm.SequencePulseBeforeCounter() == 1 {
-			require.Equal(t, 1000010, pulseNumber)
+			require.Equal(t, int64(1000010), pulseNumber)
 		}
 		if sm.SequencePulseBeforeCounter() == 2 {
-			require.Equal(t, 1000020, pulseNumber)
+			require.Equal(t, int64(1000020), pulseNumber)
 		}
 		return nil
 	})
@@ -262,15 +262,15 @@ func TestController_pulseMaintainer_Start_PulsesCompleteAndNot(t *testing.T) {
 
 	wg := sync.WaitGroup{}
 	wg.Add(2)
-	sm.CompletePulseMock.Set(func(pulseNumber int) (err error) {
-		require.Equal(t, 1000010, pulseNumber)
+	sm.CompletePulseMock.Set(func(pulseNumber int64) (err error) {
+		require.Equal(t, int64(1000010), pulseNumber)
 		require.EqualValues(t, 1, sm.CompletePulseBeforeCounter())
 		wg.Done()
 		return nil
 	})
-	extractor.LoadJetDropsMock.Set(func(ctx context.Context, fromPulseNumber int, toPulseNumber int) (err error) {
-		require.Equal(t, -1000000, fromPulseNumber)
-		require.Equal(t, -1000000, toPulseNumber)
+	extractor.LoadJetDropsMock.Set(func(ctx context.Context, fromPulseNumber int64, toPulseNumber int64) (err error) {
+		require.Equal(t, int64(-1000000), fromPulseNumber)
+		require.Equal(t, int64(-1000000), toPulseNumber)
 		require.EqualValues(t, 1, extractor.LoadJetDropsBeforeCounter())
 		wg.Done()
 		return nil
@@ -307,9 +307,9 @@ func TestController_pulseSequence_ReloadPeriodExpired(t *testing.T) {
 	sm.GetNextSavedPulseMock.Set(func(fromPulseNumber models.Pulse) (p1 models.Pulse, err error) {
 		return models.Pulse{PrevPulseNumber: 1000010, PulseNumber: 1000020, NextPulseNumber: 1000030}, nil
 	})
-	extractor.LoadJetDropsMock.Set(func(ctx context.Context, fromPulseNumber int, toPulseNumber int) (err error) {
-		require.Equal(t, 1000000, fromPulseNumber)
-		require.Equal(t, 1000020, toPulseNumber)
+	extractor.LoadJetDropsMock.Set(func(ctx context.Context, fromPulseNumber int64, toPulseNumber int64) (err error) {
+		require.Equal(t, int64(1000000), fromPulseNumber)
+		require.Equal(t, int64(1000020), toPulseNumber)
 		if extractor.LoadJetDropsBeforeCounter() > 2 {
 			require.Fail(t, "LoadJetDrops was called more than once")
 		}

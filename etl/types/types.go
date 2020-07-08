@@ -54,7 +54,7 @@ type DropContinue struct {
 }
 
 type Pulse struct {
-	PulseNo        int
+	PulseNo        int64
 	EpochPulseNo   int
 	PulseTimestamp int64
 	NextPulseDelta int

@@ -15,7 +15,7 @@ import (
 func Migrations() []*gormigrate.Migration {
 	return []*gormigrate.Migration{
 		{
-			ID: "202005180423",
+			ID: "202005180421",
 			Migrate: func(tx *gorm.DB) error {
 				// the initial database tables. Do not delete it's
 				if err := tx.CreateTable(&models.Pulse{}).Error; err != nil {
@@ -56,4 +56,11 @@ func Migrations() []*gormigrate.Migration {
 			},
 		},
 	}
+}
+
+func MigrationOptions() *gormigrate.Options {
+	options := gormigrate.DefaultOptions
+	options.UseTransaction = true
+	options.ValidateUnknownMigrations = true
+	return options
 }

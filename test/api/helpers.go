@@ -15,6 +15,20 @@ import (
 	"github.com/insolar/block-explorer/testutils/connectionmanager"
 )
 
+// nolint
+const (
+	notFound404   = "404 Not Found"
+	badRequest400 = "400 Bad Request"
+)
+
+// nolint
+type testCases struct {
+	trTestCaseName string
+	value          string
+	expResult      string
+	testName       string
+}
+
 func LogHTTP(t *testing.T, http *http.Response, requestBody interface{}, responseBody interface{}) {
 	var buf strings.Builder
 	buf.WriteString("\n")

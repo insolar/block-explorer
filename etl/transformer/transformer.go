@@ -9,6 +9,7 @@ import (
 	"bytes"
 	"context"
 
+	"github.com/insolar/block-explorer/instrumentation"
 	"github.com/insolar/block-explorer/instrumentation/converter"
 	"github.com/ugorji/go/codec"
 	"golang.org/x/crypto/sha3"
@@ -173,8 +174,7 @@ func initRecordsMapsByObj(records []types.Record) (
 }
 
 func restoreInsolarID(b []byte) string {
-	emptyByte := make([]byte, len(b))
-	if bytes.Equal(b, []byte{}) || bytes.Equal(b, emptyByte) {
+	if instrumentation.IsEmpty(b) {
 		b = nil
 	}
 	return insolar.NewIDFromBytes(b).String()
@@ -188,7 +188,7 @@ func getPulseData(rec *exporter.Record) (types.Pulse, error) {
 		return types.Pulse{}, errors.Wrapf(err, "could not get pulse ApproximateTime. pulse: %v", pulse.String())
 	}
 	return types.Pulse{
-		PulseNo:        int(pulse.AsUint32()),
+		PulseNo:        int64(pulse.AsUint32()),
 		EpochPulseNo:   int(pulse.AsEpoch()),
 		PulseTimestamp: time.Unix(),
 		NextPulseDelta: int(pulseDelta),
@@ -260,7 +260,6 @@ func transferToCanonicalRecord(r *exporter.Record) (types.Record, error) {
 	case *ins_record.Virtual_Deactivate:
 		recordType = types.STATE
 		deactivate := virtual.GetDeactivate()
-		prototypeReference = deactivate.GetImage().Bytes()
 		prevRecordReference = deactivate.PrevStateID().Bytes()
 
 	case *ins_record.Virtual_Result:
