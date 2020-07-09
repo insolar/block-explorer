@@ -64,13 +64,14 @@ func TestNewProcessor(t *testing.T) {
 	wgStorage.Add(5)
 	wgController.Add(5)
 	for i := 0; i < 5; i++ {
+		pn := int64(gen.PulseNumber())
 		JDC <- &types.JetDrop{
 			MainSection: &types.MainSection{
 				Start: types.DropStart{
 					PulseData: types.Pulse{
-						PulseNo:        int64(gen.PulseNumber()),
-						NextPulseDelta: 10,
-						PrevPulseDelta: 10,
+						PulseNo:         pn,
+						PrevPulseNumber: pn - 10,
+						NextPulseNumber: pn + 10,
 					},
 					JetDropPrefix:       "",
 					JetDropPrefixLength: 0,
@@ -104,8 +105,8 @@ func TestProcessor_process_EmptyPrev(t *testing.T) {
 	sm := mock.NewStorageSetterMock(t)
 	sm.SavePulseMock.Set(func(pulse models.Pulse) (err error) {
 		require.Equal(t, jd.MainSection.Start.PulseData.PulseNo, pulse.PulseNumber)
-		require.Equal(t, int64(jd.MainSection.Start.PulseData.PrevPulseDelta), pulse.PulseNumber-pulse.PrevPulseNumber)
-		require.Equal(t, int64(jd.MainSection.Start.PulseData.NextPulseDelta), pulse.NextPulseNumber-pulse.PulseNumber)
+		require.Equal(t, int64(jd.MainSection.Start.PulseData.PrevPulseNumber), pulse.PrevPulseNumber)
+		require.Equal(t, int64(jd.MainSection.Start.PulseData.NextPulseNumber), pulse.NextPulseNumber)
 		return nil
 	})
 	sm.SaveJetDropDataMock.Set(func(jetDrop models.JetDrop, records []models.Record) (err error) {
@@ -144,8 +145,8 @@ func TestProcessor_process_SeveralPrev(t *testing.T) {
 	sm := mock.NewStorageSetterMock(t)
 	sm.SavePulseMock.Set(func(pulse models.Pulse) (err error) {
 		require.Equal(t, jd.MainSection.Start.PulseData.PulseNo, pulse.PulseNumber)
-		require.Equal(t, int64(jd.MainSection.Start.PulseData.PrevPulseDelta), pulse.PulseNumber-pulse.PrevPulseNumber)
-		require.Equal(t, int64(jd.MainSection.Start.PulseData.NextPulseDelta), pulse.NextPulseNumber-pulse.PulseNumber)
+		require.Equal(t, int64(jd.MainSection.Start.PulseData.PrevPulseNumber), pulse.PrevPulseNumber)
+		require.Equal(t, int64(jd.MainSection.Start.PulseData.NextPulseNumber), pulse.NextPulseNumber)
 		return nil
 	})
 	sm.SaveJetDropDataMock.Set(func(jetDrop models.JetDrop, records []models.Record) (err error) {

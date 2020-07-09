@@ -56,10 +56,10 @@ type DropContinue struct {
 
 type Pulse struct {
 	PulseNo         int64
-	EpochPulseNo    int
+	EpochPulseNo    int64
 	PulseTimestamp  int64
-	NextPulseNumber int
-	PrevPulseNumber int
+	NextPulseNumber int64
+	PrevPulseNumber int64
 }
 
 type RecordType int

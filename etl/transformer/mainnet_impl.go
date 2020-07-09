@@ -7,7 +7,6 @@ package transformer
 
 import (
 	"context"
-	"sync"
 
 	"github.com/insolar/block-explorer/etl/types"
 	"github.com/insolar/block-explorer/instrumentation/belogger"

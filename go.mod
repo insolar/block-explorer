@@ -14,8 +14,8 @@ require (
 	github.com/gotestyourself/gotestyourself v2.2.0+incompatible // indirect
 	github.com/insolar/assured-ledger/ledger-core/v2 v2.0.0-20200512113104-4973d6ba44e9
 	github.com/insolar/insconfig v0.0.0-20200430133349-77f6f1624abf
-	github.com/insolar/insolar v1.5.4-0.20200619082627-7e4ca5781d32
-	github.com/insolar/spec-insolar-block-explorer-api v1.0.0
+	github.com/insolar/insolar v1.6.3-0.20200708160037-17e197fec1e7
+	github.com/insolar/spec-insolar-block-explorer-api v1.2.0
 	github.com/jinzhu/gorm v1.9.12
 	github.com/kr/pretty v0.2.0 // indirect
 	github.com/labstack/echo/v4 v4.1.16

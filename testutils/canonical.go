@@ -14,13 +14,14 @@ import (
 
 // CreateJetDropCanonical returns generated jet drop with provided record and without prevHash
 func CreateJetDropCanonical(records []types.Record) types.JetDrop {
+	pn := int64(gen.PulseNumber())
 	return types.JetDrop{
 		MainSection: &types.MainSection{
 			Start: types.DropStart{
 				PulseData: types.Pulse{
-					PulseNo:        int64(gen.PulseNumber()),
-					PrevPulseDelta: 10,
-					NextPulseDelta: 10,
+					PulseNo:         pn,
+					PrevPulseNumber: pn - 10,
+					NextPulseNumber: pn + 10,
 				},
 				JetDropPrefix:       converter.JetIDToString(gen.JetID()),
 				JetDropPrefixLength: uint(gen.JetID().Depth()),

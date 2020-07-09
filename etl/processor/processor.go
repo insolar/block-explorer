@@ -131,7 +131,7 @@ func (p *Processor) process(ctx context.Context, jd *types.JetDrop) {
 
 	mjd := models.JetDrop{
 		JetID:          ms.Start.JetDropPrefix, // FIXME
-		PulseNumber:    pd.PulseNo, //FIXME
+		PulseNumber:    pd.PulseNo,             //FIXME
 		FirstPrevHash:  firstPrevHash,
 		SecondPrevHash: secondPrevHash,
 		Hash:           jd.Hash,

@@ -203,18 +203,12 @@ func restoreInsolarID(b []byte) string {
 
 func getPulseData(pn *exporter.FullPulse) (types.Pulse, error) {
 	pulse := pn.PulseNumber
-	// time, err := pulse.AsApproximateTime()
-	// if err != nil {
-	// 	return types.Pulse{}, errors.Wrapf(err, "could not get pulse ApproximateTime. pulse: %v", pulse.String())
-	// }
 	return types.Pulse{
 		PulseNo:         int64(pulse.AsUint32()),
-		EpochPulseNo:    int(pulse.AsEpoch()),
+		EpochPulseNo:    int64(pulse.AsEpoch()),
 		PulseTimestamp:  pn.GetPulseTimestamp(),
-		NextPulseNumber: int(pn.NextPulseNumber.AsUint32()),
-		PrevPulseNumber: int(pn.PrevPulseNumber.AsUint32()),
-		// NextPulseDelta: int(pn.NextPulseNumber.AsUint32() - pn.PulseNumber.AsUint32()),
-		// PrevPulseDelta: int(pn.PulseNumber.AsUint32() - pn.PrevPulseNumber.AsUint32()),
+		NextPulseNumber: int64(pn.NextPulseNumber.AsUint32()),
+		PrevPulseNumber: int64(pn.PrevPulseNumber.AsUint32()),
 	}, nil
 }
 
