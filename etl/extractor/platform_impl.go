@@ -57,22 +57,7 @@ func (e *PlatformExtractor) GetJetDrops(ctx context.Context) <-chan *types.Platf
 }
 
 func (e *PlatformExtractor) LoadJetDrops(ctx context.Context, fromPulseNumber int64, toPulseNumber int64) error {
-	if fromPulseNumber < 0 {
-		return errors.New("fromPulseNumber cannot be negative")
-	}
-	if toPulseNumber < 1 {
-		return errors.New("toPulseNumber cannot be less than 1")
-	}
-	if fromPulseNumber > toPulseNumber {
-		return errors.New("fromPulseNumber cannot be greater than toPulseNumber")
-	}
-
-	request := &exporter.GetRecords{
-		Count:        e.request.Count,
-		PulseNumber:  insolar.PulseNumber(fromPulseNumber),
-		RecordNumber: 0,
-	}
-	e.getJetDrops(ctx, request, fromPulseNumber, toPulseNumber, true)
+	e.retrievePulses(ctx, fromPulseNumber, toPulseNumber)
 	return nil
 }
 
@@ -252,19 +237,23 @@ func (e *PlatformExtractor) Start(ctx context.Context) error {
 		// e.getJetDropsContinuously(ctx)
 		e.hasStarted = true
 		ctx, e.cancel = context.WithCancel(ctx)
-		go e.retrievePulses(ctx)
+		go e.retrievePulses(ctx, 0, 0)
 	}
 	return nil
 }
 
-// retrievePulses - initiates full pulse retrieving from current pulse till forever
-func (e *PlatformExtractor) retrievePulses(ctx context.Context) {
-	pu := new(exporter.FullPulse)
+// retrievePulses - initiates full pulse retrieving between not including from and until
+// zero from is latest pulse, zero until - never stop
+func (e *PlatformExtractor) retrievePulses(ctx context.Context, from, until int64) {
+	pu := &exporter.FullPulse{PulseNumber: insolar.PulseNumber(from)}
 	var err error
 	logger := belogger.FromContext(ctx)
 
 	halfPulse := 5 * time.Second // guess a real half of pulse, but we do not known it from the platform
 	for {
+		if until > 0 && pu.PulseNumber >= insolar.PulseNumber(until) {
+			return
+		}
 		select {
 		case <-ctx.Done(): // we need context with cancel
 			return
@@ -283,10 +272,11 @@ func (e *PlatformExtractor) retrievePulses(ctx context.Context) {
 				continue
 			}
 			logger.Error("retrievePulses(): before=%d", before, err)
-			pu.PulseNumber = 0
+			time.Sleep(time.Second)
 			continue
 		}
 		if pu.PulseNumber == before { // no new pulse happens
+			time.Sleep(halfPulse)
 			continue
 		}
 
