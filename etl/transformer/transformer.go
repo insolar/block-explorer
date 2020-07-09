@@ -8,7 +8,6 @@ package transformer
 import (
 	"bytes"
 	"context"
-	"fmt"
 
 	"github.com/insolar/block-explorer/instrumentation"
 	"github.com/insolar/block-explorer/instrumentation/converter"
@@ -46,12 +45,8 @@ func Transform(ctx context.Context, jd *types.PlatformJetDrops) ([]*types.JetDro
 		return nil, err
 	}
 
-	jets := jd.Pulse.Jets
 	result := make([]*types.JetDrop, 0)
 	for jetID, records := range m {
-		if !jetIDContains(&jets, jetID) {
-			panic(fmt.Sprintf("cannot find jetID %s", jetID.DebugString()))
-		}
 		localJetDrop, err := getJetDrop(ctx, jetID, records, pulseData)
 		if err != nil {
 			return nil, errors.Wrapf(err, "cannot create jet drop for jetID %s", jetID.DebugString())
@@ -62,23 +57,7 @@ func Transform(ctx context.Context, jd *types.PlatformJetDrops) ([]*types.JetDro
 		result = append(result, localJetDrop)
 	}
 
-	if len(jets) > 0 {
-		panic(fmt.Sprintf("not all records. jet tree %v", jets))
-	}
-
 	return result, nil
-}
-
-func jetIDContains(jets *[]insolar.JetID, jet insolar.JetID) bool {
-	noPinterJets := *jets
-	for i, v := range noPinterJets {
-		if v.Equal(jet) {
-			noPinterJets = append(noPinterJets[:i], noPinterJets[i+1:]...)
-			jets = &noPinterJets
-			return true
-		}
-	}
-	return false
 }
 
 func getJetDrop(ctx context.Context, jetID insolar.JetID, records []types.Record, pulseData types.Pulse) (*types.JetDrop, error) {

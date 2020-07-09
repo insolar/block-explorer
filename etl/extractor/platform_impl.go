@@ -323,7 +323,7 @@ func (e *PlatformExtractor) retrieveRecords(ctx context.Context, pu *exporter.Fu
 			}
 			if resp.ShouldIterateFrom != nil || resp.Record.ID.Pulse() != pu.PulseNumber { // next pulse packet
 				closeStream(ctx, stream)
-				return
+				break // FIXME
 			}
 			if err != nil {
 				if strings.Contains(err.Error(), exporter.ErrNotFinalPulseData.Error()) {
