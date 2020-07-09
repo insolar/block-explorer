@@ -11,7 +11,6 @@ import (
 	"testing"
 
 	"github.com/insolar/spec-insolar-block-explorer-api/v1/client"
-	"github.com/stretchr/testify/require"
 )
 
 type BEApiClient struct {
@@ -30,7 +29,36 @@ func NewBeAPIClient(basePath string) *BEApiClient {
 
 func (c *BEApiClient) ObjectLifeline(t *testing.T, objectRef string, localVarOptionals *client.ObjectLifelineOpts) (response client.ObjectLifelineResponse200, err error) {
 	response, rawResponse, err := c.client.RecordApi.ObjectLifeline(context.Background(), objectRef, localVarOptionals)
-	require.NoError(t, err, "Error while executing http request")
+	LogHTTP(t, rawResponse, nil, response)
+	return response, err
+}
+
+func (c *BEApiClient) Pulses(t *testing.T, localVarOptionals *client.PulsesOpts) (response client.GetPulsesResponse200, err error) {
+	response, rawResponse, err := c.client.PulseApi.Pulses(context.Background(), localVarOptionals)
+	LogHTTP(t, rawResponse, nil, response)
+	return response, err
+}
+
+func (c *BEApiClient) Pulse(t *testing.T, pulseNumber int64) (response client.PulseResponse200, err error) {
+	response, rawResponse, err := c.client.PulseApi.Pulse(context.Background(), pulseNumber)
+	LogHTTP(t, rawResponse, nil, response)
+	return response, err
+}
+
+func (c *BEApiClient) JetDropsByPulseNumber(t *testing.T, pulseNumber int64, localVarOptionals *client.JetDropsByPulseNumberOpts) (response client.JetDropsByJetIdResponse200, err error) {
+	response, rawResponse, err := c.client.JetDropApi.JetDropsByPulseNumber(context.Background(), pulseNumber, localVarOptionals)
+	LogHTTP(t, rawResponse, nil, response)
+	return response, err
+}
+
+func (c *BEApiClient) JetDropsByID(t *testing.T, jetDropID string) (response client.JetDropByIdResponse200, err error) {
+	response, rawResponse, err := c.client.JetDropApi.JetDropByID(context.Background(), jetDropID)
+	LogHTTP(t, rawResponse, nil, response)
+	return response, err
+}
+
+func (c *BEApiClient) Search(t *testing.T, value string) (response client.SearchResponse200, err error) {
+	response, rawResponse, err := c.client.SearchApi.Search(context.Background(), value)
 	LogHTTP(t, rawResponse, nil, response)
 	return response, err
 }

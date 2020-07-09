@@ -8,8 +8,10 @@ package controller
 import (
 	"context"
 	"sync"
+	"time"
 
 	"github.com/insolar/block-explorer/configuration"
+	"github.com/insolar/block-explorer/etl/models"
 
 	"github.com/pkg/errors"
 
@@ -27,20 +29,24 @@ type Controller struct {
 	cancelFunc context.CancelFunc
 
 	// jetDropRegister stores processed jetDrops for not complete pulses
-	jetDropRegister     map[types.Pulse][][]byte
+	jetDropRegister     map[types.Pulse][]string
 	jetDropRegisterLock sync.RWMutex
-	// missedDataRequestsQueue stores pulses, that were reloaded
-	missedDataRequestsQueue map[types.Pulse]bool
+	// missedDataManager stores pulses that were reloaded
+	missedDataManager *MissedDataManager
+
+	// sequentialPulse is greatest complete pulse after which all pulses complete too
+	sequentialPulse     models.Pulse
+	sequentialPulseLock sync.RWMutex
 }
 
 // NewController returns implementation of interfaces.Controller
 func NewController(cfg configuration.Controller, extractor interfaces.JetDropsExtractor, storage interfaces.Storage) (*Controller, error) {
 	c := &Controller{
-		cfg:                     cfg,
-		extractor:               extractor,
-		storage:                 storage,
-		jetDropRegister:         make(map[types.Pulse][][]byte),
-		missedDataRequestsQueue: make(map[types.Pulse]bool),
+		cfg:               cfg,
+		extractor:         extractor,
+		storage:           storage,
+		jetDropRegister:   make(map[types.Pulse][]string),
+		missedDataManager: NewMissedDataManager(time.Second*time.Duration(cfg.ReloadPeriod), time.Second*time.Duration(cfg.ReloadCleanPeriod)),
 	}
 	pulses, err := c.storage.GetIncompletePulses()
 	if err != nil {
@@ -56,6 +62,18 @@ func NewController(cfg configuration.Controller, extractor interfaces.JetDropsEx
 			c.SetJetDropData(key, jd.JetID)
 		}
 	}
+	c.sequentialPulseLock.Lock()
+	defer c.sequentialPulseLock.Unlock()
+	c.sequentialPulse, err = c.storage.GetSequentialPulse()
+	if err != nil {
+		return nil, errors.Wrap(err, "can't get sequential pulse from storage")
+	}
+	emptyPulse := models.Pulse{}
+	if c.sequentialPulse == emptyPulse {
+		c.sequentialPulse = models.Pulse{
+			PulseNumber: 0,
+		}
+	}
 	return c, nil
 }
 
@@ -63,17 +81,19 @@ func NewController(cfg configuration.Controller, extractor interfaces.JetDropsEx
 func (c *Controller) Start(ctx context.Context) error {
 	ctx, c.cancelFunc = context.WithCancel(ctx)
 	go c.pulseMaintainer(ctx)
+	go c.pulseSequence(ctx)
 	return nil
 }
 
 // Stop implements interfaces.Stopper
 func (c *Controller) Stop(ctx context.Context) error {
 	c.cancelFunc()
+	c.missedDataManager.Stop()
 	return nil
 }
 
 // SetJetDropData stores jetID, processed at specific pulse
-func (c *Controller) SetJetDropData(pulse types.Pulse, jetID []byte) {
+func (c *Controller) SetJetDropData(pulse types.Pulse, jetID string) {
 	c.jetDropRegisterLock.Lock()
 	defer c.jetDropRegisterLock.Unlock()
 	c.jetDropRegister[pulse] = append(c.jetDropRegister[pulse], jetID)

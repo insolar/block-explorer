@@ -12,6 +12,7 @@ import (
 	"io"
 	"testing"
 
+	"github.com/insolar/block-explorer/instrumentation/converter"
 	"github.com/insolar/insolar/ledger/heavy/exporter"
 	"github.com/stretchr/testify/require"
 
@@ -101,9 +102,9 @@ func TestIntegrationWithDb_GetJetDrops(t *testing.T) {
 	expRecords = append(expRecords, expRecordsJet1...)
 	expRecords = append(expRecords, expRecordsJet2...)
 
-	pulseNumbers := map[int]bool{}
+	pulseNumbers := map[int64]bool{}
 	for _, r := range expRecords {
-		pulseNumbers[int(r.Record.ID.Pulse())] = true
+		pulseNumbers[int64(r.Record.ID.Pulse())] = true
 	}
 
 	err := heavymock.ImportRecords(ts.ConMngr.ImporterClient, expRecords)
@@ -121,10 +122,10 @@ func TestIntegrationWithDb_GetJetDrops(t *testing.T) {
 
 	require.Len(t, jetDropsDB, 3, "jetDrops count in db not as expected")
 
-	prefixFirst := expRecordsJet1[0].Record.JetID.Prefix()
-	prefixSecond := expRecordsJet1[1].Record.JetID.Prefix()
-	prefixThird := expRecordsJet2[0].Record.JetID.Prefix()
-	jds := [][]byte{jetDropsDB[0].JetID, jetDropsDB[1].JetID, jetDropsDB[2].JetID}
+	prefixFirst := converter.JetIDToString(expRecordsJet1[0].Record.JetID)
+	prefixSecond := converter.JetIDToString(expRecordsJet1[1].Record.JetID)
+	prefixThird := converter.JetIDToString(expRecordsJet2[0].Record.JetID)
+	jds := []string{jetDropsDB[0].JetID, jetDropsDB[1].JetID, jetDropsDB[2].JetID}
 	require.Contains(t, jds, prefixFirst)
 	require.Contains(t, jds, prefixSecond)
 	require.Contains(t, jds, prefixThird)

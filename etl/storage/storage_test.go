@@ -11,8 +11,10 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"regexp"
 	"testing"
 
+	"github.com/insolar/block-explorer/instrumentation/converter"
 	"github.com/insolar/insolar/insolar/gen"
 	"github.com/jinzhu/gorm"
 	"github.com/stretchr/testify/require"
@@ -84,7 +86,7 @@ func TestStorage_SaveJetDropData_UpdateExistedRecord(t *testing.T) {
 	record.Payload = newPayload
 
 	err = s.SaveJetDropData(
-		models.JetDrop{PulseNumber: pulse.PulseNumber, JetID: testutils.GenerateUniqueJetID().Prefix()},
+		models.JetDrop{PulseNumber: pulse.PulseNumber, JetID: converter.JetIDToString(testutils.GenerateUniqueJetID())},
 		[]models.Record{record},
 	)
 	require.NoError(t, err)
@@ -138,25 +140,6 @@ func TestStorage_SaveJetDropData_RecordError_NilPK(t *testing.T) {
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "violates not-null constraint")
 	require.Contains(t, err.Error(), "error while saving record")
-}
-
-func TestStorage_SaveJetDropData_JetDropError_NilPK(t *testing.T) {
-	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
-	s := NewStorage(testDB)
-
-	pulse, err := testutils.InitPulseDB()
-	require.NoError(t, err)
-	err = testutils.CreatePulse(testDB, pulse)
-	require.NoError(t, err)
-
-	jetDrop := testutils.InitJetDropDB(pulse)
-	jetDrop.JetID = nil
-	record := testutils.InitRecordDB(jetDrop)
-
-	err = s.SaveJetDropData(jetDrop, []models.Record{record})
-	require.Error(t, err)
-	require.Contains(t, err.Error(), "violates not-null constraint")
-	require.Contains(t, err.Error(), "error while saving jetDrop")
 }
 
 func TestStorage_SaveJetDropData_ErrorAtTransaction(t *testing.T) {
@@ -401,6 +384,89 @@ func TestStorage_CompletePulse_ErrorNotExist(t *testing.T) {
 	require.Empty(t, pulseInDB)
 }
 
+func TestStorage_SequencePulse(t *testing.T) {
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Pulse{}})
+	s := NewStorage(testDB)
+
+	pulse, err := testutils.InitPulseDB()
+	require.NoError(t, err)
+	err = testutils.CreatePulse(testDB, pulse)
+	require.NoError(t, err)
+
+	err = s.SequencePulse(pulse.PulseNumber)
+	require.NoError(t, err)
+
+	pulse.IsSequential = true
+	pulseInDB := []models.Pulse{}
+	err = testDB.Find(&pulseInDB).Error
+	require.NoError(t, err)
+	require.Len(t, pulseInDB, 1)
+	require.EqualValues(t, pulse, pulseInDB[0])
+}
+
+func TestStorage_SequencePulse_ErrorUpdateSeveralRows(t *testing.T) {
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Pulse{}})
+	s := NewStorage(testDB)
+
+	pulse, err := testutils.InitPulseDB()
+	require.NoError(t, err)
+	err = testutils.CreatePulse(testDB, pulse)
+	require.NoError(t, err)
+	pulse, err = testutils.InitPulseDB()
+	require.NoError(t, err)
+	err = testutils.CreatePulse(testDB, pulse)
+	require.NoError(t, err)
+
+	err = s.SequencePulse(0)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "several rows were affected")
+
+	pulseInDB := []models.Pulse{}
+	err = testDB.Find(&pulseInDB).Error
+	require.NoError(t, err)
+	require.Len(t, pulseInDB, 2)
+	require.EqualValues(t, false, pulseInDB[0].IsComplete)
+	require.EqualValues(t, false, pulseInDB[1].IsComplete)
+
+}
+
+func TestStorage_SequencePulse_AlreadyCompleted(t *testing.T) {
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Pulse{}})
+	s := NewStorage(testDB)
+
+	pulse, err := testutils.InitPulseDB()
+	require.NoError(t, err)
+	pulse.IsSequential = true
+	err = testutils.CreatePulse(testDB, pulse)
+	require.NoError(t, err)
+
+	err = s.SequencePulse(pulse.PulseNumber)
+	require.NoError(t, err)
+
+	pulseInDB := []models.Pulse{}
+	err = testDB.Find(&pulseInDB).Error
+	require.NoError(t, err)
+	require.Len(t, pulseInDB, 1)
+	require.EqualValues(t, pulse, pulseInDB[0])
+}
+
+func TestStorage_SequencePulse_ErrorNotExist(t *testing.T) {
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Pulse{}})
+	s := NewStorage(testDB)
+
+	pulse, err := testutils.InitPulseDB()
+	require.NoError(t, err)
+
+	err = s.SequencePulse(pulse.PulseNumber)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "try to sequence not existing pulse")
+
+	pulseInDB := []models.Pulse{}
+	err = testDB.Find(&pulseInDB).Error
+	require.NoError(t, err)
+	require.Empty(t, pulseInDB)
+}
+
 func TestStorage_SavePulse(t *testing.T) {
 	defer testutils.TruncateTables(t, testDB, []interface{}{models.Pulse{}})
 	s := NewStorage(testDB)
@@ -468,7 +534,7 @@ func pulseSequenceOneObject(t *testing.T, pulseAmount, recordsAmount int) []puls
 	for i := 0; i < pulseAmount; i++ {
 		timestamp, err := pulseNumber.AsApproximateTime()
 		require.NoError(t, err)
-		pulse := models.Pulse{PulseNumber: int(pulseNumber), Timestamp: timestamp.Unix()}
+		pulse := models.Pulse{PulseNumber: int64(pulseNumber), Timestamp: timestamp.Unix()}
 		err = testutils.CreatePulse(testDB, pulse)
 		require.NoError(t, err)
 		jetDrop := testutils.InitJetDropDB(pulse)
@@ -500,7 +566,7 @@ func TestStorage_GetLifeline(t *testing.T) {
 
 	expectedRecords := []models.Record{genRecords[2], genRecords[1], genRecords[0]}
 
-	records, total, err := s.GetLifeline(objRef.Bytes(), nil, nil, nil, nil, nil, 20, 0, "-index")
+	records, total, err := s.GetLifeline(objRef.Bytes(), nil, nil, nil, nil, nil, 20, 0, false)
 	require.NoError(t, err)
 	require.Equal(t, 3, total)
 	require.Equal(t, expectedRecords, records)
@@ -509,7 +575,7 @@ func TestStorage_GetLifeline(t *testing.T) {
 func TestStorage_GetLifeline_ObjNotExist(t *testing.T) {
 	s := NewStorage(testDB)
 
-	records, total, err := s.GetLifeline(gen.Reference().Bytes(), nil, nil, nil, nil, nil, 20, 0, "-index")
+	records, total, err := s.GetLifeline(gen.Reference().Bytes(), nil, nil, nil, nil, nil, 20, 0, false)
 	require.NoError(t, err)
 	require.Equal(t, 0, total)
 	require.Empty(t, records)
@@ -534,7 +600,7 @@ func TestStorage_GetLifeline_Index(t *testing.T) {
 	expectedRecords := []models.Record{genRecords[1], genRecords[0]}
 
 	index := fmt.Sprintf("%d:%d", pulse.PulseNumber, genRecords[1].Order)
-	records, total, err := s.GetLifeline(objRef.Bytes(), &index, nil, nil, nil, nil, 20, 0, "-index")
+	records, total, err := s.GetLifeline(objRef.Bytes(), &index, nil, nil, nil, nil, 20, 0, false)
 	require.NoError(t, err)
 	require.Equal(t, 2, total)
 	require.Equal(t, expectedRecords, records)
@@ -548,7 +614,7 @@ func TestStorage_GetLifeline_Index_NotExist(t *testing.T) {
 	objRef := gen.Reference()
 
 	index := fmt.Sprintf("%d:%d", pulseNumber, 10)
-	records, total, err := s.GetLifeline(objRef.Bytes(), &index, nil, nil, nil, nil, 20, 0, "-index")
+	records, total, err := s.GetLifeline(objRef.Bytes(), &index, nil, nil, nil, nil, 20, 0, false)
 	require.NoError(t, err)
 	require.Equal(t, 0, total)
 	require.Empty(t, records)
@@ -574,7 +640,7 @@ func TestStorage_GetLifeline_IndexLimit(t *testing.T) {
 
 	limit := 2
 	index := fmt.Sprintf("%d:%d", pulse.PulseNumber, genRecords[3].Order)
-	records, total, err := s.GetLifeline(objRef.Bytes(), &index, nil, nil, nil, nil, limit, 0, "-index")
+	records, total, err := s.GetLifeline(objRef.Bytes(), &index, nil, nil, nil, nil, limit, 0, false)
 	require.NoError(t, err)
 	require.Equal(t, 4, total)
 	require.Equal(t, expectedRecords, records)
@@ -600,7 +666,7 @@ func TestStorage_GetLifeline_IndexOffset(t *testing.T) {
 
 	offset := 2
 	index := fmt.Sprintf("%d:%d", pulse.PulseNumber, genRecords[3].Order)
-	records, total, err := s.GetLifeline(objRef.Bytes(), &index, nil, nil, nil, nil, 20, offset, "-index")
+	records, total, err := s.GetLifeline(objRef.Bytes(), &index, nil, nil, nil, nil, 20, offset, false)
 	require.NoError(t, err)
 	require.Equal(t, 4, total)
 	require.Equal(t, expectedRecords, records)
@@ -626,7 +692,7 @@ func TestStorage_GetLifeline_IndexLimit_Asc(t *testing.T) {
 
 	limit := 2
 	index := fmt.Sprintf("%d:%d", pulse.PulseNumber, genRecords[2].Order)
-	records, total, err := s.GetLifeline(objRef.Bytes(), &index, nil, nil, nil, nil, limit, 0, "+index")
+	records, total, err := s.GetLifeline(objRef.Bytes(), &index, nil, nil, nil, nil, limit, 0, true)
 	require.NoError(t, err)
 	require.Equal(t, 3, total)
 	require.Equal(t, expectedRecords, records)
@@ -651,7 +717,7 @@ func TestStorage_GetLifeline_IndexOffset_Asc(t *testing.T) {
 	expectedRecords := []models.Record{genRecords[3], genRecords[4]}
 
 	index := fmt.Sprintf("%d:%d", pulse.PulseNumber, genRecords[1].Order)
-	records, total, err := s.GetLifeline(objRef.Bytes(), &index, nil, nil, nil, nil, 20, 2, "+index")
+	records, total, err := s.GetLifeline(objRef.Bytes(), &index, nil, nil, nil, nil, 20, 2, true)
 	require.NoError(t, err)
 	require.Equal(t, 4, total)
 	require.Equal(t, expectedRecords, records)
@@ -665,11 +731,11 @@ func TestStorage_GetLifeline_TimestampRange(t *testing.T) {
 
 	expectedRecords := []models.Record{pulses[1].records[1], pulses[1].records[0], pulses[0].records[1], pulses[0].records[0]}
 
-	timestampLte := int(pulses[1].pulse.Timestamp)
-	timestampGte := int(pulses[0].pulse.Timestamp)
+	timestampLte := int64(pulses[1].pulse.Timestamp)
+	timestampGte := int64(pulses[0].pulse.Timestamp)
 	records, total, err := s.GetLifeline(
 		pulses[1].records[0].ObjectReference, nil,
-		nil, nil, &timestampLte, &timestampGte, 20, 0, "-index")
+		nil, nil, &timestampLte, &timestampGte, 20, 0, false)
 	require.NoError(t, err)
 	require.Equal(t, 4, total)
 	require.Equal(t, expectedRecords, records)
@@ -685,7 +751,7 @@ func TestStorage_GetLifeline_PulseRange(t *testing.T) {
 
 	records, total, err := s.GetLifeline(
 		pulses[1].records[0].ObjectReference, nil,
-		&pulses[2].pulse.PulseNumber, &pulses[0].pulse.PulseNumber, nil, nil, 20, 0, "-index")
+		&pulses[2].pulse.PulseNumber, &pulses[0].pulse.PulseNumber, nil, nil, 20, 0, false)
 	require.NoError(t, err)
 	require.Equal(t, 3, total)
 	require.Equal(t, expectedRecords, records)
@@ -699,7 +765,7 @@ func TestStorage_GetLifeline_PulseRange_SamePulse(t *testing.T) {
 
 	records, total, err := s.GetLifeline(
 		pulses[1].records[0].ObjectReference, nil,
-		&pulses[2].pulse.PulseNumber, &pulses[2].pulse.PulseNumber, nil, nil, 20, 0, "-index")
+		&pulses[2].pulse.PulseNumber, &pulses[2].pulse.PulseNumber, nil, nil, 20, 0, false)
 	require.NoError(t, err)
 	require.Equal(t, 0, total)
 	require.Empty(t, records)
@@ -715,7 +781,7 @@ func TestStorage_GetLifeline_PulseRange_Limit(t *testing.T) {
 
 	records, total, err := s.GetLifeline(
 		pulses[1].records[0].ObjectReference, nil,
-		&pulses[2].pulse.PulseNumber, &pulses[0].pulse.PulseNumber, nil, nil, 2, 0, "-index")
+		&pulses[2].pulse.PulseNumber, &pulses[0].pulse.PulseNumber, nil, nil, 2, 0, false)
 	require.NoError(t, err)
 	require.Equal(t, 3, total)
 	require.Equal(t, expectedRecords, records)
@@ -731,7 +797,7 @@ func TestStorage_GetLifeline_PulseRange_LimitOffset(t *testing.T) {
 
 	records, total, err := s.GetLifeline(
 		pulses[1].records[0].ObjectReference, nil,
-		&pulses[2].pulse.PulseNumber, &pulses[0].pulse.PulseNumber, nil, nil, 2, 1, "-index")
+		&pulses[2].pulse.PulseNumber, &pulses[0].pulse.PulseNumber, nil, nil, 2, 1, false)
 	require.NoError(t, err)
 	require.Equal(t, 4, total)
 	require.Equal(t, expectedRecords, records)
@@ -747,7 +813,7 @@ func TestStorage_GetLifeline_PulseRange_Limit_Asc(t *testing.T) {
 
 	records, total, err := s.GetLifeline(
 		pulses[1].records[0].ObjectReference, nil,
-		&pulses[2].pulse.PulseNumber, &pulses[0].pulse.PulseNumber, nil, nil, 2, 0, "+index")
+		&pulses[2].pulse.PulseNumber, &pulses[0].pulse.PulseNumber, nil, nil, 2, 0, true)
 	require.NoError(t, err)
 	require.Equal(t, 3, total)
 	require.Equal(t, expectedRecords, records)
@@ -764,7 +830,7 @@ func TestStorage_GetLifeline_Index_PulseRange(t *testing.T) {
 	index := fmt.Sprintf("%d:%d", pulses[2].pulse.PulseNumber, pulses[2].records[1].Order)
 	records, total, err := s.GetLifeline(
 		pulses[1].records[0].ObjectReference, &index,
-		&pulses[3].pulse.PulseNumber, &pulses[0].pulse.PulseNumber, nil, nil, 20, 0, "-index")
+		&pulses[3].pulse.PulseNumber, &pulses[0].pulse.PulseNumber, nil, nil, 20, 0, false)
 	require.NoError(t, err)
 	require.Equal(t, 5, total)
 	require.Equal(t, expectedRecords, records)
@@ -781,7 +847,7 @@ func TestStorage_GetLifeline_AllParams(t *testing.T) {
 	index := fmt.Sprintf("%d:%d", pulses[2].pulse.PulseNumber, pulses[2].records[1].Order)
 	records, total, err := s.GetLifeline(
 		pulses[1].records[0].ObjectReference, &index,
-		&pulses[3].pulse.PulseNumber, &pulses[0].pulse.PulseNumber, nil, nil, 3, 1, "-index")
+		&pulses[3].pulse.PulseNumber, &pulses[0].pulse.PulseNumber, nil, nil, 3, 1, false)
 	require.NoError(t, err)
 	require.Equal(t, 5, total)
 	require.Equal(t, expectedRecords, records)
@@ -795,7 +861,7 @@ func TestStorage_GetLifeline_PulseRange_Empty(t *testing.T) {
 
 	records, total, err := s.GetLifeline(
 		pulses[1].records[0].ObjectReference, nil,
-		&pulses[0].pulse.PulseNumber, &pulses[3].pulse.PulseNumber, nil, nil, 20, 0, "-index")
+		&pulses[0].pulse.PulseNumber, &pulses[3].pulse.PulseNumber, nil, nil, 20, 0, false)
 	require.NoError(t, err)
 	require.Equal(t, 0, total)
 	require.Empty(t, records)
@@ -870,7 +936,7 @@ func TestStorage_GetPulse_PulseWithRecords(t *testing.T) {
 func TestStorage_GetPulse_NotExist(t *testing.T) {
 	s := NewStorage(testDB)
 
-	_, _, _, err := s.GetPulse(int(gen.PulseNumber()))
+	_, _, _, err := s.GetPulse(int64(gen.PulseNumber()))
 	require.Error(t, err)
 	require.True(t, gorm.IsRecordNotFoundError(err))
 }
@@ -1321,4 +1387,499 @@ func TestStorage_GetRecordsByJetDrop(t *testing.T) {
 		require.Equal(t, 0, total)
 		require.Empty(t, records)
 	})
+}
+
+func TestStorage_GetPulseByPrev(t *testing.T) {
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+	s := NewStorage(testDB)
+
+	prevPulse, err := testutils.InitPulseDB()
+	require.NoError(t, err)
+	err = testutils.CreatePulse(testDB, prevPulse)
+	require.NoError(t, err)
+	expectedPulse, err := testutils.InitPulseDB()
+	require.NoError(t, err)
+	expectedPulse.PrevPulseNumber = prevPulse.PulseNumber
+	err = testutils.CreatePulse(testDB, expectedPulse)
+	require.NoError(t, err)
+	notExpectedPulse, err := testutils.InitPulseDB()
+	require.NoError(t, err)
+	err = testutils.CreatePulse(testDB, notExpectedPulse)
+	require.NoError(t, err)
+
+	pulse, err := s.GetPulseByPrev(prevPulse)
+	require.NoError(t, err)
+	require.Equal(t, expectedPulse, pulse)
+}
+
+func TestStorage_GetPulseByPrev_NotExistError(t *testing.T) {
+	s := NewStorage(testDB)
+
+	pulse, err := testutils.InitPulseDB()
+	require.NoError(t, err)
+	_, err = s.GetPulseByPrev(models.Pulse{PrevPulseNumber: pulse.PulseNumber})
+	require.Error(t, err)
+}
+
+func TestStorage_GetSequentialPulse(t *testing.T) {
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+	s := NewStorage(testDB)
+
+	sequentialPulse, err := testutils.InitPulseDB()
+	require.NoError(t, err)
+	sequentialPulse.IsSequential = true
+	err = testutils.CreatePulse(testDB, sequentialPulse)
+	require.NoError(t, err)
+
+	lessSequentialPulse, err := testutils.InitPulseDB()
+	require.NoError(t, err)
+	lessSequentialPulse.IsSequential = true
+	lessSequentialPulse.PulseNumber = sequentialPulse.PulseNumber - 10
+	err = testutils.CreatePulse(testDB, lessSequentialPulse)
+	require.NoError(t, err)
+
+	notSequentialPulse, err := testutils.InitPulseDB()
+	require.NoError(t, err)
+	err = testutils.CreatePulse(testDB, notSequentialPulse)
+	require.NoError(t, err)
+
+	pulse, err := s.GetSequentialPulse()
+	require.NoError(t, err)
+	require.Equal(t, sequentialPulse, pulse)
+}
+
+func TestStorage_GetSequentialPulse_Empty(t *testing.T) {
+	s := NewStorage(testDB)
+
+	sequentialPulse, err := s.GetSequentialPulse()
+	require.NoError(t, err)
+	require.Equal(t, models.Pulse{}, sequentialPulse)
+}
+
+func TestStorage_GetNextSavedPulse(t *testing.T) {
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+	s := NewStorage(testDB)
+
+	pulse := models.Pulse{
+		PulseNumber: int64(gen.PulseNumber().AsUint32()),
+	}
+	expectedPulse := models.Pulse{
+		PulseNumber: pulse.PulseNumber + 10,
+	}
+	notExpectedPulse := models.Pulse{
+		PulseNumber: pulse.PulseNumber + 20,
+	}
+
+	err := testutils.CreatePulse(testDB, notExpectedPulse)
+	require.NoError(t, err)
+	err = testutils.CreatePulse(testDB, pulse)
+	require.NoError(t, err)
+	err = testutils.CreatePulse(testDB, expectedPulse)
+	require.NoError(t, err)
+
+	res, err := s.GetNextSavedPulse(pulse)
+	require.NoError(t, err)
+	require.Equal(t, expectedPulse, res)
+}
+
+func TestStorage_GetNextSavedPulse_Empty(t *testing.T) {
+	s := NewStorage(testDB)
+
+	pulse, err := testutils.InitPulseDB()
+	require.NoError(t, err)
+
+	sequentialPulse, err := s.GetNextSavedPulse(pulse)
+	require.NoError(t, err)
+	require.Equal(t, models.Pulse{}, sequentialPulse)
+}
+
+func TestStorage_GetJetDropsByJetId_Success(t *testing.T) {
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+	s := NewStorage(testDB)
+
+	firstPulse, err := testutils.InitPulseDB()
+	require.NoError(t, err)
+
+	err = testutils.CreatePulse(testDB, firstPulse)
+	require.NoError(t, err)
+
+	jetDropForFirstPulse1 := testutils.InitJetDropDB(firstPulse)
+	err = testutils.CreateJetDrop(testDB, jetDropForFirstPulse1)
+	require.NoError(t, err)
+
+	jetDropForFirstPulse2 := testutils.InitJetDropDB(firstPulse)
+	err = testutils.CreateJetDrop(testDB, jetDropForFirstPulse2)
+	require.NoError(t, err)
+
+	jID := jetDropForFirstPulse1.JetID
+	jetDrops, total, err := s.GetJetDropsByJetID(jID, nil, nil, nil, nil, -1, true)
+	require.NoError(t, err)
+	require.Len(t, jetDrops, 1)
+	require.EqualValues(t, jetDropForFirstPulse1, jetDrops[0])
+	require.Equal(t, 1, total)
+}
+
+func TestStorage_GetJetDropsByJetId_Fail(t *testing.T) {
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+	s := NewStorage(testDB)
+
+	firstPulse, err := testutils.InitPulseDB()
+	require.NoError(t, err)
+
+	err = testutils.CreatePulse(testDB, firstPulse)
+	require.NoError(t, err)
+
+	jetDropForFirstPulse1 := testutils.InitJetDropDB(firstPulse)
+	err = testutils.CreateJetDrop(testDB, jetDropForFirstPulse1)
+	require.NoError(t, err)
+
+	jetDropForFirstPulse2 := testutils.InitJetDropDB(firstPulse)
+	err = testutils.CreateJetDrop(testDB, jetDropForFirstPulse2)
+	require.NoError(t, err)
+
+	secondPulse, err := testutils.InitPulseDB()
+	require.NoError(t, err)
+	err = testutils.CreatePulse(testDB, secondPulse)
+	require.NoError(t, err)
+	jetDropForSecondPulse := testutils.InitJetDropDB(secondPulse)
+
+	wrongJetID := jetDropForSecondPulse.JetID
+	jetDrops, total, err := s.GetJetDropsByJetID(wrongJetID, nil, nil, nil, nil, -1, true)
+	require.NoError(t, err)
+	require.Len(t, jetDrops, 0)
+	require.Equal(t, 0, total)
+}
+
+func TestStorage_GetJetDropsByJetId(t *testing.T) {
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+	s := NewStorage(testDB)
+
+	someJetIDCount := 5
+	someJetId, preparedJetDrops, preparedPulses := testutils.GenerateJetDropsWithSomeJetID(t, someJetIDCount)
+	err := testutils.CreatePulses(testDB, preparedPulses)
+	require.NoError(t, err)
+	err = testutils.CreateJetDrops(testDB, preparedJetDrops)
+	require.NoError(t, err)
+
+	t.Run("limit", func(t *testing.T) {
+		jetDrops, total, err := s.GetJetDropsByJetID(someJetId, nil, nil, nil, nil, 1, true)
+		require.NoError(t, err)
+		require.Len(t, jetDrops, 1)
+		require.Equal(t, someJetIDCount, total)
+	})
+	t.Run("pulseNumberLte", func(t *testing.T) {
+		expectedCount := 2
+		pulseNumberLte := preparedPulses[1].PulseNumber
+		jetDrops, total, err := s.GetJetDropsByJetID(someJetId, &pulseNumberLte, nil, nil, nil, -1, true)
+		require.NoError(t, err)
+		require.Len(t, jetDrops, expectedCount)
+		require.Equal(t, expectedCount, total)
+		for i := 0; i < expectedCount; i++ {
+			expected := preparedJetDrops[i]
+			received := jetDrops[i]
+			require.EqualValues(t, expected, received)
+		}
+	})
+	t.Run("pulseNumberLte-all", func(t *testing.T) {
+		expectedCount := someJetIDCount
+		pulseNumberLte := preparedPulses[someJetIDCount-1].PulseNumber
+		jetDrops, total, err := s.GetJetDropsByJetID(someJetId, &pulseNumberLte, nil, nil, nil, -1, true)
+		require.NoError(t, err)
+		require.Len(t, jetDrops, expectedCount)
+		require.Equal(t, expectedCount, total)
+		for i := 0; i < expectedCount; i++ {
+			expected := preparedJetDrops[i]
+			received := jetDrops[i]
+			require.EqualValues(t, expected, received)
+		}
+	})
+	t.Run("pulseNumberLt", func(t *testing.T) {
+		expectedCount := 1
+		pulseNumberLt := preparedPulses[1].PulseNumber
+		jetDrops, total, err := s.GetJetDropsByJetID(someJetId, nil, &pulseNumberLt, nil, nil, -1, true)
+		require.NoError(t, err)
+		require.Len(t, jetDrops, expectedCount)
+		require.Equal(t, expectedCount, total)
+		for i := 0; i < expectedCount; i++ {
+			expected := preparedJetDrops[i]
+			received := jetDrops[i]
+			require.EqualValues(t, expected, received)
+		}
+	})
+	t.Run("pulseNumberLt-no-one", func(t *testing.T) {
+		expectedCount := 0
+		pulseNumberLt := preparedPulses[0].PulseNumber
+		jetDrops, total, err := s.GetJetDropsByJetID(someJetId, nil, &pulseNumberLt, nil, nil, -1, true)
+		require.NoError(t, err)
+		require.Len(t, jetDrops, expectedCount)
+		require.Equal(t, expectedCount, total)
+	})
+	t.Run("pulseNumberGte", func(t *testing.T) {
+		expectedCount := someJetIDCount - 1
+		pulseNumberGte := preparedPulses[1].PulseNumber
+		jetDrops, total, err := s.GetJetDropsByJetID(someJetId, nil, nil, &pulseNumberGte, nil, -1, true)
+		require.NoError(t, err)
+		require.Len(t, jetDrops, expectedCount)
+		require.Equal(t, expectedCount, total)
+		for i, j := 1, 0; i < expectedCount; i, j = i+1, j+1 {
+			expected := preparedJetDrops[i]
+			received := jetDrops[j]
+			require.EqualValues(t, expected, received)
+		}
+	})
+	t.Run("pulseNumberGte-all", func(t *testing.T) {
+		expectedCount := someJetIDCount
+		pulseNumberGt := preparedPulses[0].PulseNumber
+		jetDrops, total, err := s.GetJetDropsByJetID(someJetId, nil, nil, &pulseNumberGt, nil, -1, true)
+		require.NoError(t, err)
+		require.Len(t, jetDrops, expectedCount)
+		require.Equal(t, expectedCount, total)
+		for i := 0; i < expectedCount; i++ {
+			expected := preparedJetDrops[i]
+			received := jetDrops[i]
+			require.EqualValues(t, expected, received)
+		}
+	})
+	t.Run("pulseNumberGt", func(t *testing.T) {
+		expectedCount := someJetIDCount - 2
+		pulseNumberGt := preparedPulses[1].PulseNumber
+		jetDrops, total, err := s.GetJetDropsByJetID(someJetId, nil, nil, nil, &pulseNumberGt, -1, true)
+		require.NoError(t, err)
+		require.Len(t, jetDrops, expectedCount)
+		require.Equal(t, expectedCount, total)
+		for i, j := 2, 0; i < expectedCount; i, j = i+1, j+1 {
+			expected := preparedJetDrops[i]
+			received := jetDrops[j]
+			require.EqualValues(t, expected, received)
+		}
+	})
+	t.Run("pulseNumberGt-no-one", func(t *testing.T) {
+		expectedCount := 0
+		pulseNumberGt := preparedPulses[someJetIDCount-1].PulseNumber
+		jetDrops, total, err := s.GetJetDropsByJetID(someJetId, nil, nil, nil, &pulseNumberGt, -1, true)
+		require.NoError(t, err)
+		require.Len(t, jetDrops, expectedCount)
+		require.Equal(t, expectedCount, total)
+	})
+	t.Run("pulseNumberGte and pulseNumberLte", func(t *testing.T) {
+		expectedCount := someJetIDCount - 2
+		pulseNumberGte := preparedPulses[1].PulseNumber
+		pulseNumberLte := preparedPulses[someJetIDCount-2].PulseNumber
+		jetDrops, total, err := s.GetJetDropsByJetID(someJetId, &pulseNumberLte, nil, &pulseNumberGte, nil, -1, true)
+		require.NoError(t, err)
+		require.Len(t, jetDrops, expectedCount)
+		require.Equal(t, expectedCount, total)
+		for i, j := 1, 0; i < expectedCount; i, j = i+1, j+1 {
+			expected := preparedJetDrops[i]
+			received := jetDrops[j]
+			require.EqualValues(t, expected, received)
+		}
+	})
+	t.Run("pulseNumberGte and pulseNumberLt", func(t *testing.T) {
+		expectedCount := someJetIDCount - 3
+		pulseNumberGte := preparedPulses[1].PulseNumber
+		pulseNumberLt := preparedPulses[someJetIDCount-2].PulseNumber
+		jetDrops, total, err := s.GetJetDropsByJetID(someJetId, nil, &pulseNumberLt, &pulseNumberGte, nil, -1, true)
+		require.NoError(t, err)
+		require.Len(t, jetDrops, expectedCount)
+		require.Equal(t, expectedCount, total)
+		for i, j := 1, 0; i < expectedCount; i, j = i+1, j+1 {
+			expected := preparedJetDrops[i]
+			received := jetDrops[j]
+			require.EqualValues(t, expected, received)
+		}
+	})
+	t.Run("pulseNumberGt and pulseNumberLt", func(t *testing.T) {
+		expectedCount := someJetIDCount - 4
+		pulseNumberGt := preparedPulses[1].PulseNumber
+		pulseNumberLt := preparedPulses[someJetIDCount-2].PulseNumber
+		jetDrops, total, err := s.GetJetDropsByJetID(someJetId, nil, &pulseNumberLt, nil, &pulseNumberGt, -1, true)
+		require.NoError(t, err)
+		require.Len(t, jetDrops, expectedCount)
+		require.Equal(t, expectedCount, total)
+		for i, j := 1, 0; i < expectedCount; i, j = i+1, j+1 {
+			expected := preparedJetDrops[i]
+			received := jetDrops[j]
+			require.EqualValues(t, expected, received)
+		}
+	})
+	t.Run("pulseNumberGt and pulseNumberLte", func(t *testing.T) {
+		expectedCount := someJetIDCount - 3
+		pulseNumberGt := preparedPulses[1].PulseNumber
+		pulseNumberLte := preparedPulses[someJetIDCount-2].PulseNumber
+		jetDrops, total, err := s.GetJetDropsByJetID(someJetId, &pulseNumberLte, nil, nil, &pulseNumberGt, -1, true)
+		require.NoError(t, err)
+		require.Len(t, jetDrops, expectedCount)
+		require.Equal(t, expectedCount, total)
+		for i, j := 2, 0; i < expectedCount; i, j = i+1, j+1 {
+			expected := preparedJetDrops[i]
+			received := jetDrops[j]
+			require.EqualValues(t, expected, received)
+		}
+	})
+	t.Run("sortBy asc", func(t *testing.T) {
+		jetDrops, total, err := s.GetJetDropsByJetID(someJetId, nil, nil, nil, nil, -1, true)
+		require.NoError(t, err)
+		require.Len(t, jetDrops, total)
+		require.Equal(t, someJetIDCount, total)
+		for i, drop := range jetDrops {
+			require.EqualValues(t, preparedJetDrops[i], drop)
+		}
+	})
+	t.Run("sortBy desc", func(t *testing.T) {
+		jetDrops, total, err := s.GetJetDropsByJetID(someJetId, nil, nil, nil, nil, -1, false)
+		require.NoError(t, err)
+		require.Len(t, jetDrops, total)
+		require.Equal(t, someJetIDCount, total)
+		for i, drop := range jetDrops {
+			require.EqualValues(t, preparedJetDrops[total-i-1], drop)
+		}
+	})
+}
+
+func TestStorage_GetJetDropsByJetId_Splites(t *testing.T) {
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+	s := NewStorage(testDB)
+
+	// fnGetJetIDs returns the jetid with middle depth and all possible values fot that
+	// if we pass the jetid, then we expect that the db must contains all possible values
+	fnGetJetIDs := func(drops []models.JetDrop) (string, []string) {
+		deepest := drops[0].JetID
+		depthless := drops[0].JetID
+		middle := drops[0].JetID
+
+		for i := 1; i < len(drops); i++ {
+			id := drops[i].JetID
+			if len(id) > len(deepest) {
+				deepest = id
+			}
+			if len(id) < len(depthless) {
+				depthless = id
+			}
+		}
+		start := len(depthless)
+		end := len(deepest)
+		median := start + (end-start)/2
+
+		// try to find the middle
+		for i := 0; i < len(drops); i++ {
+			if len(drops[i].JetID) == median {
+				middle = drops[i].JetID
+			}
+		}
+
+		// find parents of middle
+		parents := GetJetIDParents(middle)
+		childrenRegexp := regexp.MustCompile(fmt.Sprintf("^%s.*", middle))
+		for i := 0; i < len(drops); i++ {
+			id := drops[i].JetID
+			if childrenRegexp.MatchString(id) && id != middle { // if it's child
+				parents = append(parents, id)
+			}
+		}
+
+		// true if array contains value
+		contains := func(data []models.JetDrop, find string) bool {
+			for _, v := range data {
+				if v.JetID == find {
+					return true
+				}
+			}
+			return false
+		}
+
+		// try to calculate all possible values
+		allPossible := make([]string, 0)
+		// delete non existing jetid
+		for _, id := range parents {
+			// if incoming jet drops contains generated values
+			if contains(drops, id) {
+				allPossible = append(allPossible, id)
+			}
+		}
+
+		return middle, allPossible
+	}
+
+	tests := map[string]struct {
+		pulseCount int
+		jDCount    int
+		depth      int
+		total      int
+	}{
+		"pc=1, jdc=1, depth=0, total=1":     {1, 1, 0, 1},
+		"pc=1, jdc=1, depth=1, total=3":     {1, 1, 1, 3},
+		"pc=2, jdc=1, depth=1, total=6":     {2, 1, 1, 6},
+		"pc=1, jdc=2, depth=2, total=14":    {1, 2, 2, 14},
+		"pc=2, jdc=2, depth=2, total=28":    {2, 2, 2, 28},
+		"pc=2, jdc=2, depth=4, total=124":   {2, 2, 4, 124},
+		"pc=4, jdc=10, depth=5, total=2520": {4, 10, 5, 2520},
+	}
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+			pulseCount := test.pulseCount
+			jetDropCount := test.jDCount
+			depth := test.depth
+			total := test.total
+
+			preparedJetDrops, preparedPulses := testutils.GenerateJetDropsWithSplit(t, pulseCount, jetDropCount, depth)
+			require.Equal(t, total, len(preparedJetDrops))
+			err := testutils.CreatePulses(testDB, preparedPulses)
+			require.NoError(t, err)
+			err = testutils.CreateJetDrops(testDB, preparedJetDrops)
+			require.NoError(t, err)
+
+			// try to calculate all possible Jet IDs
+			middle, allPossible := fnGetJetIDs(preparedJetDrops)
+
+			jetDropsFromDb, totalFromDb, err := s.GetJetDropsByJetID(middle, nil, nil, nil, nil, -1, true)
+			require.NoError(t, err)
+
+			require.Equal(t, len(allPossible), totalFromDb)
+			for _, v := range jetDropsFromDb {
+				require.Contains(t, allPossible, v.JetID)
+			}
+
+		})
+	}
+
+}
+
+func TestStorage_GetJetDropsByJetId_MultipleCounts(t *testing.T) {
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+	s := NewStorage(testDB)
+
+	tests := map[string]struct {
+		jetDropCount int
+		limit        int
+	}{
+		"no jetDrop with limit 0":   {jetDropCount: 1, limit: 0},
+		"one jetDrop with limit 1":  {jetDropCount: 1, limit: 1},
+		"two jetDrop with limit 10": {jetDropCount: 2, limit: 10},
+		"10 jetDrop with limit 10":  {jetDropCount: 10, limit: 10},
+		"15 jetDrop with limit 10":  {jetDropCount: 15, limit: 10},
+	}
+
+	for testName, data := range tests {
+		t.Run(testName, func(t *testing.T) {
+			someJetId, preparedJetDrops, preparedPulses := testutils.GenerateJetDropsWithSomeJetID(t, data.jetDropCount)
+			err := testutils.CreatePulses(testDB, preparedPulses)
+			require.NoError(t, err)
+			err = testutils.CreateJetDrops(testDB, preparedJetDrops)
+			require.NoError(t, err)
+
+			jetDropsFromDb, total, err := s.GetJetDropsByJetID(someJetId, nil, nil, nil, nil, data.limit, true)
+			require.NoError(t, err)
+			expectedCount := data.jetDropCount
+			if expectedCount > data.limit {
+				expectedCount = data.limit
+			}
+			require.Len(t, jetDropsFromDb, expectedCount)
+			for i := 0; i < expectedCount; i++ {
+				require.Contains(t, preparedJetDrops, jetDropsFromDb[i])
+			}
+			require.Equal(t, data.jetDropCount, total)
+		})
+	}
 }

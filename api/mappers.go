@@ -6,12 +6,10 @@
 package api
 
 import (
-	"bytes"
 	"encoding/base64"
 	"fmt"
-	"strconv"
-	"strings"
 
+	"github.com/insolar/block-explorer/instrumentation"
 	"github.com/insolar/insolar/insolar"
 	"github.com/insolar/spec-insolar-block-explorer-api/v1/server"
 
@@ -23,32 +21,31 @@ func NullableString(s string) *string {
 }
 
 func RecordToAPI(record models.Record) server.Record {
-	pulseNumber := int64(record.PulseNumber)
-	jetID := jetIDToString(record.JetID)
-	jetDropID := fmt.Sprintf("%s:%d", jetID, record.PulseNumber)
+	pulseNumber := record.PulseNumber
+	jetDropID := models.NewJetDropID(record.JetID, pulseNumber)
 	response := server.Record{
 		Hash:        NullableString(base64.StdEncoding.EncodeToString(record.Hash)),
-		JetDropId:   NullableString(jetDropID),
-		JetId:       NullableString(jetID),
+		JetDropId:   NullableString(jetDropID.ToString()),
+		JetId:       NullableString(jetDropID.JetID),
 		Index:       NullableString(fmt.Sprintf("%d:%d", record.PulseNumber, record.Order)),
 		Payload:     NullableString(base64.StdEncoding.EncodeToString(record.Payload)),
 		PulseNumber: &pulseNumber,
 		Timestamp:   &record.Timestamp,
 		Type:        NullableString(string(record.Type)),
 	}
-	if !bytes.Equal([]byte{}, record.ObjectReference) {
+	if !instrumentation.IsEmpty(record.ObjectReference) {
 		objectID := insolar.NewIDFromBytes(record.ObjectReference)
 		if objectID != nil {
 			response.ObjectReference = NullableString(insolar.NewReference(*objectID).String())
 		}
 	}
-	if !bytes.Equal([]byte{}, record.PrevRecordReference) {
+	if !instrumentation.IsEmpty(record.PrevRecordReference) {
 		prevRecordReference := insolar.NewIDFromBytes(record.PrevRecordReference)
 		if prevRecordReference != nil {
 			response.PrevRecordReference = NullableString(prevRecordReference.String())
 		}
 	}
-	if !bytes.Equal([]byte{}, record.PrototypeReference) {
+	if !instrumentation.IsEmpty(record.PrototypeReference) {
 		prototypeReference := insolar.NewIDFromBytes(record.PrototypeReference)
 		if prototypeReference != nil {
 			response.PrototypeReference = NullableString(prototypeReference.String())
@@ -62,9 +59,9 @@ func RecordToAPI(record models.Record) server.Record {
 }
 
 func PulseToAPI(pulse models.Pulse, jetDropAmount, recordAmount int64) server.Pulse {
-	pulseNumber := int64(pulse.PulseNumber)
-	prevPulseNumber := int64(pulse.PrevPulseNumber)
-	nextPulseNumber := int64(pulse.NextPulseNumber)
+	pulseNumber := pulse.PulseNumber
+	prevPulseNumber := pulse.PrevPulseNumber
+	nextPulseNumber := pulse.NextPulseNumber
 	response := server.Pulse{
 		IsComplete:      &pulse.IsComplete,
 		JetDropAmount:   &jetDropAmount,
@@ -78,15 +75,20 @@ func PulseToAPI(pulse models.Pulse, jetDropAmount, recordAmount int64) server.Pu
 }
 
 func JetDropToAPI(jetDrop models.JetDrop) server.JetDrop {
-	pulseNumber := int64(jetDrop.PulseNumber)
+	pulseNumber := jetDrop.PulseNumber
 	recordAmount := int64(jetDrop.RecordAmount)
 	// TODO: set correct prev and next after PENV-348
-	nextJetDropID := []string{"test_next_jet_drop"}
-	prevJetDropID := []string{"test_prev_jet_drop"}
+	nextJetDropID := []server.NextPrevJetDrop{{
+		JetId:     NullableString("test"),
+		JetDropId: NullableString("test:1234"),
+	}}
+	prevJetDropID := []server.NextPrevJetDrop{{}}
+
+	jetDropID := models.NewJetDropID(jetDrop.JetID, jetDrop.PulseNumber)
 	result := server.JetDrop{
 		Hash:      NullableString(base64.StdEncoding.EncodeToString(jetDrop.Hash)),
-		JetDropId: NullableString(models.NewJetDropID(jetDrop.JetID, int64(jetDrop.PulseNumber)).ToString()),
-		JetId:     NullableString(models.ExporterJetIDToString(jetDrop.JetID)),
+		JetDropId: NullableString(jetDropID.ToString()),
+		JetId:     NullableString(jetDropID.JetID),
 		// todo implement this if needed
 		NextJetDropId: &nextJetDropID,
 		PrevJetDropId: &prevJetDropID,
@@ -95,17 +97,4 @@ func JetDropToAPI(jetDrop models.JetDrop) server.JetDrop {
 		Timestamp:     &jetDrop.Timestamp,
 	}
 	return result
-}
-
-func jetIDToString(prefix []byte) string {
-	res := strings.Builder{}
-	for i := 0; i < 5; i++ {
-		bytePos, bitPos := i/8, 7-i%8
-
-		byteValue := prefix[bytePos]
-		bitValue := byteValue >> uint(bitPos) & 0x01
-		bitString := strconv.Itoa(int(bitValue))
-		res.WriteString(bitString)
-	}
-	return res.String()
 }

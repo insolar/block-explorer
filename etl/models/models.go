@@ -7,10 +7,10 @@ package models
 
 import (
 	"fmt"
+	"net/url"
+	"regexp"
 	"strconv"
 	"strings"
-
-	"github.com/insolar/insolar/insolar/jet"
 
 	"github.com/insolar/block-explorer/etl/types"
 )
@@ -42,15 +42,15 @@ type Record struct {
 	PrevRecordReference Reference
 	Hash                []byte
 	RawData             []byte
-	JetID               []byte
-	PulseNumber         int
+	JetID               string
+	PulseNumber         int64
 	Order               int
 	Timestamp           int64
 }
 
 type JetDrop struct {
-	JetID          []byte `gorm:"primary_key;auto_increment:false"`
-	PulseNumber    int    `gorm:"primary_key;auto_increment:false"`
+	PulseNumber    int64  `gorm:"primary_key;auto_increment:false"`
+	JetID          string `gorm:"primary_key;auto_increment:false;default:''"`
 	FirstPrevHash  []byte
 	SecondPrevHash []byte
 	Hash           []byte
@@ -60,31 +60,41 @@ type JetDrop struct {
 }
 
 type Pulse struct {
-	PulseNumber     int `gorm:"primary_key;auto_increment:false"`
-	PrevPulseNumber int
-	NextPulseNumber int
+	PulseNumber     int64 `gorm:"primary_key;auto_increment:false"`
+	PrevPulseNumber int64
+	NextPulseNumber int64
 	IsComplete      bool
+	IsSequential    bool
 	Timestamp       int64
 }
 
 type JetDropID struct {
-	JetID       []byte
+	JetID       string
 	PulseNumber int64
 }
 
-func NewJetDropID(jetID []byte, pulseNumber int64) *JetDropID {
-	return &JetDropID{JetID: jetID, PulseNumber: pulseNumber}
+func NewJetDropID(jetID string, pulseNumber int64) *JetDropID {
+	tmp := jetID
+	if jetID == "" {
+		tmp = "*"
+	}
+	return &JetDropID{JetID: tmp, PulseNumber: pulseNumber}
 }
+
+// jetIDRegexp uses for a validation of the JetID
+var jetIDRegexp = regexp.MustCompile(`^(\*|([0-1]{1,216}))$`)
 
 func NewJetDropIDFromString(jetDropID string) (*JetDropID, error) {
 	var pulse int64
-	var jetID []byte
+	jetDropID, err := url.QueryUnescape(jetDropID)
+	if err != nil {
+		return nil, fmt.Errorf("wrong jet drop id format")
+	}
 	s := strings.Split(jetDropID, ":")
 	if len(s) != 2 {
 		return nil, fmt.Errorf("wrong jet drop id format")
 	}
-	_, err := strconv.ParseInt(s[0], 2, 64)
-	if err != nil {
+	if !jetIDRegexp.MatchString(s[0]) {
 		return nil, fmt.Errorf("wrong jet drop id format")
 	}
 	pulse, err = strconv.ParseInt(s[1], 10, 64)
@@ -92,23 +102,9 @@ func NewJetDropIDFromString(jetDropID string) (*JetDropID, error) {
 		return nil, fmt.Errorf("wrong jet drop id format")
 	}
 
-	jetID = jet.NewIDFromString(s[0]).Prefix()
-	return &JetDropID{JetID: jetID, PulseNumber: pulse}, nil
+	return NewJetDropID(s[0], pulse), nil
 }
 
 func (j *JetDropID) ToString() string {
-	return fmt.Sprintf("%s:%d", ExporterJetIDToString(j.JetID), j.PulseNumber)
-}
-
-func ExporterJetIDToString(jetID []byte) string {
-	res := strings.Builder{}
-	for i := 0; i < 5; i++ {
-		bytePos, bitPos := i/8, 7-i%8
-
-		byteValue := jetID[bytePos]
-		bitValue := byteValue >> uint(bitPos) & 0x01
-		bitString := strconv.Itoa(int(bitValue))
-		res.WriteString(bitString)
-	}
-	return res.String()
+	return fmt.Sprintf("%s:%d", j.JetID, j.PulseNumber)
 }

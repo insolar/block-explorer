@@ -56,7 +56,7 @@ func (e *PlatformExtractor) GetJetDrops(ctx context.Context) <-chan *types.Platf
 	return e.mainJetDropsChan
 }
 
-func (e *PlatformExtractor) LoadJetDrops(ctx context.Context, fromPulseNumber int, toPulseNumber int) error {
+func (e *PlatformExtractor) LoadJetDrops(ctx context.Context, fromPulseNumber int64, toPulseNumber int64) error {
 	if fromPulseNumber < 0 {
 		return errors.New("fromPulseNumber cannot be negative")
 	}
@@ -76,7 +76,7 @@ func (e *PlatformExtractor) LoadJetDrops(ctx context.Context, fromPulseNumber in
 	return nil
 }
 
-func (e *PlatformExtractor) getJetDrops(ctx context.Context, request *exporter.GetRecords, fromPulseNumber int, toPulseNumber int, shouldReload bool) {
+func (e *PlatformExtractor) getJetDrops(ctx context.Context, request *exporter.GetRecords, fromPulseNumber int64, toPulseNumber int64, shouldReload bool) {
 	unsignedToPulseNumber := uint32(toPulseNumber)
 
 	client := e.client
@@ -93,6 +93,7 @@ func (e *PlatformExtractor) getJetDrops(ctx context.Context, request *exporter.G
 			}
 
 			var log = logger.WithField("request_pulse_number", request.PulseNumber)
+			log.Debugf("export data for pulseNumber:%d, recordNumber:%d", request.PulseNumber, request.RecordNumber)
 			stream, err := client.Export(ctx, request)
 
 			if err != nil {
@@ -118,6 +119,13 @@ func (e *PlatformExtractor) getJetDrops(ctx context.Context, request *exporter.G
 					if receivedPulseNumber == resp.ShouldIterateFrom.AsUint32() {
 						log.Warnf("no data in the pulse. waiting for pulse will be changed. sleep %v", pulseDelta)
 						time.Sleep(time.Second * pulseDelta)
+					}
+					// if we have received all data for topSyncPulse and the pulse didn't change yet, we need to continue
+					// when it happened it means that we need to request again without resetting the pulse number
+					if lastPulseNumber == receivedPulseNumber {
+						// wait a bit to prevent multiple callings
+						time.Sleep(time.Second)
+						continue
 					}
 					request.PulseNumber = *resp.ShouldIterateFrom
 					request.RecordNumber = 0
@@ -187,7 +195,7 @@ func logGRPCError(ctx context.Context, err error) {
 	log := belogger.FromContext(ctx)
 	if err != nil {
 		log.Debug("Data request failed: ", err)
-		log.Error(errors.Wrapf(err, "failed to get gRPC stream from exporter.Export method"))
+		log.Error(errors.Wrapf(err, "failed to get gRPC stream from exporter.Export method").Error())
 	}
 }
 

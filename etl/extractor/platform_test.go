@@ -116,7 +116,7 @@ func TestLoadJetDrops_returnsRecordByPulses(t *testing.T) {
 			pulseClient := clients.GetTestPulseClient(1, nil)
 			pulseExtractor := NewPlatformPulseExtractor(pulseClient)
 			extractor := NewPlatformExtractor(uint32(test.recordCount), pulseExtractor, recordClient)
-			err = extractor.LoadJetDrops(ctx, startPulseNumber, startPulseNumber+10*test.differentPulseCount)
+			err = extractor.LoadJetDrops(ctx, int64(startPulseNumber), int64(startPulseNumber+10*test.differentPulseCount))
 			require.NoError(t, err)
 			// we are waiting only 2 times, because of 2 different pulses
 			for i := 0; i < test.differentPulseCount; {

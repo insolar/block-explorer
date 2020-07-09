@@ -21,38 +21,40 @@ import (
 	"github.com/insolar/block-explorer/etl/types"
 )
 
-var cfg = configuration.Controller{PulsePeriod: 10}
+var cfg = configuration.Controller{PulsePeriod: 10, ReloadPeriod: 10, ReloadCleanPeriod: 1, SequentialPeriod: 1}
 
 func TestNewController_NoPulses(t *testing.T) {
 	extractor := mock.NewJetDropsExtractorMock(t)
 
 	sm := mock.NewStorageMock(t)
 	sm.GetIncompletePulsesMock.Return(nil, nil)
+	sm.GetSequentialPulseMock.Return(models.Pulse{}, nil)
 
 	c, err := NewController(cfg, extractor, sm)
 	require.NoError(t, err)
 	require.NotNil(t, c)
 	require.Empty(t, c.jetDropRegister)
-	require.Empty(t, c.missedDataRequestsQueue)
+	require.NotNil(t, c.missedDataManager)
 	require.Equal(t, uint64(1), sm.GetIncompletePulsesAfterCounter())
 }
 
 func TestNewController_OneNotCompletePulse(t *testing.T) {
 	extractor := mock.NewJetDropsExtractorMock(t)
 
-	pulseNumber := 1
-	firstJetID := []byte{1, 2, 3}
-	secondJetID := []byte{3, 4, 5}
-	expectedData := map[types.Pulse][][]byte{{PulseNo: pulseNumber}: {firstJetID, secondJetID}}
+	pulseNumber := int64(1)
+	firstJetID := "123"
+	secondJetID := "345"
+	expectedData := map[types.Pulse][]string{{PulseNo: pulseNumber}: {firstJetID, secondJetID}}
 
 	sm := mock.NewStorageMock(t)
 	sm.GetIncompletePulsesMock.Return([]models.Pulse{{PulseNumber: pulseNumber}}, nil)
 	sm.GetJetDropsMock.Return([]models.JetDrop{{JetID: firstJetID}, {JetID: secondJetID}}, nil)
+	sm.GetSequentialPulseMock.Return(models.Pulse{}, nil)
 
 	c, err := NewController(cfg, extractor, sm)
 	require.NoError(t, err)
 	require.NotNil(t, c)
-	require.Empty(t, c.missedDataRequestsQueue)
+	require.NotNil(t, c.missedDataManager)
 
 	require.Equal(t, expectedData, c.jetDropRegister)
 
@@ -63,13 +65,13 @@ func TestNewController_OneNotCompletePulse(t *testing.T) {
 func TestNewController_SeveralNotCompletePulses(t *testing.T) {
 	extractor := mock.NewJetDropsExtractorMock(t)
 
-	firstPulseNumber := 1
-	secondPulseNumber := 2
-	firstJetID := []byte{1, 2, 3}
-	secondJetID := []byte{3, 4, 5}
+	firstPulseNumber := int64(1)
+	secondPulseNumber := int64(2)
+	firstJetID := "123"
+	secondJetID := "345"
 	firstPulse := types.Pulse{PulseNo: firstPulseNumber}
 	secondPulse := types.Pulse{PulseNo: secondPulseNumber}
-	expectedData := map[types.Pulse][][]byte{firstPulse: {firstJetID}, secondPulse: {secondJetID}}
+	expectedData := map[types.Pulse][]string{firstPulse: {firstJetID}, secondPulse: {secondJetID}}
 
 	sm := mock.NewStorageMock(t)
 	getJetDrops := func(pulse models.Pulse) (ja1 []models.JetDrop, err error) {
@@ -84,11 +86,12 @@ func TestNewController_SeveralNotCompletePulses(t *testing.T) {
 	}
 	sm.GetIncompletePulsesMock.Return([]models.Pulse{{PulseNumber: firstPulseNumber}, {PulseNumber: secondPulseNumber}}, nil)
 	sm.GetJetDropsMock.Set(getJetDrops)
+	sm.GetSequentialPulseMock.Return(models.Pulse{}, nil)
 
 	c, err := NewController(cfg, extractor, sm)
 	require.NoError(t, err)
 	require.NotNil(t, c)
-	require.Empty(t, c.missedDataRequestsQueue)
+	require.NotNil(t, c.missedDataManager)
 
 	require.Equal(t, expectedData, c.jetDropRegister)
 
@@ -101,6 +104,7 @@ func TestNewController_ErrorGetPulses(t *testing.T) {
 
 	sm := mock.NewStorageMock(t)
 	sm.GetIncompletePulsesMock.Return(nil, errors.New("test error"))
+	sm.GetSequentialPulseMock.Return(models.Pulse{}, nil)
 
 	c, err := NewController(cfg, extractor, sm)
 	require.Error(t, err)
@@ -112,11 +116,12 @@ func TestNewController_ErrorGetPulses(t *testing.T) {
 func TestNewController_ErrorGetJetDrops(t *testing.T) {
 	extractor := mock.NewJetDropsExtractorMock(t)
 
-	pulseNumber := 1
+	pulseNumber := int64(1)
 
 	sm := mock.NewStorageMock(t)
 	sm.GetIncompletePulsesMock.Return([]models.Pulse{{PulseNumber: pulseNumber}}, nil)
 	sm.GetJetDropsMock.Return(nil, errors.New("test error"))
+	sm.GetSequentialPulseMock.Return(models.Pulse{}, nil)
 
 	c, err := NewController(cfg, extractor, sm)
 	require.Error(t, err)
@@ -128,12 +133,12 @@ func TestNewController_ErrorGetJetDrops(t *testing.T) {
 
 func TestController_SetJetDropData(t *testing.T) {
 	c := Controller{
-		jetDropRegister: make(map[types.Pulse][][]byte),
+		jetDropRegister: make(map[types.Pulse][]string),
 	}
 
 	pulse := types.Pulse{PulseNo: 12345}
-	jetID := []byte{1, 1, 1, 1, 2, 2, 2, 2}
-	expectedData := map[types.Pulse][][]byte{pulse: {jetID}}
+	jetID := "11112222"
+	expectedData := map[types.Pulse][]string{pulse: {jetID}}
 
 	c.SetJetDropData(pulse, jetID)
 
@@ -142,12 +147,12 @@ func TestController_SetJetDropData(t *testing.T) {
 
 func TestController_SetJetDropData_Multiple(t *testing.T) {
 	c := Controller{
-		jetDropRegister: make(map[types.Pulse][][]byte),
+		jetDropRegister: make(map[types.Pulse][]string),
 	}
 
 	pulse := types.Pulse{PulseNo: 12345}
-	firstJetID := []byte{1, 2, 3}
-	secondJetID := []byte{3, 4, 5}
+	firstJetID := "123"
+	secondJetID := "345"
 
 	wg := sync.WaitGroup{}
 	wg.Add(2)

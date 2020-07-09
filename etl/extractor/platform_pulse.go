@@ -36,7 +36,7 @@ func (ppe *PlatformPulseExtractor) fetchCurrentPulse(ctx context.Context) (uint3
 
 	tsp, err := client.TopSyncPulse(ctx, request)
 	if err != nil {
-		log.WithField("request", request).Error(errors.Wrapf(err, "failed to get TopSyncPulse"))
+		log.WithField("request", request).Error(errors.Wrap(err, "failed to get TopSyncPulse").Error())
 		return 0, err
 	}
 

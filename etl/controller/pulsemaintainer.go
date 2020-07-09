@@ -9,8 +9,10 @@ import (
 	"context"
 	"time"
 
+	"github.com/insolar/block-explorer/etl/models"
 	"github.com/insolar/block-explorer/etl/types"
 	"github.com/insolar/block-explorer/instrumentation/belogger"
+	"github.com/jinzhu/gorm"
 )
 
 func (c *Controller) pulseMaintainer(ctx context.Context) {
@@ -39,12 +41,77 @@ func (c *Controller) pulseMaintainer(ctx context.Context) {
 				}() {
 					log.Infof("Pulse %d completed and saved", p.PulseNo)
 				}
+			} else {
+				c.reloadData(ctx, p.PulseNo, p.PulseNo)
 			}
 		}
 	}
 }
 
-func pulseIsComplete(p types.Pulse, d [][]byte) bool {
+func (c *Controller) pulseSequence(ctx context.Context) {
+	log := belogger.FromContext(ctx)
+	emptyPulse := models.Pulse{}
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		default:
+			time.Sleep(time.Second * time.Duration(c.cfg.SequentialPeriod))
+		}
+		var err error
+		var nextSequential models.Pulse
+		func() {
+			c.sequentialPulseLock.Lock()
+			defer c.sequentialPulseLock.Unlock()
+			log.WithField("sequential_pulse", c.sequentialPulse)
+
+			nextSequential, err = c.storage.GetPulseByPrev(c.sequentialPulse)
+			if err != nil && !gorm.IsRecordNotFoundError(err) {
+				log.Errorf("During loading next sequential pulse: %s", err.Error())
+				return
+			}
+
+			if nextSequential == emptyPulse {
+				toPulse, err := c.storage.GetNextSavedPulse(c.sequentialPulse)
+				if err != nil && !gorm.IsRecordNotFoundError(err) {
+					log.Errorf("During loading next existing pulse: %s", err.Error())
+					return
+				}
+				if toPulse == emptyPulse {
+					log.Info("no next saved pulse. skipping")
+					return
+				}
+				c.reloadData(ctx, c.sequentialPulse.PulseNumber, toPulse.PulseNumber)
+				return
+			}
+			if nextSequential.IsComplete {
+				err = c.storage.SequencePulse(nextSequential.PulseNumber)
+				if err != nil {
+					log.Errorf("During sequence next sequential pulse: %s", err.Error())
+					return
+				}
+				c.sequentialPulse = nextSequential
+				log.Infof("Pulse %d sequenced", nextSequential.PulseNumber)
+				return
+			}
+		}()
+	}
+}
+
+func pulseIsComplete(p types.Pulse, d []string) bool { // nolint
 	// TODO implement me
-	return true
+	// This if is here for test reason, delete it after implementation and update test data for expected behavior
+	return p.PulseNo >= 0
+}
+
+func (c *Controller) reloadData(ctx context.Context, fromPulseNumber int64, toPulseNumber int64) {
+	log := belogger.FromContext(ctx)
+	if c.missedDataManager.Add(ctx, fromPulseNumber, toPulseNumber) {
+		err := c.extractor.LoadJetDrops(ctx, fromPulseNumber, toPulseNumber)
+		if err != nil {
+			log.Errorf("During loading missing data from extractor: %s", err.Error())
+			return
+		}
+		log.Infof("Reload data from %d to %d", fromPulseNumber, toPulseNumber)
+	}
 }

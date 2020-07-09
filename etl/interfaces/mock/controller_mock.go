@@ -16,8 +16,8 @@ import (
 type ControllerMock struct {
 	t minimock.Tester
 
-	funcSetJetDropData          func(pulse types.Pulse, jetID []byte)
-	inspectFuncSetJetDropData   func(pulse types.Pulse, jetID []byte)
+	funcSetJetDropData          func(pulse types.Pulse, jetID string)
+	inspectFuncSetJetDropData   func(pulse types.Pulse, jetID string)
 	afterSetJetDropDataCounter  uint64
 	beforeSetJetDropDataCounter uint64
 	SetJetDropDataMock          mControllerMockSetJetDropData
@@ -74,11 +74,11 @@ type ControllerMockSetJetDropDataExpectation struct {
 // ControllerMockSetJetDropDataParams contains parameters of the Controller.SetJetDropData
 type ControllerMockSetJetDropDataParams struct {
 	pulse types.Pulse
-	jetID []byte
+	jetID string
 }
 
 // Expect sets up expected params for Controller.SetJetDropData
-func (mmSetJetDropData *mControllerMockSetJetDropData) Expect(pulse types.Pulse, jetID []byte) *mControllerMockSetJetDropData {
+func (mmSetJetDropData *mControllerMockSetJetDropData) Expect(pulse types.Pulse, jetID string) *mControllerMockSetJetDropData {
 	if mmSetJetDropData.mock.funcSetJetDropData != nil {
 		mmSetJetDropData.mock.t.Fatalf("ControllerMock.SetJetDropData mock is already set by Set")
 	}
@@ -98,7 +98,7 @@ func (mmSetJetDropData *mControllerMockSetJetDropData) Expect(pulse types.Pulse,
 }
 
 // Inspect accepts an inspector function that has same arguments as the Controller.SetJetDropData
-func (mmSetJetDropData *mControllerMockSetJetDropData) Inspect(f func(pulse types.Pulse, jetID []byte)) *mControllerMockSetJetDropData {
+func (mmSetJetDropData *mControllerMockSetJetDropData) Inspect(f func(pulse types.Pulse, jetID string)) *mControllerMockSetJetDropData {
 	if mmSetJetDropData.mock.inspectFuncSetJetDropData != nil {
 		mmSetJetDropData.mock.t.Fatalf("Inspect function is already set for ControllerMock.SetJetDropData")
 	}
@@ -122,7 +122,7 @@ func (mmSetJetDropData *mControllerMockSetJetDropData) Return() *ControllerMock 
 }
 
 //Set uses given function f to mock the Controller.SetJetDropData method
-func (mmSetJetDropData *mControllerMockSetJetDropData) Set(f func(pulse types.Pulse, jetID []byte)) *ControllerMock {
+func (mmSetJetDropData *mControllerMockSetJetDropData) Set(f func(pulse types.Pulse, jetID string)) *ControllerMock {
 	if mmSetJetDropData.defaultExpectation != nil {
 		mmSetJetDropData.mock.t.Fatalf("Default expectation is already set for the Controller.SetJetDropData method")
 	}
@@ -136,7 +136,7 @@ func (mmSetJetDropData *mControllerMockSetJetDropData) Set(f func(pulse types.Pu
 }
 
 // SetJetDropData implements interfaces.Controller
-func (mmSetJetDropData *ControllerMock) SetJetDropData(pulse types.Pulse, jetID []byte) {
+func (mmSetJetDropData *ControllerMock) SetJetDropData(pulse types.Pulse, jetID string) {
 	mm_atomic.AddUint64(&mmSetJetDropData.beforeSetJetDropDataCounter, 1)
 	defer mm_atomic.AddUint64(&mmSetJetDropData.afterSetJetDropDataCounter, 1)
 

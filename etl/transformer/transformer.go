@@ -10,6 +10,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/insolar/block-explorer/instrumentation"
+	"github.com/insolar/block-explorer/instrumentation/converter"
 	"github.com/ugorji/go/codec"
 	"golang.org/x/crypto/sha3"
 
@@ -81,9 +83,9 @@ func jetIDContains(jets *[]insolar.JetID, jet insolar.JetID) bool {
 
 func getJetDrop(ctx context.Context, jetID insolar.JetID, records []types.Record, pulseData types.Pulse) (*types.JetDrop, error) {
 	sections := make([]types.Section, 0)
-	var prefix []byte
+	var prefix string
 	if jetID.IsValid() {
-		prefix = jetID.Prefix()
+		prefix = converter.JetIDToString(jetID)
 	}
 
 	records, err := sortRecords(records)
@@ -193,7 +195,7 @@ func initRecordsMapsByObj(records []types.Record) (
 }
 
 func restoreInsolarID(b []byte) string {
-	if bytes.Equal(b, []byte{}) {
+	if instrumentation.IsEmpty(b) {
 		b = nil
 	}
 	return insolar.NewIDFromBytes(b).String()
@@ -206,7 +208,7 @@ func getPulseData(pn *exporter.FullPulse) (types.Pulse, error) {
 	// 	return types.Pulse{}, errors.Wrapf(err, "could not get pulse ApproximateTime. pulse: %v", pulse.String())
 	// }
 	return types.Pulse{
-		PulseNo:         int(pulse.AsUint32()),
+		PulseNo:         int64(pulse.AsUint32()),
 		EpochPulseNo:    int(pulse.AsEpoch()),
 		PulseTimestamp:  pn.GetPulseTimestamp(),
 		NextPulseNumber: int(pn.NextPulseNumber.AsUint32()),
@@ -280,7 +282,6 @@ func transferToCanonicalRecord(r *exporter.Record) (types.Record, error) {
 	case *ins_record.Virtual_Deactivate:
 		recordType = types.STATE
 		deactivate := virtual.GetDeactivate()
-		prototypeReference = deactivate.GetImage().Bytes()
 		prevRecordReference = deactivate.PrevStateID().Bytes()
 
 	case *ins_record.Virtual_Result:
