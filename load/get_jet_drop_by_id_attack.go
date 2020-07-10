@@ -26,7 +26,8 @@ func (a *GetJetDropByIDAttack) Do(ctx context.Context) loadgen.DoResult {
 	pulseNumber := d[1]
 	pn, _ := strconv.ParseInt(pulseNumber, 10, 64)
 	id := models.NewJetDropID(jetDropID, pn).ToString()
-	// swagger "allowReserved" is not working in our go-codegen tools, generated client id is still urlEncoded by default
+	// swagger "allowReserved" is not working in our go-codegen tools, generated client jet drop id is still urlEncoded
+	// by default and we get 400 when using generated client
 	err := GetJetDropsByID(a, id)
 	if err != nil {
 		return loadgen.DoResult{

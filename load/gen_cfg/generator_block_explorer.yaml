@@ -8,19 +8,17 @@ generator:
   rampUpStrategy: linear
   verbose: true
 execution_mode: parallel
-grafana: 
-  url: http://0.0.0.0:8181 
-  login: "admin" 
-  password: "admin" 
-graphite: 
-  url: 0.0.0.0:2003 
-  flushDurationSec: 1 
-  loadGeneratorPrefix: be
-checks:
-  handle_threshold_percent: 1.20
+#grafana:
+#  url: http://0.0.0.0:8181
+#  login: "admin"
+#  password: "admin"
+#graphite:
+#  url: 0.0.0.0:2003
+#  flushDurationSec: 1
+#  loadGeneratorPrefix: be
 root_package_name: block-explorer
 load_scripts_dir: load
 timezone: Europe/Moscow
 logging:
-  level: debug
+  level: info
   encoding: console

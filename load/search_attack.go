@@ -4,18 +4,17 @@ import (
 	"context"
 	"strconv"
 
-	"github.com/antihax/optional"
 	"github.com/insolar/spec-insolar-block-explorer-api/v1/client"
 	"github.com/skudasov/loadgen"
 )
 
-type GetPulsesAttack struct {
+type SearchAttack struct {
 	loadgen.WithRunner
 	c     *client.APIClient
 	limit int32
 }
 
-func (a *GetPulsesAttack) Setup(hc loadgen.RunnerConfig) error {
+func (a *SearchAttack) Setup(hc loadgen.RunnerConfig) error {
 	cfg := &client.Configuration{
 		BasePath:   a.GetManager().GeneratorConfig.Generator.Target,
 		HTTPClient: loadgen.NewLoggingHTTPClient(a.GetManager().SuiteConfig.DumpTransport, 10),
@@ -30,21 +29,20 @@ func (a *GetPulsesAttack) Setup(hc loadgen.RunnerConfig) error {
 	return nil
 }
 
-func (a *GetPulsesAttack) Do(ctx context.Context) loadgen.DoResult {
-	_, _, err := a.c.PulseApi.Pulses(ctx, &client.PulsesOpts{
-		Limit: optional.NewInt32(a.limit),
-	})
+func (a *SearchAttack) Do(ctx context.Context) loadgen.DoResult {
+	query := loadgen.DefaultReadCSV(a)[0]
+	_, _, err := a.c.SearchApi.Search(ctx, query)
 	if err != nil {
 		return loadgen.DoResult{
 			Error:        err,
-			RequestLabel: GetPulsesLabel,
+			RequestLabel: SearchLabel,
 		}
 	}
 	return loadgen.DoResult{
-		RequestLabel: GetPulsesLabel,
+		RequestLabel: SearchLabel,
 	}
 }
 
-func (a *GetPulsesAttack) Clone(r *loadgen.Runner) loadgen.Attack {
-	return &GetPulsesAttack{WithRunner: loadgen.WithRunner{R: r}}
+func (a *SearchAttack) Clone(r *loadgen.Runner) loadgen.Attack {
+	return &SearchAttack{WithRunner: loadgen.WithRunner{R: r}}
 }

@@ -5,7 +5,7 @@ steps:
 - name: load
   execution_mode: sequence
   handles:
-  - name: get_jet_drop_by_id
+  - name: get_jet_drops_by_jet_id
     rps: 5
     attack_time_sec: 10
     ramp_up_sec: 10

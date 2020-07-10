@@ -6,16 +6,21 @@
 package integration
 
 import (
+	"encoding/csv"
+	"fmt"
+	"os"
+	"strconv"
 	"testing"
 	"time"
+
+	"github.com/insolar/insolar/ledger/heavy/exporter"
+	"github.com/stretchr/testify/require"
 
 	"github.com/insolar/block-explorer/etl/models"
 	"github.com/insolar/block-explorer/test/heavymock"
 	"github.com/insolar/block-explorer/testutils"
 	betest "github.com/insolar/block-explorer/testutils/betestsetup"
 	"github.com/insolar/block-explorer/testutils/connectionmanager"
-	"github.com/insolar/insolar/ledger/heavy/exporter"
-	"github.com/stretchr/testify/require"
 )
 
 type BlockExplorerTestSuite struct {
@@ -99,4 +104,20 @@ func (a *BlockExplorerTestSuite) ImportRecordsMultipleJetDrops(t testing.TB, jet
 	t.Logf("total records: %d", len(d))
 	err := heavymock.ImportRecords(a.ConMngr.ImporterClient, d)
 	require.NoError(t, err)
+}
+
+func (a *BlockExplorerTestSuite) PreparePulsesData() {
+	var pulses []models.Pulse
+	a.BE.DB.Find(&pulses)
+	file, _ := os.Create("pulses.csv")
+	defer file.Close()
+
+	writer := csv.NewWriter(file)
+	defer writer.Flush()
+
+	for _, p := range pulses {
+		writer.Write([]string{strconv.Itoa(p.PulseNumber)})
+	}
+	writer.Flush()
+	fmt.Printf("pulses: %v\n", pulses)
 }

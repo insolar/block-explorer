@@ -25,50 +25,16 @@ func generateRandBytesLen(l int) []byte {
 	return b
 }
 
-func createTables(tx *gorm.DB) error {
-	if err := tx.CreateTable(&models.Pulse{}).Error; err != nil {
-		return err
-	}
-	if err := tx.Model(models.Pulse{}).AddIndex("idx_pulse_prevpulsenumber", "prev_pulse_number").Error; err != nil {
-		return err
-	}
-
-	if err := tx.CreateTable(&models.JetDrop{}).Error; err != nil {
-		return err
-	}
-	if err := tx.Model(models.JetDrop{}).AddIndex("idx_jetdrop_pulsenumber_jetid", "pulse_number", "jet_id").Error; err != nil {
-		return err
-	}
-	if err := tx.Model(&models.JetDrop{}).AddForeignKey("pulse_number", "pulses(pulse_number)", "CASCADE", "CASCADE").Error; err != nil {
-		return err
-	}
-
-	if err := tx.CreateTable(&models.Record{}).Error; err != nil {
-		return err
-	}
-	if err := tx.Model(models.Record{}).AddIndex(
-		"idx_record_objectreference_type_pulsenumber_order", "object_reference", "type", "pulse_number", "order").Error; err != nil {
-		return err
-	}
-	if err := tx.Model(models.Record{}).AddIndex(
-		"idx_record_jetid_pulsenumber_order", "jet_id", "pulse_number", "order").Error; err != nil {
-		return err
-	}
-	if err := tx.Model(&models.Record{}).AddForeignKey("jet_id, pulse_number", "jet_drops(jet_id, pulse_number)", "CASCADE", "CASCADE").Error; err != nil {
-		return err
-	}
-	return nil
-}
-
 func generatePulses(amount int) []models.Pulse {
 	tNow := time.Now().Unix()
+	startPulse := 4000000
 	var pulses []models.Pulse
-	for i := 1; i < amount; i++ {
+	for i := startPulse; i < startPulse+amount; i++ {
 		pulses = append(pulses,
 			models.Pulse{
-				PulseNumber:     i,
-				PrevPulseNumber: i - 1,
-				NextPulseNumber: i + 1,
+				PulseNumber:     int64(i),
+				PrevPulseNumber: int64(i) - 1,
+				NextPulseNumber: int64(i) + 1,
 				IsComplete:      true,
 				IsSequential:    true,
 				Timestamp:       tNow + int64(i*10),
@@ -91,21 +57,17 @@ func notNullJetID() string {
 func generateJetDrops(pulses []models.Pulse, amount int) []models.JetDrop {
 	tNow := time.Now().Unix()
 	var jDrops []models.JetDrop
-	// uniqJetIDs := gen.UniqueJetIDs(amount)
 	for i := 1; i < amount; i++ {
-		rHash := generateRandBytesLen(16)
 		rawData := generateRandBytesLen(32)
 		randPulseNum := rand.Intn(len(pulses))
 		rPnum := pulses[randPulseNum].PulseNumber
-		// randJetID := rand.Intn(len(uniqJetIDs))
-		// jID := converter.JetIDToString(uniqJetIDs[randJetID])
 		jID := notNullJetID()
 		jDrops = append(jDrops, models.JetDrop{
 			JetID:          jID,
 			PulseNumber:    rPnum,
-			FirstPrevHash:  rHash,
-			SecondPrevHash: rHash,
-			Hash:           rHash,
+			FirstPrevHash:  gen.Reference().Bytes(),
+			SecondPrevHash: gen.Reference().Bytes(),
+			Hash:           rawData,
 			RawData:        rawData,
 			Timestamp:      tNow + int64(i*2),
 			RecordAmount:   100,
@@ -118,19 +80,18 @@ func generateRecords(jDrops []models.JetDrop, amount int) []models.Record {
 	tNow := time.Now().Unix()
 	var records []models.Record
 	for i := 1; i < amount; i++ {
-		ref := generateRandBytesLen(16)
 		rawData := generateRandBytesLen(32)
 		randJetID := rand.Intn(len(jDrops))
 		randJet := jDrops[randJetID].JetID
 		jetPulseNum := jDrops[randJetID].PulseNumber
 		records = append(records, models.Record{
-			Reference:           ref,
-			Type:                "",
-			ObjectReference:     ref,
-			PrototypeReference:  ref,
-			Payload:             ref,
-			PrevRecordReference: ref,
-			Hash:                ref,
+			Reference:           gen.Reference().Bytes(),
+			Type:                "0",
+			ObjectReference:     gen.Reference().Bytes(),
+			PrototypeReference:  gen.Reference().Bytes(),
+			Payload:             rawData,
+			PrevRecordReference: gen.Reference().Bytes(),
+			Hash:                rawData,
 			RawData:             rawData,
 			JetID:               randJet,
 			PulseNumber:         jetPulseNum,

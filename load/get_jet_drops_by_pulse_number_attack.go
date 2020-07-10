@@ -9,13 +9,13 @@ import (
 	"github.com/skudasov/loadgen"
 )
 
-type GetPulsesAttack struct {
+type GetJetDropsByPulseNumberAttack struct {
 	loadgen.WithRunner
 	c     *client.APIClient
 	limit int32
 }
 
-func (a *GetPulsesAttack) Setup(hc loadgen.RunnerConfig) error {
+func (a *GetJetDropsByPulseNumberAttack) Setup(hc loadgen.RunnerConfig) error {
 	cfg := &client.Configuration{
 		BasePath:   a.GetManager().GeneratorConfig.Generator.Target,
 		HTTPClient: loadgen.NewLoggingHTTPClient(a.GetManager().SuiteConfig.DumpTransport, 10),
@@ -30,21 +30,23 @@ func (a *GetPulsesAttack) Setup(hc loadgen.RunnerConfig) error {
 	return nil
 }
 
-func (a *GetPulsesAttack) Do(ctx context.Context) loadgen.DoResult {
-	_, _, err := a.c.PulseApi.Pulses(ctx, &client.PulsesOpts{
+func (a *GetJetDropsByPulseNumberAttack) Do(ctx context.Context) loadgen.DoResult {
+	pulse := loadgen.DefaultReadCSV(a)[0]
+	pulseNum, _ := strconv.ParseInt(pulse, 10, 64)
+	_, _, err := a.c.JetDropApi.JetDropsByPulseNumber(ctx, pulseNum, &client.JetDropsByPulseNumberOpts{
 		Limit: optional.NewInt32(a.limit),
 	})
 	if err != nil {
 		return loadgen.DoResult{
 			Error:        err,
-			RequestLabel: GetPulsesLabel,
+			RequestLabel: GetJetDropsByPulseNumLabel,
 		}
 	}
 	return loadgen.DoResult{
-		RequestLabel: GetPulsesLabel,
+		RequestLabel: GetJetDropsByPulseNumLabel,
 	}
 }
 
-func (a *GetPulsesAttack) Clone(r *loadgen.Runner) loadgen.Attack {
-	return &GetPulsesAttack{WithRunner: loadgen.WithRunner{R: r}}
+func (a *GetJetDropsByPulseNumberAttack) Clone(r *loadgen.Runner) loadgen.Attack {
+	return &GetJetDropsByPulseNumberAttack{WithRunner: loadgen.WithRunner{R: r}}
 }

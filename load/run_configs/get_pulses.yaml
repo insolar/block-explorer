@@ -13,8 +13,9 @@ steps:
     max_attackers: 10
     verbose: true
     do_timeout_sec: 40
-    csv_read: pulses.csv
-    recycle_data: true
+    csv_write: pulses.csv
+    metadata:
+      limit: 100
     stop_if:
       - type: error
         threshold: 0
