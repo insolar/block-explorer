@@ -6,6 +6,8 @@
 package configuration
 
 import (
+	"time"
+
 	"go.opencensus.io/stats/view"
 )
 
@@ -36,6 +38,21 @@ type DB struct {
 type Replicator struct {
 	Addr            string `insconfig:"127.0.0.1:5678| The gRPC server address"`
 	MaxTransportMsg int    `insconfig:"1073741824| Maximum message size the client can send"`
+	Auth            Auth
+}
+
+// Auth represents the authentication of the Platform
+type Auth struct {
+	// warning: set false only for testing purpose within secured environment
+	// if true then have to authorize
+	Required      bool          `insconfig:"false| Required authorization or not"`
+	URL           string        `insconfig:"https://{heavy.url}/auth/token | URL to auth endpoint"`
+	Login         string        `insconfig:"login| Authorization login"`
+	Password      string        `insconfig:"password| Authorization password"`
+	RefreshOffset int64         `insconfig:"60| Number of seconds remain of token expiration to start token refreshing"`
+	Timeout       time.Duration `insconfig:"15s| Timeout specifies a time limit for requests made by Client"`
+	// warning: set true only for testing purpose within secured environment
+	InsecureTLS bool `insconfig:"false| Transport layer security"`
 }
 
 // Log holds configuration for logging
