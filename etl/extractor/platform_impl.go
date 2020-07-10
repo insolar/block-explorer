@@ -293,14 +293,14 @@ func (e *PlatformExtractor) retrievePulses(ctx context.Context, from, until int6
 func (e *PlatformExtractor) retrieveRecords(ctx context.Context, pu *exporter.FullPulse) {
 	logger := belogger.FromContext(ctx)
 	jetDrops := &types.PlatformJetDrops{Pulse: pu} // save pulse info
-	for {                                          // each pulse
+
+	for { // each portion
 		log := logger.WithField("request_pulse_number", pu.PulseNumber)
-		req := &exporter.GetRecords{PulseNumber: pu.PulseNumber,
+		stream, err := e.client.Export(ctx, &exporter.GetRecords{PulseNumber: pu.PulseNumber,
 			RecordNumber: uint32(len(jetDrops.Records)),
-			Count:        10}
-		stream, err := e.client.Export(ctx, req)
+			Count:        99})
 		if err != nil {
-			log.Error("retrieveRecords() on rpc call", err.Error())
+			log.Error("retrieveRecords() on rpc call: ", err.Error())
 			time.Sleep(time.Second)
 			continue
 		}
