@@ -50,7 +50,7 @@ type Auth struct {
 	Login         string        `insconfig:"login| Authorization login"`
 	Password      string        `insconfig:"password| Authorization password"`
 	RefreshOffset int64         `insconfig:"60| Number of seconds remain of token expiration to start token refreshing"`
-	Timeout       time.Duration `insconfig:"15s| "`
+	Timeout       time.Duration `insconfig:"15s| Timeout specifies a time limit for requests made by Client"`
 	// warning: set true only for testing purpose within secured environment
 	InsecureTLS bool `insconfig:"false| Transport layer security"`
 }
