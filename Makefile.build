@@ -4,10 +4,10 @@ LDFLAGS ?=
 
 ##@ Building
 .PHONY: build
-build:  ## build all applications
-	go build -ldflags "$(LDFLAGS)" -o $(BIN_DIR)/block-explorer cmd/block-explorer/*.go
-	go build -ldflags "$(LDFLAGS)" -o $(BIN_DIR)/migrate cmd/migrate/*.go
-	go build -ldflags "$(LDFLAGS)" -o $(BIN_DIR)/api cmd/api/*.go
+build: block-explorer api ## build all applications
+
+block-explorer api:
+	go build -ldflags "$(LDFLAGS)" -o $(BIN_DIR)/$@ cmd/$@/*.go
 
 .PHONY: generate
 generate: ## generate mocks
