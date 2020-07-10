@@ -48,7 +48,7 @@ func NewGRPCClientConnection(ctx context.Context, cfg configuration.Replicator) 
 					TLSClientConfig: &tls.Config{
 						RootCAs: cp,
 						// nolint:gosec
-						InsecureSkipVerify: false,
+						InsecureSkipVerify: cfg.Auth.InsecureTLS,
 					},
 				},
 				Timeout: cfg.Auth.Timeout,
