@@ -76,9 +76,10 @@ type Log struct {
 }
 
 type Controller struct {
-	PulsePeriod       int `insconfig:"10| Seconds between pulse completion tries"`
-	SequentialPeriod  int `insconfig:"1| Seconds between pulse sequential tries"`
-	ReloadPeriod      int `insconfig:"10| Seconds between reloading data for same pulse tries"`
+	PulsePeriod      int `insconfig:"10| Seconds between pulse completion tries"`
+	SequentialPeriod int `insconfig:"1| Seconds between pulse sequential tries"`
+	// recommend to use 20 minutes because of PENV-447
+	ReloadPeriod      int `insconfig:"1200| Seconds between reloading data for same pulse tries"`
 	ReloadCleanPeriod int `insconfig:"1| Seconds between launching cleaning for reloaded data map"`
 }
 
