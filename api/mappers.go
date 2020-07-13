@@ -26,7 +26,7 @@ func RecordToAPI(record models.Record) server.Record {
 	response := server.Record{
 		Hash:        NullableString(base64.StdEncoding.EncodeToString(record.Hash)),
 		JetDropId:   NullableString(jetDropID.ToString()),
-		JetId:       NullableString(jetDropID.JetID),
+		JetId:       NullableString(jetDropID.JetIDToString()),
 		Index:       NullableString(fmt.Sprintf("%d:%d", record.PulseNumber, record.Order)),
 		Payload:     NullableString(base64.StdEncoding.EncodeToString(record.Payload)),
 		PulseNumber: &pulseNumber,
@@ -88,7 +88,7 @@ func JetDropToAPI(jetDrop models.JetDrop) server.JetDrop {
 	result := server.JetDrop{
 		Hash:      NullableString(base64.StdEncoding.EncodeToString(jetDrop.Hash)),
 		JetDropId: NullableString(jetDropID.ToString()),
-		JetId:     NullableString(jetDropID.JetID),
+		JetId:     NullableString(jetDropID.JetIDToString()),
 		// todo implement this if needed
 		NextJetDropId: &nextJetDropID,
 		PrevJetDropId: &prevJetDropID,
