@@ -36,6 +36,8 @@ type PlatformExtractor struct {
 	request          *exporter.GetRecords
 	mainJetDropsChan chan *types.PlatformJetDrops
 	cancel           context.CancelFunc
+
+	batchSize uint32
 }
 
 func NewPlatformExtractor(batchSize uint32, pulseExtractor interfaces.PulseExtractor, exporterClient exporter.RecordExporterClient) *PlatformExtractor {
@@ -49,6 +51,7 @@ func NewPlatformExtractor(batchSize uint32, pulseExtractor interfaces.PulseExtra
 
 		pulseExtractor:       pulseExtractor,
 		pulseExtractAttempts: 50,
+		batchSize:            batchSize,
 	}
 }
 
@@ -257,12 +260,6 @@ func (e *PlatformExtractor) retrievePulses(ctx context.Context, from, until int6
 		default:
 		}
 
-		if until <= 0 { // we are going on the edge of history
-			time.Sleep(halfPulse)
-		} else if pu.PulseNumber >= insolar.PulseNumber(until) { // we are at the end
-			return
-		}
-
 		var before insolar.PulseNumber // already processed pulse
 
 		if pu != nil { // not a first iteration
@@ -285,7 +282,15 @@ func (e *PlatformExtractor) retrievePulses(ctx context.Context, from, until int6
 
 		log := logger.WithField("pulse_number", pu.PulseNumber)
 		log.Info("retrievePulses(): successfully retrieved")
+
 		go e.retrieveRecords(ctx, pu)
+
+		if until <= 0 { // we are going on the edge of history
+			time.Sleep(halfPulse)
+		} else if pu.PulseNumber >= insolar.PulseNumber(until) { // we are at the end
+			return
+		}
+
 	}
 }
 
@@ -298,7 +303,7 @@ func (e *PlatformExtractor) retrieveRecords(ctx context.Context, pu *exporter.Fu
 		log := logger.WithField("request_pulse_number", pu.PulseNumber)
 		stream, err := e.client.Export(ctx, &exporter.GetRecords{PulseNumber: pu.PulseNumber,
 			RecordNumber: uint32(len(jetDrops.Records)),
-			Count:        99})
+			Count:        e.batchSize})
 		if err != nil {
 			log.Error("retrieveRecords() on rpc call: ", err.Error())
 			time.Sleep(time.Second)

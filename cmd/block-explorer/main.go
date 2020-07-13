@@ -93,8 +93,7 @@ func main() {
 	if err != nil {
 		logger.Fatal("cannot initialize controller: ", err)
 	}
-	// broken
-	// err = controller.Start(ctx)
+	err = controller.Start(ctx)
 	if err != nil {
 		logger.Fatal("cannot start controller: ", err)
 	}
