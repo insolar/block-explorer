@@ -75,8 +75,8 @@ type JetDropID struct {
 
 func NewJetDropID(jetID string, pulseNumber int64) *JetDropID {
 	tmp := jetID
-	if jetID == "" {
-		tmp = "*"
+	if jetID == "*" {
+		tmp = ""
 	}
 	return &JetDropID{JetID: tmp, PulseNumber: pulseNumber}
 }
@@ -84,6 +84,7 @@ func NewJetDropID(jetID string, pulseNumber int64) *JetDropID {
 // jetIDRegexp uses for a validation of the JetID
 var jetIDRegexp = regexp.MustCompile(`^(\*|([0-1]{1,216}))$`)
 
+// NewJetDropIDFromString create JetDropID from provided string representation. Jet with empty prefix returned with empty jetID.
 func NewJetDropIDFromString(jetDropID string) (*JetDropID, error) {
 	var pulse int64
 	jetDropID, err := url.QueryUnescape(jetDropID)
@@ -106,5 +107,13 @@ func NewJetDropIDFromString(jetDropID string) (*JetDropID, error) {
 }
 
 func (j *JetDropID) ToString() string {
-	return fmt.Sprintf("%s:%d", j.JetID, j.PulseNumber)
+	return fmt.Sprintf("%s:%d", j.JetIDToString(), j.PulseNumber)
+}
+
+func (j *JetDropID) JetIDToString() string {
+	tmp := j.JetID
+	if j.JetID == "" {
+		tmp = "*"
+	}
+	return tmp
 }

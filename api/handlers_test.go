@@ -1069,7 +1069,7 @@ func TestSearch_InvalidValue(t *testing.T) {
 	require.EqualValues(t, "value", *(*received.ValidationFailures)[0].Property)
 }
 
-func TestServer_JetDropsByID(t *testing.T) {
+func TestServer_JetDropByID(t *testing.T) {
 	t.Run("happy", func(t *testing.T) {
 		defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
 
@@ -1097,6 +1097,35 @@ func TestServer_JetDropsByID(t *testing.T) {
 		jetDrop3.JetID = converter.JetIDToString(jetID3)
 		err = testutils.CreateJetDrop(testDB, jetDrop3)
 		require.NoError(t, err)
+
+		resp, err := http.Get("http://" + apihost + "/api/v1/jet-drops/" + jetDropID1)
+		require.NoError(t, err)
+		require.Equal(t, http.StatusOK, resp.StatusCode)
+		bodyBytes, err := ioutil.ReadAll(resp.Body)
+		require.NoError(t, err)
+
+		var received server.JetDropResponse
+		err = json.Unmarshal(bodyBytes, &received)
+		require.NoError(t, err)
+		require.Equal(t, jetDropID1, *received.JetDropId)
+		require.Equal(t, base64.StdEncoding.EncodeToString(jetDrop1.Hash), *received.Hash)
+	})
+
+	t.Run("happy first jet", func(t *testing.T) {
+		defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+
+		// insert records
+		pulse, err := testutils.InitPulseDB()
+		require.NoError(t, err)
+		err = testutils.CreatePulse(testDB, pulse)
+		require.NoError(t, err)
+
+		jetDrop1 := testutils.InitJetDropDB(pulse)
+		jetID1 := jet.NewIDFromString("")
+		jetDrop1.JetID = converter.JetIDToString(jetID1)
+		err = testutils.CreateJetDrop(testDB, jetDrop1)
+		require.NoError(t, err)
+		jetDropID1 := models.NewJetDropID(jetDrop1.JetID, int64(pulse.PulseNumber)).ToString()
 
 		resp, err := http.Get("http://" + apihost + "/api/v1/jet-drops/" + jetDropID1)
 		require.NoError(t, err)
