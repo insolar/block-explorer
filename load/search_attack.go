@@ -23,8 +23,8 @@ func (a *SearchAttack) Setup(hc loadgen.RunnerConfig) error {
 	if _, ok := a.GetRunner().Config.Metadata["limit"]; !ok {
 		a.limit = 100
 	}
-	pulses_limit := a.GetRunner().Config.Metadata["limit"]
-	l, _ := strconv.Atoi(pulses_limit)
+	pulsesLimit := a.GetRunner().Config.Metadata["limit"]
+	l, _ := strconv.Atoi(pulsesLimit)
 	a.limit = int32(l)
 	return nil
 }

@@ -41,7 +41,9 @@ func main() {
 		for _, p := range res.Result {
 			pn := strconv.FormatInt(p.PulseNumber, 10)
 			pulseNumbers = append(pulseNumbers, p.PulseNumber)
-			csvPulses.Write([]string{pn})
+			if err := csvPulses.Write([]string{pn}); err != nil {
+				log.Fatal(err)
+			}
 		}
 		csvPulses.Flush()
 
@@ -57,7 +59,9 @@ func main() {
 			}
 			for _, uj := range res.Result {
 				uniqJetDropIds.Add(uj.JetDropId)
-				csvJetIDS.Write([]string{uj.JetId, strconv.FormatInt(uj.PulseNumber, 10)})
+				if err := csvJetIDS.Write([]string{uj.JetId, strconv.FormatInt(uj.PulseNumber, 10)}); err != nil {
+					log.Fatal(err)
+				}
 			}
 		}
 		csvJetIDS.Flush()
@@ -74,7 +78,9 @@ func main() {
 			}
 			for _, r := range res.Result {
 				uniqObjectRefs.Add(r.ObjectReference)
-				objectsIDS.Write([]string{r.ObjectReference})
+				if err := objectsIDS.Write([]string{r.ObjectReference}); err != nil {
+					log.Fatal(err)
+				}
 			}
 		}
 		objectsIDS.Flush()
