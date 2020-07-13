@@ -62,3 +62,9 @@ func (c *BEApiClient) Search(t *testing.T, value string) (response client.Search
 	LogHTTP(t, rawResponse, nil, response)
 	return response, err
 }
+
+func (c *BEApiClient) JetDropRecords(t *testing.T, jetDropId string, localVarOptionals *client.JetDropRecordsOpts) (response client.ObjectLifelineResponse200, err error) {
+	response, rawResponse, err := c.client.RecordApi.JetDropRecords(context.Background(), jetDropId, localVarOptionals)
+	LogHTTP(t, rawResponse, nil, response)
+	return response, err
+}
