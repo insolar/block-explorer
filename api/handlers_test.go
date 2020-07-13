@@ -1090,7 +1090,7 @@ func TestServer_JetDropByID(t *testing.T) {
 		jetDrop1.JetID = converter.JetIDToString(jetID1)
 		err = testutils.CreateJetDrop(testDB, jetDrop1)
 		require.NoError(t, err)
-		jetDropID1 := models.NewJetDropID(jetDrop1.JetID, int64(pulse.PulseNumber)).ToString()
+		jetDropID1 := models.NewJetDropID(jetDrop1.JetID, int64(pulse.PulseNumber))
 
 		jetDrop3 := testutils.InitJetDropDB(pulse)
 		jetID3 := jet.NewIDFromString("010")
@@ -1098,7 +1098,7 @@ func TestServer_JetDropByID(t *testing.T) {
 		err = testutils.CreateJetDrop(testDB, jetDrop3)
 		require.NoError(t, err)
 
-		resp, err := http.Get("http://" + apihost + "/api/v1/jet-drops/" + jetDropID1)
+		resp, err := http.Get("http://" + apihost + "/api/v1/jet-drops/" + jetDropID1.ToString())
 		require.NoError(t, err)
 		require.Equal(t, http.StatusOK, resp.StatusCode)
 		bodyBytes, err := ioutil.ReadAll(resp.Body)
@@ -1107,7 +1107,8 @@ func TestServer_JetDropByID(t *testing.T) {
 		var received server.JetDropResponse
 		err = json.Unmarshal(bodyBytes, &received)
 		require.NoError(t, err)
-		require.Equal(t, jetDropID1, *received.JetDropId)
+		require.Equal(t, jetDropID1.ToString(), *received.JetDropId)
+		require.Equal(t, jetDropID1.JetIDToString(), *received.JetId)
 		require.Equal(t, base64.StdEncoding.EncodeToString(jetDrop1.Hash), *received.Hash)
 	})
 
@@ -1125,9 +1126,9 @@ func TestServer_JetDropByID(t *testing.T) {
 		jetDrop1.JetID = converter.JetIDToString(jetID1)
 		err = testutils.CreateJetDrop(testDB, jetDrop1)
 		require.NoError(t, err)
-		jetDropID1 := models.NewJetDropID(jetDrop1.JetID, int64(pulse.PulseNumber)).ToString()
+		jetDropID1 := models.NewJetDropID(jetDrop1.JetID, int64(pulse.PulseNumber))
 
-		resp, err := http.Get("http://" + apihost + "/api/v1/jet-drops/" + jetDropID1)
+		resp, err := http.Get("http://" + apihost + "/api/v1/jet-drops/" + jetDropID1.ToString())
 		require.NoError(t, err)
 		require.Equal(t, http.StatusOK, resp.StatusCode)
 		bodyBytes, err := ioutil.ReadAll(resp.Body)
@@ -1136,7 +1137,8 @@ func TestServer_JetDropByID(t *testing.T) {
 		var received server.JetDropResponse
 		err = json.Unmarshal(bodyBytes, &received)
 		require.NoError(t, err)
-		require.Equal(t, jetDropID1, *received.JetDropId)
+		require.Equal(t, jetDropID1.ToString(), *received.JetDropId)
+		require.Equal(t, jetDropID1.JetIDToString(), *received.JetId)
 		require.Equal(t, base64.StdEncoding.EncodeToString(jetDrop1.Hash), *received.Hash)
 	})
 
@@ -1259,9 +1261,9 @@ func TestServer_JetDropByID(t *testing.T) {
 		jetDrop1.JetID = converter.JetIDToString(jetID1)
 		err = testutils.CreateJetDrop(testDB, jetDrop1)
 		require.NoError(t, err)
-		jetDropID1 := models.NewJetDropID(jetDrop1.JetID, int64(pulse.PulseNumber)).ToString()
+		jetDropID1 := models.NewJetDropID(jetDrop1.JetID, int64(pulse.PulseNumber))
 
-		urlencoded := url.QueryEscape(jetDropID1)
+		urlencoded := url.QueryEscape(jetDropID1.ToString())
 		resp, err := http.Get("http://" + apihost + "/api/v1/jet-drops/" + urlencoded)
 		require.NoError(t, err)
 		require.Equal(t, http.StatusOK, resp.StatusCode)
@@ -1271,7 +1273,8 @@ func TestServer_JetDropByID(t *testing.T) {
 		var received server.JetDropResponse
 		err = json.Unmarshal(bodyBytes, &received)
 		require.NoError(t, err)
-		require.Equal(t, jetDropID1, *received.JetDropId)
+		require.Equal(t, jetDropID1.ToString(), *received.JetDropId)
+		require.Equal(t, jetDropID1.JetIDToString(), *received.JetId)
 		require.Equal(t, base64.StdEncoding.EncodeToString(jetDrop1.Hash), *received.Hash)
 	})
 
