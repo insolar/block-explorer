@@ -24,6 +24,7 @@ services:
     environment:
       BLOCK_EXPLORER_REPLICATOR_ADDR: 'docker.for.mac.localhost:5678'
       BLOCK_EXPLORER_DB_URL: 'postgres://postgres:secret@postgres:5432/postgres?sslmode=disable'
+      BLOCK_EXPLORER_CONTROLLER_RELOADPERIOD: '1200'
       MIGRATE_URL: 'postgres://postgres:secret@postgres:5432/postgres?sslmode=disable'
     volumes:
       - .artifacts/block-explorer.yaml:/opt/app/config/block-explorer.yaml
