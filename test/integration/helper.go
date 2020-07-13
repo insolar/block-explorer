@@ -116,7 +116,7 @@ func (a *BlockExplorerTestSuite) PreparePulsesData() {
 	defer writer.Flush()
 
 	for _, p := range pulses {
-		writer.Write([]string{strconv.Itoa(p.PulseNumber)})
+		writer.Write([]string{strconv.Itoa(int(p.PulseNumber))})
 	}
 	writer.Flush()
 	fmt.Printf("pulses: %v\n", pulses)
