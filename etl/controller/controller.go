@@ -80,6 +80,7 @@ func NewController(cfg configuration.Controller, extractor interfaces.JetDropsEx
 // Start implements interfaces.Starter
 func (c *Controller) Start(ctx context.Context) error {
 	ctx, c.cancelFunc = context.WithCancel(ctx)
+	c.missedDataManager.Start()
 	go c.pulseMaintainer(ctx)
 	go c.pulseSequence(ctx)
 	return nil
