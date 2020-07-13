@@ -61,19 +61,23 @@ func main() {
 			}
 		}
 		csvJetIDS.Flush()
-		// TODO: fix bug https://insolar.atlassian.net/browse/PENV-454
+
 		// Get all uniq object refs
-		// uniqObjectRefs := hashset.New()
-		// for _, jdID := range uniqJetDropIds.Values() {
-		// 	res, _, err := c.RecordApi.JetDropRecords(ctx, jdID.(string), nil)
-		// 	if err != nil {
-		// 		log.Fatal(err)
-		// 	}
-		// 	for _, r := range res.Result {
-		// 		uniqObjectRefs.Add(r.ObjectReference)
-		// 	}
-		// }
-		// log.Printf("uniq refs: %s", uniqObjectRefs.String())
+		objectsFile := loadgen.CreateOrReplaceFile("objects.csv")
+		defer objectsFile.Close()
+		objectsIDS := csv.NewWriter(objectsFile)
+		uniqObjectRefs := hashset.New()
+		for _, jdID := range uniqJetDropIds.Values() {
+			res, _, err := c.RecordApi.JetDropRecords(ctx, jdID.(string), nil)
+			if err != nil {
+				log.Fatal(err)
+			}
+			for _, r := range res.Result {
+				uniqObjectRefs.Add(r.ObjectReference)
+				objectsIDS.Write([]string{r.ObjectReference})
+			}
+		}
+		objectsIDS.Flush()
 		return nil
 	}
 	loadgen.Run(load.AttackerFromName, load.CheckFromName, beforeAll, nil)

@@ -10,6 +10,7 @@ import (
 	"math/rand"
 	"time"
 
+	"github.com/insolar/insolar/insolar"
 	"github.com/insolar/insolar/insolar/gen"
 	"github.com/jinzhu/gorm"
 	"gopkg.in/gormigrate.v1"
@@ -61,12 +62,13 @@ func generateJetDrops(pulses []models.Pulse, amount int) []models.JetDrop {
 		rawData := generateRandBytesLen(32)
 		randPulseNum := rand.Intn(len(pulses))
 		rPnum := pulses[randPulseNum].PulseNumber
+		pn := insolar.PulseNumber(rPnum)
 		jID := notNullJetID()
 		jDrops = append(jDrops, models.JetDrop{
 			JetID:          jID,
 			PulseNumber:    rPnum,
-			FirstPrevHash:  gen.Reference().Bytes(),
-			SecondPrevHash: gen.Reference().Bytes(),
+			FirstPrevHash:  gen.IDWithPulse(pn).Bytes(),
+			SecondPrevHash: gen.IDWithPulse(pn).Bytes(),
 			Hash:           rawData,
 			RawData:        rawData,
 			Timestamp:      tNow + int64(i*2),
@@ -84,13 +86,14 @@ func generateRecords(jDrops []models.JetDrop, amount int) []models.Record {
 		randJetID := rand.Intn(len(jDrops))
 		randJet := jDrops[randJetID].JetID
 		jetPulseNum := jDrops[randJetID].PulseNumber
+		pn := insolar.PulseNumber(jetPulseNum)
 		records = append(records, models.Record{
-			Reference:           gen.Reference().Bytes(),
-			Type:                "0",
-			ObjectReference:     gen.Reference().Bytes(),
-			PrototypeReference:  gen.Reference().Bytes(),
+			Reference:           gen.IDWithPulse(pn).Bytes(),
+			Type:                "state",
+			ObjectReference:     gen.IDWithPulse(pn).Bytes(),
+			PrototypeReference:  gen.IDWithPulse(pn).Bytes(),
 			Payload:             rawData,
-			PrevRecordReference: gen.Reference().Bytes(),
+			PrevRecordReference: gen.IDWithPulse(pn).Bytes(),
 			Hash:                rawData,
 			RawData:             rawData,
 			JetID:               randJet,
@@ -115,7 +118,7 @@ func generateData(tx *gorm.DB) error {
 			return err
 		}
 	}
-	for _, rec := range generateRecords(jdrops, 10001) {
+	for _, rec := range generateRecords(jdrops, 1001) {
 		if err := tx.Model(&rec).Save(&rec).Error; err != nil {
 			return err
 		}

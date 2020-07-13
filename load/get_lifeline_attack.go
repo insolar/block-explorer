@@ -2,7 +2,6 @@ package load
 
 import (
 	"context"
-	"strconv"
 
 	"github.com/insolar/spec-insolar-block-explorer-api/v1/client"
 	"github.com/skudasov/loadgen"
@@ -23,9 +22,8 @@ func (a *GetLifelineAttack) Setup(hc loadgen.RunnerConfig) error {
 }
 
 func (a *GetLifelineAttack) Do(ctx context.Context) loadgen.DoResult {
-	pulse := loadgen.DefaultReadCSV(a)[0]
-	pulseNum, _ := strconv.ParseInt(pulse, 10, 64)
-	_, _, err := a.c.PulseApi.Pulse(ctx, pulseNum)
+	objectRef := loadgen.DefaultReadCSV(a)[0]
+	_, _, err := a.c.RecordApi.ObjectLifeline(ctx, objectRef, nil)
 	if err != nil {
 		return loadgen.DoResult{
 			Error:        err,
@@ -38,5 +36,5 @@ func (a *GetLifelineAttack) Do(ctx context.Context) loadgen.DoResult {
 }
 
 func (a *GetLifelineAttack) Clone(r *loadgen.Runner) loadgen.Attack {
-	return &GetPulseAttack{WithRunner: loadgen.WithRunner{R: r}}
+	return &GetLifelineAttack{WithRunner: loadgen.WithRunner{R: r}}
 }
