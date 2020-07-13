@@ -100,76 +100,11 @@ func TestGetRecordsByJetDropID_oneJdCheckFields(t *testing.T) {
 			maxPn = pn
 		}
 
+		objID := r.Record.ObjectID
+		objRef := insolar.NewReference(objID).String()
 		expResult[i] = client.ObjectLifelineResponse200Result{
 			Reference:       r.Record.ID.String(),
-			ObjectReference: insolar.NewReference(r.Record.ObjectID).String(),
-			// ObjectReference: ref1.String(),
-			// ObjectReference: insolar.NewIDFromBytes(r.Record.ObjectID.AsBytes()).String(),
-			Type:        "state",
-			PulseNumber: int64(pn.AsUint32()),
-			JetId:       jetID,
-			JetDropId:   jetDropID,
-			Index:       index,
-		}
-	}
-
-	require.NoError(t, heavymock.ImportRecords(ts.ConMngr.ImporterClient, []*exporter.Record{testutils.GenerateRecordInNextPulse(maxPn)}))
-	ts.WaitRecordsCount(t, len(records), 2000)
-
-	c := GetHTTPClient()
-	response, err := c.JetDropRecords(t, jetDropID, nil)
-	require.NoError(t, err)
-
-	require.Equal(t, int64(len(records)), response.Total)
-	require.Len(t, response.Result, len(records))
-	for _, r := range response.Result {
-		var expRecord client.ObjectLifelineResponse200Result
-		if r.Reference == expResult[0].Reference {
-			expRecord = expResult[0]
-		} else {
-			expRecord = expResult[1]
-		}
-		require.Equal(t, expRecord.Reference, r.Reference)
-		require.Equal(t, expRecord.ObjectReference, r.ObjectReference)
-		require.Equal(t, expRecord.Type, r.Type)
-		require.Equal(t, expRecord.PulseNumber, r.PulseNumber)
-		require.Equal(t, expRecord.JetId, r.JetId)
-		require.Equal(t, expRecord.JetDropId, r.JetDropId)
-		// require.Equal(t, expRecord.Index, r.Index)
-	}
-
-	require.Empty(t, response.Code)
-	require.Empty(t, response.Message)
-	require.Empty(t, response.Description)
-	require.Empty(t, response.Link)
-	require.Empty(t, response.ValidationFailures)
-}
-
-func TestGetRecordsByJetDropID_lifeline(t *testing.T) {
-	ts := integration.NewBlockExplorerTestSetup(t).WithHTTPServer(t)
-	defer ts.Stop(t)
-
-	pulsesCount := 1
-	recordsInJetDropCount := 2
-	lifeline := testutils.GenerateObjectLifeline(pulsesCount, recordsInJetDropCount)
-	records := lifeline.StateRecords[0].Records
-	require.NoError(t, heavymock.ImportRecords(ts.ConMngr.ImporterClient, records))
-
-	expResult := make([]client.ObjectLifelineResponse200Result, len(records))
-	var maxPn insolar.PulseNumber = 0
-	var jetDropID string
-	for i, r := range records {
-		jetID := converter.JetIDToString(r.Record.JetID)
-		pn := r.Record.ID.Pulse()
-		jetDropID = fmt.Sprintf("%v:%v", jetID, pn.String())
-		index := fmt.Sprintf("%v:%v", pn.String(), i)
-		if maxPn.AsUint32() < pn.AsUint32() {
-			maxPn = pn
-		}
-		expResult[i] = client.ObjectLifelineResponse200Result{
-			Reference: r.Record.ID.String(),
-			// ObjectReference: insolar.NewReference(lifeline.ObjID).String(),
-			ObjectReference: insolar.NewReference(r.Record.ObjectID).String(),
+			ObjectReference: objRef,
 			Type:            "state",
 			PulseNumber:     int64(pn.AsUint32()),
 			JetId:           jetID,
@@ -208,18 +143,4 @@ func TestGetRecordsByJetDropID_lifeline(t *testing.T) {
 	require.Empty(t, response.Description)
 	require.Empty(t, response.Link)
 	require.Empty(t, response.ValidationFailures)
-}
-
-func TestID(t *testing.T) {
-	r := testutils.GenerateRecordsSilence(1)[0]
-
-	bb := r.Record.ObjectID.Bytes()
-	iidd := insolar.NewIDFromBytes(bb)
-	ref1 := insolar.NewReference(*iidd)
-	println(ref1.String())
-
-	id := r.Record.ObjectID
-	ref2 := insolar.NewReference(id)
-	println(ref2.String())
-
 }

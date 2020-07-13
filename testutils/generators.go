@@ -192,8 +192,8 @@ func GenerateRecords(batchSize int) func() (record *exporter.Record, e error) {
 				Polymorph: int32(randNum()),
 				Virtual: insrecord.Virtual{
 					Polymorph: int32(randNum()),
-					Union: &insrecord.Virtual_Activate{
-						Activate: &insrecord.Activate{
+					Union: &insrecord.Virtual_Amend{
+						Amend: &insrecord.Amend{
 							Request: gen.Reference(),
 						},
 					},
