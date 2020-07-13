@@ -45,9 +45,9 @@ func NewMissedDataManager(ttl time.Duration, cleanPeriod time.Duration) *MissedD
 				mdm.deleteExpired()
 			case <-mdm.stopped:
 				stop = true
-				ticker.Stop()
 			}
 		}
+		ticker.Stop()
 		mdm.stopped <- struct{}{}
 	}()
 

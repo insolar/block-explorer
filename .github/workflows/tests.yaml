@@ -38,7 +38,7 @@ jobs:
         run: |
           echo "::set-env name=TEST_COUNT::10"
       - name: set scheduled run params
-        if: github.event_name == 'schedule'
+#        if: github.event_name == 'schedule'
         run: |
           echo "::set-env name=TEST_COUNT::1000"
           echo "::set-env name=TEST_ARGS::-timeout 60m"
@@ -66,7 +66,7 @@ jobs:
         run: |
           echo "::set-env name=TEST_COUNT::10"
       - name: set scheduled run params
-        if: github.event_name == 'schedule'
+#        if: github.event_name == 'schedule'
         run: |
           echo "::set-env name=TEST_COUNT::1000"
           echo "::set-env name=TEST_ARGS::-timeout 240m"
