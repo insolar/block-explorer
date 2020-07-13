@@ -30,17 +30,12 @@ const (
 
 // Transform transforms thr row JetDrops to canonical JetDrops
 func Transform(ctx context.Context, jd *types.PlatformJetDrops) ([]*types.JetDrop, error) {
-	// if no records per pulse
-	if len(jd.Records) == 0 {
-		return make([]*types.JetDrop, 0), nil
-	}
-
 	pulseData, err := getPulseData(jd.Pulse)
 	if err != nil {
 		return nil, errors.Wrapf(err, "cannot get pulse data from record")
 	}
 
-	m, err := getRecords(jd.Records)
+	m, err := getRecords(jd)
 	if err != nil {
 		return nil, err
 	}
@@ -191,10 +186,22 @@ func getPulseData(pn *exporter.FullPulse) (types.Pulse, error) {
 	}, nil
 }
 
-func getRecords(records []*exporter.Record) (map[insolar.JetID][]types.Record, error) {
+func getRecords(jd *types.PlatformJetDrops) (map[insolar.JetID][]types.Record, error) {
 	// map need to collect records by JetID
 	res := make(map[insolar.JetID][]types.Record)
-	for _, r := range records {
+	if jd == nil {
+		return res, nil
+	}
+
+	if len(jd.Records) == 0 && jd.Pulse != nil {
+		// we don't have a record but have a pulse
+		for _, jetID := range jd.Pulse.Jets {
+			res[jetID] = nil
+		}
+		return res, nil
+	}
+
+	for _, r := range jd.Records {
 		record, err := transferToCanonicalRecord(r)
 		if err != nil {
 			if err == UnsupportedRecordTypeError {
@@ -208,6 +215,8 @@ func getRecords(records []*exporter.Record) (map[insolar.JetID][]types.Record, e
 	}
 
 	return res, nil
+
+	// TODO: maybe ne need to check the records jetID's with jd.Pulse.Jets
 }
 
 func transferToCanonicalRecord(r *exporter.Record) (types.Record, error) {
