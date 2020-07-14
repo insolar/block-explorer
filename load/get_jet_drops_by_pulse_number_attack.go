@@ -23,13 +23,14 @@ func (a *GetJetDropsByPulseNumberAttack) Setup(hc loadgen.RunnerConfig) error {
 	a.c = client.NewAPIClient(cfg)
 	if _, ok := a.GetRunner().Config.Metadata["limit"]; !ok {
 		a.limit = 100
+	} else {
+		pulsesLimit := a.GetRunner().Config.Metadata["limit"]
+		l, err := strconv.ParseInt(pulsesLimit, 10, 0)
+		if err != nil {
+			a.R.L.Fatal(err)
+		}
+		a.limit = int32(l)
 	}
-	pulsesLimit := a.GetRunner().Config.Metadata["limit"]
-	l, err := strconv.ParseInt(pulsesLimit, 10, 0)
-	if err != nil {
-		a.R.L.Fatal(err)
-	}
-	a.limit = int32(l)
 	return nil
 }
 
