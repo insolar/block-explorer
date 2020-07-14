@@ -6,9 +6,9 @@
 package transformer
 
 import (
-	"bytes"
 	"context"
 
+	"github.com/insolar/insolar/pulse"
 	"github.com/ugorji/go/codec"
 	"golang.org/x/crypto/sha3"
 
@@ -18,7 +18,6 @@ import (
 	"github.com/insolar/insolar/applicationbase/genesisrefs"
 
 	"github.com/insolar/insolar/insolar"
-	"github.com/insolar/insolar/insolar/record"
 	ins_record "github.com/insolar/insolar/insolar/record"
 	"github.com/insolar/insolar/ledger/heavy/exporter"
 	"github.com/pkg/errors"
@@ -249,7 +248,9 @@ func transferToCanonicalRecord(r *exporter.Record) (types.Record, error) {
 		activate := virtual.GetActivate()
 		prototypeReference = activate.Image.Bytes()
 		recordPayload = activate.Memory
-		objectReference = activate.Request.GetLocal().Bytes()
+		if r.Record.ID.Pulse() == pulse.MinTimePulse {
+			objectReference = activate.Request.GetLocal().Bytes()
+		}
 
 	case *ins_record.Virtual_Amend:
 		recordType = types.STATE
@@ -257,7 +258,7 @@ func transferToCanonicalRecord(r *exporter.Record) (types.Record, error) {
 		prototypeReference = amend.Image.Bytes()
 		recordPayload = amend.Memory
 		prevRecordReference = amend.PrevStateID().Bytes()
-		if bytes.Equal(objectReference, insolar.NewEmptyID().Bytes()) {
+		if r.Record.ID.Pulse() == pulse.MinTimePulse {
 			objectReference = amend.Request.GetLocal().Bytes()
 		}
 
@@ -270,24 +271,20 @@ func transferToCanonicalRecord(r *exporter.Record) (types.Record, error) {
 		recordType = types.RESULT
 		result := virtual.GetResult()
 		recordPayload = result.Payload
-		objectReference = result.GetObject().Bytes()
+		if r.Record.ID.Pulse() == pulse.MinTimePulse {
+			objectReference = result.GetObject().Bytes()
+		}
 
 	case *ins_record.Virtual_IncomingRequest:
 		recordType = types.REQUEST
 		incomingRequest := virtual.GetIncomingRequest()
-		object := incomingRequest.GetObject()
-		if object != nil && object.IsObjectReference() {
-			objectReference = object.GetLocal().Bytes()
-		}
-		if incomingRequest.CallType == record.CTGenesis {
+		if r.Record.ID.Pulse() == pulse.MinTimePulse {
 			objectReference = genesisrefs.GenesisRef(incomingRequest.Method).GetLocal().Bytes()
 		}
+
 	case *ins_record.Virtual_OutgoingRequest:
 		recordType = types.REQUEST
-		object := virtual.GetOutgoingRequest().GetObject()
-		if object != nil && object.IsObjectReference() {
-			objectReference = object.GetLocal().Bytes()
-		}
+
 	default:
 		// skip unnecessary record
 		return types.Record{}, UnsupportedRecordTypeError
