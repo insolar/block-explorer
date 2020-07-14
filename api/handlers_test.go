@@ -21,7 +21,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/insolar/block-explorer/instrumentation/converter"
 	"github.com/insolar/insolar/insolar"
 	"github.com/insolar/insolar/insolar/gen"
 	"github.com/insolar/insolar/insolar/jet"
@@ -35,6 +34,7 @@ import (
 	"github.com/insolar/block-explorer/etl/models"
 	"github.com/insolar/block-explorer/etl/storage"
 	"github.com/insolar/block-explorer/instrumentation/belogger"
+	"github.com/insolar/block-explorer/instrumentation/converter"
 	"github.com/insolar/block-explorer/testutils"
 )
 
@@ -61,8 +61,10 @@ func TestMain(t *testing.M) {
 	server.RegisterHandlers(e, blockExplorerAPI)
 	go func() {
 		err := e.Start(apihost)
-		dbCleaner()
-		e.Logger.Fatal(err)
+		if err != http.ErrServerClosed {
+			dbCleaner()
+			e.Logger.Fatal(err)
+		}
 	}()
 	// TODO: wait until API started
 	time.Sleep(5 * time.Second)
@@ -70,6 +72,11 @@ func TestMain(t *testing.M) {
 	retCode := t.Run()
 
 	dbCleaner()
+
+	if err := e.Close(); err != nil {
+		e.Logger.Fatal(err)
+	}
+
 	os.Exit(retCode)
 }
 
@@ -368,18 +375,24 @@ func TestPulse_Pulse_NotExist(t *testing.T) {
 	resp, err := http.Get("http://" + apihost + fmt.Sprintf("/api/v1/pulses/%d", gen.PulseNumber()))
 	require.NoError(t, err)
 	require.Equal(t, http.StatusNotFound, resp.StatusCode)
+	err = resp.Body.Close()
+	require.NoError(t, err)
 }
 
 func TestPulse_Pulse_WrongFormat(t *testing.T) {
 	resp, err := http.Get("http://" + apihost + "/api/v1/pulses/" + "wrong_type")
 	require.NoError(t, err)
 	require.Equal(t, http.StatusBadRequest, resp.StatusCode)
+	err = resp.Body.Close()
+	require.NoError(t, err)
 }
 
 func TestPulse_Pulse_GreaterThanMax(t *testing.T) {
 	resp, err := http.Get("http://" + apihost + "/api/v1/pulses/" + string(math.MaxInt64) + "1")
 	require.NoError(t, err)
 	require.Equal(t, http.StatusBadRequest, resp.StatusCode)
+	err = resp.Body.Close()
+	require.NoError(t, err)
 }
 
 func TestPulses_HappyPath(t *testing.T) {
@@ -1052,6 +1065,8 @@ func TestSearch_NoValue(t *testing.T) {
 	resp, err := http.Get("http://" + apihost + "/api/v1/search")
 	require.NoError(t, err)
 	require.Equal(t, http.StatusBadRequest, resp.StatusCode)
+	err = resp.Body.Close()
+	require.NoError(t, err)
 }
 
 func TestSearch_InvalidValue(t *testing.T) {
