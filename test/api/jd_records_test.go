@@ -21,6 +21,7 @@ import (
 	"github.com/insolar/block-explorer/testutils"
 	"github.com/insolar/insolar/insolar"
 	"github.com/insolar/insolar/insolar/gen"
+	"github.com/insolar/insolar/insolar/jet"
 	"github.com/insolar/insolar/ledger/heavy/exporter"
 	"github.com/insolar/spec-insolar-block-explorer-api/v1/client"
 	"github.com/stretchr/testify/require"
@@ -104,14 +105,37 @@ func TestGetRecordsByJetDropID(t *testing.T) {
 		require.Empty(t, response.Result)
 		require.Empty(t, response.Total)
 	})
-	t.Run("star with pulse", func(t *testing.T) {
-		t.Log("")
-		val := fmt.Sprintf("*:%v", records[0].Record.ID.Pulse().String())
-		response, err := c.JetDropRecords(t, val, nil)
-		require.NoError(t, err)
-		require.Empty(t, response.Result)
-		require.Empty(t, response.Total)
-	})
+}
+
+func TestGetRecordsByJetDropID_star(t *testing.T) {
+	t.Log("")
+	ts := integration.NewBlockExplorerTestSetup(t).WithHTTPServer(t)
+	defer ts.Stop(t)
+
+	pulsesCount, recordsInJetDropCount := 1, 9
+	records := testutils.GenerateRecordsFromOneJetSilence(pulsesCount, recordsInJetDropCount)
+	for i := 2; i < 4; i++ {
+		records[i].Record.JetID = jet.NewIDFromString("")
+	}
+	recordsNextPulse := testutils.GenerateRecordsFromOneJetSilence(pulsesCount, recordsInJetDropCount)
+	pn := records[0].Record.ID.Pulse()
+	nexPn := pn + 10
+	for _, r := range recordsNextPulse {
+		r.Record.ID = gen.IDWithPulse(nexPn)
+		r.Record.JetID = jet.NewIDFromString("")
+	}
+	nextRecord := testutils.GenerateRecordInNextPulse(nexPn)
+	require.NoError(t, heavymock.ImportRecords(ts.ConMngr.ImporterClient, records))
+	require.NoError(t, heavymock.ImportRecords(ts.ConMngr.ImporterClient, recordsNextPulse))
+	require.NoError(t, heavymock.ImportRecords(ts.ConMngr.ImporterClient, []*exporter.Record{nextRecord}))
+	ts.WaitRecordsCount(t, recordsInJetDropCount*2, 5000)
+
+	val := fmt.Sprintf("*:%v", pn.String())
+	c := GetHTTPClient()
+	response, err := c.JetDropRecords(t, val, nil)
+	require.NoError(t, err)
+	require.Len(t, response.Result, 2)
+	require.Equal(t, int64(2), response.Total)
 }
 
 func TestGetRecordsByJetDropID_oneJdCheckFields(t *testing.T) {
