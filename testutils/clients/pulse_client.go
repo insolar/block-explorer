@@ -9,7 +9,6 @@ import (
 	"context"
 
 	"github.com/insolar/insolar/insolar"
-	"github.com/insolar/insolar/insolar/gen"
 	"github.com/insolar/insolar/ledger/heavy/exporter"
 	"google.golang.org/grpc"
 )
@@ -45,17 +44,16 @@ func GetTestPulseClient(pn uint32, err error) *TestPulseClient {
 		return getTestTopSyncPulseResponse(pn), err
 	}
 	client.nextFinalizedPulse = func(ctx context.Context, in *exporter.GetNextFinalizedPulse, opts ...grpc.CallOption) (*exporter.FullPulse, error) {
-		return getFullPulse(), nil
+		return GetFullPulse(pn), nil
 	}
 	return client
 }
 
-func getFullPulse() *exporter.FullPulse {
-	pulseNumber := gen.PulseNumber()
+func GetFullPulse(pn uint32) *exporter.FullPulse {
 	res := &exporter.FullPulse{
-		PulseNumber:      pulseNumber,
-		PrevPulseNumber:  pulseNumber,
-		NextPulseNumber:  pulseNumber,
+		PulseNumber:      insolar.PulseNumber(pn),
+		PrevPulseNumber:  insolar.PulseNumber(pn - 10),
+		NextPulseNumber:  insolar.PulseNumber(pn + 10),
 		Entropy:          insolar.Entropy{},
 		PulseTimestamp:   0,
 		EpochPulseNumber: 0,
