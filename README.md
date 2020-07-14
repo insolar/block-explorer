@@ -1,5 +1,8 @@
 # block-explorer
 
+#### Loadtests
+See [readme](load/README.md)
+
 #### Benchmarks
 ```
 make bench
