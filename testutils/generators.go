@@ -110,8 +110,9 @@ type RecordsByPulse struct {
 
 func (l *ObjectLifeline) GetAllRecords() []*exporter.Record {
 	r := l.GetStateRecords()
-	r = append(r, l.SideRecords[0].Records...)
-	r = append(r, l.SideRecords[1].Records...)
+	for i := 0; i < len(l.SideRecords); i++ {
+		r = append(r, l.SideRecords[i].Records...)
+	}
 	return r
 }
 
@@ -127,25 +128,32 @@ func GenerateObjectLifeline(pulseCount, recordsInPulse int) ObjectLifeline {
 	objectID := gen.ID()
 	var prevState insolar.ID
 	stateRecords := make([]RecordsByPulse, pulseCount)
-	sideRecords := make([]RecordsByPulse, 2)
+	sideRecords := make([]RecordsByPulse, 1)
 	pn := gen.PulseNumber()
 	for i := 0; i < pulseCount; i++ {
 		jetID := GenerateUniqueJetID()
 		pn += 10
+		records := make([]*exporter.Record, recordsInPulse)
+		var amends []*exporter.Record
 		if i == 0 {
 			request := GenerateRequestRecord(pn, objectID)
 			activate := GenerateVirtualActivateRecord(pn, objectID, request.Record.ID)
+			activate.Record.JetID = jetID
 			sideRecords[0] = RecordsByPulse{
 				Pn:      pn,
-				Records: []*exporter.Record{request, activate},
+				Records: []*exporter.Record{request},
 			}
 			prevState = activate.Record.ID
+			records[0] = activate
+			amends = GenerateVirtualAmendRecordsLinkedArray(pn, jetID, objectID, prevState, recordsInPulse-1)
+			copy(records[1:], amends)
+		} else {
+			amends = GenerateVirtualAmendRecordsLinkedArray(pn, jetID, objectID, prevState, recordsInPulse)
+			copy(records, amends)
 		}
-
-		records := make([]*exporter.Record, recordsInPulse)
-		amends := GenerateVirtualAmendRecordsLinkedArray(pn, jetID, objectID, prevState, recordsInPulse)
-		copy(records, amends)
-		prevState = amends[len(amends)-1].Record.ID
+		if len(amends) > 0 {
+			prevState = amends[len(amends)-1].Record.ID
+		}
 		// TODO uncomment after resolving https://insolar.atlassian.net/browse/PENV-368
 		// if i == pulseCount-1 {
 		// 	deactivate := GenerateVirtualDeactivateRecord(pn, objectID, prevState)
