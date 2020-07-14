@@ -75,7 +75,7 @@ func TestGetRecordsByJetDropID(t *testing.T) {
 	c := GetHTTPClient()
 
 	t.Run("get records by jetdrops", func(t *testing.T) {
-		t.Log("C5323\tGet records by different JetDropIDs")
+		t.Log("C5323 Get records by different JetDropIDs")
 		for jd := range jds {
 			response, err := c.JetDropRecords(t, jd, nil)
 			require.NoError(t, err)
@@ -104,7 +104,7 @@ func TestGetRecordsByJetDropID(t *testing.T) {
 		require.Empty(t, response.Total)
 	})
 	t.Run("value with star", func(t *testing.T) {
-		t.Log("C5325\tGet records by JetDropID, no results if \"*:pulse\"")
+		t.Log("C5325 Get records by JetDropID, no results if \"*:pulse\"")
 		val := "*:65538"
 		response, err := c.JetDropRecords(t, val, nil)
 		require.NoError(t, err)
@@ -143,7 +143,7 @@ func TestGetRecordsByJetDropID_queryParams(t *testing.T) {
 	c := GetHTTPClient()
 
 	t.Run("limit offset", func(t *testing.T) {
-		t.Log("\tC5326\tGet records by JetDropID with limit and offset set")
+		t.Log("C5326 Get records by JetDropID with limit and offset set")
 		queryParams := client.JetDropRecordsOpts{
 			Limit:  optional.NewInt32(int32(recordsInJetDropCount - 2)),
 			Offset: optional.NewInt32(int32(1)),
@@ -155,7 +155,7 @@ func TestGetRecordsByJetDropID_queryParams(t *testing.T) {
 		require.Equal(t, records[1].Record.ID.String(), response.Result[0].Reference)
 	})
 	t.Run("FromIndex", func(t *testing.T) {
-		t.Log("5327\tGet records by JetDropID with FromIndex set")
+		t.Log("5327 Get records by JetDropID with FromIndex set")
 		fromIdx := 5
 		queryParams := client.JetDropRecordsOpts{
 			FromIndex: optional.NewString(fmt.Sprintf("%v:%v", lifeline.StateRecords[0].Pn, fromIdx)),
@@ -197,7 +197,7 @@ func TestGetRecordsByJetDropID_byType(t *testing.T) {
 
 	c := GetHTTPClient()
 	t.Run("Type state", func(t *testing.T) {
-		t.Log("C5328\tGet records by JetDropID with Type set to State")
+		t.Log("C5328 Get records by JetDropID with Type set to State")
 		queryParams := client.JetDropRecordsOpts{
 			Type_: optional.NewString(stateType),
 			Limit: optional.NewInt32(int32(recordsInJetDropCount)),
@@ -210,7 +210,7 @@ func TestGetRecordsByJetDropID_byType(t *testing.T) {
 		require.Equal(t, stateType, response.Result[0].Type)
 	})
 	t.Run("Type request", func(t *testing.T) {
-		t.Log("C5329\tGet records by JetDropID with Type set to Request")
+		t.Log("C5329 Get records by JetDropID with Type set to Request")
 		queryParams := client.JetDropRecordsOpts{
 			Type_: optional.NewString(requestType),
 			Limit: optional.NewInt32(int32(recordsInJetDropCount)),
@@ -223,7 +223,7 @@ func TestGetRecordsByJetDropID_byType(t *testing.T) {
 		require.Equal(t, requestType, response.Result[0].Type)
 	})
 	t.Run("Type result", func(t *testing.T) {
-		t.Log("C5330\tGet records by JetDropID with Type set to Result")
+		t.Log("C5330 Get records by JetDropID with Type set to Result")
 		queryParams := client.JetDropRecordsOpts{
 			Type_: optional.NewString(resultType),
 			Limit: optional.NewInt32(int32(recordsInJetDropCount)),
@@ -238,7 +238,7 @@ func TestGetRecordsByJetDropID_byType(t *testing.T) {
 }
 
 func TestGetRecordsByJetDropID_star(t *testing.T) {
-	t.Log("C5331\tGet records by JetDropID, get genesis records by a star char")
+	t.Log("C5331 Get records by JetDropID, get genesis records by a star char")
 	ts := integration.NewBlockExplorerTestSetup(t).WithHTTPServer(t)
 	defer ts.Stop(t)
 
@@ -269,7 +269,7 @@ func TestGetRecordsByJetDropID_star(t *testing.T) {
 }
 
 func TestGetRecordsByJetDropID_oneJdCheckFields(t *testing.T) {
-	t.Log("C5332\tGet records by JetDropIDs and verify all fields")
+	t.Log("C5332 Get records by JetDropIDs and verify all fields")
 	ts := integration.NewBlockExplorerTestSetup(t).WithHTTPServer(t)
 	defer ts.Stop(t)
 
