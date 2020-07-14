@@ -9,6 +9,7 @@ package api
 
 import (
 	"fmt"
+	"regexp"
 	"testing"
 
 	"github.com/insolar/block-explorer/instrumentation/converter"
@@ -84,7 +85,7 @@ func TestGetRecordsByJetDropID_oneJdCheckFields(t *testing.T) {
 	defer ts.Stop(t)
 
 	pulsesCount := 1
-	recordsInJetDropCount := 1
+	recordsInJetDropCount := 2
 	records := testutils.GenerateRecordsFromOneJetSilence(pulsesCount, recordsInJetDropCount)
 	require.NoError(t, heavymock.ImportRecords(ts.ConMngr.ImporterClient, records))
 
@@ -135,9 +136,10 @@ func TestGetRecordsByJetDropID_oneJdCheckFields(t *testing.T) {
 		require.Equal(t, expRecord.PulseNumber, r.PulseNumber)
 		require.Equal(t, expRecord.JetId, r.JetId)
 		require.Equal(t, expRecord.JetDropId, r.JetDropId)
-		// require.Equal(t, expRecord.Index, r.Index)
+		require.Regexp(t, regexp.MustCompile(fmt.Sprintf("^%v:[01]", r.PulseNumber)), r.Index)
+		require.NotEmpty(t, r.Hash)
+		require.NotEmpty(t, r.Timestamp)
 	}
-
 	require.Empty(t, response.Code)
 	require.Empty(t, response.Message)
 	require.Empty(t, response.Description)
