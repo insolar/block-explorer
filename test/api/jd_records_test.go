@@ -9,7 +9,9 @@ package api
 
 import (
 	"fmt"
+	"math/rand"
 	"testing"
+	"time"
 
 	"github.com/insolar/block-explorer/instrumentation/converter"
 	"github.com/insolar/block-explorer/test/heavymock"
@@ -86,7 +88,6 @@ func TestGetRecordsByJetDropID_oneJdCheckFields(t *testing.T) {
 	pulsesCount := 1
 	recordsInJetDropCount := 9
 	records := testutils.GenerateObjectLifeline(pulsesCount, recordsInJetDropCount).StateRecords[0].Records
-	require.NoError(t, heavymock.ImportRecords(ts.ConMngr.ImporterClient, records))
 
 	expResult := make(map[string]client.ObjectLifelineResponse200Result, len(records))
 	var maxPn insolar.PulseNumber = 0
@@ -113,6 +114,10 @@ func TestGetRecordsByJetDropID_oneJdCheckFields(t *testing.T) {
 		}
 	}
 
+	rand.Seed(time.Now().UnixNano())
+	rand.Shuffle(len(records), func(i, j int) { records[i], records[j] = records[j], records[i] })
+
+	require.NoError(t, heavymock.ImportRecords(ts.ConMngr.ImporterClient, records))
 	require.NoError(t, heavymock.ImportRecords(ts.ConMngr.ImporterClient, []*exporter.Record{testutils.GenerateRecordInNextPulse(maxPn)}))
 	ts.WaitRecordsCount(t, len(records), 2000)
 
