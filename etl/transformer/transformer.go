@@ -44,6 +44,16 @@ func Transform(ctx context.Context, jd *types.PlatformJetDrops) ([]*types.JetDro
 		return nil, err
 	}
 
+	log := belogger.FromContext(ctx)
+	for _, jetid := range jd.Pulse.Jets {
+		if _, ok := m[jetid]; ok {
+			log.Debug("full ", jetid.DebugString())
+			continue
+		}
+		m[jetid] = nil
+		log.Debug("empty ", jetid.DebugString())
+	}
+
 	result := make([]*types.JetDrop, 0)
 	for jetID, records := range m {
 		localJetDrop, err := getJetDrop(ctx, jetID, records, pulseData)
@@ -190,6 +200,7 @@ func getPulseData(pn *exporter.FullPulse) (types.Pulse, error) {
 	}, nil
 }
 
+// getRecords - order records to map by jetid
 func getRecords(jd *types.PlatformJetDrops) (map[insolar.JetID][]types.Record, error) {
 	// map need to collect records by JetID
 	res := make(map[insolar.JetID][]types.Record)
