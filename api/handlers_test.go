@@ -17,8 +17,6 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"runtime"
-	"runtime/pprof"
 	"strconv"
 	"testing"
 	"time"
@@ -47,9 +45,6 @@ const (
 var testDB *gorm.DB
 
 func TestMain(t *testing.M) {
-	fmt.Println(runtime.NumGoroutine())
-	pprof.Lookup("goroutine").WriteTo(os.Stdout, 1)
-
 	var dbCleaner func()
 	var err error
 	testDB, dbCleaner, err = testutils.SetupDB()
@@ -84,8 +79,6 @@ func TestMain(t *testing.M) {
 		e.Logger.Fatal(err)
 	}
 	<-stopped
-	pprof.Lookup("goroutine").WriteTo(os.Stdout, 1)
-	fmt.Println(runtime.NumGoroutine())
 
 	os.Exit(retCode)
 }
