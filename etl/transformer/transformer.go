@@ -9,12 +9,16 @@ import (
 	"bytes"
 	"context"
 
-	"github.com/insolar/block-explorer/instrumentation"
-	"github.com/insolar/block-explorer/instrumentation/converter"
 	"github.com/ugorji/go/codec"
 	"golang.org/x/crypto/sha3"
 
+	"github.com/insolar/block-explorer/instrumentation"
+	"github.com/insolar/block-explorer/instrumentation/converter"
+
+	"github.com/insolar/insolar/applicationbase/genesisrefs"
+
 	"github.com/insolar/insolar/insolar"
+	"github.com/insolar/insolar/insolar/record"
 	ins_record "github.com/insolar/insolar/insolar/record"
 	"github.com/insolar/insolar/ledger/heavy/exporter"
 	"github.com/pkg/errors"
@@ -268,13 +272,19 @@ func transferToCanonicalRecord(r *exporter.Record) (types.Record, error) {
 
 	case *ins_record.Virtual_Result:
 		recordType = types.RESULT
-		recordPayload = virtual.GetResult().Payload
+		result := virtual.GetResult()
+		recordPayload = result.Payload
+		objectReference = result.GetObject().Bytes()
 
 	case *ins_record.Virtual_IncomingRequest:
 		recordType = types.REQUEST
-		object := virtual.GetIncomingRequest().GetObject()
+		incomingRequest := virtual.GetIncomingRequest()
+		object := incomingRequest.GetObject()
 		if object != nil && object.IsObjectReference() {
 			objectReference = object.GetLocal().Bytes()
+		}
+		if incomingRequest.CallType == record.CTGenesis {
+			objectReference = genesisrefs.GenesisRef(incomingRequest.Method).GetLocal().Bytes()
 		}
 	case *ins_record.Virtual_OutgoingRequest:
 		recordType = types.REQUEST
