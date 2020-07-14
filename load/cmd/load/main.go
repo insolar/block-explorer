@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/csv"
 	"errors"
 	"log"
 	"strconv"
@@ -17,6 +16,20 @@ import (
 
 func main() {
 	beforeAll := func(config *loadgen.DefaultGeneratorConfig) error {
+		var (
+			pulsesToGet     int32 = 100
+			pulsesFileName        = "pulses.csv"
+			jetIDSFileName        = "jet_ids.csv"
+			objectsFileName       = "objects.csv"
+		)
+
+		csvPulses, _ := load.NewCSVWriter(pulsesFileName)
+		defer csvPulses.Flush()
+		csvJetIDS, _ := load.NewCSVWriter(jetIDSFileName)
+		defer csvJetIDS.Flush()
+		objectsIDS, _ := load.NewCSVWriter(objectsFileName)
+		defer objectsIDS.Flush()
+
 		ctx := context.Background()
 		cfg := &client.Configuration{
 			BasePath:   config.Generator.Target,
@@ -25,8 +38,9 @@ func main() {
 		c := client.NewAPIClient(cfg)
 
 		// Get all pulses
+		log.Printf("getting pulses: %d", pulsesToGet)
 		res, _, err := c.PulseApi.Pulses(ctx, &client.PulsesOpts{
-			Limit: optional.NewInt32(100),
+			Limit: optional.NewInt32(pulsesToGet),
 		})
 		if err != nil {
 			return err
@@ -34,9 +48,6 @@ func main() {
 		if len(res.Result) == 0 {
 			return errors.New("empty pulses, no data")
 		}
-		pulsesFile := loadgen.CreateOrReplaceFile("pulses.csv")
-		defer pulsesFile.Close()
-		csvPulses := csv.NewWriter(pulsesFile)
 		pulseNumbers := make([]int64, 0)
 		for _, p := range res.Result {
 			pn := strconv.FormatInt(p.PulseNumber, 10)
@@ -45,12 +56,9 @@ func main() {
 				log.Fatal(err)
 			}
 		}
-		csvPulses.Flush()
 
 		// Get all uniq jet/pn ids
-		jetIDSFile := loadgen.CreateOrReplaceFile("jet_ids.csv")
-		defer jetIDSFile.Close()
-		csvJetIDS := csv.NewWriter(jetIDSFile)
+		log.Printf("getting all uniq jet/pn ids")
 		uniqJetDropIds := hashset.New()
 		for _, pn := range pulseNumbers {
 			res, _, err := c.JetDropApi.JetDropsByPulseNumber(ctx, pn, nil)
@@ -64,12 +72,9 @@ func main() {
 				}
 			}
 		}
-		csvJetIDS.Flush()
 
 		// Get all uniq object refs
-		objectsFile := loadgen.CreateOrReplaceFile("objects.csv")
-		defer objectsFile.Close()
-		objectsIDS := csv.NewWriter(objectsFile)
+		log.Printf("getting all uniq objects refs")
 		uniqObjectRefs := hashset.New()
 		for _, jdID := range uniqJetDropIds.Values() {
 			res, _, err := c.RecordApi.JetDropRecords(ctx, jdID.(string), nil)
@@ -83,7 +88,6 @@ func main() {
 				}
 			}
 		}
-		objectsIDS.Flush()
 		return nil
 	}
 	loadgen.Run(load.AttackerFromName, load.CheckFromName, beforeAll, nil)
