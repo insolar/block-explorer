@@ -6,11 +6,6 @@
 package integration
 
 import (
-	"encoding/csv"
-	"fmt"
-	"log"
-	"os"
-	"strconv"
 	"testing"
 	"time"
 
@@ -105,22 +100,4 @@ func (a *BlockExplorerTestSuite) ImportRecordsMultipleJetDrops(t testing.TB, jet
 	t.Logf("total records: %d", len(d))
 	err := heavymock.ImportRecords(a.ConMngr.ImporterClient, d)
 	require.NoError(t, err)
-}
-
-func (a *BlockExplorerTestSuite) PreparePulsesData() {
-	var pulses []models.Pulse
-	a.BE.DB.Find(&pulses)
-	file, _ := os.Create("pulses.csv")
-	defer file.Close()
-
-	writer := csv.NewWriter(file)
-	defer writer.Flush()
-
-	for _, p := range pulses {
-		if err := writer.Write([]string{strconv.Itoa(int(p.PulseNumber))}); err != nil {
-			log.Fatal(err)
-		}
-	}
-	writer.Flush()
-	fmt.Printf("pulses: %v\n", pulses)
 }
