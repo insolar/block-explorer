@@ -5,8 +5,5 @@ import (
 )
 
 func CheckFromName(name string) loadgen.RuntimeCheckFunc {
-	switch name {
-	default:
-		return nil
-	}
+	return nil
 }

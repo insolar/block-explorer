@@ -8,6 +8,7 @@ package integration
 import (
 	"encoding/csv"
 	"fmt"
+	"log"
 	"os"
 	"strconv"
 	"testing"
@@ -116,7 +117,9 @@ func (a *BlockExplorerTestSuite) PreparePulsesData() {
 	defer writer.Flush()
 
 	for _, p := range pulses {
-		writer.Write([]string{strconv.Itoa(int(p.PulseNumber))})
+		if err := writer.Write([]string{strconv.Itoa(int(p.PulseNumber))}); err != nil {
+			log.Fatal(err)
+		}
 	}
 	writer.Flush()
 	fmt.Printf("pulses: %v\n", pulses)

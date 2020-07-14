@@ -24,7 +24,10 @@ func (a *SearchAttack) Setup(hc loadgen.RunnerConfig) error {
 		a.limit = 100
 	}
 	pulsesLimit := a.GetRunner().Config.Metadata["limit"]
-	l, _ := strconv.Atoi(pulsesLimit)
+	l, err := strconv.Atoi(pulsesLimit)
+	if err != nil {
+		a.R.L.Fatal(err)
+	}
 	a.limit = int32(l)
 	return nil
 }

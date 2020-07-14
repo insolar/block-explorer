@@ -108,18 +108,18 @@ func generateRecords(jDrops []models.JetDrop, amount int) []models.Record {
 func generateData(tx *gorm.DB) error {
 	pulses := generatePulses(101)
 	for _, p := range pulses {
-		if err := tx.Model(&p).Save(&p).Error; err != nil {
+		if err := tx.Save(&p).Error; err != nil {
 			return err
 		}
 	}
 	jdrops := generateJetDrops(pulses, 1001)
 	for _, jd := range jdrops {
-		if err := tx.Model(&jd).Save(&jd).Error; err != nil {
+		if err := tx.Save(&jd).Error; err != nil {
 			return err
 		}
 	}
 	for _, rec := range generateRecords(jdrops, 1001) {
-		if err := tx.Model(&rec).Save(&rec).Error; err != nil {
+		if err := tx.Save(&rec).Error; err != nil {
 			return err
 		}
 	}
