@@ -38,7 +38,7 @@ func TestSearchApi(t *testing.T) {
 	lifeline := testutils.GenerateObjectLifeline(pulsesCount, recordsCount)
 	records := lifeline.GetAllRecords()
 	require.NoError(t, heavymock.ImportRecords(ts.ConMngr.ImporterClient, records))
-	ts.WaitRecordsCount(t, len(records)-recordsCount, 5000)
+	ts.WaitRecordsCount(t, len(records)-1, 5000)
 	c := GetHTTPClient()
 
 	record := lifeline.GetStateRecords()[0]
