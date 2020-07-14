@@ -15,6 +15,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/antihax/optional"
 	"github.com/insolar/block-explorer/instrumentation/converter"
 	"github.com/insolar/block-explorer/test/heavymock"
 	"github.com/insolar/block-explorer/test/integration"
@@ -25,6 +26,12 @@ import (
 	"github.com/insolar/insolar/ledger/heavy/exporter"
 	"github.com/insolar/spec-insolar-block-explorer-api/v1/client"
 	"github.com/stretchr/testify/require"
+)
+
+const (
+	requestType = "request"
+	stateType   = "state"
+	resultType  = "result"
 )
 
 func TestGetRecordsByJetDropID(t *testing.T) {
@@ -67,8 +74,8 @@ func TestGetRecordsByJetDropID(t *testing.T) {
 
 	c := GetHTTPClient()
 
-	t.Run("nonexistent JetDrop", func(t *testing.T) {
-		t.Log("get records by jetdrops")
+	t.Run("get records by jetdrops", func(t *testing.T) {
+		t.Log("C5323\tGet records by different JetDropIDs")
 		for jd := range jds {
 			response, err := c.JetDropRecords(t, jd, nil)
 			require.NoError(t, err)
@@ -86,9 +93,8 @@ func TestGetRecordsByJetDropID(t *testing.T) {
 			require.Empty(t, response.ValidationFailures)
 		}
 	})
-
-	t.Run("nonexistent JetDrop", func(t *testing.T) {
-		t.Log("")
+	t.Run("nonexistent JetDropID", func(t *testing.T) {
+		t.Log("C5324 Get records by JetDropID if JetDropID is nonexistent")
 		pn := gen.PulseNumber()
 		jetID := converter.JetIDToString(testutils.GenerateUniqueJetID())
 		val := fmt.Sprintf("%v:%v", jetID, pn)
@@ -98,7 +104,7 @@ func TestGetRecordsByJetDropID(t *testing.T) {
 		require.Empty(t, response.Total)
 	})
 	t.Run("value with star", func(t *testing.T) {
-		t.Log("")
+		t.Log("C5325\tGet records by JetDropID, no results if \"*:pulse\"")
 		val := "*:65538"
 		response, err := c.JetDropRecords(t, val, nil)
 		require.NoError(t, err)
@@ -107,8 +113,132 @@ func TestGetRecordsByJetDropID(t *testing.T) {
 	})
 }
 
+func TestGetRecordsByJetDropID_queryParams(t *testing.T) {
+	ts := integration.NewBlockExplorerTestSetup(t).WithHTTPServer(t)
+	defer ts.Stop(t)
+
+	pulsesCount := 1
+	recordsInJetDropCount := 22
+	lifeline := testutils.GenerateObjectLifeline(pulsesCount, recordsInJetDropCount)
+	records := lifeline.StateRecords[0].Records
+
+	jetID := records[0].Record.JetID
+	jetIDstr := converter.JetIDToString(jetID)
+	pn := records[0].Record.ID.Pulse()
+	jetDropID := fmt.Sprintf("%v:%v", jetIDstr, pn.String())
+	objID := records[0].Record.ObjectID
+
+	requestRecord := testutils.GenerateVirtualRequestRecord(pn, objID)
+	requestRecord.Record.JetID = jetID
+	resultRecord := testutils.GenerateVirtualResultRecord(pn, objID, gen.ID())
+	resultRecord.Record.JetID = jetID
+
+	records = append(records, requestRecord)
+	records = append(records, resultRecord)
+
+	require.NoError(t, heavymock.ImportRecords(ts.ConMngr.ImporterClient, records))
+	require.NoError(t, heavymock.ImportRecords(ts.ConMngr.ImporterClient, []*exporter.Record{testutils.GenerateRecordInNextPulse(records[0].Record.ID.Pulse())}))
+	ts.WaitRecordsCount(t, len(records), 2000)
+
+	c := GetHTTPClient()
+
+	t.Run("limit offset", func(t *testing.T) {
+		t.Log("\tC5326\tGet records by JetDropID with limit and offset set")
+		queryParams := client.JetDropRecordsOpts{
+			Limit:  optional.NewInt32(int32(recordsInJetDropCount - 2)),
+			Offset: optional.NewInt32(int32(1)),
+		}
+		response, err := c.JetDropRecords(t, jetDropID, &queryParams)
+		require.NoError(t, err)
+		require.Equal(t, int64(recordsInJetDropCount), response.Total)
+		require.Len(t, response.Result, recordsInJetDropCount-2)
+		require.Equal(t, records[1].Record.ID.String(), response.Result[0].Reference)
+	})
+	t.Run("FromIndex", func(t *testing.T) {
+		t.Log("5327\tGet records by JetDropID with FromIndex set")
+		fromIdx := 5
+		queryParams := client.JetDropRecordsOpts{
+			FromIndex: optional.NewString(fmt.Sprintf("%v:%v", lifeline.StateRecords[0].Pn, fromIdx)),
+		}
+		response, err := c.JetDropRecords(t, jetDropID, &queryParams)
+		require.NoError(t, err)
+		require.Equal(t, int64(recordsInJetDropCount-fromIdx), response.Total)
+		require.Len(t, response.Result, recordsInJetDropCount-fromIdx)
+		require.Equal(t, records[fromIdx].Record.ID.String(), response.Result[0].Reference)
+	})
+}
+
+func TestGetRecordsByJetDropID_byType(t *testing.T) {
+	ts := integration.NewBlockExplorerTestSetup(t).WithHTTPServer(t)
+	defer ts.Stop(t)
+
+	pulsesCount := 1
+	recordsInJetDropCount := 1
+	lifeline := testutils.GenerateObjectLifeline(pulsesCount, recordsInJetDropCount)
+	records := lifeline.StateRecords[0].Records
+
+	jetID := records[0].Record.JetID
+	jetIDstr := converter.JetIDToString(jetID)
+	pn := records[0].Record.ID.Pulse()
+	jetDropID := fmt.Sprintf("%v:%v", jetIDstr, pn.String())
+	objID := records[0].Record.ObjectID
+
+	requestRecord := testutils.GenerateVirtualRequestRecord(pn, objID)
+	requestRecord.Record.JetID = jetID
+	resultRecord := testutils.GenerateVirtualResultRecord(pn, objID, gen.ID())
+	resultRecord.Record.JetID = jetID
+
+	records = append(records, requestRecord)
+	records = append(records, resultRecord)
+
+	require.NoError(t, heavymock.ImportRecords(ts.ConMngr.ImporterClient, records))
+	require.NoError(t, heavymock.ImportRecords(ts.ConMngr.ImporterClient, []*exporter.Record{testutils.GenerateRecordInNextPulse(records[0].Record.ID.Pulse())}))
+	ts.WaitRecordsCount(t, len(records), 2000)
+
+	c := GetHTTPClient()
+	t.Run("Type state", func(t *testing.T) {
+		t.Log("C5328\tGet records by JetDropID with Type set to State")
+		queryParams := client.JetDropRecordsOpts{
+			Type_: optional.NewString(stateType),
+			Limit: optional.NewInt32(int32(recordsInJetDropCount)),
+		}
+		response, err := c.JetDropRecords(t, jetDropID, &queryParams)
+		require.NoError(t, err)
+		require.Equal(t, int64(recordsInJetDropCount), response.Total)
+		require.Len(t, response.Result, recordsInJetDropCount)
+		require.Equal(t, records[0].Record.ID.String(), response.Result[0].Reference)
+		require.Equal(t, stateType, response.Result[0].Type)
+	})
+	t.Run("Type request", func(t *testing.T) {
+		t.Log("C5329\tGet records by JetDropID with Type set to Request")
+		queryParams := client.JetDropRecordsOpts{
+			Type_: optional.NewString(requestType),
+			Limit: optional.NewInt32(int32(recordsInJetDropCount)),
+		}
+		response, err := c.JetDropRecords(t, jetDropID, &queryParams)
+		require.NoError(t, err)
+		require.Equal(t, int64(recordsInJetDropCount), response.Total)
+		require.Len(t, response.Result, recordsInJetDropCount)
+		require.Equal(t, requestRecord.Record.ID.String(), response.Result[0].Reference)
+		require.Equal(t, requestType, response.Result[0].Type)
+	})
+	t.Run("Type result", func(t *testing.T) {
+		t.Log("C5330\tGet records by JetDropID with Type set to Result")
+		queryParams := client.JetDropRecordsOpts{
+			Type_: optional.NewString(resultType),
+			Limit: optional.NewInt32(int32(recordsInJetDropCount)),
+		}
+		response, err := c.JetDropRecords(t, jetDropID, &queryParams)
+		require.NoError(t, err)
+		require.Equal(t, int64(recordsInJetDropCount), response.Total)
+		require.Len(t, response.Result, recordsInJetDropCount)
+		require.Equal(t, resultRecord.Record.ID.String(), response.Result[0].Reference)
+		require.Equal(t, resultType, response.Result[0].Type)
+	})
+}
+
 func TestGetRecordsByJetDropID_star(t *testing.T) {
-	t.Log("")
+	t.Log("C5331\tGet records by JetDropID, get genesis records by a star char")
 	ts := integration.NewBlockExplorerTestSetup(t).WithHTTPServer(t)
 	defer ts.Stop(t)
 
@@ -139,7 +269,7 @@ func TestGetRecordsByJetDropID_star(t *testing.T) {
 }
 
 func TestGetRecordsByJetDropID_oneJdCheckFields(t *testing.T) {
-	t.Log("")
+	t.Log("C5332\tGet records by JetDropIDs and verify all fields")
 	ts := integration.NewBlockExplorerTestSetup(t).WithHTTPServer(t)
 	defer ts.Stop(t)
 
@@ -226,15 +356,15 @@ func TestGetRecordsByJetDropID_negative(t *testing.T) {
 	randomRecordRef := gen.RecordReference().String()
 
 	tcs := []testCases{
-		{"C5286 Search by zero value, get error", "0", badRequest400, "zero value"},
-		{"C5287 Search by empty value, get error", "", badRequest400, "empty"},
-		{"C5288 Search by random reference, get error", id.String(), badRequest400, "reference"},
-		{"C5161 Search by jet_Id, get error", jetID, badRequest400, "jetID"},
-		{"C5162 Search by invalid value, get error", invalidValue, badRequest400, "invalid value"},
-		{"C5168 Search by value with 1k chars, get error", jetDropWithBigLengthPrefix, badRequest400, "big length jd pref"},
-		{"C5289 Search by invalid jetdrop_id with very big pulse number, get error", jetDropWithBigLengthPulse, badRequest400, "big length jd pulse"},
-		{"C5290 Search by very big number, get error", randomNumbers, badRequest400, "big number"},
-		{"C5164 Search by nonexisting record_ref, get error", randomRecordRef, badRequest400, "random record ref"},
+		{"C5333 Get records by JetDropID as zero value, get error", "0", badRequest400, "zero value"},
+		{"C5334 Get records by JetDropID as empty value, get error", "", badRequest400, "empty"},
+		{"C5335 Get records by JetDropID as random reference, get error", id.String(), badRequest400, "reference"},
+		{"C5336 Get records by JetDropID as jet_Id, get error", jetID, badRequest400, "jetID"},
+		{"C5337 Get records by JetDropID as invalid value, get error", invalidValue, badRequest400, "invalid value"},
+		{"C5338 Get records by JetDropID as value with 1k chars, get error", jetDropWithBigLengthPrefix, badRequest400, "big length jd pref"},
+		{"C5339 Get records by JetDropID as invalid jetdrop_id with very big pulse number, get error", jetDropWithBigLengthPulse, badRequest400, "big length jd pulse"},
+		{"C5340 Get records by JetDropID as very big number, get error", randomNumbers, badRequest400, "big number"},
+		{"C5341 Get records by JetDropID as nonexisting record_ref, get error", randomRecordRef, badRequest400, "random record ref"},
 	}
 
 	for _, tc := range tcs {
