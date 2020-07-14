@@ -16,21 +16,8 @@ type GetJetDropsByPulseNumberAttack struct {
 }
 
 func (a *GetJetDropsByPulseNumberAttack) Setup(hc loadgen.RunnerConfig) error {
-	cfg := &client.Configuration{
-		BasePath:   a.GetManager().GeneratorConfig.Generator.Target,
-		HTTPClient: loadgen.NewLoggingHTTPClient(a.GetManager().SuiteConfig.DumpTransport, 10),
-	}
-	a.c = client.NewAPIClient(cfg)
-	if _, ok := a.GetRunner().Config.Metadata["limit"]; !ok {
-		a.limit = 100
-	} else {
-		pulsesLimit := a.GetRunner().Config.Metadata["limit"]
-		l, err := strconv.ParseInt(pulsesLimit, 10, 0)
-		if err != nil {
-			a.R.L.Fatal(err)
-		}
-		a.limit = int32(l)
-	}
+	a.c = NewGeneratedBEClient(a)
+	a.limit = DefaultLimit(a)
 	return nil
 }
 

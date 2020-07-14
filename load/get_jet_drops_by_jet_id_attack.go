@@ -13,11 +13,7 @@ type GetJetDropsByJetIDAttack struct {
 }
 
 func (a *GetJetDropsByJetIDAttack) Setup(hc loadgen.RunnerConfig) error {
-	cfg := &client.Configuration{
-		BasePath:   a.GetManager().GeneratorConfig.Generator.Target,
-		HTTPClient: loadgen.NewLoggingHTTPClient(a.GetManager().SuiteConfig.DumpTransport, 10),
-	}
-	a.c = client.NewAPIClient(cfg)
+	a.c = NewGeneratedBEClient(a)
 	return nil
 }
 
