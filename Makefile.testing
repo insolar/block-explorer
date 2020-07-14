@@ -16,7 +16,7 @@ test: unit integration test-heavy-mock-integration ## run all tests
 
 .PHONY: integration
 integration: ## run integrations tests with race
-	go test -v ./api -tags integration -count $(TEST_COUNT) -race $(TEST_ARGS)
+	go test -v ./... -tags integration -count $(TEST_COUNT) -race $(TEST_ARGS)
 
 .PHONY: test-with-coverage
 test-with-coverage: ## run tests with coverage mode
