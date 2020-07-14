@@ -9,7 +9,9 @@ package api
 
 import (
 	"fmt"
+	"math"
 	"math/rand"
+	"strings"
 	"testing"
 	"time"
 
@@ -18,12 +20,13 @@ import (
 	"github.com/insolar/block-explorer/test/integration"
 	"github.com/insolar/block-explorer/testutils"
 	"github.com/insolar/insolar/insolar"
+	"github.com/insolar/insolar/insolar/gen"
 	"github.com/insolar/insolar/ledger/heavy/exporter"
 	"github.com/insolar/spec-insolar-block-explorer-api/v1/client"
 	"github.com/stretchr/testify/require"
 )
 
-func TestGetRecordsByJetDropID_severalJds(t *testing.T) {
+func TestGetRecordsByJetDropID(t *testing.T) {
 	ts := integration.NewBlockExplorerTestSetup(t).WithHTTPServer(t)
 	defer ts.Stop(t)
 
@@ -48,7 +51,6 @@ func TestGetRecordsByJetDropID_severalJds(t *testing.T) {
 			maxPn = pn
 		}
 		jetDropID := fmt.Sprintf("%v:%v", jetID, pn.String())
-		// get reference from record
 		ref := r.Record.ID.String()
 		if jds[jetDropID] == nil {
 			jds[jetDropID] = []string{ref}
@@ -63,25 +65,57 @@ func TestGetRecordsByJetDropID_severalJds(t *testing.T) {
 	ts.WaitRecordsCount(t, len(records), 2000)
 
 	c := GetHTTPClient()
-	for jd := range jds {
-		response, err := c.JetDropRecords(t, jd, nil)
-		require.NoError(t, err)
 
-		require.Equal(t, int64(len(jds[jd])), response.Total)
-		require.Len(t, response.Result, len(jds[jd]))
-		for _, r := range response.Result {
-			require.Contains(t, jds[jd], r.Reference)
+	t.Run("nonexistent JetDrop", func(t *testing.T) {
+		t.Log("get records by jetdrops")
+		for jd := range jds {
+			response, err := c.JetDropRecords(t, jd, nil)
+			require.NoError(t, err)
+
+			require.Equal(t, int64(len(jds[jd])), response.Total)
+			require.Len(t, response.Result, len(jds[jd]))
+			for _, r := range response.Result {
+				require.Contains(t, jds[jd], r.Reference)
+			}
+
+			require.Empty(t, response.Code)
+			require.Empty(t, response.Message)
+			require.Empty(t, response.Description)
+			require.Empty(t, response.Link)
+			require.Empty(t, response.ValidationFailures)
 		}
+	})
 
-		require.Empty(t, response.Code)
-		require.Empty(t, response.Message)
-		require.Empty(t, response.Description)
-		require.Empty(t, response.Link)
-		require.Empty(t, response.ValidationFailures)
-	}
+	t.Run("nonexistent JetDrop", func(t *testing.T) {
+		t.Log("")
+		pn := gen.PulseNumber()
+		jetID := converter.JetIDToString(testutils.GenerateUniqueJetID())
+		val := fmt.Sprintf("%v:%v", jetID, pn)
+		response, err := c.JetDropRecords(t, val, nil)
+		require.NoError(t, err)
+		require.Empty(t, response.Result)
+		require.Empty(t, response.Total)
+	})
+	t.Run("value with star", func(t *testing.T) {
+		t.Log("")
+		val := "*:65538"
+		response, err := c.JetDropRecords(t, val, nil)
+		require.NoError(t, err)
+		require.Empty(t, response.Result)
+		require.Empty(t, response.Total)
+	})
+	t.Run("star with pulse", func(t *testing.T) {
+		t.Log("")
+		val := fmt.Sprintf("*:%v", records[0].Record.ID.Pulse().String())
+		response, err := c.JetDropRecords(t, val, nil)
+		require.NoError(t, err)
+		require.Empty(t, response.Result)
+		require.Empty(t, response.Total)
+	})
 }
 
 func TestGetRecordsByJetDropID_oneJdCheckFields(t *testing.T) {
+	t.Log("")
 	ts := integration.NewBlockExplorerTestSetup(t).WithHTTPServer(t)
 	defer ts.Stop(t)
 
@@ -131,7 +165,7 @@ func TestGetRecordsByJetDropID_oneJdCheckFields(t *testing.T) {
 		var expRecord client.ObjectLifelineResponse200Result
 		var ok bool
 		if expRecord, ok = expResult[r.Reference]; !ok {
-			t.Fatalf("Got unexpected record with reference: %v", r.Reference)
+			t.Fatalf("Not found record in response, reference: %v", r.Reference)
 		}
 		require.Equal(t, expRecord.Reference, r.Reference)
 		require.Equal(t, expRecord.ObjectReference, r.ObjectReference)
@@ -148,4 +182,43 @@ func TestGetRecordsByJetDropID_oneJdCheckFields(t *testing.T) {
 	require.Empty(t, response.Description)
 	require.Empty(t, response.Link)
 	require.Empty(t, response.ValidationFailures)
+}
+
+func TestGetRecordsByJetDropID_negative(t *testing.T) {
+	ts := integration.NewBlockExplorerTestSetup(t).WithHTTPServer(t)
+	defer ts.Stop(t)
+	c := GetHTTPClient()
+
+	id := gen.ID()
+	jetID := converter.JetIDToString(testutils.GenerateUniqueJetID())
+	pn := gen.PulseNumber()
+	jetDropID := fmt.Sprintf("%v:%v", jetID, pn.String())
+	invalidValue := "0qwerty123:!@:#$%^"
+	jetDropWithBigLengthPrefix := fmt.Sprintf("%v:%v", strings.Repeat(jetDropID, 20), pn)
+	jetDropWithBigLengthPulse := fmt.Sprintf("%v:%v", jetDropID, string(math.MaxInt64)+"1")
+	randomNumbers := fmt.Sprintf("%v:%v",
+		testutils.RandNumberOverRange(1, math.MaxInt32),
+		testutils.RandNumberOverRange(1, math.MaxInt32))
+	randomRecordRef := gen.RecordReference().String()
+
+	tcs := []testCases{
+		{"C5286 Search by zero value, get error", "0", badRequest400, "zero value"},
+		{"C5287 Search by empty value, get error", "", badRequest400, "empty"},
+		{"C5288 Search by random reference, get error", id.String(), badRequest400, "reference"},
+		{"C5161 Search by jet_Id, get error", jetID, badRequest400, "jetID"},
+		{"C5162 Search by invalid value, get error", invalidValue, badRequest400, "invalid value"},
+		{"C5168 Search by value with 1k chars, get error", jetDropWithBigLengthPrefix, badRequest400, "big length jd pref"},
+		{"C5289 Search by invalid jetdrop_id with very big pulse number, get error", jetDropWithBigLengthPulse, badRequest400, "big length jd pulse"},
+		{"C5290 Search by very big number, get error", randomNumbers, badRequest400, "big number"},
+		{"C5164 Search by nonexisting record_ref, get error", randomRecordRef, badRequest400, "random record ref"},
+	}
+
+	for _, tc := range tcs {
+		t.Run(tc.testName, func(t *testing.T) {
+			t.Log(tc.trTestCaseName)
+			_, err := c.JetDropRecords(t, tc.value, nil)
+			require.Error(t, err)
+			require.Equal(t, tc.expResult, err.Error())
+		})
+	}
 }
