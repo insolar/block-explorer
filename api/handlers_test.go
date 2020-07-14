@@ -17,6 +17,8 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"runtime"
+	"runtime/pprof"
 	"strconv"
 	"testing"
 	"time"
@@ -45,6 +47,9 @@ const (
 var testDB *gorm.DB
 
 func TestMain(t *testing.M) {
+	fmt.Println(runtime.NumGoroutine())
+	pprof.Lookup("goroutine").WriteTo(os.Stdout, 1)
+
 	var dbCleaner func()
 	var err error
 	testDB, dbCleaner, err = testutils.SetupDB()
@@ -59,12 +64,14 @@ func TestMain(t *testing.M) {
 	blockExplorerAPI := NewServer(context.Background(), s, configuration.API{})
 
 	server.RegisterHandlers(e, blockExplorerAPI)
+	stopped := make(chan struct{})
 	go func() {
 		err := e.Start(apihost)
 		if err != http.ErrServerClosed {
 			dbCleaner()
 			e.Logger.Fatal(err)
 		}
+		stopped <- struct{}{}
 	}()
 	// TODO: wait until API started
 	time.Sleep(5 * time.Second)
@@ -76,6 +83,9 @@ func TestMain(t *testing.M) {
 	if err := e.Close(); err != nil {
 		e.Logger.Fatal(err)
 	}
+	<-stopped
+	pprof.Lookup("goroutine").WriteTo(os.Stdout, 1)
+	fmt.Println(runtime.NumGoroutine())
 
 	os.Exit(retCode)
 }
