@@ -6,7 +6,9 @@
 package migrations
 
 import (
+	crand "crypto/rand"
 	"encoding/binary"
+	"log"
 	"math/rand"
 	"time"
 
@@ -22,7 +24,9 @@ import (
 // generateRandBytesLen generates random bytes array with len
 func generateRandBytesLen(l int) []byte {
 	b := make([]byte, l)
-	rand.Read(b)
+	if _, err := crand.Read(b); err != nil {
+		log.Fatal(err)
+	}
 	return b
 }
 
@@ -108,18 +112,21 @@ func generateRecords(jDrops []models.JetDrop, amount int) []models.Record {
 func generateData(tx *gorm.DB) error {
 	pulses := generatePulses(101)
 	for _, p := range pulses {
-		if err := tx.Save(&p).Error; err != nil {
+		pulse := p
+		if err := tx.Save(&pulse).Error; err != nil {
 			return err
 		}
 	}
 	jdrops := generateJetDrops(pulses, 1001)
 	for _, jd := range jdrops {
-		if err := tx.Save(&jd).Error; err != nil {
+		jetDrop := jd
+		if err := tx.Save(&jetDrop).Error; err != nil {
 			return err
 		}
 	}
 	for _, rec := range generateRecords(jdrops, 1001) {
-		if err := tx.Save(&rec).Error; err != nil {
+		record := rec
+		if err := tx.Save(&record).Error; err != nil {
 			return err
 		}
 	}

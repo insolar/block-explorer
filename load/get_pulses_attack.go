@@ -25,7 +25,7 @@ func (a *GetPulsesAttack) Setup(hc loadgen.RunnerConfig) error {
 		a.limit = 100
 	}
 	pulsesLimit := a.GetRunner().Config.Metadata["limit"]
-	l, err := strconv.Atoi(pulsesLimit)
+	l, err := strconv.ParseInt(pulsesLimit, 10, 0)
 	if err != nil {
 		a.R.L.Fatal(err)
 	}
