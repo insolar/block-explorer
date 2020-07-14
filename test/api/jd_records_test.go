@@ -9,7 +9,6 @@ package api
 
 import (
 	"fmt"
-	"regexp"
 	"testing"
 
 	"github.com/insolar/block-explorer/instrumentation/converter"
@@ -85,32 +84,32 @@ func TestGetRecordsByJetDropID_oneJdCheckFields(t *testing.T) {
 	defer ts.Stop(t)
 
 	pulsesCount := 1
-	recordsInJetDropCount := 2
-	records := testutils.GenerateRecordsFromOneJetSilence(pulsesCount, recordsInJetDropCount)
+	recordsInJetDropCount := 9
+	records := testutils.GenerateObjectLifeline(pulsesCount, recordsInJetDropCount).StateRecords[0].Records
 	require.NoError(t, heavymock.ImportRecords(ts.ConMngr.ImporterClient, records))
 
-	expResult := make([]client.ObjectLifelineResponse200Result, len(records))
+	expResult := make(map[string]client.ObjectLifelineResponse200Result, len(records))
 	var maxPn insolar.PulseNumber = 0
 	var jetDropID string
 	for i, r := range records {
 		jetID := converter.JetIDToString(r.Record.JetID)
 		pn := r.Record.ID.Pulse()
 		jetDropID = fmt.Sprintf("%v:%v", jetID, pn.String())
-		index := fmt.Sprintf("%v:%v", pn.String(), i)
 		if maxPn.AsUint32() < pn.AsUint32() {
 			maxPn = pn
 		}
 
 		objID := r.Record.ObjectID
-		objRef := insolar.NewReference(objID).String()
-		expResult[i] = client.ObjectLifelineResponse200Result{
-			Reference:       r.Record.ID.String(),
-			ObjectReference: objRef,
+		objRef := insolar.NewReference(objID)
+		recordRef := r.Record.ID.String()
+		expResult[recordRef] = client.ObjectLifelineResponse200Result{
+			Reference:       recordRef,
+			ObjectReference: objRef.String(),
 			Type:            "state",
 			PulseNumber:     int64(pn.AsUint32()),
 			JetId:           jetID,
 			JetDropId:       jetDropID,
-			Index:           index,
+			Index:           fmt.Sprintf("%v:%v", pn, i),
 		}
 	}
 
@@ -125,10 +124,9 @@ func TestGetRecordsByJetDropID_oneJdCheckFields(t *testing.T) {
 	require.Len(t, response.Result, len(records))
 	for _, r := range response.Result {
 		var expRecord client.ObjectLifelineResponse200Result
-		if r.Reference == expResult[0].Reference {
-			expRecord = expResult[0]
-		} else {
-			expRecord = expResult[1]
+		var ok bool
+		if expRecord, ok = expResult[r.Reference]; !ok {
+			t.Fatalf("Got unexpected record with reference: %v", r.Reference)
 		}
 		require.Equal(t, expRecord.Reference, r.Reference)
 		require.Equal(t, expRecord.ObjectReference, r.ObjectReference)
@@ -136,7 +134,7 @@ func TestGetRecordsByJetDropID_oneJdCheckFields(t *testing.T) {
 		require.Equal(t, expRecord.PulseNumber, r.PulseNumber)
 		require.Equal(t, expRecord.JetId, r.JetId)
 		require.Equal(t, expRecord.JetDropId, r.JetDropId)
-		require.Regexp(t, regexp.MustCompile(fmt.Sprintf("^%v:[01]", r.PulseNumber)), r.Index)
+		require.Equal(t, expRecord.Index, r.Index)
 		require.NotEmpty(t, r.Hash)
 		require.NotEmpty(t, r.Timestamp)
 	}
