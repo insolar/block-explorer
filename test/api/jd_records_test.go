@@ -126,15 +126,6 @@ func TestGetRecordsByJetDropID_queryParams(t *testing.T) {
 	jetIDstr := converter.JetIDToString(jetID)
 	pn := records[0].Record.ID.Pulse()
 	jetDropID := fmt.Sprintf("%v:%v", jetIDstr, pn.String())
-	objID := records[0].Record.ObjectID
-
-	requestRecord := testutils.GenerateVirtualRequestRecord(pn, objID)
-	requestRecord.Record.JetID = jetID
-	resultRecord := testutils.GenerateVirtualResultRecord(pn, objID, gen.ID())
-	resultRecord.Record.JetID = jetID
-
-	records = append(records, requestRecord)
-	records = append(records, resultRecord)
 
 	require.NoError(t, heavymock.ImportRecords(ts.ConMngr.ImporterClient, records))
 	require.NoError(t, heavymock.ImportRecords(ts.ConMngr.ImporterClient, []*exporter.Record{testutils.GenerateRecordInNextPulse(records[0].Record.ID.Pulse())}))
