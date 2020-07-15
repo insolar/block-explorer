@@ -25,18 +25,22 @@ type MissedDataManager struct {
 	mutex          sync.Mutex
 	missedDataPool []missedData
 	ttl            time.Duration
+	cleanPeriod    time.Duration
 	stopped        chan struct{}
 }
 
 // NewMissedDataManager creates new missed data manager with custom params
 func NewMissedDataManager(ttl time.Duration, cleanPeriod time.Duration) *MissedDataManager {
 	mdm := MissedDataManager{
-		ttl:     ttl,
-		stopped: make(chan struct{}),
+		ttl:         ttl,
+		cleanPeriod: cleanPeriod,
+		stopped:     make(chan struct{}),
 	}
+	return &mdm
+}
 
-	ticker := time.NewTicker(cleanPeriod)
-
+func (mdm *MissedDataManager) Start() {
+	ticker := time.NewTicker(mdm.cleanPeriod)
 	go func() {
 		var stop = false
 		for !stop {
@@ -50,8 +54,6 @@ func NewMissedDataManager(ttl time.Duration, cleanPeriod time.Duration) *MissedD
 		}
 		mdm.stopped <- struct{}{}
 	}()
-
-	return &mdm
 }
 
 func (mdm *MissedDataManager) Stop() {
