@@ -7,6 +7,9 @@ package controller
 
 import (
 	"context"
+	"log"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/insolar/assured-ledger/ledger-core/v2/log"
@@ -105,9 +108,81 @@ func (c *Controller) pulseSequence(ctx context.Context) {
 }
 
 func pulseIsComplete(p types.Pulse, d []string) bool { // nolint
-	// TODO implement me
-	// This if is here for test reason, delete it after implementation and update test data for expected behavior
-	return p.PulseNo >= 0
+	if len(d) == 0 {
+		return false
+	}
+
+	// root
+	if len(d) == 1 && d[0] == "" {
+		return true
+	}
+
+	// inverts last bool symbol in string
+	invertLastSymbol := func(s string) string {
+		last := s[len(s)-1:]
+		var invertedSymbol string
+		b, err := strconv.ParseBool(last)
+		if err != nil {
+			log.Fatal("non binary symbol in jet id: ", last)
+		}
+
+		if b {
+			invertedSymbol = "0"
+		} else {
+			invertedSymbol = "1"
+		}
+
+		return s[:len(s)-1] + invertedSymbol
+	}
+
+	// making map for easy search
+	m := make(map[string]struct{}, len(d))
+	for _, s := range d {
+		m[s] = struct{}{}
+	}
+
+Main:
+	for jetID := range m {
+		jetIDInvertedLast := invertLastSymbol(jetID)
+		if _, ok := m[jetIDInvertedLast]; ok {
+			// found the opposite jet drop
+			continue
+		} else {
+			// not found, let's find any siblings
+			for _, jetID2 := range d {
+				if strings.Index(jetID2, jetIDInvertedLast) == 0 {
+					// found sibling
+					continue Main
+				}
+			}
+		}
+		// not found anything
+		return false
+	}
+
+	// let's search all possible opposite parents or their siblings
+	checkedJetIDs := make(map[string]struct{})
+	for jetID := range m {
+	ParentIterator:
+		for i := len(jetID) - 1; i >= 1; i-- {
+			jetIDParentInverted := invertLastSymbol(jetID[:i])
+			if _, ok := checkedJetIDs[jetIDParentInverted]; ok {
+				// found in already checked
+				continue
+			} else {
+				for _, jetID2 := range d {
+					if strings.Index(jetID2, jetIDParentInverted) == 0 {
+						// found sibling or opposite jetDropId
+						checkedJetIDs[jetIDParentInverted] = struct{}{}
+						continue ParentIterator
+					}
+				}
+			}
+			// not found anything
+			return false
+		}
+	}
+	return true
 }
 
 func (c *Controller) reloadData(ctx context.Context, fromPulseNumber int64, toPulseNumber int64) {
