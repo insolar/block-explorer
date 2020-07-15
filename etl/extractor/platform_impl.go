@@ -35,10 +35,12 @@ type PlatformExtractor struct {
 	mainJetDropsChan chan *types.PlatformJetDrops
 	cancel           context.CancelFunc
 
-	batchSize uint32
+	batchSize                                 uint32
+	continuousPulseRetrievingHalfPulseSeconds uint32
 }
 
-func NewPlatformExtractor(batchSize uint32, pulseExtractor interfaces.PulseExtractor, exporterClient exporter.RecordExporterClient) *PlatformExtractor {
+func NewPlatformExtractor(batchSize uint32, continuousPulseRetrievingHalfPulseSeconds uint32,
+	pulseExtractor interfaces.PulseExtractor, exporterClient exporter.RecordExporterClient) *PlatformExtractor {
 	request := &exporter.GetRecords{Count: batchSize}
 	return &PlatformExtractor{
 		stopSignal:       make(chan bool, 1),
@@ -50,6 +52,7 @@ func NewPlatformExtractor(batchSize uint32, pulseExtractor interfaces.PulseExtra
 		pulseExtractor:       pulseExtractor,
 		pulseExtractAttempts: 50,
 		batchSize:            batchSize,
+		continuousPulseRetrievingHalfPulseSeconds: continuousPulseRetrievingHalfPulseSeconds,
 	}
 }
 

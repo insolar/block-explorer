@@ -37,9 +37,10 @@ type DB struct {
 
 // Replicator represents a configuration of the Platform connection
 type Replicator struct {
-	Addr            string `insconfig:"127.0.0.1:5678| The gRPC server address"`
-	MaxTransportMsg int    `insconfig:"1073741824| Maximum message size the client can send"`
-	Auth            Auth
+	Addr                                      string `insconfig:"127.0.0.1:5678| The gRPC server address"`
+	MaxTransportMsg                           int    `insconfig:"1073741824| Maximum message size the client can send"`
+	ContinuousPulseRetrievingHalfPulseSeconds uint32 `insconfig:"5| Half pulse in seconds"`
+	Auth                                      Auth
 }
 
 // Auth represents the authentication of the Platform

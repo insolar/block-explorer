@@ -54,7 +54,7 @@ func (b *BlockExplorerTestSetUp) Start() error {
 
 	pulseClient := clients.GetTestPulseClient(1, nil)
 	pulseExtractor := extractor.NewPlatformPulseExtractor(pulseClient)
-	b.extr = extractor.NewPlatformExtractor(100, pulseExtractor, b.ExporterClient)
+	b.extr = extractor.NewPlatformExtractor(100, 5, pulseExtractor, b.ExporterClient)
 	err := b.extr.Start(b.ctx)
 	if err != nil {
 		return err

@@ -46,7 +46,7 @@ func TestGetJetDrops(t *testing.T) {
 
 	pulseClient := clients.GetTestPulseClient(1, nil)
 	pulseExtractor := NewPlatformPulseExtractor(pulseClient)
-	extractor := NewPlatformExtractor(uint32(pulseCount), pulseExtractor, recordClient)
+	extractor := NewPlatformExtractor(uint32(pulseCount), 5, pulseExtractor, recordClient)
 	err = extractor.Start(ctx)
 	require.NoError(t, err)
 	defer extractor.Stop(ctx)
@@ -154,7 +154,7 @@ func TestLoadJetDrops_returnsRecordByPulses(t *testing.T) {
 					return pp, nil
 				})
 
-			extractor := NewPlatformExtractor(77, pulseExtractor, recordClient)
+			extractor := NewPlatformExtractor(77, 5, pulseExtractor, recordClient)
 			err := extractor.LoadJetDrops(ctx, int64(startPulseNumber-10), int64(startPulseNumber+10*(test.differentPulseCount-1)))
 			require.NoError(t, err)
 			for i := 0; i < test.differentPulseCount; i++ {
