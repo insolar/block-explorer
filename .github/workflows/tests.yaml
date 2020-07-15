@@ -92,12 +92,12 @@ jobs:
       - name: set push_to_master run params
         if: github.event_name == 'push'
         run: |
-          echo "::set-env name=TEST_COUNT::1"
+          echo "::set-env name=TEST_COUNT::10"
           echo "::set-env name=TEST_ARGS::-json"
       - name: set pull_request run params
         if: github.event_name == 'pull_request'
         run: |
-          echo "::set-env name=TEST_COUNT::10"
+          echo "::set-env name=TEST_COUNT::1"
       - name: set scheduled run params
         if: github.event_name == 'schedule'
         run: |
@@ -117,7 +117,9 @@ jobs:
         run: make vendor
         working-directory: ${{env.GOPATH}}/src/github.com/insolar/block-explorer
       - name: test
-        run: make test-heavy-mock-integration
+        run:  |
+          set -o pipefail
+          make test-heavy-mock-integration
         working-directory: ${{env.GOPATH}}/src/github.com/insolar/block-explorer
       - name: Install testrail-cli
         if: github.event_name == 'push' || github.event_name == 'schedule'
