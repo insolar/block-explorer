@@ -117,7 +117,9 @@ jobs:
         run: make vendor
         working-directory: ${{env.GOPATH}}/src/github.com/insolar/block-explorer
       - name: test
-        run: make test-heavy-mock-integration
+        run: |
+          set -o pipefail
+          make test-heavy-mock-integration
         working-directory: ${{env.GOPATH}}/src/github.com/insolar/block-explorer
       - name: Install testrail-cli
         if: github.event_name == 'push' || github.event_name == 'schedule'
