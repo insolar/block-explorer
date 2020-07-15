@@ -92,7 +92,7 @@ jobs:
       - name: set push_to_master run params
         if: github.event_name == 'push'
         run: |
-          echo "::set-env name=TEST_COUNT::10"
+          echo "::set-env name=TEST_COUNT::1"
           echo "::set-env name=TEST_ARGS::-json"
       - name: set pull_request run params
         if: github.event_name == 'pull_request'

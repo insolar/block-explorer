@@ -26,7 +26,7 @@ test-with-coverage: ## run tests with coverage mode
 
 .PHONY: test-heavy-mock-integration
 test-heavy-mock-integration:
-	go test -v ./... -tags heavy_mock_integration -count $(TEST_COUNT) -race $(TEST_ARGS) | tee $(TEST_LOG_FILENAME)
+	go test -v ./... -tags heavy_mock_integration -count $(TEST_COUNT) -race $(TEST_ARGS)
 
 ##@ Benchmarks
 
