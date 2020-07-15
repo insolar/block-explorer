@@ -125,13 +125,13 @@ jobs:
           go get -v -u github.com/insolar/testrail-cli
           cd testrail-cli && go install cmd/testrail-cli/testrail-cli.go
         working-directory: ${{env.GOPATH}}/src/github.com/insolar
-      - name: Publish tests results to testrail
-        if: github.event_name == 'push' || github.event_name == 'schedule'
-        env:
-          TR_USER: ${{ secrets.TR_USER }}
-          TR_PASSWORD: ${{ secrets.TR_PASSWORD }}
-        run: make publish_tests
-        working-directory: ${{env.GOPATH}}/src/github.com/insolar/block-explorer
+#      - name: Publish tests results to testrail
+#        if: github.event_name == 'push' || github.event_name == 'schedule'
+#        env:
+#          TR_USER: ${{ secrets.TR_USER }}
+#          TR_PASSWORD: ${{ secrets.TR_PASSWORD }}
+#        run: make publish_tests
+#        working-directory: ${{env.GOPATH}}/src/github.com/insolar/block-explorer
   test-with-coverage:
     name: tests with coverage
     runs-on: ubuntu-latest
