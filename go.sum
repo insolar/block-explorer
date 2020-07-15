@@ -387,6 +387,12 @@ github.com/skudasov/loadgen v0.0.16 h1:9fxrm9IKaaZWvdto4XOp2wQ8UfAAQx9c61si6KitN
 github.com/skudasov/loadgen v0.0.16/go.mod h1:69TaHQNeGCLvP2p0SnXV29ONwGH2EWh8l9cbDg4LJb0=
 github.com/skudasov/loadgen v0.0.17 h1:F2rup8SIL02MtuBPXhvJJ19qhiOGFrgIe4e2GMTtyOc=
 github.com/skudasov/loadgen v0.0.17/go.mod h1:69TaHQNeGCLvP2p0SnXV29ONwGH2EWh8l9cbDg4LJb0=
+github.com/skudasov/loadgen v0.0.18 h1:apRlTBUiFhHnMV7IQuC2VA81h+NWXVl9s0MAM4s9Rpw=
+github.com/skudasov/loadgen v0.0.18/go.mod h1:69TaHQNeGCLvP2p0SnXV29ONwGH2EWh8l9cbDg4LJb0=
+github.com/skudasov/loadgen v0.0.19 h1:lgspd11udxQFHf9Z7bM8R8WJdjofVF2dbWW/AGFUgWo=
+github.com/skudasov/loadgen v0.0.19/go.mod h1:69TaHQNeGCLvP2p0SnXV29ONwGH2EWh8l9cbDg4LJb0=
+github.com/skudasov/loadgen v0.0.22 h1:a5CsMMQKjChVEpbJCjVhcABJzdhpZ9T7A10ks9hWzSs=
+github.com/skudasov/loadgen v0.0.22/go.mod h1:c9+YF4F7scjzFWntHFZaifnhUhpPYbN5+FhJ5UkYeGc=
 github.com/smartystreets/assertions v0.0.0-20180927180507-b2de0cb4f26d/go.mod h1:OnSkiWE9lh6wB0YB77sQom3nweQdgAjqCqsofrRNTgc=
 github.com/smartystreets/goconvey v1.6.4/go.mod h1:syvi0/a8iFYH4r/RixwvyeAJjdLS9QV7WQ/tjFTllLA=
 github.com/soheilhy/cmux v0.1.4/go.mod h1:IM3LyeVVIOuxMH7sFAkER9+bJ4dT7Ms6E4xg4kGIyLM=

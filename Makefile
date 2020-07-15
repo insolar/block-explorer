@@ -52,7 +52,7 @@ migrate: ## migrate
 	go run ./cmd/migrate/migrate.go --config=.artifacts/migrate.yaml
 
 .PHONY: migrate_loadtest
-migrate_loadtest: ## migrate_loadtest
+migrate_loadtest: ## migrations required for load testing API + postgres
 	go run ./cmd/migrate/migrate_loadtest.go --config=.artifacts/migrate.yaml
 
 help: ## display help screen

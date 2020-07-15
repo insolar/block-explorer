@@ -15,7 +15,7 @@ import (
 )
 
 func main() {
-	beforeAll := func(config *loadgen.DefaultGeneratorConfig) error {
+	beforeAll := func(config *loadgen.GeneratorConfig) error {
 		var (
 			pulsesToGet     int32 = 100
 			pulsesFileName        = "pulses.csv"
@@ -61,7 +61,9 @@ func main() {
 		log.Printf("getting all uniq jet/pn ids")
 		uniqJetDropIds := hashset.New()
 		for _, pn := range pulseNumbers {
-			res, _, err := c.JetDropApi.JetDropsByPulseNumber(ctx, pn, nil)
+			res, _, err := c.JetDropApi.JetDropsByPulseNumber(ctx, pn, &client.JetDropsByPulseNumberOpts{
+				Limit: optional.NewInt32(1000),
+			})
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -77,7 +79,9 @@ func main() {
 		log.Printf("getting all uniq objects refs")
 		uniqObjectRefs := hashset.New()
 		for _, jdID := range uniqJetDropIds.Values() {
-			res, _, err := c.RecordApi.JetDropRecords(ctx, jdID.(string), nil)
+			res, _, err := c.RecordApi.JetDropRecords(ctx, jdID.(string), &client.JetDropRecordsOpts{
+				Limit: optional.NewInt32(1000),
+			})
 			if err != nil {
 				log.Fatal(err)
 			}

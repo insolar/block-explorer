@@ -1,21 +1,9 @@
-host:
-  name: gha_runner
-  network_iface: en0
-remotes:
 generator:
   target: http://localhost:8080
   responseTimeoutSec: 20
   rampUpStrategy: linear
   verbose: true
 execution_mode: parallel
-#grafana:
-#  url: http://0.0.0.0:8181
-#  login: "admin"
-#  password: "admin"
-#graphite:
-#  url: 0.0.0.0:2003
-#  flushDurationSec: 1
-#  loadGeneratorPrefix: be
 root_package_name: block-explorer
 load_scripts_dir: load
 timezone: Europe/Moscow
