@@ -44,10 +44,6 @@ func TestController_pulseMaintainer(t *testing.T) {
 	time.Sleep(time.Millisecond)
 }
 
-func Test_pulseIsComplete(t *testing.T) {
-	require.True(t, pulseIsComplete(types.Pulse{}, nil))
-}
-
 // sequential is 0, pulses in db: [1000110], expect loading data from 0 to 1000110
 // sequential is 0, pulses in db: [1000110], expect don't load already loaded data
 // sequential is 0, pulses in db: [MinTimePulse, 1000110], expect nothing happens
@@ -254,11 +250,11 @@ func TestController_pulseMaintainer_Start_PulsesCompleteAndNot(t *testing.T) {
 	})
 
 	sm.GetIncompletePulsesMock.Return([]models.Pulse{
-		{PulseNumber: -1000000},
+		{PulseNumber: 1000000},
 		{PulseNumber: 1000010},
 	}, nil)
-	sm.GetJetDropsMock.When(models.Pulse{PulseNumber: -1000000}).Then([]models.JetDrop{{JetID: "1000"}}, nil)
-	sm.GetJetDropsMock.When(models.Pulse{PulseNumber: 1000010}).Then([]models.JetDrop{{JetID: "1001"}}, nil)
+	sm.GetJetDropsMock.When(models.Pulse{PulseNumber: 1000000}).Then([]models.JetDrop{{JetID: "1000"}}, nil)
+	sm.GetJetDropsMock.When(models.Pulse{PulseNumber: 1000010}).Then([]models.JetDrop{{JetID: ""}}, nil)
 
 	wg := sync.WaitGroup{}
 	wg.Add(2)
@@ -269,8 +265,8 @@ func TestController_pulseMaintainer_Start_PulsesCompleteAndNot(t *testing.T) {
 		return nil
 	})
 	extractor.LoadJetDropsMock.Set(func(ctx context.Context, fromPulseNumber int64, toPulseNumber int64) (err error) {
-		require.Equal(t, int64(-1000000), fromPulseNumber)
-		require.Equal(t, int64(-1000000), toPulseNumber)
+		require.Equal(t, int64(1000000), fromPulseNumber)
+		require.Equal(t, int64(1000000), toPulseNumber)
 		require.EqualValues(t, 1, extractor.LoadJetDropsBeforeCounter())
 		wg.Done()
 		return nil
