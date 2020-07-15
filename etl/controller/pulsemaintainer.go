@@ -24,11 +24,10 @@ func (c *Controller) pulseMaintainer(ctx context.Context) {
 		default:
 			time.Sleep(time.Second * time.Duration(c.cfg.PulsePeriod))
 		}
+		c.jetDropRegisterLock.Lock()
 		for p, d := range c.jetDropRegister {
 			if pulseIsComplete(p, d) {
 				if func() bool {
-					c.jetDropRegisterLock.Lock()
-					defer c.jetDropRegisterLock.Unlock()
 
 					if err := c.storage.CompletePulse(p.PulseNo); err != nil {
 						log.Errorf("During pulse saving: %s", err.Error())
@@ -45,6 +44,7 @@ func (c *Controller) pulseMaintainer(ctx context.Context) {
 				c.reloadData(ctx, p.PulseNo, p.PulseNo)
 			}
 		}
+		c.jetDropRegisterLock.Unlock()
 	}
 }
 
