@@ -9,6 +9,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/insolar/assured-ledger/ledger-core/v2/log"
 	"github.com/insolar/block-explorer/etl/models"
 	"github.com/insolar/block-explorer/etl/types"
 	"github.com/insolar/block-explorer/instrumentation/belogger"
@@ -24,27 +25,32 @@ func (c *Controller) pulseMaintainer(ctx context.Context) {
 		default:
 			time.Sleep(time.Second * time.Duration(c.cfg.PulsePeriod))
 		}
-		c.jetDropRegisterLock.Lock()
-		for p, d := range c.jetDropRegister {
-			if pulseIsComplete(p, d) {
-				if func() bool {
+		eraseJetDropRegister(ctx, c, log)
+	}
+}
 
-					if err := c.storage.CompletePulse(p.PulseNo); err != nil {
-						log.Errorf("During pulse saving: %s", err.Error())
-						return false
-					}
+func eraseJetDropRegister(ctx context.Context, c *Controller, log log.Logger) {
+	c.jetDropRegisterLock.Lock()
+	defer c.jetDropRegisterLock.Unlock()
 
-					delete(c.jetDropRegister, p)
-					return true
+	for p, d := range c.jetDropRegister {
+		if pulseIsComplete(p, d) {
+			if func() bool {
 
-				}() {
-					log.Infof("Pulse %d completed and saved", p.PulseNo)
+				if err := c.storage.CompletePulse(p.PulseNo); err != nil {
+					log.Errorf("During pulse saving: %s", err.Error())
+					return false
 				}
-			} else {
-				c.reloadData(ctx, p.PulseNo, p.PulseNo)
+
+				delete(c.jetDropRegister, p)
+				return true
+
+			}() {
+				log.Infof("Pulse %d completed and saved", p.PulseNo)
 			}
+		} else {
+			c.reloadData(ctx, p.PulseNo, p.PulseNo)
 		}
-		c.jetDropRegisterLock.Unlock()
 	}
 }
 
