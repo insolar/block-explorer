@@ -141,7 +141,7 @@ func (e *PlatformExtractor) retrievePulses(ctx context.Context, from, until int6
 		}
 
 		log := logger.WithField("pulse_number", pu.PulseNumber)
-		log.Info("retrievePulses(): successfully retrieved")
+		log.Info("retrievePulses(): Done")
 
 		go e.retrieveRecords(ctx, pu)
 
@@ -161,7 +161,6 @@ func (e *PlatformExtractor) retrieveRecords(ctx context.Context, pu *exporter.Fu
 
 	for { // each portion
 		log := logger.WithField("request_pulse_number", pu.PulseNumber)
-		log.Warnf("Record Retrieving")
 		stream, err := e.client.Export(ctx, &exporter.GetRecords{PulseNumber: pu.PulseNumber,
 			RecordNumber: uint32(len(jetDrops.Records)),
 			Count:        e.batchSize})
@@ -189,7 +188,6 @@ func (e *PlatformExtractor) retrieveRecords(ctx context.Context, pu *exporter.Fu
 			}
 			if resp.ShouldIterateFrom != nil || resp.Record.ID.Pulse() != pu.PulseNumber { // next pulse packet
 				closeStream(ctx, stream)
-				log.Warnf("%d records received", len(jetDrops.Records))
 				e.mainJetDropsChan <- jetDrops
 				return // we have whole pulse
 			}

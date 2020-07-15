@@ -79,9 +79,7 @@ func TestGetJetDrops(t *testing.T) {
 func recordTapeFunc(t *testing.T, tape []*exporter.Record) func() (record *exporter.Record, e error) {
 	used := 0
 	return func() (record *exporter.Record, e error) {
-		t.Log("used ", used)
 		if len(tape) == used {
-			t.Log("EOF")
 			return nil, io.EOF
 		}
 		ret := tape[used]
@@ -116,27 +114,35 @@ func TestLoadJetDrops_returnsRecordByPulses(t *testing.T) {
 		t.Run(fmt.Sprintf("pulse-count=%d,record-count=%d", test.differentPulseCount, test.recordCount), func(t *testing.T) {
 			recordClient := mock.NewRecordExporterClientMock(mc)
 
-			recordTape := []*exporter.Record{}
+			recordTape := make(map[int][]*exporter.Record)
 			startPulseNumber := 100
 			for p := 0; p < test.differentPulseCount; p++ {
 				pulse := startPulseNumber + p*10
 				for r := 0; r < test.recordCount; r++ {
-					recordTape = append(recordTape, &exporter.Record{
+					recordTape[pulse] = append(recordTape[pulse], &exporter.Record{
 						Record: record.Material{ID: *insolar.NewID(insolar.PulseNumber(pulse), nil)},
 					})
 				}
 			}
-			recordTape = append(recordTape, &exporter.Record{
-				Record: record.Material{ID: *insolar.NewID(insolar.PulseNumber(startPulseNumber+10*test.differentPulseCount), nil)},
-			})
-
-			stream := recordStream{
-				recvFunc: recordTapeFunc(t, recordTape),
+			lastPulse := startPulseNumber + 10*test.differentPulseCount
+			lastRecord := &exporter.Record{
+				Record: record.Material{ID: *insolar.NewID(insolar.PulseNumber(lastPulse), nil)},
 			}
+			recordTape[lastPulse] = append(recordTape[lastPulse], lastRecord)
+
 			recordClient.ExportMock.Set(
 				func(ctx context.Context, in *exporter.GetRecords, opts ...grpc.CallOption) (
 					r1 exporter.RecordExporter_ExportClient, err error) {
-					return stream, nil
+					pu := int(in.PulseNumber)
+					slice := in.RecordNumber
+					if int(slice) > len(recordTape[pu]) {
+						return recordStream{
+							recvFunc: recordTapeFunc(t, recordTape[lastPulse]),
+						}, nil
+					}
+					return recordStream{
+						recvFunc: recordTapeFunc(t, append(recordTape[pu][slice:], lastRecord)),
+					}, nil
 				})
 
 			pulseIteration := 0
