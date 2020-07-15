@@ -97,7 +97,7 @@ jobs:
       - name: set pull_request run params
         if: github.event_name == 'pull_request'
         run: |
-          echo "::set-env name=TEST_COUNT::1"
+          echo "::set-env name=TEST_COUNT::10"
       - name: set scheduled run params
         if: github.event_name == 'schedule'
         run: |
