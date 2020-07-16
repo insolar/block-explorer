@@ -115,7 +115,7 @@ func (e *PlatformExtractor) retrievePulses(ctx context.Context, from, until int6
 	var err error
 	logger := belogger.FromContext(ctx)
 
-	halfPulse := 5 * time.Second // guess a real half of pulse, but we do not known it from the platform
+	halfPulse := time.Duration(e.continuousPulseRetrievingHalfPulseSeconds) * time.Second
 	for {
 		select {
 		case <-ctx.Done(): // we need context with cancel
@@ -134,7 +134,7 @@ func (e *PlatformExtractor) retrievePulses(ctx context.Context, from, until int6
 				time.Sleep(halfPulse)
 				continue
 			}
-			logger.Error("retrievePulses(): before=%d", before, err)
+			logger.Errorf("retrievePulses(): before=%d err=%s", before, err)
 			time.Sleep(time.Second)
 			continue
 		}
