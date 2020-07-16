@@ -114,7 +114,7 @@ func main() {
 		}
 	}()
 
-	proc := processor.NewProcessor(mainNetTransformer, storage, controller, 1)
+	proc := processor.NewProcessor(mainNetTransformer, storage, controller, cfg.Processor.Workers)
 	err = proc.Start(ctx)
 	if err != nil {
 		logger.Fatal("cannot start processor: ", err)
