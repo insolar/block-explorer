@@ -115,13 +115,13 @@ func (e *PlatformExtractor) retrievePulses(ctx context.Context, from, until int6
 	var err error
 	log := belogger.FromContext(ctx).WithField("pulse_number", pu.PulseNumber)
 
-	log.Info("retrievePulses(): Start")
+	log.Debug("retrievePulses(): Start")
 
 	halfPulse := time.Duration(e.continuousPulseRetrievingHalfPulseSeconds) * time.Second
 	for {
 		select {
 		case <-ctx.Done(): // we need context with cancel
-			log.Infof("retrievePulses(): terminating")
+			log.Debug("retrievePulses(): terminating")
 			return
 		default:
 		}
@@ -144,7 +144,7 @@ func (e *PlatformExtractor) retrievePulses(ctx context.Context, from, until int6
 			continue
 		}
 
-		log.Info("retrievePulses(): Done")
+		log.Debug("retrievePulses(): Done")
 
 		go e.retrieveRecords(ctx, pu)
 
@@ -161,7 +161,7 @@ func (e *PlatformExtractor) retrievePulses(ctx context.Context, from, until int6
 func (e *PlatformExtractor) retrieveRecords(ctx context.Context, pu *exporter.FullPulse) {
 	logger := belogger.FromContext(ctx)
 	log := logger.WithField("pulse_number", pu.PulseNumber)
-	log.Info("retrieveRecords(): Start")
+	log.Debug("retrieveRecords(): Start")
 	jetDrops := &types.PlatformJetDrops{Pulse: pu} // save pulse info
 
 	for { // each portion
@@ -193,7 +193,7 @@ func (e *PlatformExtractor) retrieveRecords(ctx context.Context, pu *exporter.Fu
 			if resp.ShouldIterateFrom != nil || resp.Record.ID.Pulse() != pu.PulseNumber { // next pulse packet
 				closeStream(ctx, stream)
 				e.mainJetDropsChan <- jetDrops
-				log.Info("retrieveRecords(): Sent")
+				log.Debug("retrieveRecords(): Sent")
 				return // we have whole pulse
 			}
 

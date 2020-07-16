@@ -8,6 +8,8 @@
 package api
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"math"
 	"strings"
@@ -17,9 +19,11 @@ import (
 	"github.com/insolar/block-explorer/test/heavymock"
 	"github.com/insolar/block-explorer/test/integration"
 	"github.com/insolar/block-explorer/testutils"
+	"github.com/insolar/block-explorer/testutils/clients"
 	"github.com/insolar/insolar/ledger/heavy/exporter"
 	"github.com/insolar/insolar/pulse"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc"
 )
 
 func TestGetJetDropsByID(t *testing.T) {
@@ -43,12 +47,23 @@ func TestGetJetDropsByID(t *testing.T) {
 	recordInLastPulse := []*exporter.Record{testutils.GenerateRecordInNextPulse(lastPulse)}
 	require.NoError(t, heavymock.ImportRecords(ts.ConMngr.ImporterClient, recordInLastPulse))
 
-	ts.WaitRecordsCount(t, len(records), 5000)
+	ts.BE.PulseClient.NextFinalizedPulseFunc = func(ctx context.Context, in *exporter.GetNextFinalizedPulse, opts ...grpc.CallOption) (*exporter.FullPulse, error) {
+		p := uint32(ts.ConMngr.Importer.GetLowestUnsentPulse())
+		if p == 1<<32-1 {
+			return nil, errors.New("unready yet")
+		}
+		return clients.GetFullPulse(p), nil
+	}
+
+	ts.StartBE(t)
+	defer ts.StopBE(t)
+
+	ts.WaitRecordsCount(t, len(records)+1, 5000)
 
 	c := GetHTTPClient()
 	pulsesResp, err := c.Pulses(t, nil)
 	require.NoError(t, err)
-	require.Len(t, pulsesResp.Result, pulsesCount)
+	require.Len(t, pulsesResp.Result, pulsesCount+1)
 
 	t.Run("check received data in jetdrops", func(t *testing.T) {
 		t.Log("")
@@ -75,7 +90,19 @@ func TestGetJetDropsByID_negativeCases(t *testing.T) {
 	jetDropsCount := 2
 	records := testutils.GenerateRecordsWithDifferencePulsesSilence(pulsesCount, jetDropsCount)
 	require.NoError(t, heavymock.ImportRecords(ts.ConMngr.ImporterClient, records))
-	ts.WaitRecordsCount(t, len(records)-jetDropsCount, 5000)
+
+	ts.BE.PulseClient.NextFinalizedPulseFunc = func(ctx context.Context, in *exporter.GetNextFinalizedPulse, opts ...grpc.CallOption) (*exporter.FullPulse, error) {
+		p := uint32(ts.ConMngr.Importer.GetLowestUnsentPulse())
+		if p == 1<<32-1 {
+			return nil, errors.New("unready yet")
+		}
+		return clients.GetFullPulse(p), nil
+	}
+
+	ts.StartBE(t)
+	defer ts.StopBE(t)
+
+	ts.WaitRecordsCount(t, len(records), 5000)
 	c := GetHTTPClient()
 
 	nonExistentJetID := fmt.Sprintf("%v:%v",
