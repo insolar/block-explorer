@@ -9,24 +9,27 @@ package integration
 
 import (
 	"context"
+	"errors"
 	"io"
 	"testing"
-
-	"github.com/insolar/block-explorer/instrumentation/converter"
-	"github.com/insolar/insolar/ledger/heavy/exporter"
-	"github.com/stretchr/testify/require"
 
 	"github.com/insolar/block-explorer/etl/models"
 	"github.com/insolar/block-explorer/etl/transformer"
 	"github.com/insolar/block-explorer/etl/types"
+	"github.com/insolar/block-explorer/instrumentation/converter"
 	"github.com/insolar/block-explorer/test/heavymock"
 	"github.com/insolar/block-explorer/testutils"
+	"github.com/insolar/block-explorer/testutils/clients"
+	"github.com/insolar/insolar/ledger/heavy/exporter"
+	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc"
 )
 
 func TestIntegrationWithDb_GetRecords(t *testing.T) {
 	t.Log("C4991 Process records and get saved records by pulse number from database")
 	ts := NewBlockExplorerTestSetup(t)
 	defer ts.Stop(t)
+	records := make([]*exporter.Record, 0)
 
 	pulsesNumber := 10
 	recordsInPulse := 1
@@ -34,7 +37,14 @@ func TestIntegrationWithDb_GetRecords(t *testing.T) {
 	stream, err := ts.ConMngr.ImporterClient.Import(context.Background())
 	require.NoError(t, err)
 
-	records := make([]*exporter.Record, 0)
+	ts.BE.PulseClient.NextFinalizedPulseFunc = func(ctx context.Context, in *exporter.GetNextFinalizedPulse, opts ...grpc.CallOption) (*exporter.FullPulse, error) {
+		p := uint32(ts.ConMngr.Importer.GetLowestUnsentPulse())
+		if p == 1<<32-1 {
+			return nil, errors.New("unready yet")
+		}
+		return clients.GetFullPulse(p), nil
+	}
+
 	for i := 0; i < pulsesNumber; i++ {
 		record, _ := recordsWithDifferencePulses()
 		records = append(records, record)
@@ -52,10 +62,14 @@ func TestIntegrationWithDb_GetRecords(t *testing.T) {
 
 	jetDrops := make([]types.PlatformJetDrops, 0)
 	for _, r := range records {
-		jetDrop := types.PlatformJetDrops{Records: []*exporter.Record{r}}
+		jetDrop := types.PlatformJetDrops{Pulse: clients.GetFullPulse(uint32(r.Record.ID.Pulse())),
+			Records: []*exporter.Record{r}}
 		jetDrops = append(jetDrops, jetDrop)
 	}
 	require.Len(t, jetDrops, pulsesNumber)
+
+	ts.StartBE(t)
+	defer ts.StopBE(t)
 
 	refs := make([]types.Reference, 0)
 	ctx := context.Background()

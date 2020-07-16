@@ -113,37 +113,37 @@ func closeStream(ctx context.Context, stream exporter.RecordExporter_ExportClien
 func (e *PlatformExtractor) retrievePulses(ctx context.Context, from, until int64) {
 	pu := &exporter.FullPulse{PulseNumber: insolar.PulseNumber(from)}
 	var err error
-	logger := belogger.FromContext(ctx)
+	log := belogger.FromContext(ctx).WithField("pulse_number", pu.PulseNumber)
+
+	log.Info("retrievePulses(): Start")
 
 	halfPulse := time.Duration(e.continuousPulseRetrievingHalfPulseSeconds) * time.Second
 	for {
 		select {
 		case <-ctx.Done(): // we need context with cancel
+			log.Infof("retrievePulses(): terminating")
 			return
 		default:
 		}
 
-		var before insolar.PulseNumber // already processed pulse
+		before := *pu
 
-		if pu != nil { // not a first iteration
-			before = pu.PulseNumber
-		}
-		pu, err = e.pulseExtractor.GetNextFinalizedPulse(ctx, int64(before))
+		pu, err = e.pulseExtractor.GetNextFinalizedPulse(ctx, int64(before.PulseNumber))
 		if err != nil { // network error ?
 			if strings.Contains(err.Error(), pulse.ErrNotFound.Error()) { // seems this pulse already last
 				time.Sleep(halfPulse)
 				continue
 			}
-			logger.Errorf("retrievePulses(): before=%d err=%s", before, err)
+			log.Errorf("retrievePulses(): before=%d err=%s", before, err)
+			pu = &before
 			time.Sleep(time.Second)
 			continue
 		}
-		if pu.PulseNumber == before { // no new pulse happens
+		if pu.PulseNumber == before.PulseNumber { // no new pulse happens
 			time.Sleep(halfPulse)
 			continue
 		}
 
-		log := logger.WithField("pulse_number", pu.PulseNumber)
 		log.Info("retrievePulses(): Done")
 
 		go e.retrieveRecords(ctx, pu)
@@ -160,10 +160,11 @@ func (e *PlatformExtractor) retrievePulses(ctx context.Context, from, until int6
 // retrieveRecords - retrieves all records for specified pulse and puts this to channel
 func (e *PlatformExtractor) retrieveRecords(ctx context.Context, pu *exporter.FullPulse) {
 	logger := belogger.FromContext(ctx)
+	log := logger.WithField("pulse_number", pu.PulseNumber)
+	log.Info("retrieveRecords(): Start")
 	jetDrops := &types.PlatformJetDrops{Pulse: pu} // save pulse info
 
 	for { // each portion
-		log := logger.WithField("request_pulse_number", pu.PulseNumber)
 		stream, err := e.client.Export(ctx, &exporter.GetRecords{PulseNumber: pu.PulseNumber,
 			RecordNumber: uint32(len(jetDrops.Records)),
 			Count:        e.batchSize})
@@ -192,6 +193,7 @@ func (e *PlatformExtractor) retrieveRecords(ctx context.Context, pu *exporter.Fu
 			if resp.ShouldIterateFrom != nil || resp.Record.ID.Pulse() != pu.PulseNumber { // next pulse packet
 				closeStream(ctx, stream)
 				e.mainJetDropsChan <- jetDrops
+				log.Info("retrieveRecords(): Sent")
 				return // we have whole pulse
 			}
 

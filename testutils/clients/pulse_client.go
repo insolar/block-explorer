@@ -14,13 +14,13 @@ import (
 )
 
 type TestPulseClient struct {
-	export             func(ctx context.Context, in *exporter.GetPulses, opts ...grpc.CallOption) (exporter.PulseExporter_ExportClient, error)
-	topSyncPulse       func(ctx context.Context, in *exporter.GetTopSyncPulse, opts ...grpc.CallOption) (*exporter.TopSyncPulseResponse, error)
-	nextFinalizedPulse func(ctx context.Context, in *exporter.GetNextFinalizedPulse, opts ...grpc.CallOption) (*exporter.FullPulse, error)
+	export                 func(ctx context.Context, in *exporter.GetPulses, opts ...grpc.CallOption) (exporter.PulseExporter_ExportClient, error)
+	topSyncPulse           func(ctx context.Context, in *exporter.GetTopSyncPulse, opts ...grpc.CallOption) (*exporter.TopSyncPulseResponse, error)
+	NextFinalizedPulseFunc func(ctx context.Context, in *exporter.GetNextFinalizedPulse, opts ...grpc.CallOption) (*exporter.FullPulse, error)
 }
 
 func (c *TestPulseClient) NextFinalizedPulse(ctx context.Context, in *exporter.GetNextFinalizedPulse, opts ...grpc.CallOption) (*exporter.FullPulse, error) {
-	return c.nextFinalizedPulse(ctx, in, opts...)
+	return c.NextFinalizedPulseFunc(ctx, in, opts...)
 }
 
 func (c *TestPulseClient) Export(ctx context.Context, in *exporter.GetPulses, opts ...grpc.CallOption) (exporter.PulseExporter_ExportClient, error) {
@@ -43,7 +43,7 @@ func GetTestPulseClient(pn uint32, err error) *TestPulseClient {
 	client.topSyncPulse = func(ctx context.Context, in *exporter.GetTopSyncPulse, opts ...grpc.CallOption) (response *exporter.TopSyncPulseResponse, e error) {
 		return getTestTopSyncPulseResponse(pn), err
 	}
-	client.nextFinalizedPulse = func(ctx context.Context, in *exporter.GetNextFinalizedPulse, opts ...grpc.CallOption) (*exporter.FullPulse, error) {
+	client.NextFinalizedPulseFunc = func(ctx context.Context, in *exporter.GetNextFinalizedPulse, opts ...grpc.CallOption) (*exporter.FullPulse, error) {
 		return GetFullPulse(pn), nil
 	}
 	return client
