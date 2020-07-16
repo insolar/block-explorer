@@ -12,6 +12,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/insolar/block-explorer/api"
 	"github.com/insolar/insconfig"
 	"github.com/insolar/insolar/ledger/heavy/exporter"
 	"github.com/pkg/errors"
@@ -44,6 +45,15 @@ func main() {
 	fmt.Println("Starts with configuration:\n", insConfigurator.ToYaml(cfg))
 	ctx, logger := belogger.InitLogger(context.Background(), cfg.Log, "block_explorer")
 	logger.Info("Config and logger were initialized")
+
+	router := api.NewRouter()
+	_ = router.Start(ctx)
+	defer func() {
+		err := router.Stop(ctx)
+		if err != nil {
+			logger.Fatal("cannot stop pprof: ", err)
+		}
+	}()
 
 	client, err := connection.NewGRPCClientConnection(ctx, cfg.Replicator)
 	if err != nil {
@@ -105,7 +115,7 @@ func main() {
 		}
 	}()
 
-	proc := processor.NewProcessor(mainNetTransformer, storage, controller, 1)
+	proc := processor.NewProcessor(mainNetTransformer, storage, controller, cfg.Processor.Workers)
 	err = proc.Start(ctx)
 	if err != nil {
 		logger.Fatal("cannot start processor: ", err)

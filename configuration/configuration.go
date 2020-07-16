@@ -21,6 +21,7 @@ type BlockExplorer struct {
 	DB         DB
 	Replicator Replicator
 	Controller Controller
+	Processor  Processor
 }
 
 type API struct {
@@ -83,6 +84,11 @@ type Controller struct {
 	// recommend to use 20 minutes because of PENV-447
 	ReloadPeriod      int `insconfig:"1200| Seconds between reloading data for same pulse tries"`
 	ReloadCleanPeriod int `insconfig:"1| Seconds between launching cleaning for reloaded data map"`
+}
+
+// Processor represents for processing layer
+type Processor struct {
+	Workers int `insconfig:"200| The count of workers for processing transformed data"`
 }
 
 // NewLog creates new default configuration for logging
