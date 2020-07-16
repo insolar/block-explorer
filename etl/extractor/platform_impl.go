@@ -20,10 +20,7 @@ import (
 	"github.com/insolar/insolar/ledger/heavy/exporter"
 )
 
-const pulseDelta = 10
-
 type PlatformExtractor struct {
-	stopSignal     chan bool
 	hasStarted     bool
 	startStopMutex *sync.Mutex
 
@@ -43,7 +40,6 @@ func NewPlatformExtractor(batchSize uint32, continuousPulseRetrievingHalfPulseSe
 	pulseExtractor interfaces.PulseExtractor, exporterClient exporter.RecordExporterClient) *PlatformExtractor {
 	request := &exporter.GetRecords{Count: batchSize}
 	return &PlatformExtractor{
-		stopSignal:       make(chan bool, 1),
 		startStopMutex:   &sync.Mutex{},
 		client:           exporterClient,
 		request:          request,
@@ -71,20 +67,9 @@ func (e *PlatformExtractor) Stop(ctx context.Context) error {
 	defer e.startStopMutex.Unlock()
 	if e.hasStarted {
 		belogger.FromContext(ctx).Info("Stopping platform extractor...")
-		e.stopSignal <- true
 		e.hasStarted = false
 	}
 	return nil
-}
-
-func (e *PlatformExtractor) needStop() bool {
-	select {
-	case <-e.stopSignal:
-		return true
-	default:
-		// continue
-	}
-	return false
 }
 
 func (e *PlatformExtractor) Start(ctx context.Context) error {

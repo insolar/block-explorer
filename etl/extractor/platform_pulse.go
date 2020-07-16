@@ -46,7 +46,7 @@ func (ppe *PlatformPulseExtractor) fetchCurrentPulse(ctx context.Context) (uint3
 
 func (ppe *PlatformPulseExtractor) GetNextFinalizedPulse(ctx context.Context, p int64) (*exporter.FullPulse, error) {
 	c := ppe.client
-	req := &exporter.GetNextFinalizedPulse{p}
+	req := &exporter.GetNextFinalizedPulse{p} // nolint
 
 	log := belogger.FromContext(ctx)
 	log.Debug("GetNextFinalizedPulse")

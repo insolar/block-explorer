@@ -26,17 +26,9 @@ import (
 	"github.com/kelindar/binary"
 )
 
-const (
-	// delta between pulses
-	pulseDelta uint16 = 10
-)
-
 // Transform transforms thr row JetDrops to canonical JetDrops
 func Transform(ctx context.Context, jd *types.PlatformJetDrops) ([]*types.JetDrop, error) {
-	pulseData, err := getPulseData(jd.Pulse)
-	if err != nil {
-		return nil, errors.Wrapf(err, "cannot get pulse data from record")
-	}
+	pulseData := getPulseData(jd.Pulse)
 
 	m, err := getRecords(jd)
 	if err != nil {
@@ -185,7 +177,8 @@ func restoreInsolarID(b []byte) string {
 	return insolar.NewIDFromBytes(b).String()
 }
 
-func getPulseData(pn *exporter.FullPulse) (types.Pulse, error) {
+//nolint
+func getPulseData(pn *exporter.FullPulse) types.Pulse {
 	pulse := pn.PulseNumber
 	return types.Pulse{
 		PulseNo:         int64(pulse.AsUint32()),
@@ -193,7 +186,7 @@ func getPulseData(pn *exporter.FullPulse) (types.Pulse, error) {
 		PulseTimestamp:  pn.GetPulseTimestamp(),
 		NextPulseNumber: int64(pn.NextPulseNumber.AsUint32()),
 		PrevPulseNumber: int64(pn.PrevPulseNumber.AsUint32()),
-	}, nil
+	}
 }
 
 // getRecords - order records to map by jetid
