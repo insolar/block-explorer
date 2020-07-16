@@ -121,11 +121,21 @@ func TestIntegrationWithDb_GetJetDrops(t *testing.T) {
 		pulseNumbers[int64(r.Record.ID.Pulse())] = true
 	}
 
+	ts.BE.PulseClient.NextFinalizedPulseFunc = func(ctx context.Context, in *exporter.GetNextFinalizedPulse, opts ...grpc.CallOption) (*exporter.FullPulse, error) {
+		p := uint32(ts.ConMngr.Importer.GetLowestUnsentPulse())
+		if p == 1<<32-1 {
+			return nil, errors.New("unready yet")
+		}
+		return clients.GetFullPulse(p), nil
+	}
+
 	err := heavymock.ImportRecords(ts.ConMngr.ImporterClient, expRecords)
 	require.NoError(t, err)
 
-	// last records with the biggest pulse number won't be processed, so we do not expect this record in DB
-	ts.WaitRecordsCount(t, len(expRecords)-recordsCount, 6000)
+	ts.StartBE(t)
+	defer ts.StopBE(t)
+
+	ts.WaitRecordsCount(t, len(expRecords), 6000)
 
 	var jetDropsDB []models.JetDrop
 	for pulse, _ := range pulseNumbers {
@@ -134,7 +144,7 @@ func TestIntegrationWithDb_GetJetDrops(t *testing.T) {
 		jetDropsDB = append(jetDropsDB, jd...)
 	}
 
-	require.Len(t, jetDropsDB, 3, "jetDrops count in db not as expected")
+	require.Len(t, jetDropsDB, recordsCount*pulses, "jetDrops count in db not as expected")
 
 	prefixFirst := converter.JetIDToString(expRecordsJet1[0].Record.JetID)
 	prefixSecond := converter.JetIDToString(expRecordsJet1[1].Record.JetID)
