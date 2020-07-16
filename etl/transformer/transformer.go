@@ -9,14 +9,12 @@ import (
 	"context"
 
 	"github.com/insolar/insolar/pulse"
-	"github.com/ugorji/go/codec"
 	"golang.org/x/crypto/sha3"
 
 	"github.com/insolar/block-explorer/instrumentation"
 	"github.com/insolar/block-explorer/instrumentation/converter"
 
 	"github.com/insolar/insolar/applicationbase/genesisrefs"
-
 	"github.com/insolar/insolar/insolar"
 	ins_record "github.com/insolar/insolar/insolar/record"
 	"github.com/insolar/insolar/ledger/heavy/exporter"
@@ -24,6 +22,8 @@ import (
 
 	"github.com/insolar/block-explorer/etl/types"
 	"github.com/insolar/block-explorer/instrumentation/belogger"
+
+	"github.com/kelindar/binary"
 )
 
 const (
@@ -102,10 +102,7 @@ func getJetDrop(ctx context.Context, jetID insolar.JetID, records []types.Record
 }
 
 func serialize(o interface{}) ([]byte, error) {
-	ch := new(codec.CborHandle)
-	var data []byte
-	err := codec.NewEncoderBytes(&data, ch).Encode(o)
-	return data, errors.Wrap(err, "[ Serialize ]")
+	return binary.Marshal(o)
 }
 
 // sortRecords sorts state records for every object in order of change
