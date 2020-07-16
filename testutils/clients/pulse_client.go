@@ -50,12 +50,16 @@ func GetTestPulseClient(pn uint32, err error) *TestPulseClient {
 }
 
 func GetFullPulse(pn uint32) *exporter.FullPulse {
+	time, err := insolar.PulseNumber(pn).AsApproximateTime()
+	if err != nil {
+		panic(err)
+	}
 	res := &exporter.FullPulse{
 		PulseNumber:      insolar.PulseNumber(pn),
 		PrevPulseNumber:  insolar.PulseNumber(pn - 10),
 		NextPulseNumber:  insolar.PulseNumber(pn + 10),
 		Entropy:          insolar.Entropy{},
-		PulseTimestamp:   0,
+		PulseTimestamp:   time.Unix(),
 		EpochPulseNumber: 0,
 		Jets:             nil,
 	}
