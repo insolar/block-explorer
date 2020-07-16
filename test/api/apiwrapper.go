@@ -57,6 +57,12 @@ func (c *BEApiClient) JetDropsByID(t *testing.T, jetDropID string) (response cli
 	return response, err
 }
 
+func (c *BEApiClient) JetDropsByJetID(t *testing.T, jetID string, opts *client.JetDropsByJetIDOpts) (response client.JetDropsByJetIdResponse200, err error) {
+	response, rawResponse, err := c.client.JetDropApi.JetDropsByJetID(context.Background(), jetID, opts)
+	LogHTTP(t, rawResponse, nil, response)
+	return response, err
+}
+
 func (c *BEApiClient) Search(t *testing.T, value string) (response client.SearchResponse200, err error) {
 	response, rawResponse, err := c.client.SearchApi.Search(context.Background(), value)
 	LogHTTP(t, rawResponse, nil, response)
