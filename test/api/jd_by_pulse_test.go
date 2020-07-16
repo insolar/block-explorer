@@ -121,7 +121,7 @@ func TestGetJetDropsByPulse(t *testing.T) {
 			testutils.GenerateRecordInNextPulse(lastPulse + 30)}
 
 		require.NoError(t, heavymock.ImportRecords(ts.ConMngr.ImporterClient, newRecords[1:]))
-		ts.WaitRecordsCount(t, len(records)+2, 5000)
+		ts.WaitRecordsCount(t, len(records)+3, 5000)
 
 		emptyPulse := int64(newRecords[0].Record.ID.Pulse())
 
@@ -152,7 +152,7 @@ func TestGetJetDropsByPulse_severalRecordsInJD(t *testing.T) {
 	ts.StartBE(t)
 	defer ts.StopBE(t)
 
-	ts.WaitRecordsCount(t, recordsCount*(pulsesCount-1), 1000)
+	ts.WaitRecordsCount(t, recordsCount*pulsesCount, 1000)
 	c := GetHTTPClient()
 	response, err := c.JetDropsByPulseNumber(t, int64(records[0].Record.ID.Pulse()), nil)
 	require.NoError(t, err)
