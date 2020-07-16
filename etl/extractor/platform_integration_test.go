@@ -40,8 +40,8 @@ func TestExporterIsWorking(t *testing.T) {
 	defer client.GetGRPCConn().Close()
 
 	g := &RecordExporterClient{}
-	pulseClient := clients.GetTestPulseClient(1, nil)
-	extractor := NewPlatformExtractor(uint32(defaultLocalBatchSize), 5, NewPlatformPulseExtractor(pulseClient), g)
+	pulseClient := clients.GetTestPulseClient(65537, nil)
+	extractor := NewPlatformExtractor(uint32(defaultLocalBatchSize), 0, NewPlatformPulseExtractor(pulseClient), g)
 	err = extractor.Start(ctx)
 	require.NoError(t, err)
 	defer extractor.Stop(ctx)

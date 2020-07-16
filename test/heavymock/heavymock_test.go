@@ -41,7 +41,7 @@ func TestConnect(t *testing.T) {
 
 	greeterClient := exporter.NewRecordExporterClient(client.GetGRPCConn())
 	// send record to stream
-	request := &exporter.GetRecords{}
+	request := &exporter.GetRecords{PulseNumber: SimpleRecord.Record.ID.Pulse()}
 	stream, err := greeterClient.Export(context.Background(), request)
 	require.NoError(t, err, "Error when sending client request")
 

@@ -44,7 +44,7 @@ func TestGetJetDrops(t *testing.T) {
 			return stream, nil
 		})
 
-	pulseClient := clients.GetTestPulseClient(1, nil)
+	pulseClient := clients.GetTestPulseClient(65537, nil)
 	pulseExtractor := NewPlatformPulseExtractor(pulseClient)
 	extractor := NewPlatformExtractor(uint32(pulseCount), 5, pulseExtractor, recordClient)
 	err = extractor.Start(ctx)
@@ -115,7 +115,7 @@ func TestLoadJetDrops_returnsRecordByPulses(t *testing.T) {
 			recordClient := mock.NewRecordExporterClientMock(mc)
 
 			recordTape := make(map[int][]*exporter.Record)
-			startPulseNumber := 100
+			startPulseNumber := 65537
 			for p := 0; p < test.differentPulseCount; p++ {
 				pulse := startPulseNumber + p*10
 				for r := 0; r < test.recordCount; r++ {
