@@ -31,9 +31,9 @@ type API struct {
 }
 
 type DB struct {
-	URL string `insconfig:"postgres://postgres@localhost/postgres?sslmode=disable| Path to postgres db"`
 	// for nondocker testing also it may be  `postgres://postgres:secret@localhost:5432/postgres?sslmode=disable`
-	PoolSize int `insconfig:"100| Maximum number of socket connections"`
+	URL      string `insconfig:"postgres://postgres@localhost/postgres?sslmode=disable| Path to postgres db"`
+	PoolSize int    `insconfig:"100| Maximum number of socket connections"`
 }
 
 // Replicator represents a configuration of the Platform connection
