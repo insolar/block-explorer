@@ -90,7 +90,7 @@ func Migrations() []*gormigrate.Migration {
 	}
 }
 
-func LoadTestMigrations(cfg *configuration.DB) *gormigrate.Migration {
+func LoadTestMigrations(cfg *configuration.TestDB) *gormigrate.Migration {
 	return &gormigrate.Migration{
 		ID: "202005180425",
 		Migrate: func(tx *gorm.DB) error {

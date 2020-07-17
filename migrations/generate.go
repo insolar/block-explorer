@@ -109,7 +109,7 @@ func generateRecords(jDrops []models.JetDrop, amount int) ([]models.Record, erro
 	return records, nil
 }
 
-func generateData(tx *gorm.DB, cfg *configuration.DB) error {
+func generateData(tx *gorm.DB, cfg *configuration.TestDB) error {
 	pulses := generatePulses(cfg.TestPulses)
 	for _, p := range pulses {
 		pulse := p

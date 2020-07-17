@@ -50,5 +50,5 @@ services:
         ./wait.sh "postgres:5432"
         printenv
         ls -al
-        ./migrate --config=/opt/app/config/migrate.yaml
+        ./loadtest_migrate --config=/opt/app/config/migrate.yaml
         ./api --config=/opt/app/config/api.yaml

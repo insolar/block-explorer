@@ -21,7 +21,7 @@ import (
 )
 
 func main() {
-	cfg := &configuration.DB{}
+	cfg := &configuration.TestDB{}
 	params := insconfig.Params{
 		EnvPrefix:        "migrate",
 		ConfigPathGetter: &insconfig.DefaultPathGetter{},
@@ -45,7 +45,10 @@ func main() {
 	db = db.LogMode(true)
 	db.SetLogger(belogger.NewGORMLogAdapter(log))
 
-	m := gormigrate.New(db, migrations.MigrationOptions(), migrations.Migrations())
+	migrationsSlice := migrations.Migrations()
+	migrationsSlice = append(migrationsSlice, migrations.LoadTestMigrations(cfg))
+
+	m := gormigrate.New(db, migrations.MigrationOptions(), migrationsSlice)
 
 	if err = m.Migrate(); err != nil {
 		log.Fatalf("Could not migrate: %v", err)

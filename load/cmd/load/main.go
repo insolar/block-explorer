@@ -34,7 +34,7 @@ func main() {
 	ctx := context.Background()
 	log := belogger.FromContext(ctx)
 
-	dbCfg := &configuration.DB{}
+	dbCfg := &configuration.TestDB{}
 	params := insconfig.Params{
 		EnvPrefix:        "migrate",
 		ConfigPathGetter: &PathGetter{},
