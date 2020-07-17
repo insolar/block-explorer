@@ -246,25 +246,25 @@ func TestLifeline_receiveNewObjectStates(t *testing.T) {
 	err = heavymock.ImportRecords(ts.ConMngr.ImporterClient, lifeline.StateRecords[1].Records)
 	err = heavymock.ImportRecords(ts.ConMngr.ImporterClient, lifeline.StateRecords[2].Records)
 	require.NoError(t, err)
-	// expected records from pulses 1, 2
+	// expected records from pulses 1, 2, 3
 
 	ts.BE.PulseClient.SetNextFinalizedPulseFunc(ts.ConMngr.Importer)
 	ts.StartBE(t)
 	defer ts.StopBE(t)
 
-	ts.WaitRecordsCount(t, recordsInPulse*2+2, 1000)
+	ts.WaitRecordsCount(t, recordsInPulse*3, 1000)
 
 	err = heavymock.ImportRecords(ts.ConMngr.ImporterClient, lifeline.StateRecords[3].Records)
 	err = heavymock.ImportRecords(ts.ConMngr.ImporterClient, lifeline.StateRecords[4].Records)
 	require.NoError(t, err)
-	// expected records from pulses 1, 2, 3, 4
+	// expected records from pulses 1, 2, 3, 4, 5
 
-	ts.WaitRecordsCount(t, recordsInPulse*4-2, 1000)
+	ts.WaitRecordsCount(t, recordsInPulse*5, 1000)
 
 	c := GetHTTPClient()
 	response, err := c.ObjectLifeline(t, lifeline.ObjID.String(), &client.ObjectLifelineOpts{Limit: optional.NewInt32(100)})
 	require.NoError(t, err)
-	require.Len(t, response.Result, recordsInPulse*4-2)
+	require.Len(t, response.Result, recordsInPulse*pulsesNumber)
 }
 
 func TestLifeline_fillMissedStates(t *testing.T) {
