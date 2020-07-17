@@ -25,9 +25,11 @@ type BlockExplorer struct {
 }
 
 type API struct {
-	Listen string `insconfig:":0| API starts on this address"`
-	DB     DB
-	Log    Log
+	Listen       string        `insconfig:":0| API starts on this address"`
+	ReadTimeout  time.Duration `insconfig:"60s| The maximum duration for reading the entire request, including the body"`
+	WriteTimeout time.Duration `insconfig:"60s| The maximum duration before timing out writes of the response"`
+	DB           DB
+	Log          Log
 }
 
 type DB struct {

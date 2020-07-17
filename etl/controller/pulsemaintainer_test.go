@@ -44,10 +44,6 @@ func TestController_pulseMaintainer(t *testing.T) {
 	time.Sleep(time.Millisecond)
 }
 
-func Test_pulseIsComplete(t *testing.T) {
-	require.True(t, pulseIsComplete(types.Pulse{}, nil))
-}
-
 // sequential is 0, pulses in db: [1000110], expect loading data from 0 to 1000110
 // sequential is 0, pulses in db: [1000110], expect don't load already loaded data
 // sequential is 0, pulses in db: [MinTimePulse, 1000110], expect nothing happens
@@ -254,11 +250,11 @@ func TestController_pulseMaintainer_Start_PulsesCompleteAndNot(t *testing.T) {
 	})
 
 	sm.GetIncompletePulsesMock.Return([]models.Pulse{
-		{PulseNumber: -1000000},
+		{PulseNumber: 1000000},
 		{PulseNumber: 1000010},
 	}, nil)
-	sm.GetJetDropsMock.When(models.Pulse{PulseNumber: -1000000}).Then([]models.JetDrop{{JetID: "1000"}}, nil)
-	sm.GetJetDropsMock.When(models.Pulse{PulseNumber: 1000010}).Then([]models.JetDrop{{JetID: "1001"}}, nil)
+	sm.GetJetDropsMock.When(models.Pulse{PulseNumber: 1000000}).Then([]models.JetDrop{{JetID: "1000"}}, nil)
+	sm.GetJetDropsMock.When(models.Pulse{PulseNumber: 1000010}).Then([]models.JetDrop{{JetID: ""}}, nil)
 
 	wg := sync.WaitGroup{}
 	wg.Add(2)
@@ -269,8 +265,8 @@ func TestController_pulseMaintainer_Start_PulsesCompleteAndNot(t *testing.T) {
 		return nil
 	})
 	extractor.LoadJetDropsMock.Set(func(ctx context.Context, fromPulseNumber int64, toPulseNumber int64) (err error) {
-		require.Equal(t, int64(-1000000), fromPulseNumber)
-		require.Equal(t, int64(-1000000), toPulseNumber)
+		require.Equal(t, int64(1000000), fromPulseNumber)
+		require.Equal(t, int64(1000000), toPulseNumber)
 		require.EqualValues(t, 1, extractor.LoadJetDropsBeforeCounter())
 		wg.Done()
 		return nil
@@ -327,4 +323,144 @@ func TestController_pulseSequence_ReloadPeriodExpired(t *testing.T) {
 	wg.Wait()
 	require.NoError(t, c.Stop(ctx))
 	time.Sleep(time.Millisecond)
+}
+
+func Test_pulseIsComplete(t *testing.T) {
+	type args struct {
+		p types.Pulse
+		d []string
+	}
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		{
+			name: "root",
+			args: args{
+				types.Pulse{PulseNo: 1000},
+				[]string{
+					"",
+				},
+			},
+			want: true,
+		},
+		{
+			name: "complete",
+			args: args{
+				types.Pulse{PulseNo: 1000},
+				[]string{
+					"1",
+					"000",
+					"001",
+					"010",
+					"011",
+				},
+			},
+			want: true,
+		},
+		{
+			name: "not complete",
+			args: args{
+				types.Pulse{PulseNo: 1000},
+				[]string{
+					"1",
+					"000",
+					"001",
+					"010",
+				},
+			},
+			want: false,
+		},
+		{
+			name: "not complete",
+			args: args{
+				types.Pulse{PulseNo: 1000},
+				[]string{
+					"1",
+					"000",
+					"001",
+				},
+			},
+			want: false,
+		},
+		{
+			name: "not complete",
+			args: args{
+				types.Pulse{PulseNo: 1000},
+				[]string{
+					"000",
+					"001",
+					"010",
+					"011",
+				},
+			},
+			want: false,
+		},
+		{
+			name: "not complete",
+			args: args{
+				types.Pulse{PulseNo: 1000},
+				[]string{
+					"000",
+					"001",
+					"011",
+				},
+			},
+			want: false,
+		},
+		{
+			name: "complete",
+			args: args{
+				types.Pulse{PulseNo: 1000},
+				[]string{
+					"10",
+					"11",
+					"000",
+					"001",
+					"010",
+					"011",
+				},
+			},
+			want: true,
+		},
+		{
+			name: "complete",
+			args: args{
+				types.Pulse{PulseNo: 1000},
+				[]string{
+					"10",
+					"110",
+					"111",
+					"000",
+					"001",
+					"010",
+					"011",
+				},
+			},
+			want: true,
+		},
+		{
+			name: "not complete",
+			args: args{
+				types.Pulse{PulseNo: 1000},
+				[]string{
+					"110",
+					"111",
+					"000",
+					"001",
+					"010",
+					"011",
+				},
+			},
+			want: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := pulseIsComplete(tt.args.p, tt.args.d); got != tt.want {
+				t.Errorf("pulseIsComplete() = %v, want %v", got, tt.want)
+			}
+		})
+	}
 }
