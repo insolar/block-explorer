@@ -105,13 +105,15 @@ func TestGetJetDropsByJetID(t *testing.T) {
 			values = append(values, jetID[:len(jetID)-int(math.Round(float64(len(jetID)/2)))])
 			break
 		}
-		response, err := c.JetDropsByJetID(t, value, nil)
-		require.NoError(t, err)
-		require.NotEmpty(t, response.Result)
-		require.Greater(t, response.Total, int64(0))
-		require.Empty(t, response.ValidationFailures)
-		for _, res := range response.Result {
-			require.True(t, strings.HasPrefix(res.JetId, value))
+		for _, value := range values {
+			response, err := c.JetDropsByJetID(t, value, nil)
+			require.NoError(t, err)
+			require.NotEmpty(t, response.Result)
+			require.Greater(t, response.Total, int64(0))
+			require.Empty(t, response.ValidationFailures)
+			for _, res := range response.Result {
+				require.True(t, strings.HasPrefix(res.JetId, value))
+			}
 		}
 	})
 	t.Run("check jetDrops amount", func(t *testing.T) {
