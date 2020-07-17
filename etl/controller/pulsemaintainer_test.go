@@ -325,7 +325,7 @@ func TestController_pulseSequence_ReloadPeriodExpired(t *testing.T) {
 	time.Sleep(time.Millisecond)
 }
 
-func Test_pulseIsComplete1(t *testing.T) {
+func Test_pulseIsComplete(t *testing.T) {
 	type args struct {
 		p types.Pulse
 		d []string

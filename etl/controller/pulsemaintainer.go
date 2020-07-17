@@ -7,16 +7,15 @@ package controller
 
 import (
 	"context"
-	"log"
-	"strconv"
 	"strings"
 	"time"
 
 	"github.com/insolar/assured-ledger/ledger-core/v2/log"
+	"github.com/jinzhu/gorm"
+
 	"github.com/insolar/block-explorer/etl/models"
 	"github.com/insolar/block-explorer/etl/types"
 	"github.com/insolar/block-explorer/instrumentation/belogger"
-	"github.com/jinzhu/gorm"
 )
 
 func (c *Controller) pulseMaintainer(ctx context.Context) {
@@ -121,12 +120,7 @@ func pulseIsComplete(p types.Pulse, d []string) bool { // nolint
 	invertLastSymbol := func(s string) string {
 		last := s[len(s)-1:]
 		var invertedSymbol string
-		b, err := strconv.ParseBool(last)
-		if err != nil {
-			log.Fatal("non binary symbol in jet id: ", last)
-		}
-
-		if b {
+		if last == "1" {
 			invertedSymbol = "0"
 		} else {
 			invertedSymbol = "1"
