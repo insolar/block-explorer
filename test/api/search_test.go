@@ -46,7 +46,7 @@ func TestSearchApi(t *testing.T) {
 
 	randomJetID := func() string {
 		for {
-			jd := converter.JetIDToString(testutils.GenerateUniqueJetID())
+			jd := converter.JetIDToString(gen.JetID())
 			if len(jd) < 20 {
 				continue
 			}
