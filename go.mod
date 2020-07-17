@@ -17,6 +17,7 @@ require (
 	github.com/insolar/insolar v1.5.2
 	github.com/insolar/spec-insolar-block-explorer-api v1.2.0
 	github.com/jinzhu/gorm v1.9.12
+	github.com/kelindar/binary v1.0.9
 	github.com/kr/pretty v0.2.0 // indirect
 	github.com/labstack/echo/v4 v4.1.16
 	github.com/mitchellh/mapstructure v1.3.2 // indirect
@@ -36,7 +37,6 @@ require (
 	golang.org/x/sys v0.0.0-20200602225109-6fdc65e7d980 // indirect
 	google.golang.org/appengine v1.6.1 // indirect
 	google.golang.org/grpc v1.22.0
-	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15 // indirect
 	gopkg.in/gormigrate.v1 v1.6.0
 	gopkg.in/ini.v1 v1.57.0 // indirect
 	gotest.tools v2.2.0+incompatible // indirect

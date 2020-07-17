@@ -1847,7 +1847,6 @@ func TestStorage_GetJetDropsByJetId_Splites(t *testing.T) {
 }
 
 func TestStorage_GetJetDropsByJetId_MultipleCounts(t *testing.T) {
-	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
 	s := NewStorage(testDB)
 
 	tests := map[string]struct {
@@ -1863,6 +1862,7 @@ func TestStorage_GetJetDropsByJetId_MultipleCounts(t *testing.T) {
 
 	for testName, data := range tests {
 		t.Run(testName, func(t *testing.T) {
+			defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
 			someJetId, preparedJetDrops, preparedPulses := testutils.GenerateJetDropsWithSomeJetID(t, data.jetDropCount)
 			err := testutils.CreatePulses(testDB, preparedPulses)
 			require.NoError(t, err)
