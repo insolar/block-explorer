@@ -252,14 +252,14 @@ func TestLifeline_receiveNewObjectStates(t *testing.T) {
 	ts.StartBE(t)
 	defer ts.StopBE(t)
 
-	ts.WaitRecordsCount(t, recordsInPulse*3, 1000)
+	ts.WaitRecordsCount(t, recordsInPulse*3, 10000)
 
 	err = heavymock.ImportRecords(ts.ConMngr.ImporterClient, lifeline.StateRecords[3].Records)
 	err = heavymock.ImportRecords(ts.ConMngr.ImporterClient, lifeline.StateRecords[4].Records)
 	require.NoError(t, err)
 	// expected records from pulses 1, 2, 3, 4, 5
 
-	ts.WaitRecordsCount(t, recordsInPulse*5, 1000)
+	ts.WaitRecordsCount(t, recordsInPulse*5, 10000)
 
 	c := GetHTTPClient()
 	response, err := c.ObjectLifeline(t, lifeline.ObjID.String(), &client.ObjectLifelineOpts{Limit: optional.NewInt32(100)})
