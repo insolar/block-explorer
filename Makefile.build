@@ -19,4 +19,4 @@ generate-protobuf: ## generate protobuf structs
 		echo "error: protoc not installed" >&2; \
 		exit 1; \
 	fi
-	protoc -I./vendor -I./ --gogoslick_out=plugins=grpc:./ test/heavymock/import_records.proto
+	protoc -I./ --gogoslick_out=plugins=grpc:./ test/heavymock/import_records.proto

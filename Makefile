@@ -4,13 +4,13 @@ include Makefile.testing
 export GOPATH ?= $(shell go env GOPATH)
 export GO111MODULE ?= on
 export GOSUMDB ?= sum.golang.org
-export GOFLAGS ?= -mod=vendor
+export GOFLAGS ?= -mod=mod
 export GOPROXY=https://proxy.golang.org,https://goproxy.io,direct
 
 #.DEFAULT_GOAL := all
 
 .PHONY: all
-all: vendor clean build
+all: mod clean build
 
 .PHONY: mod
 mod:
@@ -21,10 +21,6 @@ clean: ## run all cleanup tasks
 	go clean ./...
 	rm -f $(COVERPROFILE)
 	rm -rf $(BIN_DIR)
-
-.PHONY: vendor
-vendor:  ## update vendor dependencies
-	go mod vendor
 
 ##@ Dependencies
 
