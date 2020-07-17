@@ -8,8 +8,6 @@
 package api
 
 import (
-	"context"
-	"errors"
 	"testing"
 
 	"github.com/antihax/optional"
@@ -17,11 +15,9 @@ import (
 	"github.com/insolar/block-explorer/test/heavymock"
 	"github.com/insolar/block-explorer/test/integration"
 	"github.com/insolar/block-explorer/testutils"
-	"github.com/insolar/block-explorer/testutils/clients"
 	"github.com/insolar/insolar/ledger/heavy/exporter"
 	"github.com/insolar/spec-insolar-block-explorer-api/v1/client"
 	"github.com/stretchr/testify/require"
-	"google.golang.org/grpc"
 )
 
 func TestPulsesAPI(t *testing.T) {
@@ -44,14 +40,7 @@ func TestPulsesAPI(t *testing.T) {
 	err = heavymock.ImportRecords(ts.ConMngr.ImporterClient, []*exporter.Record{lastPulseRecord})
 	require.NoError(t, err)
 
-	ts.BE.PulseClient.NextFinalizedPulseFunc = func(ctx context.Context, in *exporter.GetNextFinalizedPulse, opts ...grpc.CallOption) (*exporter.FullPulse, error) {
-		p := uint32(ts.ConMngr.Importer.GetLowestUnsentPulse())
-		if p == 1<<32-1 {
-			return nil, errors.New("unready yet")
-		}
-		return clients.GetFullPulse(p), nil
-	}
-
+	ts.BE.PulseClient.SetNextFinalizedPulseFunc(ts.ConMngr.Importer)
 	ts.StartBE(t)
 	defer ts.StopBE(t)
 

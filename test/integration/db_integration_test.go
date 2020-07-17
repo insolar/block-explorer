@@ -9,7 +9,6 @@ package integration
 
 import (
 	"context"
-	"errors"
 	"io"
 	"testing"
 
@@ -22,7 +21,6 @@ import (
 	"github.com/insolar/block-explorer/testutils/clients"
 	"github.com/insolar/insolar/ledger/heavy/exporter"
 	"github.com/stretchr/testify/require"
-	"google.golang.org/grpc"
 )
 
 func TestIntegrationWithDb_GetRecords(t *testing.T) {
@@ -37,13 +35,7 @@ func TestIntegrationWithDb_GetRecords(t *testing.T) {
 	stream, err := ts.ConMngr.ImporterClient.Import(context.Background())
 	require.NoError(t, err)
 
-	ts.BE.PulseClient.NextFinalizedPulseFunc = func(ctx context.Context, in *exporter.GetNextFinalizedPulse, opts ...grpc.CallOption) (*exporter.FullPulse, error) {
-		p := uint32(ts.ConMngr.Importer.GetLowestUnsentPulse())
-		if p == 1<<32-1 {
-			return nil, errors.New("unready yet")
-		}
-		return clients.GetFullPulse(p), nil
-	}
+	ts.BE.PulseClient.SetNextFinalizedPulseFunc(ts.ConMngr.Importer)
 
 	for i := 0; i < pulsesNumber; i++ {
 		record, _ := recordsWithDifferencePulses()
@@ -121,13 +113,7 @@ func TestIntegrationWithDb_GetJetDrops(t *testing.T) {
 		pulseNumbers[int64(r.Record.ID.Pulse())] = true
 	}
 
-	ts.BE.PulseClient.NextFinalizedPulseFunc = func(ctx context.Context, in *exporter.GetNextFinalizedPulse, opts ...grpc.CallOption) (*exporter.FullPulse, error) {
-		p := uint32(ts.ConMngr.Importer.GetLowestUnsentPulse())
-		if p == 1<<32-1 {
-			return nil, errors.New("unready yet")
-		}
-		return clients.GetFullPulse(p), nil
-	}
+	ts.BE.PulseClient.SetNextFinalizedPulseFunc(ts.ConMngr.Importer)
 
 	err := heavymock.ImportRecords(ts.ConMngr.ImporterClient, expRecords)
 	require.NoError(t, err)

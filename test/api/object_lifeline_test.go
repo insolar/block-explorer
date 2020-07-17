@@ -8,21 +8,17 @@
 package api
 
 import (
-	"context"
-	"errors"
 	"testing"
 
 	"github.com/antihax/optional"
 	"github.com/insolar/block-explorer/test/heavymock"
 	"github.com/insolar/block-explorer/test/integration"
 	"github.com/insolar/block-explorer/testutils"
-	"github.com/insolar/block-explorer/testutils/clients"
 	"github.com/insolar/insolar/insolar/gen"
 	ins_record "github.com/insolar/insolar/insolar/record"
 	"github.com/insolar/insolar/ledger/heavy/exporter"
 	"github.com/insolar/spec-insolar-block-explorer-api/v1/client"
 	"github.com/stretchr/testify/require"
-	"google.golang.org/grpc"
 )
 
 func TestLifeline_onePulse(t *testing.T) {
@@ -44,14 +40,7 @@ func TestLifeline_onePulse(t *testing.T) {
 	err := heavymock.ImportRecords(ts.ConMngr.ImporterClient, records)
 	require.NoError(t, err)
 
-	ts.BE.PulseClient.NextFinalizedPulseFunc = func(ctx context.Context, in *exporter.GetNextFinalizedPulse, opts ...grpc.CallOption) (*exporter.FullPulse, error) {
-		p := uint32(ts.ConMngr.Importer.GetLowestUnsentPulse())
-		if p == 1<<32-1 {
-			return nil, errors.New("unready yet")
-		}
-		return clients.GetFullPulse(p), nil
-	}
-
+	ts.BE.PulseClient.SetNextFinalizedPulseFunc(ts.ConMngr.Importer)
 	ts.StartBE(t)
 	defer ts.StopBE(t)
 
@@ -85,14 +74,7 @@ func TestLifeline_severalPulses(t *testing.T) {
 	err := heavymock.ImportRecords(ts.ConMngr.ImporterClient, records)
 	require.NoError(t, err)
 
-	ts.BE.PulseClient.NextFinalizedPulseFunc = func(ctx context.Context, in *exporter.GetNextFinalizedPulse, opts ...grpc.CallOption) (*exporter.FullPulse, error) {
-		p := uint32(ts.ConMngr.Importer.GetLowestUnsentPulse())
-		if p == 1<<32-1 {
-			return nil, errors.New("unready yet")
-		}
-		return clients.GetFullPulse(p), nil
-	}
-
+	ts.BE.PulseClient.SetNextFinalizedPulseFunc(ts.ConMngr.Importer)
 	ts.StartBE(t)
 	defer ts.StopBE(t)
 
@@ -127,14 +109,7 @@ func TestLifeline_amendRecords(t *testing.T) {
 	err := heavymock.ImportRecords(ts.ConMngr.ImporterClient, allRecords)
 	require.NoError(t, err)
 
-	ts.BE.PulseClient.NextFinalizedPulseFunc = func(ctx context.Context, in *exporter.GetNextFinalizedPulse, opts ...grpc.CallOption) (*exporter.FullPulse, error) {
-		p := uint32(ts.ConMngr.Importer.GetLowestUnsentPulse())
-		if p == 1<<32-1 {
-			return nil, errors.New("unready yet")
-		}
-		return clients.GetFullPulse(p), nil
-	}
-
+	ts.BE.PulseClient.SetNextFinalizedPulseFunc(ts.ConMngr.Importer)
 	ts.StartBE(t)
 	defer ts.StopBE(t)
 
@@ -176,14 +151,7 @@ func TestLifeline_removedStatesBetweenPulses(t *testing.T) {
 	err := heavymock.ImportRecords(ts.ConMngr.ImporterClient, allRecords)
 	require.NoError(t, err)
 
-	ts.BE.PulseClient.NextFinalizedPulseFunc = func(ctx context.Context, in *exporter.GetNextFinalizedPulse, opts ...grpc.CallOption) (*exporter.FullPulse, error) {
-		p := uint32(ts.ConMngr.Importer.GetLowestUnsentPulse())
-		if p == 1<<32-1 {
-			return nil, errors.New("unready yet")
-		}
-		return clients.GetFullPulse(p), nil
-	}
-
+	ts.BE.PulseClient.SetNextFinalizedPulseFunc(ts.ConMngr.Importer)
 	ts.StartBE(t)
 	defer ts.StopBE(t)
 
@@ -216,14 +184,7 @@ func TestLifeline_removedStatesWithinPulses(t *testing.T) {
 	err := heavymock.ImportRecords(ts.ConMngr.ImporterClient, records)
 	require.NoError(t, err)
 
-	ts.BE.PulseClient.NextFinalizedPulseFunc = func(ctx context.Context, in *exporter.GetNextFinalizedPulse, opts ...grpc.CallOption) (*exporter.FullPulse, error) {
-		p := uint32(ts.ConMngr.Importer.GetLowestUnsentPulse())
-		if p == 1<<32-1 {
-			return nil, errors.New("unready yet")
-		}
-		return clients.GetFullPulse(p), nil
-	}
-
+	ts.BE.PulseClient.SetNextFinalizedPulseFunc(ts.ConMngr.Importer)
 	ts.StartBE(t)
 	defer ts.StopBE(t)
 
@@ -260,14 +221,7 @@ func TestLifeline_recordsHaveSamePrevState(t *testing.T) {
 	err := heavymock.ImportRecords(ts.ConMngr.ImporterClient, records)
 	require.NoError(t, err)
 
-	ts.BE.PulseClient.NextFinalizedPulseFunc = func(ctx context.Context, in *exporter.GetNextFinalizedPulse, opts ...grpc.CallOption) (*exporter.FullPulse, error) {
-		p := uint32(ts.ConMngr.Importer.GetLowestUnsentPulse())
-		if p == 1<<32-1 {
-			return nil, errors.New("unready yet")
-		}
-		return clients.GetFullPulse(p), nil
-	}
-
+	ts.BE.PulseClient.SetNextFinalizedPulseFunc(ts.ConMngr.Importer)
 	ts.StartBE(t)
 	defer ts.StopBE(t)
 
@@ -294,14 +248,7 @@ func TestLifeline_receiveNewObjectStates(t *testing.T) {
 	require.NoError(t, err)
 	// expected records from pulses 1, 2
 
-	ts.BE.PulseClient.NextFinalizedPulseFunc = func(ctx context.Context, in *exporter.GetNextFinalizedPulse, opts ...grpc.CallOption) (*exporter.FullPulse, error) {
-		p := uint32(ts.ConMngr.Importer.GetLowestUnsentPulse())
-		if p == 1<<32-1 {
-			return nil, errors.New("unready yet")
-		}
-		return clients.GetFullPulse(p), nil
-	}
-
+	ts.BE.PulseClient.SetNextFinalizedPulseFunc(ts.ConMngr.Importer)
 	ts.StartBE(t)
 	defer ts.StopBE(t)
 
@@ -349,14 +296,7 @@ func TestLifeline_fillMissedStates(t *testing.T) {
 	err = heavymock.ImportRecords(ts.ConMngr.ImporterClient, []*exporter.Record{lastPulseRecord})
 	lenExpRecords := recordsInPulse * pulsesNumber
 
-	ts.BE.PulseClient.NextFinalizedPulseFunc = func(ctx context.Context, in *exporter.GetNextFinalizedPulse, opts ...grpc.CallOption) (*exporter.FullPulse, error) {
-		p := uint32(ts.ConMngr.Importer.GetLowestUnsentPulse())
-		if p == 1<<32-1 {
-			return nil, errors.New("unready yet")
-		}
-		return clients.GetFullPulse(p), nil
-	}
-
+	ts.BE.PulseClient.SetNextFinalizedPulseFunc(ts.ConMngr.Importer)
 	ts.StartBE(t)
 	defer ts.StopBE(t)
 

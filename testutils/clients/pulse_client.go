@@ -7,9 +7,12 @@ package clients
 
 import (
 	"context"
+	"errors"
 
+	"github.com/insolar/block-explorer/test/heavymock"
 	"github.com/insolar/insolar/insolar"
 	"github.com/insolar/insolar/ledger/heavy/exporter"
+
 	"google.golang.org/grpc"
 )
 
@@ -64,4 +67,14 @@ func GetFullPulse(pn uint32) *exporter.FullPulse {
 		Jets:             nil,
 	}
 	return res
+}
+
+func (c *TestPulseClient) SetNextFinalizedPulseFunc(importer *heavymock.ImporterServer) {
+	c.NextFinalizedPulseFunc = func(ctx context.Context, in *exporter.GetNextFinalizedPulse, opts ...grpc.CallOption) (*exporter.FullPulse, error) {
+		p := uint32(importer.GetLowestUnsentPulse())
+		if p == 1<<32-1 {
+			return nil, errors.New("unready yet")
+		}
+		return GetFullPulse(p), nil
+	}
 }

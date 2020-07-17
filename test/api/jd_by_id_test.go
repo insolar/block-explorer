@@ -8,8 +8,6 @@
 package api
 
 import (
-	"context"
-	"errors"
 	"fmt"
 	"math"
 	"strings"
@@ -19,11 +17,9 @@ import (
 	"github.com/insolar/block-explorer/test/heavymock"
 	"github.com/insolar/block-explorer/test/integration"
 	"github.com/insolar/block-explorer/testutils"
-	"github.com/insolar/block-explorer/testutils/clients"
 	"github.com/insolar/insolar/ledger/heavy/exporter"
 	"github.com/insolar/insolar/pulse"
 	"github.com/stretchr/testify/require"
-	"google.golang.org/grpc"
 )
 
 func TestGetJetDropsByID(t *testing.T) {
@@ -47,13 +43,7 @@ func TestGetJetDropsByID(t *testing.T) {
 	recordInLastPulse := []*exporter.Record{testutils.GenerateRecordInNextPulse(lastPulse)}
 	require.NoError(t, heavymock.ImportRecords(ts.ConMngr.ImporterClient, recordInLastPulse))
 
-	ts.BE.PulseClient.NextFinalizedPulseFunc = func(ctx context.Context, in *exporter.GetNextFinalizedPulse, opts ...grpc.CallOption) (*exporter.FullPulse, error) {
-		p := uint32(ts.ConMngr.Importer.GetLowestUnsentPulse())
-		if p == 1<<32-1 {
-			return nil, errors.New("unready yet")
-		}
-		return clients.GetFullPulse(p), nil
-	}
+	ts.BE.PulseClient.SetNextFinalizedPulseFunc(ts.ConMngr.Importer)
 
 	ts.StartBE(t)
 	defer ts.StopBE(t)
@@ -91,13 +81,7 @@ func TestGetJetDropsByID_negativeCases(t *testing.T) {
 	records := testutils.GenerateRecordsWithDifferencePulsesSilence(pulsesCount, jetDropsCount)
 	require.NoError(t, heavymock.ImportRecords(ts.ConMngr.ImporterClient, records))
 
-	ts.BE.PulseClient.NextFinalizedPulseFunc = func(ctx context.Context, in *exporter.GetNextFinalizedPulse, opts ...grpc.CallOption) (*exporter.FullPulse, error) {
-		p := uint32(ts.ConMngr.Importer.GetLowestUnsentPulse())
-		if p == 1<<32-1 {
-			return nil, errors.New("unready yet")
-		}
-		return clients.GetFullPulse(p), nil
-	}
+	ts.BE.PulseClient.SetNextFinalizedPulseFunc(ts.ConMngr.Importer)
 
 	ts.StartBE(t)
 	defer ts.StopBE(t)

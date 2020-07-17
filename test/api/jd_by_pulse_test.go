@@ -8,8 +8,6 @@
 package api
 
 import (
-	"context"
-	"errors"
 	"fmt"
 	"math"
 	"strconv"
@@ -21,12 +19,10 @@ import (
 	"github.com/insolar/block-explorer/test/heavymock"
 	"github.com/insolar/block-explorer/test/integration"
 	"github.com/insolar/block-explorer/testutils"
-	"github.com/insolar/block-explorer/testutils/clients"
 	"github.com/insolar/insolar/ledger/heavy/exporter"
 	"github.com/insolar/insolar/pulse"
 	"github.com/insolar/spec-insolar-block-explorer-api/v1/client"
 	"github.com/stretchr/testify/require"
-	"google.golang.org/grpc"
 )
 
 const defaultLimit = 20
@@ -50,14 +46,7 @@ func TestGetJetDropsByPulse(t *testing.T) {
 	lastRecordInPulse := []*exporter.Record{testutils.GenerateRecordInNextPulse(lastPulse)}
 	require.NoError(t, heavymock.ImportRecords(ts.ConMngr.ImporterClient, lastRecordInPulse))
 
-	ts.BE.PulseClient.NextFinalizedPulseFunc = func(ctx context.Context, in *exporter.GetNextFinalizedPulse, opts ...grpc.CallOption) (*exporter.FullPulse, error) {
-		p := uint32(ts.ConMngr.Importer.GetLowestUnsentPulse())
-		if p == 1<<32-1 {
-			return nil, errors.New("unready yet")
-		}
-		return clients.GetFullPulse(p), nil
-	}
-
+	ts.BE.PulseClient.SetNextFinalizedPulseFunc(ts.ConMngr.Importer)
 	ts.StartBE(t)
 	defer ts.StopBE(t)
 
@@ -141,14 +130,7 @@ func TestGetJetDropsByPulse_severalRecordsInJD(t *testing.T) {
 	records := testutils.GenerateRecordsFromOneJetSilence(pulsesCount, recordsCount)
 	require.NoError(t, heavymock.ImportRecords(ts.ConMngr.ImporterClient, records))
 
-	ts.BE.PulseClient.NextFinalizedPulseFunc = func(ctx context.Context, in *exporter.GetNextFinalizedPulse, opts ...grpc.CallOption) (*exporter.FullPulse, error) {
-		p := uint32(ts.ConMngr.Importer.GetLowestUnsentPulse())
-		if p == 1<<32-1 {
-			return nil, errors.New("unready yet")
-		}
-		return clients.GetFullPulse(p), nil
-	}
-
+	ts.BE.PulseClient.SetNextFinalizedPulseFunc(ts.ConMngr.Importer)
 	ts.StartBE(t)
 	defer ts.StopBE(t)
 
@@ -174,14 +156,7 @@ func TestGetJetDropsByPulse_queryParams(t *testing.T) {
 	nextPulseRecords := []*exporter.Record{testutils.GenerateRecordInNextPulse(pn)}
 	require.NoError(t, heavymock.ImportRecords(ts.ConMngr.ImporterClient, nextPulseRecords))
 
-	ts.BE.PulseClient.NextFinalizedPulseFunc = func(ctx context.Context, in *exporter.GetNextFinalizedPulse, opts ...grpc.CallOption) (*exporter.FullPulse, error) {
-		p := uint32(ts.ConMngr.Importer.GetLowestUnsentPulse())
-		if p == 1<<32-1 {
-			return nil, errors.New("unready yet")
-		}
-		return clients.GetFullPulse(p), nil
-	}
-
+	ts.BE.PulseClient.SetNextFinalizedPulseFunc(ts.ConMngr.Importer)
 	ts.StartBE(t)
 	defer ts.StopBE(t)
 
