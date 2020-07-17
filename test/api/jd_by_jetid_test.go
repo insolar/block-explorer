@@ -99,16 +99,24 @@ func TestGetJetDropsByJetID(t *testing.T) {
 		}
 	})
 	t.Run("check jetDrops amount", func(t *testing.T) {
-		t.Log("C5421 Get JetDrops by JetID as zero value")
-		response, err := c.JetDropsByJetID(t, "0", nil)
+		t.Log("C5421 Get JetDrops by JetID, if value is a starting numbers of existing JetID (get childs by parent)")
+		var values []string
+		for jetID := range jetIDs {
+			values = append(values, jetID[:len(jetID)-int(math.Round(float64(len(jetID)/2)))])
+			break
+		}
+		response, err := c.JetDropsByJetID(t, value, nil)
 		require.NoError(t, err)
-		require.Empty(t, response.Result)
-		require.Equal(t, int64(0), response.Total)
-		require.Empty(t, int64(0), response.ValidationFailures)
+		require.NotEmpty(t, response.Result)
+		require.Greater(t, response.Total, int64(0))
+		require.Empty(t, response.ValidationFailures)
+		for _, res := range response.Result {
+			require.True(t, strings.HasPrefix(res.JetId, value))
+		}
 	})
 	t.Run("check jetDrops amount", func(t *testing.T) {
 		t.Log("C5422 Get JetDrops by nonexistent JetID")
-		jetID := converter.JetIDToString(gen.JetID())
+		jetID := converter.JetIDToString(testutils.GenerateUniqueJetID())
 		response, err := c.JetDropsByJetID(t, jetID, nil)
 		require.NoError(t, err)
 		require.Empty(t, response.Result)
