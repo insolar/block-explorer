@@ -1,0 +1,13 @@
+
+# Path to postgres db
+url: postgres://postgres@localhost/postgres?sslmode=disable # string
+# Maximum number of socket connections
+poolsize: 100 # int
+# migrate data for load tests
+loadtestmigration: true # bool
+# amount of generated pulses
+testpulses: 100 # int
+# amount of generated jet drops
+testjetdrops: 1000 # int
+# amount of generated records
+testrecords: 1000 # int

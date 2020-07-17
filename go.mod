@@ -29,7 +29,7 @@ require (
 	github.com/skudasov/loadgen v0.0.22
 	github.com/spf13/cast v1.3.1 // indirect
 	github.com/stretchr/testify v1.5.1
-	github.com/ugorji/go/codec v0.0.0-20181204163529-d75b2dcb6bc8
+	github.com/ugorji/go/codec v0.0.0-20181204163529-d75b2dcb6bc8 // indirect
 	github.com/urfave/cli/v2 v2.2.0 // indirect
 	go.opencensus.io v0.22.1
 	golang.org/x/crypto v0.0.0-20200510223506-06a226fb4e37

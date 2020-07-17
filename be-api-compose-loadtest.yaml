@@ -40,7 +40,7 @@ services:
       - postgres
     volumes:
       - .artifacts/api.yaml:/opt/app/config/api.yaml
-      - .artifacts/migrate.yaml:/opt/app/config/migrate.yaml
+      - ./load/migrate_cfg/migrate.yaml:/opt/app/config/migrate.yaml
     command:
       - /bin/bash
       - -c
@@ -50,5 +50,5 @@ services:
         ./wait.sh "postgres:5432"
         printenv
         ls -al
-        ./migrate_loadtest --config=/opt/app/config/migrate.yaml
+        ./migrate --config=/opt/app/config/migrate.yaml
         ./api --config=/opt/app/config/api.yaml

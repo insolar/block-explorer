@@ -7,7 +7,6 @@ LDFLAGS ?=
 build:  ## build all applications
 	go build -ldflags "$(LDFLAGS)" -o $(BIN_DIR)/block-explorer cmd/block-explorer/*.go
 	go build -ldflags "$(LDFLAGS)" -o $(BIN_DIR)/migrate cmd/migrate/*.go
-	go build -ldflags "$(LDFLAGS)" -o $(BIN_DIR)/migrate_loadtest cmd/migrate_loadtest/*.go
 	go build -ldflags "$(LDFLAGS)" -o $(BIN_DIR)/api cmd/api/*.go
 
 .PHONY: generate

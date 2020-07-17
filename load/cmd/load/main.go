@@ -8,24 +8,50 @@ package main
 import (
 	"context"
 	"errors"
-	"log"
+	"flag"
 	"strconv"
 
 	"github.com/antihax/optional"
 	"github.com/emirpasic/gods/sets/hashset"
+	"github.com/insolar/insconfig"
 	"github.com/insolar/spec-insolar-block-explorer-api/v1/client"
 	"github.com/skudasov/loadgen"
 
+	"github.com/insolar/block-explorer/configuration"
+	"github.com/insolar/block-explorer/instrumentation/belogger"
 	"github.com/insolar/block-explorer/load"
 )
 
+type PathGetter struct {
+	GoFlags *flag.FlagSet
+}
+
+func (g *PathGetter) GetConfigPath() string {
+	return "load/migrate_cfg/migrate.yaml"
+}
+
 func main() {
+	ctx := context.Background()
+	log := belogger.FromContext(ctx)
+
+	dbCfg := &configuration.DB{}
+	params := insconfig.Params{
+		EnvPrefix:        "migrate",
+		ConfigPathGetter: &PathGetter{},
+	}
+	insConfigurator := insconfig.New(params)
+	if err := insConfigurator.Load(dbCfg); err != nil {
+		panic(err)
+	}
+	log.Infof("Starts with configuration:\n", insConfigurator.ToYaml(dbCfg))
 	beforeAll := func(config *loadgen.GeneratorConfig) error {
 		var (
-			pulsesToGet     int32 = 100
-			pulsesFileName        = "pulses.csv"
-			jetIDSFileName        = "jet_ids.csv"
-			objectsFileName       = "objects.csv"
+			pulsesToGet     = int32(dbCfg.TestPulses)
+			jetDropsToGet   = int32(dbCfg.TestJetDrops)
+			recordsToGet    = int32(dbCfg.TestRecords)
+			pulsesFileName  = "pulses.csv"
+			jetIDSFileName  = "jet_ids.csv"
+			objectsFileName = "objects.csv"
 		)
 
 		csvPulses, _ := load.NewCSVWriter(pulsesFileName)
@@ -35,7 +61,6 @@ func main() {
 		objectsIDS, _ := load.NewCSVWriter(objectsFileName)
 		defer objectsIDS.Flush()
 
-		ctx := context.Background()
 		cfg := &client.Configuration{
 			BasePath:   config.Generator.Target,
 			HTTPClient: loadgen.NewLoggingHTTPClient(false, 10),
@@ -43,7 +68,7 @@ func main() {
 		c := client.NewAPIClient(cfg)
 
 		// Get all pulses
-		log.Printf("getting pulses: %d", pulsesToGet)
+		log.Infof("getting pulses: %d", pulsesToGet)
 		res, _, err := c.PulseApi.Pulses(ctx, &client.PulsesOpts{
 			Limit: optional.NewInt32(pulsesToGet),
 		})
@@ -63,11 +88,11 @@ func main() {
 		}
 
 		// Get all uniq jet/pn ids
-		log.Printf("getting all uniq jet/pn ids")
+		log.Infof("getting all uniq jet/pn ids")
 		uniqJetDropIds := hashset.New()
 		for _, pn := range pulseNumbers {
 			res, _, err := c.JetDropApi.JetDropsByPulseNumber(ctx, pn, &client.JetDropsByPulseNumberOpts{
-				Limit: optional.NewInt32(1000),
+				Limit: optional.NewInt32(jetDropsToGet),
 			})
 			if err != nil {
 				log.Fatal(err)
@@ -81,11 +106,11 @@ func main() {
 		}
 
 		// Get all uniq object refs
-		log.Printf("getting all uniq objects refs")
+		log.Infof("getting all uniq objects refs")
 		uniqObjectRefs := hashset.New()
 		for _, jdID := range uniqJetDropIds.Values() {
 			res, _, err := c.RecordApi.JetDropRecords(ctx, jdID.(string), &client.JetDropRecordsOpts{
-				Limit: optional.NewInt32(1000),
+				Limit: optional.NewInt32(recordsToGet),
 			})
 			if err != nil {
 				log.Fatal(err)

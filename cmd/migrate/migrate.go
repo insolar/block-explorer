@@ -45,7 +45,12 @@ func main() {
 	db = db.LogMode(true)
 	db.SetLogger(belogger.NewGORMLogAdapter(log))
 
-	m := gormigrate.New(db, migrations.MigrationOptions(), migrations.Migrations())
+	migrationsSlice := migrations.Migrations()
+	if cfg.LoadTestMigration {
+		migrationsSlice = append(migrationsSlice, migrations.LoadTestMigrations(cfg))
+	}
+
+	m := gormigrate.New(db, migrations.MigrationOptions(), migrationsSlice)
 
 	if err = m.Migrate(); err != nil {
 		log.Fatalf("Could not migrate: %v", err)

@@ -31,8 +31,12 @@ type API struct {
 }
 
 type DB struct {
-	URL      string `insconfig:"postgres://postgres@localhost/postgres?sslmode=disable| Path to postgres db"`
-	PoolSize int    `insconfig:"100| Maximum number of socket connections"`
+	URL               string `insconfig:"postgres://postgres@localhost/postgres?sslmode=disable| Path to postgres db"`
+	PoolSize          int    `insconfig:"100| Maximum number of socket connections"`
+	LoadTestMigration bool   `insconfig:"false| migrate data for load tests"`
+	TestPulses        int    `insconfig:"101| amount of generated pulses"`
+	TestJetDrops      int    `insconfig:"1001| amount of generated jet drops"`
+	TestRecords       int    `insconfig:"1001| amount of generated records"`
 }
 
 // Replicator represents a configuration of the Platform connection
