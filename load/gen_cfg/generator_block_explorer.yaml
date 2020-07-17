@@ -1,0 +1,12 @@
+generator:
+  target: http://localhost:8080
+  responseTimeoutSec: 20
+  rampUpStrategy: linear
+  verbose: true
+execution_mode: parallel
+root_package_name: block-explorer
+load_scripts_dir: load
+timezone: Europe/Moscow
+logging:
+  level: info
+  encoding: console

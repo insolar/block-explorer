@@ -37,6 +37,14 @@ type DB struct {
 	PoolSize int    `insconfig:"100| Maximum number of socket connections"`
 }
 
+type TestDB struct {
+	URL          string `insconfig:"postgres://postgres@localhost/postgres?sslmode=disable| Path to postgres db"`
+	PoolSize     int    `insconfig:"100| Maximum number of socket connections"`
+	TestPulses   int    `insconfig:"100| amount of generated pulses"`
+	TestJetDrops int    `insconfig:"1000| amount of generated jet drops"`
+	TestRecords  int    `insconfig:"1000| amount of generated records"`
+}
+
 // Replicator represents a configuration of the Platform connection
 type Replicator struct {
 	Addr            string `insconfig:"127.0.0.1:5678| The gRPC server address"`
