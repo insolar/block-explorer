@@ -38,13 +38,10 @@ func main() {
 	logger.Info("Config and logger were initialized")
 
 	router := api.NewRouter()
-	_ = router.Start(ctx)
-	defer func() {
-		err := router.Stop(ctx)
-		if err != nil {
-			logger.Fatal("cannot stop pprof: ", err)
-		}
-	}()
+	err := router.Start(ctx)
+	if err != nil {
+		logger.Fatal("cannot start pprof: ", err)
+	}
 
 	db, err := dbconn.Connect(cfg.DB)
 	if err != nil {
