@@ -8,10 +8,12 @@ package main
 import (
 	"context"
 	"fmt"
+	"net/http"
 
 	"github.com/insolar/insconfig"
 	"github.com/insolar/spec-insolar-block-explorer-api/v1/server"
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 
 	"github.com/insolar/block-explorer/api"
 	"github.com/insolar/block-explorer/configuration"
@@ -35,6 +37,12 @@ func main() {
 	ctx, logger := belogger.InitLogger(ctx, cfg.Log, "block_explorer_api")
 	logger.Info("Config and logger were initialized")
 
+	router := api.NewRouter()
+	err := router.Start(ctx)
+	if err != nil {
+		logger.Fatal("cannot start pprof: ", err)
+	}
+
 	db, err := dbconn.Connect(cfg.DB)
 	if err != nil {
 		logger.Fatalf("Error while connecting to database: %s", err.Error())
@@ -42,10 +50,18 @@ func main() {
 	}
 
 	e := echo.New()
+	e.Use(middleware.Logger())
+	e.Use(middleware.Recover())
+
 	s := storage.NewStorage(db)
 
 	apiServer := api.NewServer(ctx, s, *cfg)
 	server.RegisterHandlers(e, apiServer)
 
-	e.Logger.Fatal(e.Start(cfg.Listen))
+	srv := &http.Server{
+		Addr:         cfg.Listen,
+		ReadTimeout:  cfg.ReadTimeout,
+		WriteTimeout: cfg.WriteTimeout,
+	}
+	e.Logger.Fatal(e.StartServer(srv))
 }
