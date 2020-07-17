@@ -103,7 +103,6 @@ func TestGetJetDropsByJetID(t *testing.T) {
 		var values []string
 		for jetID := range jetIDs {
 			values = append(values, jetID[:len(jetID)-int(math.Round(float64(len(jetID)/2)))])
-			break
 		}
 		for _, value := range values {
 			response, err := c.JetDropsByJetID(t, value, nil)
