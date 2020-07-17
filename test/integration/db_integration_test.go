@@ -83,7 +83,7 @@ func TestIntegrationWithDb_GetRecords(t *testing.T) {
 
 	// last record with the biggest pulse number won't be processed, so we do not expect this record in DB
 	expRecordsCount := recordsInPulse * (pulsesNumber - 1)
-	ts.WaitRecordsCount(t, expRecordsCount+1, 6000)
+	ts.WaitRecordsCount(t, recordsInPulse*pulsesNumber, 6000)
 
 	for _, ref := range refs[:expRecordsCount] {
 		modelRef := models.ReferenceFromTypes(ref)
