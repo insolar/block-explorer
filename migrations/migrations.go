@@ -18,6 +18,7 @@ func Migrations() []*gormigrate.Migration {
 		{
 			ID: "202005180421",
 			Migrate: func(tx *gorm.DB) error {
+				// the initial database tables. Do not delete it's
 				type Pulse struct {
 					PulseNumber     int64 `gorm:"primary_key;auto_increment:false"`
 					PrevPulseNumber int64
