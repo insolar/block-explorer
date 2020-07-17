@@ -108,7 +108,7 @@ func (p *Processor) process(ctx context.Context, jd *types.JetDrop) {
 	logger.Infof("pulse = %d, jetDrop = %v, record amount = %d", pd.PulseNo, ms.Start.JetDropPrefix, len(jd.MainSection.Records))
 
 	mp := models.Pulse{
-		PulseNumber:     pd.PulseNo, // TODO PulseNumber must be int64
+		PulseNumber:     pd.PulseNo,
 		PrevPulseNumber: pd.PrevPulseNumber,
 		NextPulseNumber: pd.NextPulseNumber,
 		IsComplete:      false,
@@ -130,8 +130,8 @@ func (p *Processor) process(ctx context.Context, jd *types.JetDrop) {
 	}
 
 	mjd := models.JetDrop{
-		JetID:          ms.Start.JetDropPrefix, // FIXME
-		PulseNumber:    pd.PulseNo,             //FIXME
+		JetID:          ms.Start.JetDropPrefix,
+		PulseNumber:    pd.PulseNo,
 		FirstPrevHash:  firstPrevHash,
 		SecondPrevHash: secondPrevHash,
 		Hash:           jd.Hash,
