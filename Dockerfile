@@ -3,7 +3,7 @@ WORKDIR /app
 
 COPY ./ /app
 
-RUN make vendor build
+RUN make mod build
 
 FROM debian
 WORKDIR /opt/app/
