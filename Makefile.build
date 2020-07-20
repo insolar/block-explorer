@@ -5,6 +5,7 @@ LDFLAGS ?=
 ##@ Building
 .PHONY: build
 build: block-explorer api loadtest_migrate## build all applications
+	go build -ldflags "$(LDFLAGS)" -o $(BIN_DIR)/migrate cmd/migrate/*.go
 
 block-explorer api loadtest_migrate:
 	go build -ldflags "$(LDFLAGS)" -o $(BIN_DIR)/$@ cmd/$@/*.go

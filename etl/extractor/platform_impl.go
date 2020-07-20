@@ -115,12 +115,12 @@ func (e *PlatformExtractor) retrievePulses(ctx context.Context, from, until int6
 
 		pu, err = e.pulseExtractor.GetNextFinalizedPulse(ctx, int64(before.PulseNumber))
 		if err != nil { // network error ?
+			pu = &before
 			if strings.Contains(err.Error(), pulse.ErrNotFound.Error()) { // seems this pulse already last
 				time.Sleep(halfPulse)
 				continue
 			}
 			log.Errorf("retrievePulses(): before=%d err=%s", before, err)
-			pu = &before
 			time.Sleep(time.Second)
 			continue
 		}
@@ -150,6 +150,11 @@ func (e *PlatformExtractor) retrieveRecords(ctx context.Context, pu *exporter.Fu
 	jetDrops := &types.PlatformJetDrops{Pulse: pu} // save pulse info
 
 	for { // each portion
+		select {
+		case <-ctx.Done():
+			return
+		default:
+		}
 		stream, err := e.client.Export(ctx, &exporter.GetRecords{PulseNumber: pu.PulseNumber,
 			RecordNumber: uint32(len(jetDrops.Records)),
 			Count:        e.batchSize})
