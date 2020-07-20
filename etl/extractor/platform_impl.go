@@ -10,6 +10,7 @@ import (
 	"io"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/insolar/block-explorer/etl/interfaces"
@@ -23,9 +24,10 @@ import (
 type PlatformExtractor struct {
 	hasStarted     bool
 	startStopMutex *sync.Mutex
+	workers        int32
+	maxWorkers     int32
 
-	pulseExtractor       interfaces.PulseExtractor
-	pulseExtractAttempts int
+	pulseExtractor interfaces.PulseExtractor
 
 	client           exporter.RecordExporterClient
 	request          *exporter.GetRecords
@@ -36,7 +38,7 @@ type PlatformExtractor struct {
 	continuousPulseRetrievingHalfPulseSeconds uint32
 }
 
-func NewPlatformExtractor(batchSize uint32, continuousPulseRetrievingHalfPulseSeconds uint32,
+func NewPlatformExtractor(batchSize uint32, continuousPulseRetrievingHalfPulseSeconds uint32, maxWorkers int32,
 	pulseExtractor interfaces.PulseExtractor, exporterClient exporter.RecordExporterClient) *PlatformExtractor {
 	request := &exporter.GetRecords{Count: batchSize}
 	return &PlatformExtractor{
@@ -45,10 +47,10 @@ func NewPlatformExtractor(batchSize uint32, continuousPulseRetrievingHalfPulseSe
 		request:          request,
 		mainJetDropsChan: make(chan *types.PlatformJetDrops),
 
-		pulseExtractor:       pulseExtractor,
-		pulseExtractAttempts: 50,
-		batchSize:            batchSize,
+		pulseExtractor: pulseExtractor,
+		batchSize:      batchSize,
 		continuousPulseRetrievingHalfPulseSeconds: continuousPulseRetrievingHalfPulseSeconds,
+		maxWorkers: maxWorkers,
 	}
 }
 
@@ -62,10 +64,10 @@ func (e *PlatformExtractor) LoadJetDrops(ctx context.Context, fromPulseNumber in
 }
 
 func (e *PlatformExtractor) Stop(ctx context.Context) error {
-	e.cancel()
 	e.startStopMutex.Lock()
 	defer e.startStopMutex.Unlock()
 	if e.hasStarted {
+		e.cancel()
 		belogger.FromContext(ctx).Info("Stopping platform extractor...")
 		e.hasStarted = false
 	}
@@ -113,6 +115,10 @@ func (e *PlatformExtractor) retrievePulses(ctx context.Context, from, until int6
 
 		before := *pu
 
+		for atomic.LoadInt32(&e.workers) >= e.maxWorkers {
+			time.Sleep(time.Second)
+		}
+
 		pu, err = e.pulseExtractor.GetNextFinalizedPulse(ctx, int64(before.PulseNumber))
 		if err != nil { // network error ?
 			pu = &before
@@ -144,6 +150,8 @@ func (e *PlatformExtractor) retrievePulses(ctx context.Context, from, until int6
 
 // retrieveRecords - retrieves all records for specified pulse and puts this to channel
 func (e *PlatformExtractor) retrieveRecords(ctx context.Context, pu *exporter.FullPulse) {
+	atomic.AddInt32(&e.workers, 1)
+	defer atomic.AddInt32(&e.workers, -1)
 	logger := belogger.FromContext(ctx)
 	log := logger.WithField("pulse_number", pu.PulseNumber)
 	log.Debug("retrieveRecords(): Start")
@@ -178,6 +186,10 @@ func (e *PlatformExtractor) retrieveRecords(ctx context.Context, pu *exporter.Fu
 			}
 			if resp == nil { // error, assume the data is broken
 				log.Errorf("retrieveRecords(): empty response: err=%s", err)
+				if strings.Contains(err.Error(), "trying to get a non-finalized pulse data") {
+					time.Sleep(time.Duration(e.continuousPulseRetrievingHalfPulseSeconds) * time.Second)
+					go e.retrieveRecords(ctx, pu) // goroutine to split the stack
+				}
 				return
 			}
 			if resp.ShouldIterateFrom != nil || resp.Record.ID.Pulse() != pu.PulseNumber { // next pulse packet

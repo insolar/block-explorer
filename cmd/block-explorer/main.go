@@ -63,6 +63,7 @@ func main() {
 
 	pulseExtractor := extractor.NewPlatformPulseExtractor(exporter.NewPulseExporterClient(client.GetGRPCConn()))
 	platformExtractor := extractor.NewPlatformExtractor(100, cfg.Replicator.ContinuousPulseRetrievingHalfPulseSeconds,
+		int32(cfg.Replicator.ParallelConnections),
 		pulseExtractor, exporter.NewRecordExporterClient(client.GetGRPCConn()))
 	err = platformExtractor.Start(ctx)
 	if err != nil {
