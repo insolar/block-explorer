@@ -75,7 +75,7 @@ func TestGetJetDropsByJetID(t *testing.T) {
 	ts.StartBE(t)
 	defer ts.StopBE(t)
 
-	ts.WaitRecordsCount(t, len(records), 5000)
+	ts.WaitRecordsCount(t, len(records)+1, 5000)
 
 	c := GetHTTPClient()
 	t.Run("check jetDrops amount", func(t *testing.T) {

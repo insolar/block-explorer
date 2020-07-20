@@ -70,7 +70,12 @@ func TestGetRecordsByJetDropID(t *testing.T) {
 	require.Len(t, jds, jdsCount)
 
 	require.NoError(t, heavymock.ImportRecords(ts.ConMngr.ImporterClient, []*exporter.Record{testutils.GenerateRecordInNextPulse(maxPn)}))
-	ts.WaitRecordsCount(t, len(records), 2000)
+
+	ts.BE.PulseClient.SetNextFinalizedPulseFunc(ts.ConMngr.Importer)
+	ts.StartBE(t)
+	defer ts.StopBE(t)
+
+	ts.WaitRecordsCount(t, len(records)+1, 2000)
 
 	c := GetHTTPClient()
 
