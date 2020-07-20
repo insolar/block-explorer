@@ -1,0 +1,21 @@
+dumptransport: true
+goroutines_dump: false
+http_timeout: 20
+steps:
+- name: load
+  execution_mode: sequence
+  handles:
+  - name: get_jet_drop_by_id
+    rps: 5
+    attack_time_sec: 10
+    ramp_up_sec: 10
+    ramp_up_strategy: linear
+    max_attackers: 10
+    verbose: true
+    do_timeout_sec: 40
+    csv_read: jet_ids.csv
+    recycle_data: true
+    stop_if:
+      - type: error
+        threshold: 0
+        interval: 1

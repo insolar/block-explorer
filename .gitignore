@@ -37,5 +37,3 @@ coverage.txt
 
 # GoReleaser dist dir
 /dist
-vendor
-/autotest.log

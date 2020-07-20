@@ -4,9 +4,9 @@ LDFLAGS ?=
 
 ##@ Building
 .PHONY: build
-build: block-explorer api ## build all applications
+build: block-explorer api loadtest_migrate## build all applications
 
-block-explorer api:
+block-explorer api loadtest_migrate:
 	go build -ldflags "$(LDFLAGS)" -o $(BIN_DIR)/$@ cmd/$@/*.go
 
 .PHONY: generate
@@ -19,9 +19,8 @@ generate-protobuf: ## generate protobuf structs
 		echo "error: protoc not installed" >&2; \
 		exit 1; \
 	fi
-	protoc -I./vendor -I./ --gogoslick_out=plugins=grpc:./ test/heavymock/import_records.proto
+	protoc -I./ --gogoslick_out=plugins=grpc:./ test/heavymock/import_records.proto
 
 .PHONY: install-dev
 install-dev:
 	go get github.com/gogo/protobuf
-	go get github.com/gojuno/minimock

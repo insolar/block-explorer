@@ -9,13 +9,14 @@ import (
 	"testing"
 	"time"
 
+	"github.com/insolar/insolar/ledger/heavy/exporter"
+	"github.com/stretchr/testify/require"
+
 	"github.com/insolar/block-explorer/etl/models"
 	"github.com/insolar/block-explorer/test/heavymock"
 	"github.com/insolar/block-explorer/testutils"
 	betest "github.com/insolar/block-explorer/testutils/betestsetup"
 	"github.com/insolar/block-explorer/testutils/connectionmanager"
-	"github.com/insolar/insolar/ledger/heavy/exporter"
-	"github.com/stretchr/testify/require"
 )
 
 type BlockExplorerTestSuite struct {

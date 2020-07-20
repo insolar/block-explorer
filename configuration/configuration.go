@@ -25,15 +25,25 @@ type BlockExplorer struct {
 }
 
 type API struct {
-	Listen string `insconfig:":0| API starts on this address"`
-	DB     DB
-	Log    Log
+	Listen       string        `insconfig:":0| API starts on this address"`
+	ReadTimeout  time.Duration `insconfig:"60s| The maximum duration for reading the entire request, including the body"`
+	WriteTimeout time.Duration `insconfig:"60s| The maximum duration before timing out writes of the response"`
+	DB           DB
+	Log          Log
 }
 
 type DB struct {
 	// for nondocker testing also it may be  `postgres://postgres:secret@localhost:5432/postgres?sslmode=disable`
 	URL      string `insconfig:"postgres://postgres@localhost/postgres?sslmode=disable| Path to postgres db"`
 	PoolSize int    `insconfig:"100| Maximum number of socket connections"`
+}
+
+type TestDB struct {
+	URL          string `insconfig:"postgres://postgres@localhost/postgres?sslmode=disable| Path to postgres db"`
+	PoolSize     int    `insconfig:"100| Maximum number of socket connections"`
+	TestPulses   int    `insconfig:"100| amount of generated pulses"`
+	TestJetDrops int    `insconfig:"1000| amount of generated jet drops"`
+	TestRecords  int    `insconfig:"1000| amount of generated records"`
 }
 
 // Replicator represents a configuration of the Platform connection

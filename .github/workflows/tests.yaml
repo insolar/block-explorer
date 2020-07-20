@@ -53,7 +53,7 @@ jobs:
           path: go/src/github.com/insolar/block-explorer
           fetch-depth: 1
       - name: Test
-        run: make vendor unit
+        run: make mod unit
         working-directory: ${{env.GOPATH}}/src/github.com/insolar/block-explorer
   integration:
     name: Integration tests
@@ -81,7 +81,7 @@ jobs:
           path: go/src/github.com/insolar/block-explorer
           fetch-depth: 1
       - name: Test
-        run: make vendor integration
+        run: make mod integration
         working-directory: ${{env.GOPATH}}/src/github.com/insolar/block-explorer
   test-with-mock:
     name: heavy mock integration tests
@@ -113,8 +113,8 @@ jobs:
         with:
           path: go/src/github.com/insolar/block-explorer
           fetch-depth: 1
-      - name: vendor
-        run: make vendor
+      - name: go mod download
+        run: make mod
         working-directory: ${{env.GOPATH}}/src/github.com/insolar/block-explorer
       - name: test
         run: make test-heavy-mock-integration

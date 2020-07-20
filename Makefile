@@ -4,13 +4,13 @@ include Makefile.testing
 export GOPATH ?= $(shell go env GOPATH)
 export GO111MODULE ?= on
 export GOSUMDB ?= sum.golang.org
-export GOFLAGS ?= -mod=vendor
+export GOFLAGS ?= -mod=mod
 export GOPROXY=https://proxy.golang.org,https://goproxy.io,direct
 
 #.DEFAULT_GOAL := all
 
 .PHONY: all
-all: vendor clean build
+all: mod clean build
 
 .PHONY: mod
 mod:
@@ -21,10 +21,6 @@ clean: ## run all cleanup tasks
 	go clean ./...
 	rm -f $(COVERPROFILE)
 	rm -rf $(BIN_DIR)
-
-.PHONY: vendor
-vendor:  ## update vendor dependencies
-	go mod vendor
 
 ##@ Dependencies
 
@@ -50,6 +46,10 @@ config: ## generate config
 .PHONY: migrate
 migrate: ## migrate
 	go run ./cmd/migrate/migrate.go --config=.artifacts/migrate.yaml
+
+.PHONY: migrate_loadtest
+migrate_loadtest: ## migrations required for load testing API + postgres
+	go run ./cmd/loadtest_migrate/loadtest_migrate.go --config=./load/migrate_cfg/migrate.yaml
 
 help: ## display help screen
 	@awk 'BEGIN {FS = ":.*##"; printf "Usage: make \033[36m<target>\033[0m\n"}  \

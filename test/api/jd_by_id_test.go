@@ -56,7 +56,7 @@ func TestGetJetDropsByID(t *testing.T) {
 	require.Len(t, pulsesResp.Result, pulsesCount+1)
 
 	t.Run("check received data in jetdrops", func(t *testing.T) {
-		t.Log("")
+		t.Log("C5240 Get JetDrop by JetDropID")
 		for jd := range jds {
 			response, err := c.JetDropsByID(t, jd)
 			require.NoError(t, err)
@@ -92,11 +92,11 @@ func TestGetJetDropsByID_negativeCases(t *testing.T) {
 	nonExistentJetID := fmt.Sprintf("%v:%v",
 		converter.JetIDToString(testutils.GenerateUniqueJetID()),
 		records[0].Record.ID.Pulse())
-	jetDropID := strings.Split(nonExistentJetID, ":")[0]
+	jetID := strings.Split(nonExistentJetID, ":")[0]
 	withWrongPulse := fmt.Sprintf("%v:%v",
 		strings.Split(converter.JetIDToString(records[0].Record.JetID), ":")[0],
 		records[2].Record.ID.Pulse())
-	invalidJetID := "0qwerty123:!@#$%^"
+	invalidJetDropID := "0qwerty123:!@#$%^"
 	withBigLengthPrefix := fmt.Sprintf("%v:%v",
 		strings.Repeat("01", 130),
 		records[0].Record.ID.Pulse())
@@ -108,15 +108,15 @@ func TestGetJetDropsByID_negativeCases(t *testing.T) {
 		testutils.RandNumberOverRange(1, math.MaxInt32))
 
 	tcs := []testCases{
-		{"C5242 Get JetDrop by JetID, not found non existing JetID", nonExistentJetID, notFound404, "non existing JetID"},
-		{"C5243 Get JetDrop by JetID, error if passed JetDropID", jetDropID, badRequest400, "JetDropID as JetID"},
-		{"C5244 Get JetDrop by JetID, error if JetID format is [validJetDropID]:[wrongPulse]", withWrongPulse, notFound404, "wrong pulse"},
-		{"C5245 Get JetDrop by JetID, error if JetID is invalid values separated by colon", invalidJetID, badRequest400, "invalid value"},
-		{"C5246 Get JetDrop by JetID, error if JetID length > 217", withBigLengthPrefix, badRequest400, "too big prefix length"},
-		{"C5247 Get JetDrop by JetID, error if pulse length > int64", withBigLengthPulse, badRequest400, "too big pulse length"},
-		{"C5248 Get JetDrop by JetID, error if JetID = 0:0", "0:0", notFound404, "JetID = 0:0"},
-		{"C5249 Get JetDrop by JetID, error if JetID = *", "*", badRequest400, "star"},
-		{"C5251 Get JetDrop by JetID, if value is random numbers separated by colon", randomNumbers, badRequest400, "random number"},
+		{"C5242 Get JetDrop by JetDropID, not found non existing JetDropID ", nonExistentJetID, notFound404, "non existing JetDropID"},
+		{"C5243 Get JetDrop by JetDropID, error if passed JetID", jetID, badRequest400, "JetDropID as JetID"},
+		{"C5244 Get JetDrop by JetDropID, error if JetDropID format is [validJetDropID]:[wrongPulse]", withWrongPulse, notFound404, "wrong pulse"},
+		{"C5245 Get JetDrop by JetDropID, error if JetDropID is invalid values separated by colon", invalidJetDropID, badRequest400, "invalid value"},
+		{"C5246 Get JetDrop by JetDropID, error if JetID length > 217", withBigLengthPrefix, badRequest400, "too big prefix length"},
+		{"C5247 Get JetDrop by JetDropID, error if pulse length > int64", withBigLengthPulse, badRequest400, "too big pulse length"},
+		{"C5248 Get JetDrop by JetDropID, error if JetDropID = 0:0", "0:0", notFound404, "JetDropID = 0:0"},
+		{"C5249 Get JetDrop by JetDropID, error if JetDropID = *", "*", badRequest400, "star"},
+		{"C5251 Get JetDrop by JetDropID, if value is random numbers separated by colon", randomNumbers, badRequest400, "random number"},
 	}
 
 	for _, tc := range tcs {

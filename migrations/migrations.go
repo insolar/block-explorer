@@ -9,6 +9,7 @@ import (
 	"github.com/jinzhu/gorm"
 	"gopkg.in/gormigrate.v1"
 
+	"github.com/insolar/block-explorer/configuration"
 	"github.com/insolar/block-explorer/etl/models"
 )
 
@@ -27,8 +28,8 @@ func Migrations() []*gormigrate.Migration {
 					Timestamp       int64
 				}
 				type JetDrop struct {
-					JetID          string `gorm:"type:varchar(255);primary_key;auto_increment:false;default:''"`
 					PulseNumber    int64  `gorm:"primary_key;auto_increment:false"`
+					JetID          string `gorm:"type:varchar(255);primary_key;auto_increment:false;default:''"`
 					FirstPrevHash  []byte
 					SecondPrevHash []byte
 					Hash           []byte
@@ -50,18 +51,17 @@ func Migrations() []*gormigrate.Migration {
 					Order               int
 					Timestamp           int64
 				}
-
 				if err := tx.CreateTable(&Pulse{}).Error; err != nil {
 					return err
 				}
-				if err := tx.Model(Pulse{}).AddIndex("idx_pulse_prevpulsenumber", "prev_pulse_number").Error; err != nil {
+				if err := tx.Model(&Pulse{}).AddIndex("idx_pulse_prevpulsenumber", "prev_pulse_number").Error; err != nil {
 					return err
 				}
 
 				if err := tx.CreateTable(&JetDrop{}).Error; err != nil {
 					return err
 				}
-				if err := tx.Model(JetDrop{}).AddIndex("idx_jetdrop_pulsenumber_jetid", "pulse_number", "jet_id").Error; err != nil {
+				if err := tx.Model(&JetDrop{}).AddIndex("idx_jetdrop_pulsenumber_jetid", "pulse_number", "jet_id").Error; err != nil {
 					return err
 				}
 				if err := tx.Model(&JetDrop{}).AddForeignKey("pulse_number", "pulses(pulse_number)", "CASCADE", "CASCADE").Error; err != nil {
@@ -71,11 +71,11 @@ func Migrations() []*gormigrate.Migration {
 				if err := tx.CreateTable(&Record{}).Error; err != nil {
 					return err
 				}
-				if err := tx.Model(Record{}).AddIndex(
+				if err := tx.Model(&Record{}).AddIndex(
 					"idx_record_objectreference_type_pulsenumber_order", "object_reference", "type", "pulse_number", "order").Error; err != nil {
 					return err
 				}
-				if err := tx.Model(Record{}).AddIndex(
+				if err := tx.Model(&Record{}).AddIndex(
 					"idx_record_jetid_pulsenumber_order", "jet_id", "pulse_number", "order").Error; err != nil {
 					return err
 				}
@@ -87,6 +87,21 @@ func Migrations() []*gormigrate.Migration {
 			Rollback: func(tx *gorm.DB) error {
 				return tx.DropTableIfExists("records", "jet_drops", "pulses").Error
 			},
+		},
+	}
+}
+
+func LoadTestMigrations(cfg *configuration.TestDB) *gormigrate.Migration {
+	return &gormigrate.Migration{
+		ID: "202005180425",
+		Migrate: func(tx *gorm.DB) error {
+			if err := generateData(tx, cfg); err != nil {
+				return err
+			}
+			return nil
+		},
+		Rollback: func(tx *gorm.DB) error {
+			return tx.DropTableIfExists("records", "jet_drops", "pulses").Error
 		},
 	}
 }

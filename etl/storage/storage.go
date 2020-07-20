@@ -30,7 +30,8 @@ func NewStorage(db *gorm.DB) *Storage {
 // SaveJetDropData saves provided jetDrop and records to db in one transaction.
 func (s *Storage) SaveJetDropData(jetDrop models.JetDrop, records []models.Record) error {
 	return s.db.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Save(&jetDrop).Error; err != nil {
+		jd := &jetDrop
+		if err := tx.Save(jd).Error; err != nil {
 			return errors.Wrap(err, "error while saving jetDrop")
 		}
 
