@@ -134,7 +134,12 @@ func TestGetRecordsByJetDropID_queryParams(t *testing.T) {
 
 	require.NoError(t, heavymock.ImportRecords(ts.ConMngr.ImporterClient, records))
 	require.NoError(t, heavymock.ImportRecords(ts.ConMngr.ImporterClient, []*exporter.Record{testutils.GenerateRecordInNextPulse(records[0].Record.ID.Pulse())}))
-	ts.WaitRecordsCount(t, len(records), 2000)
+
+	ts.BE.PulseClient.SetNextFinalizedPulseFunc(ts.ConMngr.Importer)
+	ts.StartBE(t)
+	defer ts.StopBE(t)
+
+	ts.WaitRecordsCount(t, len(records)+1, 5000)
 
 	c := GetHTTPClient()
 
@@ -189,7 +194,12 @@ func TestGetRecordsByJetDropID_byType(t *testing.T) {
 
 	require.NoError(t, heavymock.ImportRecords(ts.ConMngr.ImporterClient, records))
 	require.NoError(t, heavymock.ImportRecords(ts.ConMngr.ImporterClient, []*exporter.Record{testutils.GenerateRecordInNextPulse(records[0].Record.ID.Pulse())}))
-	ts.WaitRecordsCount(t, len(records), 2000)
+
+	ts.BE.PulseClient.SetNextFinalizedPulseFunc(ts.ConMngr.Importer)
+	ts.StartBE(t)
+	defer ts.StopBE(t)
+
+	ts.WaitRecordsCount(t, len(records)+1, 5000)
 
 	c := GetHTTPClient()
 	t.Run("Type state", func(t *testing.T) {
@@ -254,6 +264,11 @@ func TestGetRecordsByJetDropID_star(t *testing.T) {
 	require.NoError(t, heavymock.ImportRecords(ts.ConMngr.ImporterClient, records))
 	require.NoError(t, heavymock.ImportRecords(ts.ConMngr.ImporterClient, recordsNextPulse))
 	require.NoError(t, heavymock.ImportRecords(ts.ConMngr.ImporterClient, []*exporter.Record{nextRecord}))
+
+	ts.BE.PulseClient.SetNextFinalizedPulseFunc(ts.ConMngr.Importer)
+	ts.StartBE(t)
+	defer ts.StopBE(t)
+
 	ts.WaitRecordsCount(t, recordsInJetDropCount*2, 5000)
 
 	val := fmt.Sprintf("*:%v", pn.String())
@@ -303,7 +318,12 @@ func TestGetRecordsByJetDropID_oneJdCheckFields(t *testing.T) {
 
 	require.NoError(t, heavymock.ImportRecords(ts.ConMngr.ImporterClient, records))
 	require.NoError(t, heavymock.ImportRecords(ts.ConMngr.ImporterClient, []*exporter.Record{testutils.GenerateRecordInNextPulse(maxPn)}))
-	ts.WaitRecordsCount(t, len(records), 2000)
+
+	ts.BE.PulseClient.SetNextFinalizedPulseFunc(ts.ConMngr.Importer)
+	ts.StartBE(t)
+	defer ts.StopBE(t)
+
+	ts.WaitRecordsCount(t, len(records)+1, 5000)
 
 	c := GetHTTPClient()
 	response, err := c.JetDropRecords(t, jetDropID, nil)
