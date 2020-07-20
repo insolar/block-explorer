@@ -57,6 +57,35 @@ func GenerateVirtualActivateRecord(pulse insolar.PulseNumber, objectID, requestI
 	return r
 }
 
+func GenerateVirtualRequestRecord(pulse insolar.PulseNumber, objectID insolar.ID) (record *exporter.Record) {
+	r := GenerateRecordsSilence(1)[0]
+	id := gen.IDWithPulse(pulse)
+	r.Record.ID = id
+	r.Record.ObjectID = objectID
+	r.ShouldIterateFrom = nil
+	r.Record.Virtual.Union = &insrecord.Virtual_IncomingRequest{
+		IncomingRequest: &insrecord.IncomingRequest{
+			Polymorph: int32(1),
+		},
+	}
+	return r
+}
+
+func GenerateVirtualResultRecord(pulse insolar.PulseNumber, objectID, requestID insolar.ID) (record *exporter.Record) {
+	r := GenerateRecordsSilence(1)[0]
+	id := gen.IDWithPulse(pulse)
+	r.Record.ID = id
+	r.Record.ObjectID = objectID
+	r.ShouldIterateFrom = nil
+	requestRerence := insolar.NewReference(requestID)
+	r.Record.Virtual.Union = &insrecord.Virtual_Result{
+		Result: &insrecord.Result{
+			Request: *requestRerence,
+		},
+	}
+	return r
+}
+
 func GenerateVirtualAmendRecordsLinkedArray(pulse insolar.PulseNumber, jetID insolar.JetID, objectID, prevStateID insolar.ID, recordsCount int) []*exporter.Record {
 	result := make([]*exporter.Record, recordsCount)
 	for i := 0; i < recordsCount; i++ {
@@ -200,8 +229,8 @@ func GenerateRecords(batchSize int) func() (record *exporter.Record, e error) {
 				Polymorph: int32(randNum()),
 				Virtual: insrecord.Virtual{
 					Polymorph: int32(randNum()),
-					Union: &insrecord.Virtual_Activate{
-						Activate: &insrecord.Activate{
+					Union: &insrecord.Virtual_Amend{
+						Amend: &insrecord.Amend{
 							Request: gen.Reference(),
 						},
 					},
