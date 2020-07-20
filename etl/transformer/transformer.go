@@ -177,7 +177,6 @@ func restoreInsolarID(b []byte) string {
 	return insolar.NewIDFromBytes(b).String()
 }
 
-//nolint
 func getPulseData(pn *exporter.FullPulse) types.Pulse {
 	pulse := pn.PulseNumber
 	return types.Pulse{
