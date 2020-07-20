@@ -44,7 +44,7 @@ func TestLifeline_onePulse(t *testing.T) {
 	ts.StartBE(t)
 	defer ts.StopBE(t)
 
-	ts.WaitRecordsCount(t, len(lifelineRecords)+1, 1000)
+	ts.WaitRecordsCount(t, len(lifelineRecords)+1, 10000)
 
 	c := GetHTTPClient()
 	response, err := c.ObjectLifeline(t, lifeline.ObjID.String(), nil)
