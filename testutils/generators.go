@@ -233,7 +233,7 @@ func GenerateRecordsWithDifferencePulsesSilence(differentPulseSize, recordCount 
 	return result
 }
 
-// GenerateRecordsFromPulseSilence returns new generated records without errors
+// GenerateRecordsFromOneJetSilence returns new generated records from one JetID
 func GenerateRecordsFromOneJetSilence(differentPulseSize, recordCount int) []*exporter.Record {
 	records := GenerateRecordsWithDifferencePulsesSilence(differentPulseSize, recordCount)
 	jetID := GenerateUniqueJetID()
