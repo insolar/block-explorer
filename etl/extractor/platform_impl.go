@@ -81,7 +81,7 @@ func (e *PlatformExtractor) Start(ctx context.Context) error {
 		belogger.FromContext(ctx).Info("Starting platform extractor...")
 		e.hasStarted = true
 		ctx, e.cancel = context.WithCancel(ctx)
-		go e.retrievePulses(ctx, 0, 0)
+		go e.retrievePulses(ctx, -1, 0)
 	}
 	return nil
 }
@@ -119,7 +119,7 @@ func (e *PlatformExtractor) retrievePulses(ctx context.Context, from, until int6
 			time.Sleep(time.Second)
 		}
 
-		pu, err = e.pulseExtractor.GetNextFinalizedPulse(ctx, int64(before.PulseNumber))
+		pu, err = e.pulseExtractor.GetNextFinalizedPulse(ctx, int64(int32(before.PulseNumber)))
 		if err != nil { // network error ?
 			pu = &before
 			if strings.Contains(err.Error(), pulse.ErrNotFound.Error()) { // seems this pulse already last
