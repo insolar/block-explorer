@@ -269,7 +269,7 @@ func TestGetRecordsByJetDropID_star(t *testing.T) {
 	ts.StartBE(t)
 	defer ts.StopBE(t)
 
-	ts.WaitRecordsCount(t, recordsInJetDropCount*2, 5000)
+	ts.WaitRecordsCount(t, recordsInJetDropCount*2+1, 5000)
 
 	val := fmt.Sprintf("*:%v", pn.String())
 	c := GetHTTPClient()
