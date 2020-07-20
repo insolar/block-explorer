@@ -35,7 +35,7 @@ func Transform(ctx context.Context, jd *types.PlatformJetDrops) ([]*types.JetDro
 		return nil, err
 	}
 
-	log := belogger.FromContext(ctx)
+	log := belogger.FromContext(ctx).WithField("service", "transformer")
 	for _, jetid := range jd.Pulse.Jets {
 		if _, ok := m[jetid]; ok {
 			log.Debug("full ", jetid.DebugString())
