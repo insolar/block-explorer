@@ -115,7 +115,7 @@ func (e *PlatformExtractor) retrievePulses(ctx context.Context, from, until int6
 
 		before := *pu
 
-		for atomic.LoadInt32(&e.workers) >= e.maxWorkers {
+		for until > 0 && atomic.LoadInt32(&e.workers) >= e.maxWorkers {
 			time.Sleep(time.Second)
 		}
 
