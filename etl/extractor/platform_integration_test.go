@@ -41,7 +41,7 @@ func TestExporterIsWorking(t *testing.T) {
 
 	g := &RecordExporterClient{}
 	pulseClient := clients.GetTestPulseClient(65537, nil)
-	extractor := NewPlatformExtractor(uint32(defaultLocalBatchSize), 0, NewPlatformPulseExtractor(pulseClient), g)
+	extractor := NewPlatformExtractor(uint32(defaultLocalBatchSize), 0, 100, NewPlatformPulseExtractor(pulseClient), g)
 	err = extractor.Start(ctx)
 	require.NoError(t, err)
 	defer extractor.Stop(ctx)
