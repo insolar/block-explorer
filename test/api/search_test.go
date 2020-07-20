@@ -43,6 +43,17 @@ func TestSearchApi(t *testing.T) {
 
 	record := lifeline.GetStateRecords()[0]
 	pn := record.Record.ID.Pulse()
+
+	randomJetID := func() string {
+		for {
+			jd := converter.JetIDToString(gen.JetID())
+			if len(jd) < 20 {
+				continue
+			}
+			return jd
+		}
+	}
+
 	jetID := converter.JetIDToString(record.Record.JetID)
 	jetDropID := fmt.Sprintf("%v:%v", jetID, pn.String())
 	objRef := insolar.NewReference(lifeline.ObjID).String()
@@ -161,7 +172,7 @@ func TestSearchApi(t *testing.T) {
 		{"C5286 Search by zero value", "0", badRequest400, "zero value"},
 		{"C5287 Search by empty value", "", badRequest400, "empty"},
 		{"C5288 Search by random reference", id.String(), badRequest400, "reference"},
-		{"C5161 Search by existing jet_Id, get error", jetID, badRequest400, "jetID"},
+		{"C5161 Search by existing jet_Id, get error", randomJetID(), badRequest400, "jetID"},
 		{"C5162 Search by invalid value", invalidValue, badRequest400, "invalid value"},
 		{"C5168 Search by value with 1k chars", jetDropWithBigLengthPrefix, badRequest400, "big length jd pref"},
 		{"C5289 Search by invalid jetdrop_id with very big pulse number, get error", jetDropWithBigLengthPulse, badRequest400, "big length jd pulse"},
