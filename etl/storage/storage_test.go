@@ -1546,8 +1546,8 @@ func TestStorage_GetJetDropsByJetId_Fail(t *testing.T) {
 	err = testutils.CreatePulse(testDB, secondPulse)
 	require.NoError(t, err)
 
-	notExistEdJetID := "100"
-	jetDrops, total, err := s.GetJetDropsByJetID(notExistEdJetID, nil, nil, nil, nil, -1, true)
+	notExistingJetID := "100"
+	jetDrops, total, err := s.GetJetDropsByJetID(notExistingJetID, nil, nil, nil, nil, -1, true)
 	require.NoError(t, err)
 	require.Len(t, jetDrops, 0)
 	require.Equal(t, 0, total)
