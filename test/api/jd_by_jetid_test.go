@@ -126,7 +126,7 @@ func TestGetJetDropsByJetID(t *testing.T) {
 	})
 }
 
-func TestGetRecordsByJetDropID_queryParams(t *testing.T) {
+func TestGetJetDropsByJetID_queryParams(t *testing.T) {
 	ts := integration.NewBlockExplorerTestSetup(t).WithHTTPServer(t)
 	defer ts.Stop(t)
 
