@@ -81,7 +81,7 @@ func (e *PlatformExtractor) Start(ctx context.Context) error {
 		belogger.FromContext(ctx).Info("Starting platform extractor...")
 		e.hasStarted = true
 		ctx, e.cancel = context.WithCancel(ctx)
-		go e.retrievePulses(ctx, -1, 0)
+		go e.retrievePulses(ctx, 0, 0)
 	}
 	return nil
 }
