@@ -4,11 +4,11 @@ LDFLAGS ?=
 
 ##@ Building
 .PHONY: build
-build: block-explorer api loadtest_migrate## build all applications
+build: ## build all applications
 	go build -ldflags "$(LDFLAGS)" -o $(BIN_DIR)/migrate cmd/migrate/*.go
-
-block-explorer api loadtest_migrate:
-	go build -ldflags "$(LDFLAGS)" -o $(BIN_DIR)/$@ cmd/$@/*.go
+	go build -ldflags "$(LDFLAGS)" -o $(BIN_DIR)/block-explorer cmd/block-explorer/*.go
+	go build -ldflags "$(LDFLAGS)" -o $(BIN_DIR)/api cmd/api/*.go
+	go build -ldflags "$(LDFLAGS)" -o $(BIN_DIR)/loadtest_migrate cmd/loadtest_migrate/*.go
 
 .PHONY: generate
 generate: ## generate mocks
