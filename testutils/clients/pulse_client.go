@@ -47,15 +47,15 @@ func GetTestPulseClient(pn uint32, err error) *TestPulseClient {
 		return getTestTopSyncPulseResponse(pn), err
 	}
 	client.NextFinalizedPulseFunc = func(ctx context.Context, in *exporter.GetNextFinalizedPulse, opts ...grpc.CallOption) (*exporter.FullPulse, error) {
-		return GetFullPulse(pn), nil
+		return GetFullPulse(pn)
 	}
 	return client
 }
 
-func GetFullPulse(pn uint32) *exporter.FullPulse {
+func GetFullPulse(pn uint32) (*exporter.FullPulse, error) {
 	time, err := insolar.PulseNumber(pn).AsApproximateTime()
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	res := &exporter.FullPulse{
 		PulseNumber:      insolar.PulseNumber(pn),
@@ -66,7 +66,7 @@ func GetFullPulse(pn uint32) *exporter.FullPulse {
 		EpochPulseNumber: 0,
 		Jets:             nil,
 	}
-	return res
+	return res, nil
 }
 
 func (c *TestPulseClient) SetNextFinalizedPulseFunc(importer *heavymock.ImporterServer) {
@@ -75,6 +75,6 @@ func (c *TestPulseClient) SetNextFinalizedPulseFunc(importer *heavymock.Importer
 		if p == 1<<32-1 {
 			return nil, errors.New("unready yet")
 		}
-		return GetFullPulse(p), nil
+		return GetFullPulse(p)
 	}
 }

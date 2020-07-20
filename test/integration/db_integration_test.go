@@ -54,7 +54,9 @@ func TestIntegrationWithDb_GetRecords(t *testing.T) {
 
 	jetDrops := make([]types.PlatformJetDrops, 0)
 	for _, r := range records {
-		jetDrop := types.PlatformJetDrops{Pulse: clients.GetFullPulse(uint32(r.Record.ID.Pulse())),
+		p, err := clients.GetFullPulse(uint32(r.Record.ID.Pulse()))
+		require.NoError(t, err)
+		jetDrop := types.PlatformJetDrops{Pulse: p,
 			Records: []*exporter.Record{r}}
 		jetDrops = append(jetDrops, jetDrop)
 	}
