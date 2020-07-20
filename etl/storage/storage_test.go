@@ -1504,10 +1504,12 @@ func TestStorage_GetJetDropsByJetId_Success(t *testing.T) {
 	require.NoError(t, err)
 
 	jetDropForFirstPulse1 := testutils.InitJetDropDB(firstPulse)
+	jetDropForFirstPulse1.JetID = "0"
 	err = testutils.CreateJetDrop(testDB, jetDropForFirstPulse1)
 	require.NoError(t, err)
 
 	jetDropForFirstPulse2 := testutils.InitJetDropDB(firstPulse)
+	jetDropForFirstPulse2.JetID = "1"
 	err = testutils.CreateJetDrop(testDB, jetDropForFirstPulse2)
 	require.NoError(t, err)
 
