@@ -33,8 +33,10 @@ type API struct {
 }
 
 type DB struct {
-	URL      string `insconfig:"postgres://postgres@localhost/postgres?sslmode=disable| Path to postgres db"`
-	PoolSize int    `insconfig:"100| Maximum number of socket connections"`
+	URL             string        `insconfig:"postgres://postgres:secret@localhost:5432/postgres?sslmode=disable| Path to postgres db"`
+	MaxOpenConns    int           `insconfig:"100| The maximum number of open connections to the database"`
+	MaxIdleConns    int           `insconfig:"100| The maximum number of connections in the idle"`
+	ConnMaxLifetime time.Duration `insconfig:"600s| The maximum amount of time a connection may be reused"`
 }
 
 type TestDB struct {

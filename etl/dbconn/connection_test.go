@@ -25,8 +25,8 @@ func TestConnect(t *testing.T) {
 	defer poolCleaner()
 
 	cfg := configuration.DB{
-		URL:      fmt.Sprintf("postgres://postgres:%s@localhost:%s/%s?sslmode=disable", dbPassword, resource.GetPort("5432/tcp"), dbName),
-		PoolSize: 100,
+		URL:          fmt.Sprintf("postgres://postgres:%s@localhost:%s/%s?sslmode=disable", dbPassword, resource.GetPort("5432/tcp"), dbName),
+		MaxOpenConns: 100,
 	}
 	var db *gorm.DB
 	err := pool.Retry(func() error {
