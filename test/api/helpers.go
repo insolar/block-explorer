@@ -33,15 +33,20 @@ func LogHTTP(t *testing.T, http *http.Response, requestBody interface{}, respons
 	var buf strings.Builder
 	buf.WriteString("\n")
 	buf.WriteString("Request:")
-	url := http.Request.URL
+	request := http.Request
+	if request == nil {
+		t.Log("http.request is nil, unable to log request")
+		return
+	}
+	url := request.URL
 	if url == nil {
-		t.Log("http.URL is nil, unable to log request")
+		t.Log("http.request.URL is nil, unable to log request")
 		return
 	}
 	buf.WriteString(fmt.Sprintf("%v %v://%v%v?%v \n",
-		http.Request.Method, url.Scheme, url.Host, url.Path, url.RawQuery))
+		request.Method, url.Scheme, url.Host, url.Path, url.RawQuery))
 
-	headers := http.Request.Header
+	headers := request.Header
 	if len(headers) > 0 {
 		for k, v := range headers {
 			buf.WriteString(fmt.Sprintf("  -H %v: %v\n", k, v))
