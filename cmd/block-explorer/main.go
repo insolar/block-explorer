@@ -13,16 +13,16 @@ import (
 	"syscall"
 
 	"github.com/insolar/block-explorer/api"
-	"github.com/insolar/insconfig"
-	"github.com/insolar/insolar/ledger/heavy/exporter"
-	"github.com/pkg/errors"
-
 	"github.com/insolar/block-explorer/etl/connection"
 	"github.com/insolar/block-explorer/etl/controller"
+	"github.com/insolar/block-explorer/etl/dbconn/reconnect"
 	"github.com/insolar/block-explorer/etl/extractor"
 	"github.com/insolar/block-explorer/etl/processor"
 	"github.com/insolar/block-explorer/etl/transformer"
 	"github.com/insolar/block-explorer/instrumentation/belogger"
+	"github.com/insolar/insconfig"
+	"github.com/insolar/insolar/ledger/heavy/exporter"
+	"github.com/pkg/errors"
 
 	"github.com/insolar/block-explorer/etl/dbconn"
 	"github.com/insolar/block-explorer/etl/storage"
@@ -86,7 +86,8 @@ func main() {
 		}
 	}()
 
-	db, err := dbconn.Connect(cfg.DB)
+	connectFn := dbconn.ConnectFn(cfg.DB)
+	db, err := connectFn()
 	if err != nil {
 		logger.Fatalf("Error while connecting to database: %s", err.Error())
 	}
@@ -96,6 +97,9 @@ func main() {
 			logger.Error(errors.Wrap(err, "failed to close database").Error())
 		}
 	}()
+
+	r := reconnect.New(cfg.DB.Reconnect, connectFn)
+	r.Apply(db)
 
 	storage := storage.NewStorage(db)
 

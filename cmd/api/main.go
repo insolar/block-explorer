@@ -18,6 +18,7 @@ import (
 	"github.com/insolar/block-explorer/api"
 	"github.com/insolar/block-explorer/configuration"
 	"github.com/insolar/block-explorer/etl/dbconn"
+	"github.com/insolar/block-explorer/etl/dbconn/reconnect"
 	"github.com/insolar/block-explorer/etl/storage"
 	"github.com/insolar/block-explorer/instrumentation/belogger"
 )
@@ -43,11 +44,15 @@ func main() {
 		logger.Fatal("cannot start pprof: ", err)
 	}
 
-	db, err := dbconn.Connect(cfg.DB)
+	connectFn := dbconn.ConnectFn(cfg.DB)
+	db, err := connectFn()
 	if err != nil {
 		logger.Fatalf("Error while connecting to database: %s", err.Error())
 		return
 	}
+
+	r := reconnect.New(cfg.DB.Reconnect, connectFn)
+	r.Apply(db)
 
 	e := echo.New()
 	e.Use(middleware.Logger())
