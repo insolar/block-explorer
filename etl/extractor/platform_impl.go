@@ -188,7 +188,7 @@ func (e *PlatformExtractor) retrieveRecords(ctx context.Context, pu *exporter.Fu
 				if strings.Contains(err.Error(), "trying to get a non-finalized pulse data") ||
 					strings.Contains(err.Error(), "pulse not found") {
 					time.Sleep(time.Duration(e.continuousPulseRetrievingHalfPulseSeconds) * time.Second)
-					go e.retrievePulses(ctx, int64(pu.PulseNumber-10), int64(pu.PulseNumber-1)) // goroutine to split the stack
+					go e.retrievePulses(ctx, int64(pu.PrevPulseNumber), int64(pu.PulseNumber-1)) // goroutine to split the stack
 					log.Infof("Rerequest pulse=%d err=%s", pu.PulseNumber, err)
 					return
 				}
