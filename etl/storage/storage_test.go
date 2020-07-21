@@ -1532,10 +1532,12 @@ func TestStorage_GetJetDropsByJetId_Fail(t *testing.T) {
 	require.NoError(t, err)
 
 	jetDropForFirstPulse1 := testutils.InitJetDropDB(firstPulse)
+	jetDropForFirstPulse1.JetID = "000"
 	err = testutils.CreateJetDrop(testDB, jetDropForFirstPulse1)
 	require.NoError(t, err)
 
 	jetDropForFirstPulse2 := testutils.InitJetDropDB(firstPulse)
+	jetDropForFirstPulse2.JetID = "001"
 	err = testutils.CreateJetDrop(testDB, jetDropForFirstPulse2)
 	require.NoError(t, err)
 
@@ -1543,10 +1545,9 @@ func TestStorage_GetJetDropsByJetId_Fail(t *testing.T) {
 	require.NoError(t, err)
 	err = testutils.CreatePulse(testDB, secondPulse)
 	require.NoError(t, err)
-	jetDropForSecondPulse := testutils.InitJetDropDB(secondPulse)
 
-	wrongJetID := jetDropForSecondPulse.JetID
-	jetDrops, total, err := s.GetJetDropsByJetID(wrongJetID, nil, nil, nil, nil, -1, true)
+	notExistingJetID := "100"
+	jetDrops, total, err := s.GetJetDropsByJetID(notExistingJetID, nil, nil, nil, nil, -1, true)
 	require.NoError(t, err)
 	require.Len(t, jetDrops, 0)
 	require.Equal(t, 0, total)
