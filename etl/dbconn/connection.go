@@ -14,13 +14,21 @@ import (
 	"github.com/insolar/block-explorer/configuration"
 )
 
+// Connect returns connection to database
 func Connect(cfg configuration.DB) (*gorm.DB, error) {
-	db, err := gorm.Open("postgres", cfg.URL)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to open database")
+	return ConnectFn(cfg)()
+}
+
+// ConnectFn returns the function which can be used to connect
+func ConnectFn(cfg configuration.DB) func() (*gorm.DB, error) {
+	return func() (*gorm.DB, error) {
+		db, err := gorm.Open("postgres", cfg.URL)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to open database")
+		}
+		db.DB().SetMaxOpenConns(cfg.MaxOpenConns)
+		db.DB().SetMaxIdleConns(cfg.MaxIdleConns)
+		db.DB().SetConnMaxLifetime(cfg.ConnMaxLifetime)
+		return db, nil
 	}
-	db.DB().SetMaxOpenConns(cfg.MaxOpenConns)
-	db.DB().SetMaxIdleConns(cfg.MaxIdleConns)
-	db.DB().SetConnMaxLifetime(cfg.ConnMaxLifetime)
-	return db, nil
 }

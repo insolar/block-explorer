@@ -10,7 +10,9 @@ package dbconn
 import (
 	"fmt"
 	"testing"
+	"time"
 
+	"github.com/insolar/block-explorer/etl/dbconn/reconnect"
 	"github.com/jinzhu/gorm"
 	"github.com/stretchr/testify/require"
 
@@ -45,4 +47,52 @@ func TestConnect_WrongURL(t *testing.T) {
 	db, err := Connect(cfg)
 	require.Error(t, err)
 	require.Nil(t, db)
+}
+
+func TestReconnect(t *testing.T) {
+	dbName := "test_db"
+	dbPassword := "secret"
+	hostPort, pool, resource, poolCleaner := testutils.RunDBInDockerWithPortBindings(dbName, dbPassword)
+	containerID := resource.Container.ID
+	defer poolCleaner()
+
+	cfg := configuration.DB{
+		URL:          fmt.Sprintf("postgres://postgres:%s@localhost:%d/%s?sslmode=disable", dbPassword, hostPort, dbName),
+		MaxOpenConns: 100,
+	}
+	var db *gorm.DB
+	connectFn := ConnectFn(cfg)
+	err := pool.Retry(func() error {
+		var err error
+		db, err = connectFn()
+		return err
+	})
+	require.NoError(t, err)
+	require.NotNil(t, db)
+
+	reconnect := reconnect.New(&reconnect.Config{
+		Attempts: 100,
+		Interval: 3 * time.Second,
+	}, connectFn)
+	reconnect.Apply(db)
+
+	// try to do select and it working
+	err = db.Raw("select 1").Error
+	require.NoError(t, db.Raw("select 1").Error)
+
+	err = pool.Client.StopContainer(containerID, 0)
+	require.NoError(t, err)
+	_, err = pool.Client.WaitContainer(containerID)
+	require.NoError(t, err)
+
+	// try to do select and for getting error
+	err = db.Raw("select 1").Error
+	require.Nil(t, db.Raw("select 1").Error)
+
+	err = pool.Client.StartContainer(containerID, nil)
+	require.NoError(t, err)
+
+	// try to do select
+	err = db.Raw("select 1").Error
+	require.NoError(t, db.Raw("select 1").Error)
 }
