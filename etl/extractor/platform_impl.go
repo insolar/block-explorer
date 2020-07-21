@@ -137,10 +137,6 @@ func (e *PlatformExtractor) retrievePulses(ctx context.Context, from, until int6
 
 		log.Debug("retrievePulses(): Done")
 
-		if len(pu.Jets) == 0 {
-			pu.Jets = []insolar.JetID{insolar.ZeroJetID}
-		}
-
 		go e.retrieveRecords(ctx, pu)
 
 		if until <= 0 { // we are going on the edge of history
@@ -189,12 +185,14 @@ func (e *PlatformExtractor) retrieveRecords(ctx context.Context, pu *exporter.Fu
 				break
 			}
 			if resp == nil { // error, assume the data is broken
-				log.Errorf("retrieveRecords(): empty response: err=%s", err)
 				if strings.Contains(err.Error(), "trying to get a non-finalized pulse data") ||
 					strings.Contains(err.Error(), "pulse not found") {
 					time.Sleep(time.Duration(e.continuousPulseRetrievingHalfPulseSeconds) * time.Second)
-					go e.retrieveRecords(ctx, pu) // goroutine to split the stack
+					go e.retrievePulses(ctx, int64(pu.PulseNumber-10), int64(pu.PulseNumber-1)) // goroutine to split the stack
+					log.Infof("Rerequest pulse=%d err=%s", pu.PulseNumber, err)
+					return
 				}
+				log.Errorf("retrieveRecords(): empty response: err=%s", err)
 				return
 			}
 			if resp.ShouldIterateFrom != nil || resp.Record.ID.Pulse() != pu.PulseNumber { // next pulse packet
