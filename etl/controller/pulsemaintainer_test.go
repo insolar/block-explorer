@@ -328,7 +328,7 @@ func TestController_pulseSequence_ReloadPeriodExpired(t *testing.T) {
 func Test_pulseIsComplete(t *testing.T) {
 	type args struct {
 		p types.Pulse
-		d []string
+		d map[string]struct{}
 	}
 	tests := []struct {
 		name string
@@ -339,8 +339,8 @@ func Test_pulseIsComplete(t *testing.T) {
 			name: "root",
 			args: args{
 				types.Pulse{PulseNo: 1000},
-				[]string{
-					"",
+				map[string]struct{}{
+					"": {},
 				},
 			},
 			want: true,
@@ -349,12 +349,12 @@ func Test_pulseIsComplete(t *testing.T) {
 			name: "complete",
 			args: args{
 				types.Pulse{PulseNo: 1000},
-				[]string{
-					"1",
-					"000",
-					"001",
-					"010",
-					"011",
+				map[string]struct{}{
+					"1":   {},
+					"000": {},
+					"001": {},
+					"010": {},
+					"011": {},
 				},
 			},
 			want: true,
@@ -363,11 +363,11 @@ func Test_pulseIsComplete(t *testing.T) {
 			name: "not complete",
 			args: args{
 				types.Pulse{PulseNo: 1000},
-				[]string{
-					"1",
-					"000",
-					"001",
-					"010",
+				map[string]struct{}{
+					"1":   {},
+					"000": {},
+					"001": {},
+					"010": {},
 				},
 			},
 			want: false,
@@ -376,10 +376,10 @@ func Test_pulseIsComplete(t *testing.T) {
 			name: "not complete",
 			args: args{
 				types.Pulse{PulseNo: 1000},
-				[]string{
-					"1",
-					"000",
-					"001",
+				map[string]struct{}{
+					"1":   {},
+					"000": {},
+					"001": {},
 				},
 			},
 			want: false,
@@ -388,11 +388,11 @@ func Test_pulseIsComplete(t *testing.T) {
 			name: "not complete",
 			args: args{
 				types.Pulse{PulseNo: 1000},
-				[]string{
-					"000",
-					"001",
-					"010",
-					"011",
+				map[string]struct{}{
+					"000": {},
+					"001": {},
+					"010": {},
+					"011": {},
 				},
 			},
 			want: false,
@@ -401,10 +401,10 @@ func Test_pulseIsComplete(t *testing.T) {
 			name: "not complete",
 			args: args{
 				types.Pulse{PulseNo: 1000},
-				[]string{
-					"000",
-					"001",
-					"011",
+				map[string]struct{}{
+					"000": {},
+					"001": {},
+					"011": {},
 				},
 			},
 			want: false,
@@ -413,13 +413,13 @@ func Test_pulseIsComplete(t *testing.T) {
 			name: "complete",
 			args: args{
 				types.Pulse{PulseNo: 1000},
-				[]string{
-					"10",
-					"11",
-					"000",
-					"001",
-					"010",
-					"011",
+				map[string]struct{}{
+					"10":  {},
+					"11":  {},
+					"000": {},
+					"001": {},
+					"010": {},
+					"011": {},
 				},
 			},
 			want: true,
@@ -428,14 +428,14 @@ func Test_pulseIsComplete(t *testing.T) {
 			name: "complete",
 			args: args{
 				types.Pulse{PulseNo: 1000},
-				[]string{
-					"10",
-					"110",
-					"111",
-					"000",
-					"001",
-					"010",
-					"011",
+				map[string]struct{}{
+					"10":  {},
+					"110": {},
+					"111": {},
+					"000": {},
+					"001": {},
+					"010": {},
+					"011": {},
 				},
 			},
 			want: true,
@@ -444,13 +444,13 @@ func Test_pulseIsComplete(t *testing.T) {
 			name: "not complete",
 			args: args{
 				types.Pulse{PulseNo: 1000},
-				[]string{
-					"110",
-					"111",
-					"000",
-					"001",
-					"010",
-					"011",
+				map[string]struct{}{
+					"110": {},
+					"111": {},
+					"000": {},
+					"001": {},
+					"010": {},
+					"011": {},
 				},
 			},
 			want: false,

@@ -29,7 +29,7 @@ type Controller struct {
 	cancelFunc context.CancelFunc
 
 	// jetDropRegister stores processed jetDrops for not complete pulses
-	jetDropRegister     map[types.Pulse][]string
+	jetDropRegister     map[types.Pulse]map[string]struct{}
 	jetDropRegisterLock sync.RWMutex
 	// missedDataManager stores pulses that were reloaded
 	missedDataManager *MissedDataManager
@@ -45,7 +45,7 @@ func NewController(cfg configuration.Controller, extractor interfaces.JetDropsEx
 		cfg:               cfg,
 		extractor:         extractor,
 		storage:           storage,
-		jetDropRegister:   make(map[types.Pulse][]string),
+		jetDropRegister:   make(map[types.Pulse]map[string]struct{}),
 		missedDataManager: NewMissedDataManager(time.Second*time.Duration(cfg.ReloadPeriod), time.Second*time.Duration(cfg.ReloadCleanPeriod)),
 	}
 	pulses, err := c.storage.GetIncompletePulses()
@@ -97,5 +97,8 @@ func (c *Controller) Stop(ctx context.Context) error {
 func (c *Controller) SetJetDropData(pulse types.Pulse, jetID string) {
 	c.jetDropRegisterLock.Lock()
 	defer c.jetDropRegisterLock.Unlock()
-	c.jetDropRegister[pulse] = append(c.jetDropRegister[pulse], jetID)
+	if c.jetDropRegister[pulse] == nil {
+		c.jetDropRegister[pulse] = map[string]struct{}{}
+	}
+	c.jetDropRegister[pulse][jetID] = struct{}{}
 }
