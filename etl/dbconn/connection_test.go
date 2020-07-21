@@ -59,6 +59,10 @@ func TestReconnect(t *testing.T) {
 	cfg := configuration.DB{
 		URL:          fmt.Sprintf("postgres://postgres:%s@localhost:%d/%s?sslmode=disable", dbPassword, hostPort, dbName),
 		MaxOpenConns: 100,
+		Reconnect: configuration.Reconnect{
+			Attempts: 100,
+			Interval: 3 * time.Second,
+		},
 	}
 	var db *gorm.DB
 	connectFn := ConnectFn(cfg)
@@ -70,11 +74,8 @@ func TestReconnect(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, db)
 
-	reconnect := reconnect.New(&reconnect.Config{
-		Attempts: 100,
-		Interval: 3 * time.Second,
-	}, connectFn)
-	reconnect.Apply(db)
+	r := reconnect.New(cfg.Reconnect, connectFn)
+	r.Apply(db)
 
 	// try to do select and it working
 	err = db.Raw("select 1").Error

@@ -37,6 +37,13 @@ type DB struct {
 	MaxOpenConns    int           `insconfig:"100| The maximum number of open connections to the database"`
 	MaxIdleConns    int           `insconfig:"100| The maximum number of connections in the idle"`
 	ConnMaxLifetime time.Duration `insconfig:"600s| The maximum amount of time a connection may be reused"`
+	Reconnect       Reconnect
+}
+
+// Reconnect represents the connection for reconnect to somewhere
+type Reconnect struct {
+	Attempts int           `insconfig:"100| The count of attempts to reconnect"`
+	Interval time.Duration `insconfig:"3s| Timeout specifies a time interval between reconnect attempts"`
 }
 
 type TestDB struct {

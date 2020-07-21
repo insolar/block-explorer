@@ -11,6 +11,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/insolar/block-explorer/configuration"
 	"github.com/jinzhu/gorm"
 )
 
@@ -32,28 +33,11 @@ type Config struct {
 }
 
 // New initialize GORM reconnect DB
-func New(config *Config, connectionFn func() (*gorm.DB, error)) *Reconnect {
-	if config == nil {
-		config = &Config{}
-	}
-
-	if config.BadConnChecker == nil {
-		config.BadConnChecker = func(errors []error) bool {
-			for _, err := range errors {
-				if err == driver.ErrBadConn || badConnectRegexp.MatchString(err.Error()) {
-					return true
-				}
-			}
-			return false
-		}
-	}
-
-	if config.Attempts == 0 {
-		config.Attempts = 5
-	}
-
-	if config.Interval == 0 {
-		config.Interval = 5 * time.Second
+func New(cfg configuration.Reconnect, connectionFn func() (*gorm.DB, error)) *Reconnect {
+	config := &Config{
+		Attempts:       cfg.Attempts,
+		Interval:       cfg.Interval,
+		BadConnChecker: defaultConnectionChecker,
 	}
 
 	return &Reconnect{
@@ -63,18 +47,28 @@ func New(config *Config, connectionFn func() (*gorm.DB, error)) *Reconnect {
 	}
 }
 
+// defaultConnectionChecker checks is network error received or not
+func defaultConnectionChecker(errors []error) bool {
+	for _, err := range errors {
+		if err == driver.ErrBadConn || badConnectRegexp.MatchString(err.Error()) {
+			return true
+		}
+	}
+	return false
+}
+
 // Apply apply reconnect to GORM DB instance
 func (reconnect *Reconnect) Apply(db *gorm.DB) {
-	db.Callback().Create().Before("gorm:plugins:reconnect").
-		Register("gorm:plugins:reconnect", reconnect.generateCallback)
+	db.Callback().Create().Before("gbe:gorm:plugins:reconnect").
+		Register("gbe:gorm:plugins:reconnect", reconnect.generateCallback)
 	db.Callback().Update().Before("gorm:plugins:reconnect").
-		Register("gorm:plugins:reconnect", reconnect.generateCallback)
+		Register("gbe:gorm:plugins:reconnect", reconnect.generateCallback)
 	db.Callback().Delete().Before("gorm:plugins:reconnect").
-		Register("gorm:plugins:reconnect", reconnect.generateCallback)
+		Register("gbe:gorm:plugins:reconnect", reconnect.generateCallback)
 	db.Callback().Query().Before("gorm:plugins:reconnect").
-		Register("gorm:plugins:reconnect", reconnect.generateCallback)
+		Register("gbe:gorm:plugins:reconnect", reconnect.generateCallback)
 	db.Callback().RowQuery().Before("gorm:plugins:reconnect").
-		Register("gorm:plugins:reconnect", reconnect.generateCallback)
+		Register("gbe:gorm:plugins:reconnect", reconnect.generateCallback)
 }
 
 // if callback was called and no connection to database,
