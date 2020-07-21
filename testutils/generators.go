@@ -36,6 +36,7 @@ func GenerateRequestRecord(pulse insolar.PulseNumber, objectID insolar.ID) *expo
 	r.Record.Virtual.Union = &insrecord.Virtual_IncomingRequest{
 		IncomingRequest: &insrecord.IncomingRequest{
 			Object: reference,
+			Method: "method",
 		},
 	}
 	return r
@@ -81,6 +82,7 @@ func GenerateVirtualResultRecord(pulse insolar.PulseNumber, objectID, requestID 
 	r.Record.Virtual.Union = &insrecord.Virtual_Result{
 		Result: &insrecord.Result{
 			Request: *requestRerence,
+			Object:  gen.ID(),
 		},
 	}
 	return r
