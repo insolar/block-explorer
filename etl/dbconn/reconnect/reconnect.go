@@ -59,16 +59,11 @@ func defaultConnectionChecker(errors []error) bool {
 
 // Apply apply reconnect to GORM DB instance
 func (reconnect *Reconnect) Apply(db *gorm.DB) {
-	db.Callback().Create().Before("gbe:gorm:plugins:reconnect").
-		Register("gbe:gorm:plugins:reconnect", reconnect.generateCallback)
-	db.Callback().Update().Before("gorm:plugins:reconnect").
-		Register("gbe:gorm:plugins:reconnect", reconnect.generateCallback)
-	db.Callback().Delete().Before("gorm:plugins:reconnect").
-		Register("gbe:gorm:plugins:reconnect", reconnect.generateCallback)
-	db.Callback().Query().Before("gorm:plugins:reconnect").
-		Register("gbe:gorm:plugins:reconnect", reconnect.generateCallback)
-	db.Callback().RowQuery().Before("gorm:plugins:reconnect").
-		Register("gbe:gorm:plugins:reconnect", reconnect.generateCallback)
+	db.Callback().Create().Register("gbe:gorm:plugins:reconnect", reconnect.generateCallback)
+	db.Callback().Update().Register("gbe:gorm:plugins:reconnect", reconnect.generateCallback)
+	db.Callback().Delete().Register("gbe:gorm:plugins:reconnect", reconnect.generateCallback)
+	db.Callback().Query().Register("gbe:gorm:plugins:reconnect", reconnect.generateCallback)
+	db.Callback().RowQuery().Register("gbe:gorm:plugins:reconnect", reconnect.generateCallback)
 }
 
 // if callback was called and no connection to database,
