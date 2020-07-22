@@ -42,24 +42,19 @@ func BenchmarkPlatformExtractorGetJetDrops(b *testing.B) {
 
 		pulseClient := clients.GetTestPulseClient(1, nil)
 		extractor := NewPlatformExtractor(uint32(defaultLocalBatchSize), 0, 100, NewPlatformPulseExtractor(pulseClient), &RecordExporterClient{})
-		err = extractor.Start(ctx)
+		fullPulse, err := clients.GetFullPulse(uint32(StartPulseNumber))
 		require.NoError(b, err)
+		go extractor.retrieveRecords(ctx, fullPulse)
 
 		b.StartTimer()
 		jetDrops := extractor.GetJetDrops(ctx)
-		for i := 0; i < defaultLocalPulseSize*defaultLocalBatchSize; i++ {
-			select {
-			case jd := <-jetDrops:
-				// when i ∈ [0,1) we received records with some pulse
-				// when i ≥ 2 we received records with different pulse, now records from i ∈ [0,1) should be returned
-				if i < 1 {
-					continue
-				}
-				require.NotEmpty(b, jd.Records)
-			case <-time.After(time.Millisecond * 100):
-				b.Fatal("chan receive timeout ")
-			}
+		select {
+		case jd := <-jetDrops:
+			require.NotEmpty(b, jd.Records)
+		case <-time.After(time.Millisecond * 100):
+			b.Fatal("chan receive timeout ")
 		}
+
 		b.StopTimer()
 
 		server.Server.Stop()
