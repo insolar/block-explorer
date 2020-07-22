@@ -31,7 +31,7 @@ func TestGetJetDrops(t *testing.T) {
 	mc := minimock.NewController(t)
 	recordClient := mock.NewRecordExporterClientMock(mc)
 
-	withDifferencePulses := testutils.GenerateRecordsWithDifferencePulses(pulseCount, 2)
+	withDifferencePulses := testutils.GenerateRecordsWithDifferencePulses(pulseCount, 2, StartPulseNumber)
 	expectedRecord, err := withDifferencePulses()
 	require.NoError(t, err) // you are testing yours testutils
 

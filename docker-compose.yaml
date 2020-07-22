@@ -38,7 +38,7 @@ services:
         chmod +x wait.sh
         ./wait.sh "postgres:5432"
         ./migrate --config=/opt/app/config/migrate.yaml
-        ./block-explorer --config=/opt/app/config/block-explorer.yaml
+        # ./block-explorer --config=/opt/app/config/block-explorer.yaml
 
   api:
     build:

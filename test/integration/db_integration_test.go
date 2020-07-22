@@ -31,7 +31,7 @@ func TestIntegrationWithDb_GetRecords(t *testing.T) {
 
 	pulsesNumber := 10
 	recordsInPulse := 1
-	recordsWithDifferencePulses := testutils.GenerateRecordsWithDifferencePulses(pulsesNumber, recordsInPulse)
+	recordsWithDifferencePulses := testutils.GenerateRecordsWithDifferencePulses(pulsesNumber, recordsInPulse, int64(pulse.MinTimePulse))
 	stream, err := ts.ConMngr.ImporterClient.Import(context.Background())
 	require.NoError(t, err)
 
