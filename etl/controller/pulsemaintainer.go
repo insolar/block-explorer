@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/insolar/assured-ledger/ledger-core/v2/log"
+	"github.com/insolar/insolar/pulse"
 	"github.com/jinzhu/gorm"
 
 	"github.com/insolar/block-explorer/etl/models"
@@ -51,7 +52,7 @@ func eraseJetDropRegister(ctx context.Context, c *Controller, log log.Logger) {
 				log.Infof("Pulse %d completed and saved", p.PulseNo)
 			}
 		} else {
-			c.reloadData(ctx, p.PulseNo, p.PulseNo)
+			c.reloadData(ctx, p.PrevPulseNumber, p.PulseNo)
 		}
 	}
 }
@@ -89,7 +90,7 @@ func (c *Controller) pulseSequence(ctx context.Context) {
 					log.Info("no next saved pulse. skipping")
 					return
 				}
-				c.reloadData(ctx, c.sequentialPulse.PulseNumber, toPulse.PulseNumber)
+				c.reloadData(ctx, c.sequentialPulse.PulseNumber, toPulse.PrevPulseNumber)
 				return
 			}
 			if nextSequential.IsComplete {
@@ -177,12 +178,15 @@ Main:
 
 func (c *Controller) reloadData(ctx context.Context, fromPulseNumber int64, toPulseNumber int64) {
 	log := belogger.FromContext(ctx)
+	if fromPulseNumber == 0 {
+		fromPulseNumber = pulse.MinTimePulse - 1
+	}
 	if c.missedDataManager.Add(ctx, fromPulseNumber, toPulseNumber) {
+		log.Infof("Reload data from %d to %d", fromPulseNumber, toPulseNumber)
 		err := c.extractor.LoadJetDrops(ctx, fromPulseNumber, toPulseNumber)
 		if err != nil {
 			log.Errorf("During loading missing data from extractor: %s", err.Error())
 			return
 		}
-		log.Infof("Reload data from %d to %d", fromPulseNumber, toPulseNumber)
 	}
 }

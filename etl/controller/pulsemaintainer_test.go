@@ -20,9 +20,10 @@ import (
 	"github.com/insolar/block-explorer/configuration"
 	"github.com/insolar/block-explorer/etl/models"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/insolar/block-explorer/etl/interfaces/mock"
 	"github.com/insolar/block-explorer/etl/types"
-	"github.com/stretchr/testify/require"
 )
 
 func TestController_pulseMaintainer(t *testing.T) {
@@ -44,7 +45,7 @@ func TestController_pulseMaintainer(t *testing.T) {
 	time.Sleep(time.Millisecond)
 }
 
-// sequential is 0, pulses in db: [1000110], expect loading data from 0 to 1000110
+// sequential is 0, pulses in db: [1000110], expect loading data from 0 to 1000100
 // sequential is 0, pulses in db: [1000110], expect don't load already loaded data
 // sequential is 0, pulses in db: [MinTimePulse, 1000110], expect nothing happens
 // sequential is 0, pulses in db: [MinTimePulse, 1000110], MinTimePulse is complete, expect sequential to change
@@ -92,8 +93,8 @@ func TestController_pulseSequence_StartFromNothing(t *testing.T) {
 	})
 	extractor.LoadJetDropsMock.Set(func(ctx context.Context, fromPulseNumber int64, toPulseNumber int64) (err error) {
 		if extractor.LoadJetDropsBeforeCounter() == 1 {
-			require.Equal(t, int64(0), fromPulseNumber)
-			require.Equal(t, int64(1000110), toPulseNumber)
+			require.Equal(t, int64(pulse.MinTimePulse-1), fromPulseNumber)
+			require.Equal(t, int64(1000100), toPulseNumber)
 		} else {
 			require.Fail(t, "LoadJetDrops was called more than once")
 		}
@@ -117,7 +118,7 @@ func TestController_pulseSequence_StartFromNothing(t *testing.T) {
 	time.Sleep(time.Millisecond)
 }
 
-// sequential is 1000000, pulses in db: [1000000, 1000020], expect loading data from 1000000 to 1000020
+// sequential is 1000000, pulses in db: [1000000, 1000020], expect loading data from 1000000 to 1000010
 // sequential is 1000000, pulses in db: [1000000, 1000010, 1000020], expect don't load already loaded data
 // sequential is 1000000, pulses in db: [1000000, 1000010, 1000020], 1000010 is complete, expect sequential to change
 // sequential is 1000010, pulses in db: [1000000, 1000010, 1000020], 1000020 is complete, expect sequential to change
@@ -162,7 +163,7 @@ func TestController_pulseSequence_StartFromSomething(t *testing.T) {
 	extractor.LoadJetDropsMock.Set(func(ctx context.Context, fromPulseNumber int64, toPulseNumber int64) (err error) {
 		if extractor.LoadJetDropsBeforeCounter() == 1 {
 			require.Equal(t, int64(1000000), fromPulseNumber)
-			require.Equal(t, int64(1000020), toPulseNumber)
+			require.Equal(t, int64(1000010), toPulseNumber)
 		} else {
 			require.Fail(t, "LoadJetDrops was called more than once")
 		}
@@ -249,24 +250,26 @@ func TestController_pulseMaintainer_Start_PulsesCompleteAndNot(t *testing.T) {
 		return models.Pulse{}, errors.New("some test error")
 	})
 
+	notCompletePulse := models.Pulse{PulseNumber: 1000000, PrevPulseNumber: 999999}
+	completePulse := models.Pulse{PulseNumber: 1000010}
 	sm.GetIncompletePulsesMock.Return([]models.Pulse{
-		{PulseNumber: 1000000},
-		{PulseNumber: 1000010},
+		notCompletePulse,
+		completePulse,
 	}, nil)
-	sm.GetJetDropsMock.When(models.Pulse{PulseNumber: 1000000}).Then([]models.JetDrop{{JetID: "1000"}}, nil)
-	sm.GetJetDropsMock.When(models.Pulse{PulseNumber: 1000010}).Then([]models.JetDrop{{JetID: ""}}, nil)
+	sm.GetJetDropsMock.When(notCompletePulse).Then([]models.JetDrop{{JetID: "1000"}}, nil)
+	sm.GetJetDropsMock.When(completePulse).Then([]models.JetDrop{{JetID: ""}}, nil)
 
 	wg := sync.WaitGroup{}
 	wg.Add(2)
 	sm.CompletePulseMock.Set(func(pulseNumber int64) (err error) {
-		require.Equal(t, int64(1000010), pulseNumber)
+		require.Equal(t, completePulse.PulseNumber, pulseNumber)
 		require.EqualValues(t, 1, sm.CompletePulseBeforeCounter())
 		wg.Done()
 		return nil
 	})
 	extractor.LoadJetDropsMock.Set(func(ctx context.Context, fromPulseNumber int64, toPulseNumber int64) (err error) {
-		require.Equal(t, int64(1000000), fromPulseNumber)
-		require.Equal(t, int64(1000000), toPulseNumber)
+		require.Equal(t, notCompletePulse.PrevPulseNumber, fromPulseNumber)
+		require.Equal(t, notCompletePulse.PulseNumber, toPulseNumber)
 		require.EqualValues(t, 1, extractor.LoadJetDropsBeforeCounter())
 		wg.Done()
 		return nil
@@ -283,7 +286,7 @@ func TestController_pulseMaintainer_Start_PulsesCompleteAndNot(t *testing.T) {
 	time.Sleep(time.Millisecond)
 }
 
-// sequential is 1000000, pulses in db: [1000000, 1000020], expect loading data from 1000000 to 1000020
+// sequential is 1000000, pulses in db: [1000000, 1000020], expect loading data from 1000000 to 1000010
 // sequential is 1000000, pulses in db: [1000000, 1000020], expect don't load already loaded data
 // wait ReloadPeriod seconds
 // sequential is 1000000, pulses in db: [1000000, 1000020], expect loading data from 1000000 to 1000020
@@ -305,7 +308,7 @@ func TestController_pulseSequence_ReloadPeriodExpired(t *testing.T) {
 	})
 	extractor.LoadJetDropsMock.Set(func(ctx context.Context, fromPulseNumber int64, toPulseNumber int64) (err error) {
 		require.Equal(t, int64(1000000), fromPulseNumber)
-		require.Equal(t, int64(1000020), toPulseNumber)
+		require.Equal(t, int64(1000010), toPulseNumber)
 		if extractor.LoadJetDropsBeforeCounter() > 2 {
 			require.Fail(t, "LoadJetDrops was called more than once")
 		}
