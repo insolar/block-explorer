@@ -70,6 +70,37 @@ func TestStorage_SaveJetDropData(t *testing.T) {
 	require.EqualValues(t, secondRecord, recordInDB[1])
 }
 
+func TestStorage_SaveJetDropData_PulseUpdated(t *testing.T) {
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+	s := NewStorage(testDB)
+
+	pulse, err := testutils.InitPulseDB()
+	require.NoError(t, err)
+	err = testutils.CreatePulse(testDB, pulse)
+	require.NoError(t, err)
+
+	jetDrop := testutils.InitJetDropDB(pulse)
+	firstRecord := testutils.InitRecordDB(jetDrop)
+	secondRecord := testutils.InitRecordDB(jetDrop)
+	err = s.SaveJetDropData(jetDrop, []models.Record{firstRecord, secondRecord}, pulse.PulseNumber)
+	require.NoError(t, err)
+
+	jetDrop = testutils.InitJetDropDB(pulse)
+	firstRecord = testutils.InitRecordDB(jetDrop)
+	secondRecord = testutils.InitRecordDB(jetDrop)
+	err = s.SaveJetDropData(jetDrop, []models.Record{firstRecord, secondRecord}, pulse.PulseNumber)
+	require.NoError(t, err)
+
+	expectedPulse := pulse
+	expectedPulse.JetDropAmount = 2
+	expectedPulse.RecordAmount = 4
+	pulseInDB := []models.Pulse{}
+	err = testDB.Find(&pulseInDB).Error
+	require.NoError(t, err)
+	require.Len(t, pulseInDB, 1)
+	require.EqualValues(t, expectedPulse, pulseInDB[0])
+}
+
 func TestStorage_SaveJetDropData_UpdateExistedRecord(t *testing.T) {
 	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
 	s := NewStorage(testDB)
