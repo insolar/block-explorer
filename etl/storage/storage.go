@@ -30,7 +30,8 @@ func NewStorage(db *gorm.DB) *Storage {
 }
 
 // SaveJetDropData saves provided jetDrop and records to db in one transaction.
-func (s *Storage) SaveJetDropData(jetDrop models.JetDrop, records []models.Record) error {
+// increase jet_drop_amount and record_amount
+func (s *Storage) SaveJetDropData(jetDrop models.JetDrop, records []models.Record, pulseNumber int64) error {
 	return s.db.Transaction(func(tx *gorm.DB) error {
 		jd := &jetDrop
 		if err := tx.Save(jd).Error; err != nil {
@@ -43,6 +44,13 @@ func (s *Storage) SaveJetDropData(jetDrop models.JetDrop, records []models.Recor
 			}
 		}
 
+		err := tx.Model(&models.Pulse{PulseNumber: pulseNumber}).
+			UpdateColumn("jet_drop_amount", gorm.Expr("jet_drop_amount + ?", 1)).
+			UpdateColumn("record_amount", gorm.Expr("record_amount + ?", len(records))).Error
+
+		if err != nil {
+			return errors.Wrap(err, "error to update pulse data")
+		}
 		return nil
 	})
 }

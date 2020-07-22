@@ -26,6 +26,8 @@ func Migrations() []*gormigrate.Migration {
 					IsComplete      bool
 					IsSequential    bool
 					Timestamp       int64
+					JetDropAmount   int64
+					RecordAmount    int64
 				}
 				type JetDrop struct {
 					PulseNumber    int64  `gorm:"primary_key;auto_increment:false"`

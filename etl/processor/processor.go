@@ -168,7 +168,7 @@ func (p *Processor) process(ctx context.Context, jd *types.JetDrop) {
 			Timestamp:           mjd.Timestamp,
 		})
 	}
-	err = p.storage.SaveJetDropData(mjd, mrs)
+	err = p.storage.SaveJetDropData(mjd, mrs, mp.PulseNumber)
 	if err != nil {
 		logger.Errorf("cannot save jetDrop data: %s. jetDrop:{jetID: %s, pulseNumber: %d}, record amount = %d\n",
 			err.Error(), mjd.JetID, mjd.PulseNumber, len(mrs))
