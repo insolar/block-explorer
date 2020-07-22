@@ -54,6 +54,7 @@ func TestRecordsWithoutObjectID(t *testing.T) {
 	c := GetHTTPClient()
 
 	t.Run("request", func(t *testing.T) {
+		t.Log("C5458 Receive request records with empty ObjectID")
 		res, err := c.JetDropRecords(t, jetDropID, nil)
 		require.NoError(t, err)
 		require.NotEmpty(t, res.Result)
@@ -66,6 +67,7 @@ func TestRecordsWithoutObjectID(t *testing.T) {
 		t.Fatalf("record with reference %v not found", request.Record.ID.String())
 	})
 	t.Run("result", func(t *testing.T) {
+		t.Log("C5459 Receive result records with empty ObjectID")
 		res, err := c.JetDropRecords(t, jetDropID, nil)
 		require.NoError(t, err)
 		require.NotEmpty(t, res.Result)
