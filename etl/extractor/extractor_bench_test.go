@@ -51,7 +51,7 @@ func BenchmarkPlatformExtractorGetJetDrops(b *testing.B) {
 		select {
 		case jd := <-jetDrops:
 			require.NotEmpty(b, jd.Records)
-		case <-time.After(time.Millisecond * 100):
+		case <-time.After(time.Second):
 			b.Fatal("chan receive timeout ")
 		}
 

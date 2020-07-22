@@ -20,6 +20,7 @@ import (
 	"github.com/insolar/block-explorer/testutils"
 	"github.com/insolar/block-explorer/testutils/clients"
 	"github.com/insolar/insolar/ledger/heavy/exporter"
+	"github.com/insolar/insolar/pulse"
 	"github.com/stretchr/testify/require"
 )
 
