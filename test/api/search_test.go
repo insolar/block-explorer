@@ -37,8 +37,13 @@ func TestSearchApi(t *testing.T) {
 	pulsesCount, recordsCount := 3, 2
 	lifeline := testutils.GenerateObjectLifeline(pulsesCount, recordsCount)
 	records := lifeline.GetAllRecords()
+
+	ts.BE.PulseClient.SetNextFinalizedPulseFunc(ts.ConMngr.Importer)
+	ts.StartBE(t)
+	defer ts.StopBE(t)
+
 	require.NoError(t, heavymock.ImportRecords(ts.ConMngr.ImporterClient, records))
-	ts.WaitRecordsCount(t, len(records)-1, 5000)
+	ts.WaitRecordsCount(t, len(records), 5000)
 	c := GetHTTPClient()
 
 	record := lifeline.GetStateRecords()[0]
