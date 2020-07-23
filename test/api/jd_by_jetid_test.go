@@ -306,7 +306,7 @@ func TestGetJetDropsByJetID_negative(t *testing.T) {
 }
 
 func TestGetJetDropsByJetID_emptyJetID(t *testing.T) {
-	t.Log("C5457 Get JetDrops by JetID = '*', receive a list containing empty and not empty GetIDs")
+	t.Log("C5457 Get JetDrops by JetID = '*', receive a list containing empty and not empty JetIDs")
 	ts := integration.NewBlockExplorerTestSetup(t).WithHTTPServer(t)
 	defer ts.Stop(t)
 
