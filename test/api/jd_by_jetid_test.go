@@ -324,10 +324,10 @@ func TestGetJetDropsByJetID_emptyJetID(t *testing.T) {
 	c := GetHTTPClient()
 
 	res, err := c.JetDropsByJetID(t, "*", nil)
-	jetIDsAmount := pulsesCount + 1
+	jetDropsAmount := pulsesCount + 1
 	require.NoError(t, err)
-	require.Len(t, res.Result, jetIDsAmount)
-	require.Equal(t, int64(jetIDsAmount), res.Total)
+	require.Len(t, res.Result, jetDropsAmount)
+	require.Equal(t, int64(jetDropsAmount), res.Total)
 	for _, jd := range res.Result {
 		if jd.JetId != "*" {
 			require.Equal(t, converter.JetIDToString(recordWithNotEmptyJetID.Record.JetID), jd.JetId)
