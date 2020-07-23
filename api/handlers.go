@@ -289,12 +289,7 @@ func (s *Server) Pulses(ctx echo.Context, params server.PulsesParams) error {
 
 	result := []server.Pulse{}
 	for _, p := range pulses {
-		jetDrops, records, err := s.storage.GetAmounts(p.PulseNumber)
-		if err != nil {
-			s.logger.Error(err)
-			return ctx.JSON(http.StatusInternalServerError, struct{}{})
-		}
-		result = append(result, PulseToAPI(p, jetDrops, records))
+		result = append(result, PulseToAPI(p))
 	}
 	cnt := int64(count)
 	return ctx.JSON(http.StatusOK, server.PulsesResponse{
@@ -304,7 +299,7 @@ func (s *Server) Pulses(ctx echo.Context, params server.PulsesParams) error {
 }
 
 func (s *Server) Pulse(ctx echo.Context, pulseNumber server.PulseNumberPath) error {
-	pulse, jetDropAmount, recordAmount, err := s.storage.GetPulse(int64(pulseNumber))
+	pulse, err := s.storage.GetPulse(int64(pulseNumber))
 	if err != nil {
 		if gorm.IsRecordNotFoundError(err) {
 			return ctx.JSON(http.StatusNotFound, struct{}{})
@@ -314,7 +309,7 @@ func (s *Server) Pulse(ctx echo.Context, pulseNumber server.PulseNumberPath) err
 		return ctx.JSON(http.StatusInternalServerError, struct{}{})
 	}
 
-	pulseResponse := PulseToAPI(pulse, jetDropAmount, recordAmount)
+	pulseResponse := PulseToAPI(pulse)
 	return ctx.JSON(http.StatusOK, pulseResponse)
 }
 

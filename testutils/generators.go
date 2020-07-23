@@ -14,6 +14,7 @@ import (
 	"time"
 
 	fuzz "github.com/google/gofuzz"
+	"github.com/insolar/block-explorer/etl/interfaces"
 	"github.com/insolar/block-explorer/etl/models"
 	"github.com/insolar/insolar/insolar"
 	"github.com/insolar/insolar/insolar/gen"
@@ -21,6 +22,8 @@ import (
 	"github.com/insolar/insolar/ledger/heavy/exporter"
 	"github.com/stretchr/testify/require"
 )
+
+var letterRunes = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
 func init() {
 	rand.Seed(time.Now().UnixNano())
@@ -36,6 +39,7 @@ func GenerateRequestRecord(pulse insolar.PulseNumber, objectID insolar.ID) *expo
 	r.Record.Virtual.Union = &insrecord.Virtual_IncomingRequest{
 		IncomingRequest: &insrecord.IncomingRequest{
 			Object: reference,
+			Method: RandomString(20),
 		},
 	}
 	return r
@@ -81,6 +85,7 @@ func GenerateVirtualResultRecord(pulse insolar.PulseNumber, objectID, requestID 
 	r.Record.Virtual.Union = &insrecord.Virtual_Result{
 		Result: &insrecord.Result{
 			Request: *requestRerence,
+			Object:  gen.ID(),
 		},
 	}
 	return r
@@ -359,6 +364,15 @@ func GenerateRandBytes() []byte {
 	return hash
 }
 
+// Generate random string with specified length
+func RandomString(n int) string {
+	b := make([]rune, n)
+	for i := range b {
+		b[i] = letterRunes[rand.Intn(len(letterRunes))]
+	}
+	return string(b)
+}
+
 // GenerateJetDropsWithSplit returns a jetdrops with splited by depth in different pulse
 func GenerateJetDropsWithSplit(t *testing.T, pulseCount, jDCount int, depth int) ([]models.JetDrop, []models.Pulse) {
 	pulses := make([]models.Pulse, pulseCount)
@@ -383,6 +397,19 @@ func GenerateJetDropsWithSplit(t *testing.T, pulseCount, jDCount int, depth int)
 	}
 
 	return drops, pulses
+}
+
+// InitJetDropWithRecords create new JetDrop, generate random records, save SaveJetDropData
+func InitJetDropWithRecords(t *testing.T, s interfaces.StorageSetter, recordAmount int, pulse models.Pulse) models.JetDrop {
+	jetDrop := InitJetDropDB(pulse)
+	jetDrop.RecordAmount = recordAmount
+	record := make([]models.Record, recordAmount)
+	for i := 0; i < recordAmount; i++ {
+		record[i] = InitRecordDB(jetDrop)
+	}
+	err := s.SaveJetDropData(jetDrop, record, pulse.PulseNumber)
+	require.NoError(t, err)
+	return jetDrop
 }
 
 // createChildren is the recursion function which prepare jetdrops where jetID will be splited
