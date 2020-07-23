@@ -104,7 +104,7 @@ func TestShutDownPlugin(t *testing.T) {
 	// no need to wait until the connection return error
 	go func() {
 		// try to do save and for getting error
-		err = db.Save(&user).Error
+		err := db.Save(&user).Error
 		require.Error(t, err)
 	}()
 
