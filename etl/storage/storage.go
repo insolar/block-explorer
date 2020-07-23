@@ -255,20 +255,6 @@ func (s *Storage) GetPulse(pulseNumber int64) (models.Pulse, error) {
 	return pulse, err
 }
 
-// GetAmounts return amount of jetDrops and records at provided pulse.
-func (s *Storage) GetAmounts(pulseNumber int64) (int64, int64, error) {
-	res := struct {
-		JetDrops int
-		Records  int
-	}{}
-	err := s.db.Model(models.JetDrop{}).Select("count(*) as jet_drops, sum(record_amount) as records").Where("pulse_number = ?", pulseNumber).Scan(&res).Error
-	if err != nil {
-		return 0, 0, errors.Wrapf(err, "error while select count of records from db for pulse number %d", pulseNumber)
-	}
-
-	return int64(res.JetDrops), int64(res.Records), err
-}
-
 // GetPulses returns pulses from db.
 func (s *Storage) GetPulses(fromPulse *int64, timestampLte, timestampGte *int64, limit, offset int) ([]models.Pulse, int, error) {
 	query := s.db.Model(&models.Pulse{})

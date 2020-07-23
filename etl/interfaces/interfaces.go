@@ -102,8 +102,6 @@ type StorageAPIFetcher interface {
 	GetRecord(ref models.Reference) (models.Record, error)
 	// GetPulse returns pulse with provided pulse number from db.
 	GetPulse(pulseNumber int64) (models.Pulse, error)
-	// GetAmounts return amount of jetDrops and records at provided pulse.
-	GetAmounts(pulseNumber int64) (jdAmount int64, rAmount int64, err error)
 	// GetPulse returns pulses from db.
 	GetPulses(fromPulse *int64, timestampLte, timestampGte *int64, limit, offset int) ([]models.Pulse, int, error)
 	// GetJetDropsWithParams returns jetDrops for provided pulse with limit and offset.
