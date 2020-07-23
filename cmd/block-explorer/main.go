@@ -13,9 +13,10 @@ import (
 	"syscall"
 
 	"github.com/insolar/block-explorer/api"
+	"github.com/insolar/block-explorer/cmd/block-explorer/common"
 	"github.com/insolar/block-explorer/etl/connection"
 	"github.com/insolar/block-explorer/etl/controller"
-	"github.com/insolar/block-explorer/etl/dbconn/reconnect"
+	"github.com/insolar/block-explorer/etl/dbconn/plugins"
 	"github.com/insolar/block-explorer/etl/extractor"
 	"github.com/insolar/block-explorer/etl/processor"
 	"github.com/insolar/block-explorer/etl/transformer"
@@ -86,8 +87,7 @@ func main() {
 		}
 	}()
 
-	connectFn := dbconn.ConnectFn(cfg.DB)
-	db, err := connectFn()
+	db, err := dbconn.Connect(cfg.DB)
 	if err != nil {
 		logger.Fatalf("Error while connecting to database: %s", err.Error())
 	}
@@ -98,7 +98,7 @@ func main() {
 		}
 	}()
 
-	r := reconnect.New(cfg.DB.Reconnect, connectFn)
+	r := plugins.NewDefaultShutdownPlugin()
 	r.Apply(db)
 
 	storage := storage.NewStorage(db)
@@ -135,7 +135,12 @@ func main() {
 
 func graceful(ctx context.Context) {
 	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)
-	<-stop
 	logger := belogger.FromContext(ctx)
 	logger.Infof("gracefully stopping...")
+	select {
+	case <-common.StopChannel:
+		logger.Info("stopping by channel")
+	case <-stop:
+		logger.Info("stopping by signal")
+	}
 }

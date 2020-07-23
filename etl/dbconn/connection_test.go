@@ -9,15 +9,16 @@ package dbconn
 
 import (
 	"fmt"
+	"sync/atomic"
 	"testing"
 	"time"
 
-	"github.com/insolar/block-explorer/etl/dbconn/reconnect"
+	"github.com/insolar/block-explorer/cmd/block-explorer/common"
+	"github.com/insolar/block-explorer/configuration"
+	"github.com/insolar/block-explorer/etl/dbconn/plugins"
+	"github.com/insolar/block-explorer/testutils"
 	"github.com/jinzhu/gorm"
 	"github.com/stretchr/testify/require"
-
-	"github.com/insolar/block-explorer/configuration"
-	"github.com/insolar/block-explorer/testutils"
 )
 
 func TestConnect(t *testing.T) {
@@ -49,7 +50,7 @@ func TestConnect_WrongURL(t *testing.T) {
 	require.Nil(t, db)
 }
 
-func TestReconnect(t *testing.T) {
+func TestShutDownPlugin(t *testing.T) {
 	dbName := "test_db"
 	dbPassword := "secret"
 	hostPort, pool, resource, poolCleaner := testutils.RunDBInDockerWithPortBindings(dbName, dbPassword)
@@ -57,43 +58,75 @@ func TestReconnect(t *testing.T) {
 	defer poolCleaner()
 
 	cfg := configuration.DB{
-		URL:          fmt.Sprintf("postgres://postgres:%s@localhost:%d/%s?sslmode=disable", dbPassword, hostPort, dbName),
-		MaxOpenConns: 100,
-		Reconnect: configuration.Reconnect{
-			Attempts: 100,
-			Interval: 3 * time.Second,
-		},
+		URL:             fmt.Sprintf("postgres://postgres:%s@localhost:%d/%s?sslmode=disable", dbPassword, hostPort, dbName),
+		MaxOpenConns:    100,
+		ConnMaxLifetime: time.Millisecond * 100,
 	}
 	var db *gorm.DB
-	connectFn := ConnectFn(cfg)
 	err := pool.Retry(func() error {
 		var err error
-		db, err = connectFn()
+		db, err = Connect(cfg)
 		return err
 	})
 	require.NoError(t, err)
 	require.NotNil(t, db)
 
-	r := reconnect.New(cfg.Reconnect, connectFn)
+	r := plugins.NewDefaultShutdownPlugin()
 	r.Apply(db)
 
-	// try to do select and it working
-	err = db.Raw("select 1").Error
-	require.NoError(t, db.Raw("select 1").Error)
+	type User struct {
+		ID   uint
+		Name string
+	}
+
+	db.DropTableIfExists(new(User))
+	if err := db.AutoMigrate(new(User)).Error; err != nil {
+		t.Error(err)
+	}
+
+	user := User{ID: 1, Name: "test"}
+
+	// try to save and it's working
+	err = db.Save(&User{ID: 100, Name: "test user"}).Error
+	require.NoError(t, err)
+
+	var called int32 = 0
+	db.Callback().Update().Register("TestShutDownPlugin", func(scope *gorm.Scope) {
+		called = called + 1
+		atomic.CompareAndSwapInt32(&called, 0, 1)
+	})
 
 	err = pool.Client.StopContainer(containerID, 0)
 	require.NoError(t, err)
 	_, err = pool.Client.WaitContainer(containerID)
 	require.NoError(t, err)
 
-	// try to do select and for getting error
-	err = db.Raw("select 1").Error
-	require.Nil(t, db.Raw("select 1").Error)
+	// no need to wait until the connection return error
+	go func() {
+		// try to do save and for getting error
+		err = db.Save(&user).Error
+		require.Error(t, err)
+	}()
+
+	select {
+	case <-common.StopChannel:
+		// error happened
+	case <-time.After(time.Millisecond * 100):
+		t.Fatal("chan receive timeout. Stop signal was not received")
+	}
+
+	require.Equal(t, atomic.LoadInt32(&called), int32(1), "plugin should be called once")
 
 	err = pool.Client.StartContainer(containerID, nil)
 	require.NoError(t, err)
 
-	// try to do select
-	err = db.Raw("select 1").Error
-	require.NoError(t, db.Raw("select 1").Error)
+	// wait for container
+	err = pool.Retry(func() error {
+		return db.DB().Ping()
+	})
+	require.NoError(t, err)
+
+	// try to exec the query successfully
+	err = db.Save(&user).Error
+	require.NoError(t, err)
 }
