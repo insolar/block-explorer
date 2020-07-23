@@ -349,13 +349,20 @@ func TestPulse_PulseWithRecords(t *testing.T) {
 	require.NoError(t, err)
 	err = testutils.CreatePulse(testDB, pulse)
 	require.NoError(t, err)
-	jetDrop1 := testutils.InitJetDropDB(pulse)
-	jetDrop1.RecordAmount = 10
-	err = testutils.CreateJetDrop(testDB, jetDrop1)
-	jetDrop2 := testutils.InitJetDropDB(pulse)
-	jetDrop2.RecordAmount = 25
-	err = testutils.CreateJetDrop(testDB, jetDrop2)
-	require.NoError(t, err)
+	s := storage.NewStorage(testDB)
+
+	fnCreateData := func(t *testing.T, recordAmount int, pulse models.Pulse) {
+		jetDrop := testutils.InitJetDropDB(pulse)
+		record := make([]models.Record, recordAmount)
+		for i := 0; i < recordAmount; i++ {
+			record[i] = testutils.InitRecordDB(jetDrop)
+		}
+		err := s.SaveJetDropData(jetDrop, record, pulse.PulseNumber)
+		require.NoError(t, err)
+	}
+
+	fnCreateData(t, 5, pulse)
+	fnCreateData(t, 1, pulse)
 
 	// request pulse for pulseNumber
 	resp, err := http.Get("http://" + apihost + fmt.Sprintf("/api/v1/pulses/%d", pulse.PulseNumber))
@@ -370,7 +377,7 @@ func TestPulse_PulseWithRecords(t *testing.T) {
 	require.EqualValues(t, pulse.PulseNumber, *received.PulseNumber)
 	require.False(t, *received.IsComplete)
 	require.EqualValues(t, 2, *received.JetDropAmount)
-	require.EqualValues(t, jetDrop1.RecordAmount+jetDrop2.RecordAmount, *received.RecordAmount)
+	require.EqualValues(t, 6, *received.RecordAmount)
 }
 
 func TestPulse_Pulse_NotExist(t *testing.T) {
@@ -431,27 +438,34 @@ func TestPulses_HappyPath(t *testing.T) {
 func TestPulses_PulsesWithRecords(t *testing.T) {
 	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
 
+	s := storage.NewStorage(testDB)
+	fnCreateData := func(t *testing.T, recordAmount int, pulse models.Pulse) models.JetDrop {
+		jetDrop := testutils.InitJetDropDB(pulse)
+		jetDrop.RecordAmount = recordAmount
+		record := make([]models.Record, recordAmount)
+		for i := 0; i < recordAmount; i++ {
+			record[i] = testutils.InitRecordDB(jetDrop)
+		}
+		err := s.SaveJetDropData(jetDrop, record, pulse.PulseNumber)
+		require.NoError(t, err)
+		return jetDrop
+	}
+
 	// insert data
 	pulse, err := testutils.InitPulseDB()
 	require.NoError(t, err)
 	err = testutils.CreatePulse(testDB, pulse)
 	require.NoError(t, err)
-	jetDrop1 := testutils.InitJetDropDB(pulse)
-	jetDrop1.RecordAmount = 10
-	err = testutils.CreateJetDrop(testDB, jetDrop1)
-	jetDrop2 := testutils.InitJetDropDB(pulse)
-	jetDrop2.RecordAmount = 25
-	err = testutils.CreateJetDrop(testDB, jetDrop2)
-	require.NoError(t, err)
+
+	jetDrop1 := fnCreateData(t, 6, pulse)
+	jetDrop2 := fnCreateData(t, 2, pulse)
 
 	secondPulse, err := testutils.InitPulseDB()
 	secondPulse.PulseNumber = pulse.PulseNumber + 10
 	require.NoError(t, err)
 	err = testutils.CreatePulse(testDB, secondPulse)
 	require.NoError(t, err)
-	jetDrop3 := testutils.InitJetDropDB(secondPulse)
-	jetDrop3.RecordAmount = 6
-	err = testutils.CreateJetDrop(testDB, jetDrop3)
+	jetDrop3 := fnCreateData(t, 3, secondPulse)
 
 	// request pulses
 	resp, err := http.Get("http://" + apihost + "/api/v1/pulses")

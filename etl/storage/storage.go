@@ -243,21 +243,16 @@ func (s *Storage) GetLifeline(objRef []byte, fromIndex *string, pulseNumberLt, p
 }
 
 // GetPulse returns pulse with provided pulse number from db.
-func (s *Storage) GetPulse(pulseNumber int64) (models.Pulse, int64, int64, error) {
+func (s *Storage) GetPulse(pulseNumber int64) (models.Pulse, error) {
 	var pulse models.Pulse
 	err := s.db.Where("pulse_number = ?", pulseNumber).First(&pulse).Error
 	if err != nil {
-		return pulse, 0, 0, err
+		return pulse, err
 	}
 
 	pulse = s.updateNextPulse(pulse)
 
-	jetDrops, records, err := s.GetAmounts(pulseNumber)
-	if err != nil {
-		return pulse, 0, 0, errors.Wrapf(err, "error while select count of records from db for pulse number %d", pulseNumber)
-	}
-
-	return pulse, jetDrops, records, err
+	return pulse, err
 }
 
 // GetAmounts return amount of jetDrops and records at provided pulse.

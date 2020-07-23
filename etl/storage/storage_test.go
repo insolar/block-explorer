@@ -940,11 +940,9 @@ func TestStorage_GetPulse(t *testing.T) {
 	err = testutils.CreatePulse(testDB, notExpectedPulse)
 	require.NoError(t, err)
 
-	pulse, jetDropAmount, recordAmount, err := s.GetPulse(expectedPulse.PulseNumber)
+	pulse, err := s.GetPulse(expectedPulse.PulseNumber)
 	require.NoError(t, err)
 	require.Equal(t, expectedPulse, pulse)
-	require.EqualValues(t, 0, jetDropAmount)
-	require.EqualValues(t, 0, recordAmount)
 }
 
 func TestStorage_GetPulse_PulseWithDifferentNext(t *testing.T) {
@@ -962,41 +960,45 @@ func TestStorage_GetPulse_PulseWithDifferentNext(t *testing.T) {
 	err = testutils.CreatePulse(testDB, nextPulse)
 	require.NoError(t, err)
 
-	pulse, jetDropAmount, recordAmount, err := s.GetPulse(expectedPulse.PulseNumber)
+	pulse, err := s.GetPulse(expectedPulse.PulseNumber)
 	require.NoError(t, err)
 	expectedPulse.NextPulseNumber = nextPulse.PulseNumber
 	require.Equal(t, expectedPulse, pulse)
-	require.EqualValues(t, 0, jetDropAmount)
-	require.EqualValues(t, 0, recordAmount)
 }
 
 func TestStorage_GetPulse_PulseWithRecords(t *testing.T) {
 	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
 	s := NewStorage(testDB)
 
+	fnCreateData := func(t *testing.T, recordAmount int, pulse models.Pulse) {
+		jetDrop := testutils.InitJetDropDB(pulse)
+		record := make([]models.Record, recordAmount)
+		for i := 0; i < recordAmount; i++ {
+			record[i] = testutils.InitRecordDB(jetDrop)
+		}
+		err := s.SaveJetDropData(jetDrop, record, pulse.PulseNumber)
+		require.NoError(t, err)
+	}
+
 	expectedPulse, err := testutils.InitPulseDB()
 	require.NoError(t, err)
 	err = testutils.CreatePulse(testDB, expectedPulse)
 	require.NoError(t, err)
-	jetDrop1 := testutils.InitJetDropDB(expectedPulse)
-	jetDrop1.RecordAmount = 10
-	err = testutils.CreateJetDrop(testDB, jetDrop1)
-	jetDrop2 := testutils.InitJetDropDB(expectedPulse)
-	jetDrop2.RecordAmount = 25
-	err = testutils.CreateJetDrop(testDB, jetDrop2)
-	require.NoError(t, err)
 
-	pulse, jetDropAmount, recordAmount, err := s.GetPulse(expectedPulse.PulseNumber)
+	fnCreateData(t, 25, expectedPulse)
+	fnCreateData(t, 15, expectedPulse)
+
+	expectedPulse.JetDropAmount = 2
+	expectedPulse.RecordAmount = 40
+	pulse, err := s.GetPulse(expectedPulse.PulseNumber)
 	require.NoError(t, err)
 	require.Equal(t, expectedPulse, pulse)
-	require.EqualValues(t, 2, jetDropAmount)
-	require.EqualValues(t, jetDrop1.RecordAmount+jetDrop2.RecordAmount, recordAmount)
 }
 
 func TestStorage_GetPulse_NotExist(t *testing.T) {
 	s := NewStorage(testDB)
 
-	_, _, _, err := s.GetPulse(int64(gen.PulseNumber()))
+	_, err := s.GetPulse(int64(gen.PulseNumber()))
 	require.Error(t, err)
 	require.True(t, gorm.IsRecordNotFoundError(err))
 }
