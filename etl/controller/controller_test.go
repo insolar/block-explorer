@@ -62,6 +62,28 @@ func TestNewController_OneNotCompletePulse(t *testing.T) {
 	require.Equal(t, uint64(1), sm.GetJetDropsAfterCounter())
 }
 
+func TestNewController_OneNotCompletePulse_NoJets(t *testing.T) {
+	extractor := mock.NewJetDropsExtractorMock(t)
+
+	pulseNumber := int64(1)
+	expectedData := map[types.Pulse]map[string]struct{}{{PulseNo: pulseNumber}: {}}
+
+	sm := mock.NewStorageMock(t)
+	sm.GetIncompletePulsesMock.Return([]models.Pulse{{PulseNumber: pulseNumber}}, nil)
+	sm.GetJetDropsMock.Return([]models.JetDrop{}, nil)
+	sm.GetSequentialPulseMock.Return(models.Pulse{}, nil)
+
+	c, err := NewController(cfg, extractor, sm)
+	require.NoError(t, err)
+	require.NotNil(t, c)
+	require.NotNil(t, c.missedDataManager)
+
+	require.Equal(t, expectedData, c.jetDropRegister)
+
+	require.Equal(t, uint64(1), sm.GetIncompletePulsesAfterCounter())
+	require.Equal(t, uint64(1), sm.GetJetDropsAfterCounter())
+}
+
 func TestNewController_SeveralNotCompletePulses(t *testing.T) {
 	extractor := mock.NewJetDropsExtractorMock(t)
 
