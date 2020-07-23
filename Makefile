@@ -5,7 +5,7 @@ export GOPATH ?= $(shell go env GOPATH)
 export GO111MODULE ?= on
 export GOSUMDB ?= sum.golang.org
 export GOFLAGS ?= -mod=mod
-export GOPROXY=https://proxy.golang.org,https://goproxy.io,direct
+export GOPROXY=https://proxy.golang.org,https://goproxy.io,https://gocenter.io,direct
 
 #.DEFAULT_GOAL := all
 
