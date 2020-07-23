@@ -20,20 +20,18 @@ import (
 )
 
 type BlockExplorerTestSuite struct {
-	ConMngr connectionmanager.ConnectionManager
+	ConMngr *connectionmanager.ConnectionManager
 	BE      betest.BlockExplorerTestSetUp
 }
 
 func NewBlockExplorerTestSetup(t testing.TB) *BlockExplorerTestSuite {
-	c := connectionmanager.ConnectionManager{}
+	c := &connectionmanager.ConnectionManager{}
 	c.Start(t)
 	c.StartDB(t)
 	be := betest.NewBlockExplorer(c.ExporterClient, c.DB)
-	err := be.Start()
-	require.NoError(t, err)
 	return &BlockExplorerTestSuite{
-		c,
-		be,
+		ConMngr: c,
+		BE:      be,
 	}
 }
 
@@ -47,11 +45,19 @@ func (a *BlockExplorerTestSuite) Start(t testing.TB) {
 }
 
 func (a *BlockExplorerTestSuite) Stop(t testing.TB) {
+	a.ConMngr.Stop()
+}
+
+func (a *BlockExplorerTestSuite) StartBE(t *testing.T) {
+	err := a.BE.Start()
+	require.NoError(t, err)
+}
+
+func (a *BlockExplorerTestSuite) StopBE(t *testing.T) {
 	err := a.BE.Stop()
 	require.NoError(t, err)
 	// TODO remove sleep after resolving https://insolar.atlassian.net/browse/PENV-343
 	time.Sleep(time.Second * 1)
-	a.ConMngr.Stop()
 }
 
 func (a *BlockExplorerTestSuite) WithHTTPServer(t testing.TB) *BlockExplorerTestSuite {

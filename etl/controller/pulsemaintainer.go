@@ -106,14 +106,16 @@ func (c *Controller) pulseSequence(ctx context.Context) {
 	}
 }
 
-func pulseIsComplete(p types.Pulse, d []string) bool { // nolint
+func pulseIsComplete(p types.Pulse, d map[string]struct{}) bool { // nolint
 	if len(d) == 0 {
 		return false
 	}
 
 	// root
-	if len(d) == 1 && d[0] == "" {
-		return true
+	if len(d) == 1 {
+		if _, ok := d[""]; ok {
+			return true
+		}
 	}
 
 	// inverts last bool symbol in string
@@ -129,21 +131,15 @@ func pulseIsComplete(p types.Pulse, d []string) bool { // nolint
 		return s[:len(s)-1] + invertedSymbol
 	}
 
-	// making map for easy search
-	m := make(map[string]struct{}, len(d))
-	for _, s := range d {
-		m[s] = struct{}{}
-	}
-
 Main:
-	for jetID := range m {
+	for jetID := range d {
 		jetIDInvertedLast := invertLastSymbol(jetID)
-		if _, ok := m[jetIDInvertedLast]; ok {
+		if _, ok := d[jetIDInvertedLast]; ok {
 			// found the opposite jet drop
 			continue
 		} else {
 			// not found, let's find any siblings
-			for _, jetID2 := range d {
+			for jetID2 := range d {
 				if strings.Index(jetID2, jetIDInvertedLast) == 0 {
 					// found sibling
 					continue Main
@@ -156,7 +152,7 @@ Main:
 
 	// let's search all possible opposite parents or their siblings
 	checkedJetIDs := make(map[string]struct{})
-	for jetID := range m {
+	for jetID := range d {
 	ParentIterator:
 		for i := len(jetID) - 1; i >= 1; i-- {
 			jetIDParentInverted := invertLastSymbol(jetID[:i])
@@ -164,7 +160,7 @@ Main:
 				// found in already checked
 				continue
 			} else {
-				for _, jetID2 := range d {
+				for jetID2 := range d {
 					if strings.Index(jetID2, jetIDParentInverted) == 0 {
 						// found sibling or opposite jetDropId
 						checkedJetIDs[jetIDParentInverted] = struct{}{}

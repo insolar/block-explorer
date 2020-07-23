@@ -12,21 +12,22 @@ import (
 	"io"
 	"testing"
 
-	"github.com/insolar/block-explorer/instrumentation/converter"
-	"github.com/insolar/insolar/ledger/heavy/exporter"
-	"github.com/stretchr/testify/require"
-
 	"github.com/insolar/block-explorer/etl/models"
 	"github.com/insolar/block-explorer/etl/transformer"
 	"github.com/insolar/block-explorer/etl/types"
+	"github.com/insolar/block-explorer/instrumentation/converter"
 	"github.com/insolar/block-explorer/test/heavymock"
 	"github.com/insolar/block-explorer/testutils"
+	"github.com/insolar/block-explorer/testutils/clients"
+	"github.com/insolar/insolar/ledger/heavy/exporter"
+	"github.com/stretchr/testify/require"
 )
 
 func TestIntegrationWithDb_GetRecords(t *testing.T) {
 	t.Log("C4991 Process records and get saved records by pulse number from database")
 	ts := NewBlockExplorerTestSetup(t)
 	defer ts.Stop(t)
+	records := make([]*exporter.Record, 0)
 
 	pulsesNumber := 10
 	recordsInPulse := 1
@@ -34,7 +35,8 @@ func TestIntegrationWithDb_GetRecords(t *testing.T) {
 	stream, err := ts.ConMngr.ImporterClient.Import(context.Background())
 	require.NoError(t, err)
 
-	records := make([]*exporter.Record, 0)
+	ts.BE.PulseClient.SetNextFinalizedPulseFunc(ts.ConMngr.Importer)
+
 	for i := 0; i < pulsesNumber; i++ {
 		record, _ := recordsWithDifferencePulses()
 		records = append(records, record)
@@ -52,10 +54,16 @@ func TestIntegrationWithDb_GetRecords(t *testing.T) {
 
 	jetDrops := make([]types.PlatformJetDrops, 0)
 	for _, r := range records {
-		jetDrop := types.PlatformJetDrops{Records: []*exporter.Record{r}}
+		p, err := clients.GetFullPulse(uint32(r.Record.ID.Pulse()))
+		require.NoError(t, err)
+		jetDrop := types.PlatformJetDrops{Pulse: p,
+			Records: []*exporter.Record{r}}
 		jetDrops = append(jetDrops, jetDrop)
 	}
 	require.Len(t, jetDrops, pulsesNumber)
+
+	ts.StartBE(t)
+	defer ts.StopBE(t)
 
 	refs := make([]types.Reference, 0)
 	ctx := context.Background()
@@ -77,7 +85,7 @@ func TestIntegrationWithDb_GetRecords(t *testing.T) {
 
 	// last record with the biggest pulse number won't be processed, so we do not expect this record in DB
 	expRecordsCount := recordsInPulse * (pulsesNumber - 1)
-	ts.WaitRecordsCount(t, expRecordsCount, 6000)
+	ts.WaitRecordsCount(t, recordsInPulse*pulsesNumber, 6000)
 
 	for _, ref := range refs[:expRecordsCount] {
 		modelRef := models.ReferenceFromTypes(ref)
@@ -107,11 +115,15 @@ func TestIntegrationWithDb_GetJetDrops(t *testing.T) {
 		pulseNumbers[int64(r.Record.ID.Pulse())] = true
 	}
 
+	ts.BE.PulseClient.SetNextFinalizedPulseFunc(ts.ConMngr.Importer)
+
 	err := heavymock.ImportRecords(ts.ConMngr.ImporterClient, expRecords)
 	require.NoError(t, err)
 
-	// last records with the biggest pulse number won't be processed, so we do not expect this record in DB
-	ts.WaitRecordsCount(t, len(expRecords)-recordsCount, 6000)
+	ts.StartBE(t)
+	defer ts.StopBE(t)
+
+	ts.WaitRecordsCount(t, len(expRecords), 6000)
 
 	var jetDropsDB []models.JetDrop
 	for pulse, _ := range pulseNumbers {
@@ -120,7 +132,7 @@ func TestIntegrationWithDb_GetJetDrops(t *testing.T) {
 		jetDropsDB = append(jetDropsDB, jd...)
 	}
 
-	require.Len(t, jetDropsDB, 3, "jetDrops count in db not as expected")
+	require.Len(t, jetDropsDB, recordsCount*pulses, "jetDrops count in db not as expected")
 
 	prefixFirst := converter.JetIDToString(expRecordsJet1[0].Record.JetID)
 	prefixSecond := converter.JetIDToString(expRecordsJet1[1].Record.JetID)

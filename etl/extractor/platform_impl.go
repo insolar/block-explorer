@@ -8,206 +8,82 @@ package extractor
 import (
 	"context"
 	"io"
-	"math"
+	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/insolar/block-explorer/etl/interfaces"
 	"github.com/insolar/block-explorer/etl/types"
 	"github.com/insolar/block-explorer/instrumentation/belogger"
 	"github.com/insolar/insolar/insolar"
+	"github.com/insolar/insolar/insolar/pulse"
 	"github.com/insolar/insolar/ledger/heavy/exporter"
-	"github.com/pkg/errors"
 )
 
-const pulseDelta = 10
-
 type PlatformExtractor struct {
-	stopSignal     chan bool
 	hasStarted     bool
 	startStopMutex *sync.Mutex
+	workers        int32
+	maxWorkers     int32
 
-	pulseExtractor       interfaces.PulseExtractor
-	pulseExtractAttempts int
+	pulseExtractor interfaces.PulseExtractor
 
 	client           exporter.RecordExporterClient
 	request          *exporter.GetRecords
 	mainJetDropsChan chan *types.PlatformJetDrops
+	cancel           context.CancelFunc
+
+	batchSize                                 uint32
+	continuousPulseRetrievingHalfPulseSeconds uint32
 }
 
-func NewPlatformExtractor(batchSize uint32, pulseExtractor interfaces.PulseExtractor, exporterClient exporter.RecordExporterClient) *PlatformExtractor {
+func NewPlatformExtractor(batchSize uint32, continuousPulseRetrievingHalfPulseSeconds uint32, maxWorkers int32,
+	pulseExtractor interfaces.PulseExtractor, exporterClient exporter.RecordExporterClient) *PlatformExtractor {
 	request := &exporter.GetRecords{Count: batchSize}
 	return &PlatformExtractor{
-		stopSignal:       make(chan bool, 1),
 		startStopMutex:   &sync.Mutex{},
 		client:           exporterClient,
 		request:          request,
 		mainJetDropsChan: make(chan *types.PlatformJetDrops),
 
-		pulseExtractor:       pulseExtractor,
-		pulseExtractAttempts: 50,
+		pulseExtractor: pulseExtractor,
+		batchSize:      batchSize,
+		continuousPulseRetrievingHalfPulseSeconds: continuousPulseRetrievingHalfPulseSeconds,
+		maxWorkers: maxWorkers,
 	}
 }
 
-func (m *PlatformExtractor) GetJetDrops(ctx context.Context) <-chan *types.PlatformJetDrops {
-	return m.mainJetDropsChan
+func (e *PlatformExtractor) GetJetDrops(ctx context.Context) <-chan *types.PlatformJetDrops {
+	return e.mainJetDropsChan
 }
 
-func (m *PlatformExtractor) LoadJetDrops(ctx context.Context, fromPulseNumber int64, toPulseNumber int64) error {
-	if fromPulseNumber < 0 {
-		return errors.New("fromPulseNumber cannot be negative")
-	}
-	if toPulseNumber < 1 {
-		return errors.New("toPulseNumber cannot be less than 1")
-	}
-	if fromPulseNumber > toPulseNumber {
-		return errors.New("fromPulseNumber cannot be greater than toPulseNumber")
-	}
-
-	request := &exporter.GetRecords{
-		Count:        m.request.Count,
-		PulseNumber:  insolar.PulseNumber(fromPulseNumber),
-		RecordNumber: 0,
-	}
-	m.getJetDrops(ctx, request, fromPulseNumber, toPulseNumber, true)
+func (e *PlatformExtractor) LoadJetDrops(ctx context.Context, fromPulseNumber int64, toPulseNumber int64) error {
+	e.retrievePulses(ctx, fromPulseNumber, toPulseNumber)
 	return nil
 }
 
-func (m *PlatformExtractor) getJetDrops(ctx context.Context, request *exporter.GetRecords, fromPulseNumber int64, toPulseNumber int64, shouldReload bool) {
-	unsignedToPulseNumber := uint32(toPulseNumber)
-
-	client := m.client
-	lastPulseNumber := uint32(fromPulseNumber)
-	receivedPulseNumber := uint32(0)
-
-	go func() {
-		logger := belogger.FromContext(ctx)
-		// need to collect all records from pulse
-		jetDrops := new(types.PlatformJetDrops)
-		for {
-			if m.needStop() {
-				return
-			}
-
-			var log = logger.WithField("request_pulse_number", request.PulseNumber)
-			log.Debugf("export data for pulseNumber:%d, recordNumber:%d", request.PulseNumber, request.RecordNumber)
-			stream, err := client.Export(ctx, request)
-
-			if err != nil {
-				logGRPCError(ctx, err)
-				continue
-			}
-
-			// Get records from the stream
-			for {
-				if m.needStop() {
-					closeStream(ctx, stream)
-					return
-				}
-
-				resp, err := stream.Recv()
-				if yes := isEOF(ctx, err); yes {
-					// that means we have received all records in the batchSize
-					break
-				}
-				logIfErrorReceived(ctx, err, request)
-
-				if resp.ShouldIterateFrom != nil {
-					if receivedPulseNumber == resp.ShouldIterateFrom.AsUint32() {
-						log.Warnf("no data in the pulse. waiting for pulse will be changed. sleep %v", pulseDelta)
-						time.Sleep(time.Second * pulseDelta)
-					}
-					// if we have received all data for topSyncPulse and the pulse didn't change yet, we need to continue
-					// when it happened it means that we need to request again without resetting the pulse number
-					if lastPulseNumber == receivedPulseNumber {
-						// wait a bit to prevent multiple callings
-						time.Sleep(time.Second)
-						continue
-					}
-					request.PulseNumber = *resp.ShouldIterateFrom
-					request.RecordNumber = 0
-					receivedPulseNumber = request.PulseNumber.AsUint32()
-					log.Debugf("jump to pulse number: %v", receivedPulseNumber)
-					break
-				}
-
-				// save the last pulse for future requests
-				request.RecordNumber = resp.RecordNumber
-				request.PulseNumber = resp.Record.ID.Pulse()
-
-				receivedPulseNumber = request.PulseNumber.AsUint32()
-
-				// collect all records by PulseNumber
-				if receivedPulseNumber == lastPulseNumber {
-					jetDrops.Records = append(jetDrops.Records, resp)
-					continue
-				}
-
-				lastPulseNumber = receivedPulseNumber
-
-				// sending data to channel
-				m.mainJetDropsChan <- jetDrops
-				// zeroing variable which collecting jetDrops
-				jetDrops = new(types.PlatformJetDrops)
-				// don't forget to save the last data
-				jetDrops.Records = append(jetDrops.Records, resp)
-
-				if shouldReload && receivedPulseNumber > unsignedToPulseNumber {
-					// now we have received all needed data
-					return
-				}
-			}
-		}
-	}()
+func (e *PlatformExtractor) Stop(ctx context.Context) error {
+	e.startStopMutex.Lock()
+	defer e.startStopMutex.Unlock()
+	if e.hasStarted {
+		e.cancel()
+		belogger.FromContext(ctx).Info("Stopping platform extractor...")
+		e.hasStarted = false
+	}
+	return nil
 }
 
-func (m *PlatformExtractor) getJetDropsContinuously(ctx context.Context) {
-	logger := belogger.FromContext(ctx)
-	var pulse uint32 = 0
-	var err error
-
-	// try to get current pulse with attempts
-	for i := 0; i < m.pulseExtractAttempts; i++ {
-		pulse, err = m.pulseExtractor.GetCurrentPulse(ctx)
-		if err != nil {
-			logger.Warnf("trying to get current pulse, attempt: %d", i)
-			time.Sleep(time.Duration(pulseDelta) * time.Second)
-		} else {
-			break
-		}
+func (e *PlatformExtractor) Start(ctx context.Context) error {
+	e.startStopMutex.Lock()
+	defer e.startStopMutex.Unlock()
+	if !e.hasStarted {
+		belogger.FromContext(ctx).Info("Starting platform extractor...")
+		e.hasStarted = true
+		ctx, e.cancel = context.WithCancel(ctx)
+		go e.retrievePulses(ctx, 0, 0)
 	}
-
-	// fatal and exit if could not get current pulse
-	if pulse == 0 || err != nil {
-		logger.Fatalf("could not get current pulse number after %d attempts", m.pulseExtractAttempts)
-	}
-
-	logger.Infof("current pulse number: %d", pulse)
-	m.request.PulseNumber = insolar.PulseNumber(pulse)
-	m.request.RecordNumber = 0
-	m.getJetDrops(ctx, m.request, 0, math.MaxUint32, false)
-}
-
-func logGRPCError(ctx context.Context, err error) {
-	log := belogger.FromContext(ctx)
-	if err != nil {
-		log.Debug("Data request failed: ", err)
-		log.Error(errors.Wrapf(err, "failed to get gRPC stream from exporter.Export method").Error())
-	}
-}
-
-func logIfErrorReceived(ctx context.Context, err error, request interface{}) {
-	if err != nil {
-		belogger.FromContext(ctx).Debug("received error value from records gRPC stream %v", request)
-	}
-}
-
-func isEOF(ctx context.Context, err error) bool {
-	if err == io.EOF {
-		belogger.FromContext(ctx).Debug("EOF received, quit")
-		return true
-	}
-	return false
+	return nil
 }
 
 func closeStream(ctx context.Context, stream exporter.RecordExporter_ExportClient) {
@@ -219,34 +95,115 @@ func closeStream(ctx context.Context, stream exporter.RecordExporter_ExportClien
 	}
 }
 
-func (m *PlatformExtractor) Stop(ctx context.Context) error {
-	m.startStopMutex.Lock()
-	defer m.startStopMutex.Unlock()
-	if m.hasStarted {
-		belogger.FromContext(ctx).Info("Stopping platform extractor...")
-		m.stopSignal <- true
-		m.hasStarted = false
+// retrievePulses - initiates full pulse retrieving between not including from and until
+// zero from is latest pulse, zero until - never stop
+func (e *PlatformExtractor) retrievePulses(ctx context.Context, from, until int64) {
+	pu := &exporter.FullPulse{PulseNumber: insolar.PulseNumber(from)}
+	var err error
+	log := belogger.FromContext(ctx).WithField("pulse_number", pu.PulseNumber)
+
+	log.Debug("retrievePulses(): Start")
+
+	halfPulse := time.Duration(e.continuousPulseRetrievingHalfPulseSeconds) * time.Second
+	for {
+		select {
+		case <-ctx.Done(): // we need context with cancel
+			log.Debug("retrievePulses(): terminating")
+			return
+		default:
+		}
+
+		before := *pu
+
+		for until > 0 && atomic.LoadInt32(&e.workers) >= e.maxWorkers {
+			time.Sleep(time.Second)
+		}
+
+		pu, err = e.pulseExtractor.GetNextFinalizedPulse(ctx, int64(int32(before.PulseNumber)))
+		if err != nil { // network error ?
+			pu = &before
+			if strings.Contains(err.Error(), pulse.ErrNotFound.Error()) { // seems this pulse already last
+				time.Sleep(halfPulse)
+				continue
+			}
+			log.Errorf("retrievePulses(): before=%d err=%s", before, err)
+			time.Sleep(time.Second)
+			continue
+		}
+		if pu.PulseNumber == before.PulseNumber { // no new pulse happens
+			time.Sleep(halfPulse)
+			continue
+		}
+
+		log.Debug("retrievePulses(): Done")
+
+		go e.retrieveRecords(ctx, pu)
+
+		if until <= 0 { // we are going on the edge of history
+			time.Sleep(halfPulse)
+		} else if pu.PulseNumber >= insolar.PulseNumber(until) { // we are at the end
+			return
+		}
+
 	}
-	return nil
 }
 
-func (m *PlatformExtractor) needStop() bool {
-	select {
-	case <-m.stopSignal:
-		return true
-	default:
-		// continue
-	}
-	return false
-}
+// retrieveRecords - retrieves all records for specified pulse and puts this to channel
+func (e *PlatformExtractor) retrieveRecords(ctx context.Context, pu *exporter.FullPulse) {
+	atomic.AddInt32(&e.workers, 1)
+	defer atomic.AddInt32(&e.workers, -1)
+	logger := belogger.FromContext(ctx)
+	log := logger.WithField("pulse_number", pu.PulseNumber)
+	log.Debug("retrieveRecords(): Start")
+	jetDrops := &types.PlatformJetDrops{Pulse: pu} // save pulse info
 
-func (m *PlatformExtractor) Start(ctx context.Context) error {
-	m.startStopMutex.Lock()
-	defer m.startStopMutex.Unlock()
-	if !m.hasStarted {
-		belogger.FromContext(ctx).Info("Starting platform extractor...")
-		m.getJetDropsContinuously(ctx)
-		m.hasStarted = true
+	for { // each portion
+		select {
+		case <-ctx.Done():
+			return
+		default:
+		}
+		stream, err := e.client.Export(ctx, &exporter.GetRecords{PulseNumber: pu.PulseNumber,
+			RecordNumber: uint32(len(jetDrops.Records)),
+			Count:        e.batchSize})
+		if err != nil {
+			log.Error("retrieveRecords() on rpc call: ", err.Error())
+			time.Sleep(time.Second)
+			continue
+		}
+
+		for { // per record in request
+			select {
+			case <-ctx.Done():
+				closeStream(ctx, stream)
+				return
+			default:
+			}
+
+			resp, err := stream.Recv()
+			if err == io.EOF { // stream ended, we have our portion
+				break
+			}
+			if resp == nil { // error, assume the data is broken
+				if strings.Contains(err.Error(), "trying to get a non-finalized pulse data") ||
+					strings.Contains(err.Error(), "pulse not found") {
+					time.Sleep(time.Duration(e.continuousPulseRetrievingHalfPulseSeconds) * time.Second)
+					go e.retrievePulses(ctx, int64(pu.PrevPulseNumber), int64(pu.PulseNumber-1)) // goroutine to split the stack
+					log.Infof("Rerequest pulse=%d err=%s", pu.PulseNumber, err)
+					return
+				}
+				log.Errorf("retrieveRecords(): empty response: err=%s", err)
+				return
+			}
+			if resp.ShouldIterateFrom != nil || resp.Record.ID.Pulse() != pu.PulseNumber { // next pulse packet
+				closeStream(ctx, stream)
+				e.mainJetDropsChan <- jetDrops
+				log.Debug("retrieveRecords(): Sent")
+				return // we have whole pulse
+			}
+
+			jetDrops.Records = append(jetDrops.Records, resp)
+		}
 	}
-	return nil
+
 }
