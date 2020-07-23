@@ -101,6 +101,63 @@ func TestStorage_SaveJetDropData_PulseUpdated(t *testing.T) {
 	require.EqualValues(t, expectedPulse, pulseInDB[0])
 }
 
+func TestStorage_SaveJetDropData_ConcurrentCalls(t *testing.T) {
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+	s := NewStorage(testDB)
+
+	pulse, err := testutils.InitPulseDB()
+	require.NoError(t, err)
+	err = testutils.CreatePulse(testDB, pulse)
+	require.NoError(t, err)
+
+	type tmp struct {
+		jetDrops models.JetDrop
+		records  []models.Record
+	}
+	dataSet := make([]tmp, 3)
+
+	jetDrop1 := testutils.InitJetDropDB(pulse)
+	firstRecord := testutils.InitRecordDB(jetDrop1)
+	secondRecord := testutils.InitRecordDB(jetDrop1)
+	dataSet[0] = tmp{
+		jetDrops: jetDrop1,
+		records:  []models.Record{firstRecord, secondRecord},
+	}
+
+	jetDrop2 := testutils.InitJetDropDB(pulse)
+	firstRecord = testutils.InitRecordDB(jetDrop2)
+	secondRecord = testutils.InitRecordDB(jetDrop2)
+	dataSet[1] = tmp{
+		jetDrops: jetDrop2,
+		records:  []models.Record{firstRecord, secondRecord},
+	}
+	jetDrop3 := testutils.InitJetDropDB(pulse)
+	dataSet[2] = tmp{
+		jetDrops: jetDrop3,
+		records:  nil,
+	}
+
+	wg := sync.WaitGroup{}
+	wg.Add(3)
+	for i := 0; i < 3; i++ {
+		go func(data tmp) {
+			err = s.SaveJetDropData(data.jetDrops, data.records, pulse.PulseNumber)
+			require.NoError(t, err)
+			wg.Done()
+		}(dataSet[i])
+	}
+	wg.Wait()
+
+	expectedPulse := pulse
+	expectedPulse.JetDropAmount = 3
+	expectedPulse.RecordAmount = 4
+	pulseInDB := []models.Pulse{}
+	err = testDB.Find(&pulseInDB).Error
+	require.NoError(t, err)
+	require.Len(t, pulseInDB, 1)
+	require.EqualValues(t, expectedPulse, pulseInDB[0])
+}
+
 func TestStorage_SaveJetDropData_UpdateExistedRecord(t *testing.T) {
 	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
 	s := NewStorage(testDB)
