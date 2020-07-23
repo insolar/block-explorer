@@ -10,6 +10,7 @@ package testutils
 import (
 	"fmt"
 	"io"
+	"strings"
 	"testing"
 
 	"github.com/insolar/insolar/insolar"
@@ -206,4 +207,11 @@ func TestGenerateJetDropsWithSplit(t *testing.T) {
 			require.Len(t, drops, test.total)
 		})
 	}
+}
+
+func TestRandomString(t *testing.T) {
+	l := 100
+	str := RandomString(l)
+	require.Equal(t, l, len(str))
+	require.True(t, strings.ContainsAny(string(letterRunes), str))
 }
