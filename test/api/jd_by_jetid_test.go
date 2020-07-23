@@ -325,11 +325,14 @@ func TestGetJetDropsByJetID_emptyJetID(t *testing.T) {
 		r.Record.JetID = jetID
 	}
 	recordWithNotEmptyJetID := testutils.GenerateRecordInNextPulse(maxPn)
-	inNextPulse := testutils.GenerateRecordInNextPulse(recordWithNotEmptyJetID.Record.ID.Pulse())
 	records = append(records, recordWithNotEmptyJetID)
-	records = append(records, inNextPulse)
 	require.NoError(t, heavymock.ImportRecords(ts.ConMngr.ImporterClient, records))
-	ts.WaitRecordsCount(t, len(records)-1, 5000)
+
+	ts.BE.PulseClient.SetNextFinalizedPulseFunc(ts.ConMngr.Importer)
+	ts.StartBE(t)
+	defer ts.StopBE(t)
+
+	ts.WaitRecordsCount(t, len(records), 5000)
 	c := GetHTTPClient()
 
 	res, err := c.JetDropsByJetID(t, "*", nil)
@@ -344,8 +347,7 @@ func TestGetJetDropsByJetID_emptyJetID(t *testing.T) {
 			pulses[jd.PulseNumber] = true
 			require.Equal(t, "*", jd.JetId)
 			require.Equal(t, int64(recordsCount), jd.RecordAmount)
-			require.True(t, strings.HasPrefix(jd.JetDropId, "*:"))
-			require.True(t, strings.Contains(jd.JetDropId, strconv.FormatInt(jd.PulseNumber, 10)))
+			require.Equal(t, fmt.Sprintf("*:%v", strconv.FormatInt(jd.PulseNumber, 10)), jd.JetDropId)
 		}
 	}
 	for p := range pulses {
