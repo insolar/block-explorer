@@ -25,6 +25,7 @@ import (
 type BlockExplorerTestSetUp struct {
 	ExporterClient exporter.RecordExporterClient
 	DB             *gorm.DB
+	PulseClient    *clients.TestPulseClient
 
 	extr *extractor.PlatformExtractor
 	cont *controller.Controller
@@ -38,6 +39,7 @@ func NewBlockExplorer(exporterClient exporter.RecordExporterClient, db *gorm.DB)
 	return BlockExplorerTestSetUp{
 		ExporterClient: exporterClient,
 		DB:             db,
+		PulseClient:    clients.GetTestPulseClient(1, nil),
 	}
 }
 
@@ -52,9 +54,8 @@ var cfg = configuration.Controller{
 func (b *BlockExplorerTestSetUp) Start() error {
 	b.ctx = context.Background()
 
-	pulseClient := clients.GetTestPulseClient(1, nil)
-	pulseExtractor := extractor.NewPlatformPulseExtractor(pulseClient)
-	b.extr = extractor.NewPlatformExtractor(100, pulseExtractor, b.ExporterClient)
+	pulseExtractor := extractor.NewPlatformPulseExtractor(b.PulseClient)
+	b.extr = extractor.NewPlatformExtractor(100, 0, 100, pulseExtractor, b.ExporterClient)
 	err := b.extr.Start(b.ctx)
 	if err != nil {
 		return err

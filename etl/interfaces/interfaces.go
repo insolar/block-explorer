@@ -8,6 +8,8 @@ package interfaces
 import (
 	"context"
 
+	"github.com/insolar/insolar/ledger/heavy/exporter"
+
 	"github.com/insolar/block-explorer/etl/types"
 	"google.golang.org/grpc"
 
@@ -42,6 +44,8 @@ type JetDropsExtractor interface {
 type PulseExtractor interface {
 	// GetCurrentPulse returns the current Pulse number
 	GetCurrentPulse(ctx context.Context) (uint32, error)
+	// GetNextFinalizedPulse requests full pulse info
+	GetNextFinalizedPulse(ctx context.Context, p int64) (*exporter.FullPulse, error)
 }
 
 //go:generate minimock -i github.com/insolar/block-explorer/etl/interfaces.ConnectionManager -o ./mock -s _mock.go -g

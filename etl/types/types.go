@@ -17,6 +17,7 @@ func init() {
 
 // PlatformJetDrops represents on the missing struct in the Platform
 type PlatformJetDrops struct {
+	Pulse   *exporter.FullPulse
 	Records []*exporter.Record
 }
 
@@ -54,11 +55,11 @@ type DropContinue struct {
 }
 
 type Pulse struct {
-	PulseNo        int64
-	EpochPulseNo   int
-	PulseTimestamp int64
-	NextPulseDelta int
-	PrevPulseDelta int
+	PulseNo         int64
+	EpochPulseNo    int64
+	PulseTimestamp  int64
+	NextPulseNumber int64
+	PrevPulseNumber int64
 }
 
 type RecordType int

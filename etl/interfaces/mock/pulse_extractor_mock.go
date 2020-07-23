@@ -9,6 +9,7 @@ import (
 	mm_time "time"
 
 	"github.com/gojuno/minimock/v3"
+	"github.com/insolar/insolar/ledger/heavy/exporter"
 )
 
 // PulseExtractorMock implements interfaces.PulseExtractor
@@ -20,6 +21,12 @@ type PulseExtractorMock struct {
 	afterGetCurrentPulseCounter  uint64
 	beforeGetCurrentPulseCounter uint64
 	GetCurrentPulseMock          mPulseExtractorMockGetCurrentPulse
+
+	funcGetNextFinalizedPulse          func(ctx context.Context, p int64) (fp1 *exporter.FullPulse, err error)
+	inspectFuncGetNextFinalizedPulse   func(ctx context.Context, p int64)
+	afterGetNextFinalizedPulseCounter  uint64
+	beforeGetNextFinalizedPulseCounter uint64
+	GetNextFinalizedPulseMock          mPulseExtractorMockGetNextFinalizedPulse
 }
 
 // NewPulseExtractorMock returns a mock for interfaces.PulseExtractor
@@ -31,6 +38,9 @@ func NewPulseExtractorMock(t minimock.Tester) *PulseExtractorMock {
 
 	m.GetCurrentPulseMock = mPulseExtractorMockGetCurrentPulse{mock: m}
 	m.GetCurrentPulseMock.callArgs = []*PulseExtractorMockGetCurrentPulseParams{}
+
+	m.GetNextFinalizedPulseMock = mPulseExtractorMockGetNextFinalizedPulse{mock: m}
+	m.GetNextFinalizedPulseMock.callArgs = []*PulseExtractorMockGetNextFinalizedPulseParams{}
 
 	return m
 }
@@ -251,10 +261,229 @@ func (m *PulseExtractorMock) MinimockGetCurrentPulseInspect() {
 	}
 }
 
+type mPulseExtractorMockGetNextFinalizedPulse struct {
+	mock               *PulseExtractorMock
+	defaultExpectation *PulseExtractorMockGetNextFinalizedPulseExpectation
+	expectations       []*PulseExtractorMockGetNextFinalizedPulseExpectation
+
+	callArgs []*PulseExtractorMockGetNextFinalizedPulseParams
+	mutex    sync.RWMutex
+}
+
+// PulseExtractorMockGetNextFinalizedPulseExpectation specifies expectation struct of the PulseExtractor.GetNextFinalizedPulse
+type PulseExtractorMockGetNextFinalizedPulseExpectation struct {
+	mock    *PulseExtractorMock
+	params  *PulseExtractorMockGetNextFinalizedPulseParams
+	results *PulseExtractorMockGetNextFinalizedPulseResults
+	Counter uint64
+}
+
+// PulseExtractorMockGetNextFinalizedPulseParams contains parameters of the PulseExtractor.GetNextFinalizedPulse
+type PulseExtractorMockGetNextFinalizedPulseParams struct {
+	ctx context.Context
+	p   int64
+}
+
+// PulseExtractorMockGetNextFinalizedPulseResults contains results of the PulseExtractor.GetNextFinalizedPulse
+type PulseExtractorMockGetNextFinalizedPulseResults struct {
+	fp1 *exporter.FullPulse
+	err error
+}
+
+// Expect sets up expected params for PulseExtractor.GetNextFinalizedPulse
+func (mmGetNextFinalizedPulse *mPulseExtractorMockGetNextFinalizedPulse) Expect(ctx context.Context, p int64) *mPulseExtractorMockGetNextFinalizedPulse {
+	if mmGetNextFinalizedPulse.mock.funcGetNextFinalizedPulse != nil {
+		mmGetNextFinalizedPulse.mock.t.Fatalf("PulseExtractorMock.GetNextFinalizedPulse mock is already set by Set")
+	}
+
+	if mmGetNextFinalizedPulse.defaultExpectation == nil {
+		mmGetNextFinalizedPulse.defaultExpectation = &PulseExtractorMockGetNextFinalizedPulseExpectation{}
+	}
+
+	mmGetNextFinalizedPulse.defaultExpectation.params = &PulseExtractorMockGetNextFinalizedPulseParams{ctx, p}
+	for _, e := range mmGetNextFinalizedPulse.expectations {
+		if minimock.Equal(e.params, mmGetNextFinalizedPulse.defaultExpectation.params) {
+			mmGetNextFinalizedPulse.mock.t.Fatalf("Expectation set by When has same params: %#v", *mmGetNextFinalizedPulse.defaultExpectation.params)
+		}
+	}
+
+	return mmGetNextFinalizedPulse
+}
+
+// Inspect accepts an inspector function that has same arguments as the PulseExtractor.GetNextFinalizedPulse
+func (mmGetNextFinalizedPulse *mPulseExtractorMockGetNextFinalizedPulse) Inspect(f func(ctx context.Context, p int64)) *mPulseExtractorMockGetNextFinalizedPulse {
+	if mmGetNextFinalizedPulse.mock.inspectFuncGetNextFinalizedPulse != nil {
+		mmGetNextFinalizedPulse.mock.t.Fatalf("Inspect function is already set for PulseExtractorMock.GetNextFinalizedPulse")
+	}
+
+	mmGetNextFinalizedPulse.mock.inspectFuncGetNextFinalizedPulse = f
+
+	return mmGetNextFinalizedPulse
+}
+
+// Return sets up results that will be returned by PulseExtractor.GetNextFinalizedPulse
+func (mmGetNextFinalizedPulse *mPulseExtractorMockGetNextFinalizedPulse) Return(fp1 *exporter.FullPulse, err error) *PulseExtractorMock {
+	if mmGetNextFinalizedPulse.mock.funcGetNextFinalizedPulse != nil {
+		mmGetNextFinalizedPulse.mock.t.Fatalf("PulseExtractorMock.GetNextFinalizedPulse mock is already set by Set")
+	}
+
+	if mmGetNextFinalizedPulse.defaultExpectation == nil {
+		mmGetNextFinalizedPulse.defaultExpectation = &PulseExtractorMockGetNextFinalizedPulseExpectation{mock: mmGetNextFinalizedPulse.mock}
+	}
+	mmGetNextFinalizedPulse.defaultExpectation.results = &PulseExtractorMockGetNextFinalizedPulseResults{fp1, err}
+	return mmGetNextFinalizedPulse.mock
+}
+
+//Set uses given function f to mock the PulseExtractor.GetNextFinalizedPulse method
+func (mmGetNextFinalizedPulse *mPulseExtractorMockGetNextFinalizedPulse) Set(f func(ctx context.Context, p int64) (fp1 *exporter.FullPulse, err error)) *PulseExtractorMock {
+	if mmGetNextFinalizedPulse.defaultExpectation != nil {
+		mmGetNextFinalizedPulse.mock.t.Fatalf("Default expectation is already set for the PulseExtractor.GetNextFinalizedPulse method")
+	}
+
+	if len(mmGetNextFinalizedPulse.expectations) > 0 {
+		mmGetNextFinalizedPulse.mock.t.Fatalf("Some expectations are already set for the PulseExtractor.GetNextFinalizedPulse method")
+	}
+
+	mmGetNextFinalizedPulse.mock.funcGetNextFinalizedPulse = f
+	return mmGetNextFinalizedPulse.mock
+}
+
+// When sets expectation for the PulseExtractor.GetNextFinalizedPulse which will trigger the result defined by the following
+// Then helper
+func (mmGetNextFinalizedPulse *mPulseExtractorMockGetNextFinalizedPulse) When(ctx context.Context, p int64) *PulseExtractorMockGetNextFinalizedPulseExpectation {
+	if mmGetNextFinalizedPulse.mock.funcGetNextFinalizedPulse != nil {
+		mmGetNextFinalizedPulse.mock.t.Fatalf("PulseExtractorMock.GetNextFinalizedPulse mock is already set by Set")
+	}
+
+	expectation := &PulseExtractorMockGetNextFinalizedPulseExpectation{
+		mock:   mmGetNextFinalizedPulse.mock,
+		params: &PulseExtractorMockGetNextFinalizedPulseParams{ctx, p},
+	}
+	mmGetNextFinalizedPulse.expectations = append(mmGetNextFinalizedPulse.expectations, expectation)
+	return expectation
+}
+
+// Then sets up PulseExtractor.GetNextFinalizedPulse return parameters for the expectation previously defined by the When method
+func (e *PulseExtractorMockGetNextFinalizedPulseExpectation) Then(fp1 *exporter.FullPulse, err error) *PulseExtractorMock {
+	e.results = &PulseExtractorMockGetNextFinalizedPulseResults{fp1, err}
+	return e.mock
+}
+
+// GetNextFinalizedPulse implements interfaces.PulseExtractor
+func (mmGetNextFinalizedPulse *PulseExtractorMock) GetNextFinalizedPulse(ctx context.Context, p int64) (fp1 *exporter.FullPulse, err error) {
+	mm_atomic.AddUint64(&mmGetNextFinalizedPulse.beforeGetNextFinalizedPulseCounter, 1)
+	defer mm_atomic.AddUint64(&mmGetNextFinalizedPulse.afterGetNextFinalizedPulseCounter, 1)
+
+	if mmGetNextFinalizedPulse.inspectFuncGetNextFinalizedPulse != nil {
+		mmGetNextFinalizedPulse.inspectFuncGetNextFinalizedPulse(ctx, p)
+	}
+
+	mm_params := &PulseExtractorMockGetNextFinalizedPulseParams{ctx, p}
+
+	// Record call args
+	mmGetNextFinalizedPulse.GetNextFinalizedPulseMock.mutex.Lock()
+	mmGetNextFinalizedPulse.GetNextFinalizedPulseMock.callArgs = append(mmGetNextFinalizedPulse.GetNextFinalizedPulseMock.callArgs, mm_params)
+	mmGetNextFinalizedPulse.GetNextFinalizedPulseMock.mutex.Unlock()
+
+	for _, e := range mmGetNextFinalizedPulse.GetNextFinalizedPulseMock.expectations {
+		if minimock.Equal(e.params, mm_params) {
+			mm_atomic.AddUint64(&e.Counter, 1)
+			return e.results.fp1, e.results.err
+		}
+	}
+
+	if mmGetNextFinalizedPulse.GetNextFinalizedPulseMock.defaultExpectation != nil {
+		mm_atomic.AddUint64(&mmGetNextFinalizedPulse.GetNextFinalizedPulseMock.defaultExpectation.Counter, 1)
+		mm_want := mmGetNextFinalizedPulse.GetNextFinalizedPulseMock.defaultExpectation.params
+		mm_got := PulseExtractorMockGetNextFinalizedPulseParams{ctx, p}
+		if mm_want != nil && !minimock.Equal(*mm_want, mm_got) {
+			mmGetNextFinalizedPulse.t.Errorf("PulseExtractorMock.GetNextFinalizedPulse got unexpected parameters, want: %#v, got: %#v%s\n", *mm_want, mm_got, minimock.Diff(*mm_want, mm_got))
+		}
+
+		mm_results := mmGetNextFinalizedPulse.GetNextFinalizedPulseMock.defaultExpectation.results
+		if mm_results == nil {
+			mmGetNextFinalizedPulse.t.Fatal("No results are set for the PulseExtractorMock.GetNextFinalizedPulse")
+		}
+		return (*mm_results).fp1, (*mm_results).err
+	}
+	if mmGetNextFinalizedPulse.funcGetNextFinalizedPulse != nil {
+		return mmGetNextFinalizedPulse.funcGetNextFinalizedPulse(ctx, p)
+	}
+	mmGetNextFinalizedPulse.t.Fatalf("Unexpected call to PulseExtractorMock.GetNextFinalizedPulse. %v %v", ctx, p)
+	return
+}
+
+// GetNextFinalizedPulseAfterCounter returns a count of finished PulseExtractorMock.GetNextFinalizedPulse invocations
+func (mmGetNextFinalizedPulse *PulseExtractorMock) GetNextFinalizedPulseAfterCounter() uint64 {
+	return mm_atomic.LoadUint64(&mmGetNextFinalizedPulse.afterGetNextFinalizedPulseCounter)
+}
+
+// GetNextFinalizedPulseBeforeCounter returns a count of PulseExtractorMock.GetNextFinalizedPulse invocations
+func (mmGetNextFinalizedPulse *PulseExtractorMock) GetNextFinalizedPulseBeforeCounter() uint64 {
+	return mm_atomic.LoadUint64(&mmGetNextFinalizedPulse.beforeGetNextFinalizedPulseCounter)
+}
+
+// Calls returns a list of arguments used in each call to PulseExtractorMock.GetNextFinalizedPulse.
+// The list is in the same order as the calls were made (i.e. recent calls have a higher index)
+func (mmGetNextFinalizedPulse *mPulseExtractorMockGetNextFinalizedPulse) Calls() []*PulseExtractorMockGetNextFinalizedPulseParams {
+	mmGetNextFinalizedPulse.mutex.RLock()
+
+	argCopy := make([]*PulseExtractorMockGetNextFinalizedPulseParams, len(mmGetNextFinalizedPulse.callArgs))
+	copy(argCopy, mmGetNextFinalizedPulse.callArgs)
+
+	mmGetNextFinalizedPulse.mutex.RUnlock()
+
+	return argCopy
+}
+
+// MinimockGetNextFinalizedPulseDone returns true if the count of the GetNextFinalizedPulse invocations corresponds
+// the number of defined expectations
+func (m *PulseExtractorMock) MinimockGetNextFinalizedPulseDone() bool {
+	for _, e := range m.GetNextFinalizedPulseMock.expectations {
+		if mm_atomic.LoadUint64(&e.Counter) < 1 {
+			return false
+		}
+	}
+
+	// if default expectation was set then invocations count should be greater than zero
+	if m.GetNextFinalizedPulseMock.defaultExpectation != nil && mm_atomic.LoadUint64(&m.afterGetNextFinalizedPulseCounter) < 1 {
+		return false
+	}
+	// if func was set then invocations count should be greater than zero
+	if m.funcGetNextFinalizedPulse != nil && mm_atomic.LoadUint64(&m.afterGetNextFinalizedPulseCounter) < 1 {
+		return false
+	}
+	return true
+}
+
+// MinimockGetNextFinalizedPulseInspect logs each unmet expectation
+func (m *PulseExtractorMock) MinimockGetNextFinalizedPulseInspect() {
+	for _, e := range m.GetNextFinalizedPulseMock.expectations {
+		if mm_atomic.LoadUint64(&e.Counter) < 1 {
+			m.t.Errorf("Expected call to PulseExtractorMock.GetNextFinalizedPulse with params: %#v", *e.params)
+		}
+	}
+
+	// if default expectation was set then invocations count should be greater than zero
+	if m.GetNextFinalizedPulseMock.defaultExpectation != nil && mm_atomic.LoadUint64(&m.afterGetNextFinalizedPulseCounter) < 1 {
+		if m.GetNextFinalizedPulseMock.defaultExpectation.params == nil {
+			m.t.Error("Expected call to PulseExtractorMock.GetNextFinalizedPulse")
+		} else {
+			m.t.Errorf("Expected call to PulseExtractorMock.GetNextFinalizedPulse with params: %#v", *m.GetNextFinalizedPulseMock.defaultExpectation.params)
+		}
+	}
+	// if func was set then invocations count should be greater than zero
+	if m.funcGetNextFinalizedPulse != nil && mm_atomic.LoadUint64(&m.afterGetNextFinalizedPulseCounter) < 1 {
+		m.t.Error("Expected call to PulseExtractorMock.GetNextFinalizedPulse")
+	}
+}
+
 // MinimockFinish checks that all mocked methods have been called the expected number of times
 func (m *PulseExtractorMock) MinimockFinish() {
 	if !m.minimockDone() {
 		m.MinimockGetCurrentPulseInspect()
+
+		m.MinimockGetNextFinalizedPulseInspect()
 		m.t.FailNow()
 	}
 }
@@ -278,5 +507,6 @@ func (m *PulseExtractorMock) MinimockWait(timeout mm_time.Duration) {
 func (m *PulseExtractorMock) minimockDone() bool {
 	done := true
 	return done &&
-		m.MinimockGetCurrentPulseDone()
+		m.MinimockGetCurrentPulseDone() &&
+		m.MinimockGetNextFinalizedPulseDone()
 }

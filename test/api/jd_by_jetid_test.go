@@ -73,7 +73,11 @@ func TestGetJetDropsByJetID(t *testing.T) {
 	recordInLastPulse := []*exporter.Record{testutils.GenerateRecordInNextPulse(maxPn)}
 	require.NoError(t, heavymock.ImportRecords(ts.ConMngr.ImporterClient, recordInLastPulse))
 
-	ts.WaitRecordsCount(t, len(records), 5000)
+	ts.BE.PulseClient.SetNextFinalizedPulseFunc(ts.ConMngr.Importer)
+	ts.StartBE(t)
+	defer ts.StopBE(t)
+
+	ts.WaitRecordsCount(t, len(records)+1, 5000)
 
 	c := GetHTTPClient()
 	t.Run("check jetDrops amount", func(t *testing.T) {
@@ -160,7 +164,12 @@ func TestGetJetDropsByJetID_queryParams(t *testing.T) {
 	jetID := converter.JetIDToString(records[0].Record.JetID)
 	require.NoError(t, heavymock.ImportRecords(ts.ConMngr.ImporterClient, records))
 	require.NoError(t, heavymock.ImportRecords(ts.ConMngr.ImporterClient, []*exporter.Record{testutils.GenerateRecordInNextPulse(maxPn)}))
-	ts.WaitRecordsCount(t, len(records), 2000)
+
+	ts.BE.PulseClient.SetNextFinalizedPulseFunc(ts.ConMngr.Importer)
+	ts.StartBE(t)
+	defer ts.StopBE(t)
+
+	ts.WaitRecordsCount(t, len(records)+1, 2000)
 
 	c := GetHTTPClient()
 

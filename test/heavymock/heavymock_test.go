@@ -15,6 +15,8 @@ import (
 	"github.com/insolar/block-explorer/configuration"
 	"github.com/insolar/block-explorer/etl/connection"
 	"github.com/insolar/block-explorer/testutils"
+	"github.com/insolar/insolar/insolar"
+	"github.com/insolar/insolar/insolar/gen"
 	"github.com/insolar/insolar/ledger/heavy/exporter"
 	"github.com/stretchr/testify/require"
 )
@@ -39,7 +41,7 @@ func TestConnect(t *testing.T) {
 
 	greeterClient := exporter.NewRecordExporterClient(client.GetGRPCConn())
 	// send record to stream
-	request := &exporter.GetRecords{}
+	request := &exporter.GetRecords{PulseNumber: SimpleRecord.Record.ID.Pulse()}
 	stream, err := greeterClient.Export(context.Background(), request)
 	require.NoError(t, err, "Error when sending client request")
 
@@ -52,7 +54,7 @@ func TestConnect(t *testing.T) {
 			t.Fatalf("%v.Export(_) = _, %v", client, err)
 		}
 		require.NoError(t, err, "Err listening stream")
-		require.True(t, SimpleRecord.Equal(record), "Incorrect response message")
+		require.Equal(t, SimpleRecord.Record.ID.Pulse()+10, record.Record.ID.Pulse(), "Incorrect response message")
 	}
 }
 
@@ -76,6 +78,14 @@ func TestHeavymockImporter_storeAndSend(t *testing.T) {
 	recordsPtOne := testutils.GenerateRecordsSilence(5)
 	recordsPtTwo := testutils.GenerateRecordsSilence(10)
 
+	pu := gen.PulseNumber()
+	for i, _ := range recordsPtOne {
+		recordsPtOne[i].Record.ID = *insolar.NewID(pu, nil)
+	}
+	for i, _ := range recordsPtTwo {
+		recordsPtTwo[i].Record.ID = *insolar.NewID(pu, nil)
+	}
+
 	err = ImportRecords(importerCli, recordsPtOne)
 	require.NoError(t, err)
 	require.Len(t, importer.GetUnsentRecords(), len(recordsPtOne))
@@ -84,17 +94,17 @@ func TestHeavymockImporter_storeAndSend(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, importer.GetUnsentRecords(), len(recordsPtOne)+len(recordsPtTwo))
 
-	received, err := ReceiveRecords(exporterCli, &exporter.GetRecords{})
+	received, err := ReceiveRecords(exporterCli, &exporter.GetRecords{PulseNumber: pu})
 	require.NoError(t, err)
-	require.Len(t, received, len(recordsPtOne)+len(recordsPtTwo))
+	require.Len(t, received, len(recordsPtOne)+len(recordsPtTwo)+1) // one nextpulse record
 	require.Empty(t, importer.GetUnsentRecords())
 
 	// send same records once again, then receive
 	err = ImportRecords(importerCli, recordsPtOne)
 	require.NoError(t, err)
 	require.Len(t, importer.GetUnsentRecords(), len(recordsPtOne))
-	received, err = ReceiveRecords(exporterCli, &exporter.GetRecords{})
+	received, err = ReceiveRecords(exporterCli, &exporter.GetRecords{PulseNumber: pu})
 	require.NoError(t, err)
-	require.Len(t, received, len(recordsPtOne))
+	require.Len(t, received, len(recordsPtOne)+1)
 	require.Empty(t, importer.GetUnsentRecords())
 }
