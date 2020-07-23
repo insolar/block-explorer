@@ -13,7 +13,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/insolar/block-explorer/cmd/block-explorer/common"
 	"github.com/insolar/block-explorer/configuration"
 	"github.com/insolar/block-explorer/etl/dbconn/plugins"
 	"github.com/insolar/block-explorer/testutils"
@@ -71,7 +70,8 @@ func TestShutDownPlugin(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, db)
 
-	r := plugins.NewDefaultShutdownPlugin()
+	stopChannel := make(chan struct{})
+	r := plugins.NewDefaultShutdownPlugin(stopChannel)
 	r.Apply(db)
 
 	type User struct {
@@ -109,7 +109,7 @@ func TestShutDownPlugin(t *testing.T) {
 	}()
 
 	select {
-	case <-common.StopChannel:
+	case <-stopChannel:
 		// error happened
 	case <-time.After(time.Millisecond * 100):
 		t.Fatal("chan receive timeout. Stop signal was not received")

@@ -9,7 +9,6 @@ import (
 	"database/sql/driver"
 	"regexp"
 
-	"github.com/insolar/block-explorer/cmd/block-explorer/common"
 	"github.com/jinzhu/gorm"
 )
 
@@ -17,20 +16,23 @@ var badConnectRegexp = regexp.MustCompile("(connection refused|invalid connectio
 
 // Shutdown GORM plugin
 type Shutdown struct {
-	BadConnChecker func(errors []error) bool
+	stopChannel    chan struct{}
+	badConnChecker func(errors []error) bool
 }
 
 // NewDefaultShutdownPlugin initialize GORM plugin
-func NewDefaultShutdownPlugin() *Shutdown {
+func NewDefaultShutdownPlugin(stopChannel chan struct{}) *Shutdown {
 	return &Shutdown{
-		BadConnChecker: defaultConnectionChecker,
+		stopChannel:    stopChannel,
+		badConnChecker: defaultConnectionChecker,
 	}
 }
 
 // NewShutdownPlugin initialize GORM plugin
-func NewShutdownPlugin(badConnChecker func(errors []error) bool) *Shutdown {
+func NewShutdownPlugin(stopChannel chan struct{}, badConnChecker func(errors []error) bool) *Shutdown {
 	return &Shutdown{
-		BadConnChecker: badConnChecker,
+		stopChannel:    stopChannel,
+		badConnChecker: badConnChecker,
 	}
 }
 
@@ -58,11 +60,11 @@ func (shutdown *Shutdown) Apply(db *gorm.DB) {
 func (shutdown *Shutdown) shutdownCallback(scope *gorm.Scope) {
 	if scope.HasError() {
 		// check the error message
-		if db := scope.DB(); shutdown.BadConnChecker(db.GetErrors()) {
+		if db := scope.DB(); shutdown.badConnChecker(db.GetErrors()) {
 			connected := db.DB().Ping() == nil
 			if !connected {
 				// stop the application gracefully
-				common.StopChannel <- struct{}{}
+				shutdown.stopChannel <- struct{}{}
 			}
 		}
 	}

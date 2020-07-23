@@ -13,7 +13,6 @@ import (
 	"syscall"
 
 	"github.com/insolar/block-explorer/api"
-	"github.com/insolar/block-explorer/cmd/block-explorer/common"
 	"github.com/insolar/block-explorer/etl/connection"
 	"github.com/insolar/block-explorer/etl/controller"
 	"github.com/insolar/block-explorer/etl/dbconn/plugins"
@@ -32,6 +31,9 @@ import (
 )
 
 var stop = make(chan os.Signal, 1)
+
+// stopChannel is the global channel where you have to send signal to stop application
+var stopChannel = make(chan struct{})
 
 func main() {
 	cfg := &configuration.BlockExplorer{}
@@ -100,7 +102,7 @@ func main() {
 		}
 	}()
 
-	r := plugins.NewDefaultShutdownPlugin()
+	r := plugins.NewDefaultShutdownPlugin(stopChannel)
 	r.Apply(db)
 
 	storage := storage.NewStorage(db)
@@ -140,7 +142,7 @@ func graceful(ctx context.Context) {
 	logger := belogger.FromContext(ctx)
 	logger.Infof("gracefully stopping...")
 	select {
-	case <-common.StopChannel:
+	case <-stopChannel:
 		logger.Info("stopping by channel")
 	case <-stop:
 		logger.Info("stopping by signal")
