@@ -22,7 +22,9 @@ import (
 	"github.com/insolar/block-explorer/testutils"
 	"github.com/insolar/insolar/insolar"
 	"github.com/insolar/insolar/insolar/gen"
+	"github.com/insolar/insolar/insolar/jet"
 	"github.com/insolar/insolar/ledger/heavy/exporter"
+	"github.com/insolar/insolar/pulse"
 	"github.com/insolar/spec-insolar-block-explorer-api/v1/client"
 	"github.com/stretchr/testify/require"
 )
@@ -300,5 +302,56 @@ func TestGetJetDropsByJetID_negative(t *testing.T) {
 			require.Error(t, err)
 			require.Equal(t, tc.expResult, err.Error())
 		})
+	}
+}
+
+func TestGetJetDropsByJetID_emptyJetID(t *testing.T) {
+	t.Log("C5457 Get JetDrops by JetID = '*', receive a list containing empty and not empty JetIDs")
+	ts := integration.NewBlockExplorerTestSetup(t).WithHTTPServer(t)
+	defer ts.Stop(t)
+
+	pulsesCount, recordsCount := 5, 2
+	records := testutils.GenerateRecordsFromOneJetSilence(pulsesCount, recordsCount)
+
+	pulses := make(map[int64]bool, pulsesCount)
+	var maxPn pulse.Number = 0
+	jetID := jet.NewIDFromString("")
+	for _, r := range records {
+		pn := r.Record.ID.Pulse()
+		if maxPn < pn {
+			maxPn = pn
+		}
+		pulses[int64(pn)] = false
+		r.Record.JetID = jetID
+	}
+	recordWithNotEmptyJetID := testutils.GenerateRecordInNextPulse(maxPn)
+	records = append(records, recordWithNotEmptyJetID)
+	require.NoError(t, heavymock.ImportRecords(ts.ConMngr.ImporterClient, records))
+
+	ts.BE.PulseClient.SetNextFinalizedPulseFunc(ts.ConMngr.Importer)
+
+	ts.StartBE(t)
+	defer ts.StopBE(t)
+
+	ts.WaitRecordsCount(t, len(records), 5000)
+	c := GetHTTPClient()
+
+	res, err := c.JetDropsByJetID(t, "*", nil)
+	jetDropsAmount := pulsesCount + 1
+	require.NoError(t, err)
+	require.Len(t, res.Result, jetDropsAmount)
+	require.Equal(t, int64(jetDropsAmount), res.Total)
+	for _, jd := range res.Result {
+		if jd.JetId != "*" {
+			require.Equal(t, converter.JetIDToString(recordWithNotEmptyJetID.Record.JetID), jd.JetId)
+		} else {
+			pulses[jd.PulseNumber] = true
+			require.Equal(t, "*", jd.JetId)
+			require.Equal(t, int64(recordsCount), jd.RecordAmount)
+			require.Equal(t, fmt.Sprintf("*:%v", strconv.FormatInt(jd.PulseNumber, 10)), jd.JetDropId)
+		}
+	}
+	for p := range pulses {
+		require.True(t, pulses[p])
 	}
 }

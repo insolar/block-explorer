@@ -113,7 +113,7 @@ func TestLifeline_amendRecords(t *testing.T) {
 	ts.StartBE(t)
 	defer ts.StopBE(t)
 
-	ts.WaitRecordsCount(t, count+1, 1000)
+	ts.WaitRecordsCount(t, count+1, 10000)
 
 	c := GetHTTPClient()
 	response, err := c.ObjectLifeline(t, lifeline.ObjID.String(), &client.ObjectLifelineOpts{Limit: optional.NewInt32(100)})
@@ -156,7 +156,7 @@ func TestLifeline_removedStatesBetweenPulses(t *testing.T) {
 	defer ts.StopBE(t)
 
 	expCount := len(allRecords) - 1
-	ts.WaitRecordsCount(t, expCount+1, 1000)
+	ts.WaitRecordsCount(t, expCount+1, 10000)
 
 	c := GetHTTPClient()
 	response, err := c.ObjectLifeline(t, objID.String(), &client.ObjectLifelineOpts{Limit: optional.NewInt32(100)})
@@ -188,7 +188,7 @@ func TestLifeline_removedStatesWithinPulses(t *testing.T) {
 	ts.StartBE(t)
 	defer ts.StopBE(t)
 
-	ts.WaitRecordsCount(t, recordsInPulse+1, 1000)
+	ts.WaitRecordsCount(t, recordsInPulse+1, 10000)
 
 	c := GetHTTPClient()
 	response, err := c.ObjectLifeline(t, lifeline.ObjID.String(), &client.ObjectLifelineOpts{Limit: optional.NewInt32(100)})
@@ -225,7 +225,7 @@ func TestLifeline_recordsHaveSamePrevState(t *testing.T) {
 	ts.StartBE(t)
 	defer ts.StopBE(t)
 
-	ts.WaitRecordsCount(t, recordsInPulse+1, 1000)
+	ts.WaitRecordsCount(t, recordsInPulse+1, 10000)
 
 	c := GetHTTPClient()
 	response, err := c.ObjectLifeline(t, lifeline.ObjID.String(), &client.ObjectLifelineOpts{Limit: optional.NewInt32(100)})
@@ -300,7 +300,7 @@ func TestLifeline_fillMissedStates(t *testing.T) {
 	ts.StartBE(t)
 	defer ts.StopBE(t)
 
-	ts.WaitRecordsCount(t, lenExpRecords+1, 1000)
+	ts.WaitRecordsCount(t, lenExpRecords+1, 10000)
 
 	c := GetHTTPClient()
 	response, err := c.ObjectLifeline(t, lifeline.ObjID.String(), &client.ObjectLifelineOpts{Limit: optional.NewInt32(100)})
