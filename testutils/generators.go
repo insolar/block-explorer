@@ -23,6 +23,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+var letterRunes = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+
 func init() {
 	rand.Seed(time.Now().UnixNano())
 }
@@ -37,6 +39,7 @@ func GenerateRequestRecord(pulse insolar.PulseNumber, objectID insolar.ID) *expo
 	r.Record.Virtual.Union = &insrecord.Virtual_IncomingRequest{
 		IncomingRequest: &insrecord.IncomingRequest{
 			Object: reference,
+			Method: RandomString(20),
 		},
 	}
 	return r
@@ -82,6 +85,7 @@ func GenerateVirtualResultRecord(pulse insolar.PulseNumber, objectID, requestID 
 	r.Record.Virtual.Union = &insrecord.Virtual_Result{
 		Result: &insrecord.Result{
 			Request: *requestRerence,
+			Object:  gen.ID(),
 		},
 	}
 	return r
@@ -358,6 +362,15 @@ func GenerateRandBytes() []byte {
 	var hash []byte
 	fuzz.New().NilChance(0).Fuzz(&hash)
 	return hash
+}
+
+// Generate random string with specified length
+func RandomString(n int) string {
+	b := make([]rune, n)
+	for i := range b {
+		b[i] = letterRunes[rand.Intn(len(letterRunes))]
+	}
+	return string(b)
 }
 
 // GenerateJetDropsWithSplit returns a jetdrops with splited by depth in different pulse
