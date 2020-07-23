@@ -44,7 +44,7 @@ func TestNewController_OneNotCompletePulse(t *testing.T) {
 	pulseNumber := int64(1)
 	firstJetID := "123"
 	secondJetID := "345"
-	expectedData := map[types.Pulse][]string{{PulseNo: pulseNumber}: {firstJetID, secondJetID}}
+	expectedData := map[types.Pulse]map[string]struct{}{{PulseNo: pulseNumber}: {firstJetID: {}, secondJetID: {}}}
 
 	sm := mock.NewStorageMock(t)
 	sm.GetIncompletePulsesMock.Return([]models.Pulse{{PulseNumber: pulseNumber}}, nil)
@@ -71,7 +71,7 @@ func TestNewController_SeveralNotCompletePulses(t *testing.T) {
 	secondJetID := "345"
 	firstPulse := types.Pulse{PulseNo: firstPulseNumber}
 	secondPulse := types.Pulse{PulseNo: secondPulseNumber}
-	expectedData := map[types.Pulse][]string{firstPulse: {firstJetID}, secondPulse: {secondJetID}}
+	expectedData := map[types.Pulse]map[string]struct{}{firstPulse: {firstJetID: {}}, secondPulse: {secondJetID: {}}}
 
 	sm := mock.NewStorageMock(t)
 	getJetDrops := func(pulse models.Pulse) (ja1 []models.JetDrop, err error) {
@@ -133,12 +133,12 @@ func TestNewController_ErrorGetJetDrops(t *testing.T) {
 
 func TestController_SetJetDropData(t *testing.T) {
 	c := Controller{
-		jetDropRegister: make(map[types.Pulse][]string),
+		jetDropRegister: make(map[types.Pulse]map[string]struct{}),
 	}
 
 	pulse := types.Pulse{PulseNo: 12345}
 	jetID := "11112222"
-	expectedData := map[types.Pulse][]string{pulse: {jetID}}
+	expectedData := map[types.Pulse]map[string]struct{}{pulse: {jetID: {}}}
 
 	c.SetJetDropData(pulse, jetID)
 
@@ -147,7 +147,7 @@ func TestController_SetJetDropData(t *testing.T) {
 
 func TestController_SetJetDropData_Multiple(t *testing.T) {
 	c := Controller{
-		jetDropRegister: make(map[types.Pulse][]string),
+		jetDropRegister: make(map[types.Pulse]map[string]struct{}),
 	}
 
 	pulse := types.Pulse{PulseNo: 12345}

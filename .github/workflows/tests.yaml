@@ -93,11 +93,12 @@ jobs:
         if: github.event_name == 'push'
         run: |
           echo "::set-env name=TEST_COUNT::10"
-          echo "::set-env name=TEST_ARGS::-json"
+          echo "::set-env name=TEST_ARGS::-timeout 30m -json"
       - name: set pull_request run params
         if: github.event_name == 'pull_request'
         run: |
           echo "::set-env name=TEST_COUNT::10"
+          echo "::set-env name=TEST_ARGS::-timeout 30m"
       - name: set scheduled run params
         if: github.event_name == 'schedule'
         run: |

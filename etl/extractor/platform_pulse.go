@@ -23,13 +23,13 @@ func NewPlatformPulseExtractor(client exporter.PulseExporterClient) *PlatformPul
 	}
 }
 
-func (p *PlatformPulseExtractor) GetCurrentPulse(ctx context.Context) (uint32, error) {
-	return p.fetchCurrentPulse(ctx)
+func (ppe *PlatformPulseExtractor) GetCurrentPulse(ctx context.Context) (uint32, error) {
+	return ppe.fetchCurrentPulse(ctx)
 }
 
 // fetchCurrentPulse returns the current pulse number
-func (p *PlatformPulseExtractor) fetchCurrentPulse(ctx context.Context) (uint32, error) {
-	client := p.client
+func (ppe *PlatformPulseExtractor) fetchCurrentPulse(ctx context.Context) (uint32, error) {
+	client := ppe.client
 	request := &exporter.GetTopSyncPulse{}
 	log := belogger.FromContext(ctx)
 	log.Debug("Fetching top sync pulse")
@@ -42,4 +42,20 @@ func (p *PlatformPulseExtractor) fetchCurrentPulse(ctx context.Context) (uint32,
 
 	log.Debug("Received top sync pulse ", tsp.PulseNumber)
 	return tsp.PulseNumber, nil
+}
+
+func (ppe *PlatformPulseExtractor) GetNextFinalizedPulse(ctx context.Context, p int64) (*exporter.FullPulse, error) {
+	c := ppe.client
+	req := &exporter.GetNextFinalizedPulse{p} // nolint
+
+	log := belogger.FromContext(ctx)
+	log.Debug("GetNextFinalizedPulse")
+
+	// fatal error: signal_recv: inconsistent state
+	ret, err := c.NextFinalizedPulse(ctx, req)
+	if err != nil {
+		log.WithField("request", req).Error(errors.Wrap(err, "failed to GetNextFinalizedPulse()"))
+		return nil, err
+	}
+	return ret, nil
 }

@@ -12,12 +12,14 @@ import (
 	"fmt"
 	"os"
 	"regexp"
+	"sync"
 	"testing"
 
-	"github.com/insolar/block-explorer/instrumentation/converter"
 	"github.com/insolar/insolar/insolar/gen"
 	"github.com/jinzhu/gorm"
 	"github.com/stretchr/testify/require"
+
+	"github.com/insolar/block-explorer/instrumentation/converter"
 
 	"github.com/insolar/block-explorer/etl/models"
 	"github.com/insolar/block-explorer/instrumentation/belogger"
@@ -520,6 +522,32 @@ func TestStorage_SavePulse_Error(t *testing.T) {
 	err = testDB.Find(&pulseInDB).Error
 	require.NoError(t, err)
 	require.Empty(t, pulseInDB)
+}
+
+func TestStorage_SavePulse_Concurrency(t *testing.T) {
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Pulse{}})
+	s := NewStorage(testDB)
+
+	pulse, err := testutils.InitPulseDB()
+	require.NoError(t, err)
+	iterations := 20
+
+	wg := sync.WaitGroup{}
+	wg.Add(iterations)
+	for i := 0; i < iterations; i++ {
+		go func() {
+			err := s.SavePulse(pulse)
+			require.NoError(t, err)
+			wg.Done()
+		}()
+	}
+	wg.Wait()
+
+	pulseInDB := []models.Pulse{}
+	err = testDB.Find(&pulseInDB).Error
+	require.NoError(t, err)
+	require.Len(t, pulseInDB, 1)
+	require.EqualValues(t, pulse, pulseInDB[0])
 }
 
 type pulseRecords struct {
@@ -1532,10 +1560,12 @@ func TestStorage_GetJetDropsByJetId_Fail(t *testing.T) {
 	require.NoError(t, err)
 
 	jetDropForFirstPulse1 := testutils.InitJetDropDB(firstPulse)
+	jetDropForFirstPulse1.JetID = "000"
 	err = testutils.CreateJetDrop(testDB, jetDropForFirstPulse1)
 	require.NoError(t, err)
 
 	jetDropForFirstPulse2 := testutils.InitJetDropDB(firstPulse)
+	jetDropForFirstPulse2.JetID = "001"
 	err = testutils.CreateJetDrop(testDB, jetDropForFirstPulse2)
 	require.NoError(t, err)
 
@@ -1543,10 +1573,9 @@ func TestStorage_GetJetDropsByJetId_Fail(t *testing.T) {
 	require.NoError(t, err)
 	err = testutils.CreatePulse(testDB, secondPulse)
 	require.NoError(t, err)
-	jetDropForSecondPulse := testutils.InitJetDropDB(secondPulse)
 
-	wrongJetID := jetDropForSecondPulse.JetID
-	jetDrops, total, err := s.GetJetDropsByJetID(wrongJetID, nil, nil, nil, nil, -1, true)
+	notExistingJetID := "100"
+	jetDrops, total, err := s.GetJetDropsByJetID(notExistingJetID, nil, nil, nil, nil, -1, true)
 	require.NoError(t, err)
 	require.Len(t, jetDrops, 0)
 	require.Equal(t, 0, total)

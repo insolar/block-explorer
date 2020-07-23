@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/jinzhu/gorm"
 	"github.com/pkg/errors"
@@ -17,7 +18,8 @@ import (
 )
 
 type Storage struct {
-	db *gorm.DB
+	db            *gorm.DB
+	savePulseLock sync.Mutex
 }
 
 // NewStorage returns implementation of interfaces.Storage
@@ -47,6 +49,8 @@ func (s *Storage) SaveJetDropData(jetDrop models.JetDrop, records []models.Recor
 
 // SavePulse saves provided pulse to db.
 func (s *Storage) SavePulse(pulse models.Pulse) error {
+	s.savePulseLock.Lock()
+	defer s.savePulseLock.Unlock()
 	return errors.Wrap(s.db.Save(&pulse).Error, "error while saving pulse")
 }
 

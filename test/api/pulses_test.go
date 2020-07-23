@@ -40,7 +40,11 @@ func TestPulsesAPI(t *testing.T) {
 	err = heavymock.ImportRecords(ts.ConMngr.ImporterClient, []*exporter.Record{lastPulseRecord})
 	require.NoError(t, err)
 
-	ts.WaitRecordsCount(t, len(records), 10000)
+	ts.BE.PulseClient.SetNextFinalizedPulseFunc(ts.ConMngr.Importer)
+	ts.StartBE(t)
+	defer ts.StopBE(t)
+
+	ts.WaitRecordsCount(t, len(records)+1, 10000)
 
 	c := GetHTTPClient()
 
