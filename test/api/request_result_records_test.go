@@ -45,10 +45,14 @@ func TestRecordsWithoutObjectID(t *testing.T) {
 	virtualRes := result.Record.Virtual
 	objRefRes := insolar.NewReference(*insolar.NewIDFromBytes(virtualRes.GetResult().GetObject().Bytes())).String()
 
-	inNextPulse := testutils.GenerateRecordInNextPulse(pn)
-	records := []*exporter.Record{request, result, inNextPulse}
+	records := []*exporter.Record{request, result}
 	require.NoError(t, heavymock.ImportRecords(ts.ConMngr.ImporterClient, records))
-	ts.WaitRecordsCount(t, len(records)-1, 5000)
+
+	ts.BE.PulseClient.SetNextFinalizedPulseFunc(ts.ConMngr.Importer)
+	ts.StartBE(t)
+	defer ts.StopBE(t)
+
+	ts.WaitRecordsCount(t, len(records), 5000)
 
 	jetDropID := fmt.Sprintf("%v:%v", converter.JetIDToString(jetID), pn.String())
 	c := GetHTTPClient()
