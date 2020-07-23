@@ -140,11 +140,11 @@ func TestStorage_SaveJetDropData_ConcurrentCalls(t *testing.T) {
 	wg := sync.WaitGroup{}
 	wg.Add(3)
 	for i := 0; i < 3; i++ {
-		go func(data tmp) {
-			err := s.SaveJetDropData(data.jetDrops, data.records, pulse.PulseNumber)
+		go func(data tmp, pulseNumber int64) {
+			err := s.SaveJetDropData(data.jetDrops, data.records, pulseNumber)
 			require.NoError(t, err)
 			wg.Done()
-		}(dataSet[i])
+		}(dataSet[i], pulse.PulseNumber)
 	}
 	wg.Wait()
 
