@@ -30,7 +30,8 @@ func NewStorage(db *gorm.DB) *Storage {
 }
 
 // SaveJetDropData saves provided jetDrop and records to db in one transaction.
-func (s *Storage) SaveJetDropData(jetDrop models.JetDrop, records []models.Record) error {
+// increase jet_drop_amount and record_amount
+func (s *Storage) SaveJetDropData(jetDrop models.JetDrop, records []models.Record, pulseNumber int64) error {
 	return s.db.Transaction(func(tx *gorm.DB) error {
 		jd := &jetDrop
 		if err := tx.Save(jd).Error; err != nil {
@@ -43,6 +44,13 @@ func (s *Storage) SaveJetDropData(jetDrop models.JetDrop, records []models.Recor
 			}
 		}
 
+		err := tx.Model(&models.Pulse{PulseNumber: pulseNumber}).
+			UpdateColumn("jet_drop_amount", gorm.Expr("jet_drop_amount + ?", 1)).
+			UpdateColumn("record_amount", gorm.Expr("record_amount + ?", len(records))).Error
+
+		if err != nil {
+			return errors.Wrap(err, "error to update pulse data")
+		}
 		return nil
 	})
 }
@@ -235,35 +243,16 @@ func (s *Storage) GetLifeline(objRef []byte, fromIndex *string, pulseNumberLt, p
 }
 
 // GetPulse returns pulse with provided pulse number from db.
-func (s *Storage) GetPulse(pulseNumber int64) (models.Pulse, int64, int64, error) {
+func (s *Storage) GetPulse(pulseNumber int64) (models.Pulse, error) {
 	var pulse models.Pulse
 	err := s.db.Where("pulse_number = ?", pulseNumber).First(&pulse).Error
 	if err != nil {
-		return pulse, 0, 0, err
+		return pulse, err
 	}
 
 	pulse = s.updateNextPulse(pulse)
 
-	jetDrops, records, err := s.GetAmounts(pulseNumber)
-	if err != nil {
-		return pulse, 0, 0, errors.Wrapf(err, "error while select count of records from db for pulse number %d", pulseNumber)
-	}
-
-	return pulse, jetDrops, records, err
-}
-
-// GetAmounts return amount of jetDrops and records at provided pulse.
-func (s *Storage) GetAmounts(pulseNumber int64) (int64, int64, error) {
-	res := struct {
-		JetDrops int
-		Records  int
-	}{}
-	err := s.db.Model(models.JetDrop{}).Select("count(*) as jet_drops, sum(record_amount) as records").Where("pulse_number = ?", pulseNumber).Scan(&res).Error
-	if err != nil {
-		return 0, 0, errors.Wrapf(err, "error while select count of records from db for pulse number %d", pulseNumber)
-	}
-
-	return int64(res.JetDrops), int64(res.Records), err
+	return pulse, err
 }
 
 // GetPulses returns pulses from db.

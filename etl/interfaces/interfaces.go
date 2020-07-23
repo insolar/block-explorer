@@ -90,7 +90,8 @@ type Controller interface {
 // StorageSetter saves data to database
 type StorageSetter interface {
 	// SaveJetDropData saves provided jetDrop and records to db in one transaction.
-	SaveJetDropData(jetDrop models.JetDrop, records []models.Record) error
+	// increase jet_drop_amount and record_amount
+	SaveJetDropData(jetDrop models.JetDrop, records []models.Record, pulseNumber int64) error
 	// SavePulse saves provided pulse to db.
 	SavePulse(pulse models.Pulse) error
 	// CompletePulse update pulse with provided number to completeness in db.
@@ -104,9 +105,7 @@ type StorageAPIFetcher interface {
 	// GetRecord returns record with provided reference from db.
 	GetRecord(ref models.Reference) (models.Record, error)
 	// GetPulse returns pulse with provided pulse number from db.
-	GetPulse(pulseNumber int64) (models.Pulse, int64, int64, error)
-	// GetAmounts return amount of jetDrops and records at provided pulse.
-	GetAmounts(pulseNumber int64) (jdAmount int64, rAmount int64, err error)
+	GetPulse(pulseNumber int64) (models.Pulse, error)
 	// GetPulse returns pulses from db.
 	GetPulses(fromPulse *int64, timestampLte, timestampGte *int64, limit, offset int) ([]models.Pulse, int, error)
 	// GetJetDropsWithParams returns jetDrops for provided pulse with limit and offset.

@@ -14,6 +14,7 @@ import (
 	"time"
 
 	fuzz "github.com/google/gofuzz"
+	"github.com/insolar/block-explorer/etl/interfaces"
 	"github.com/insolar/block-explorer/etl/models"
 	"github.com/insolar/insolar/insolar"
 	"github.com/insolar/insolar/insolar/gen"
@@ -383,6 +384,19 @@ func GenerateJetDropsWithSplit(t *testing.T, pulseCount, jDCount int, depth int)
 	}
 
 	return drops, pulses
+}
+
+// InitJetDropWithRecords create new JetDrop, generate random records, save SaveJetDropData
+func InitJetDropWithRecords(t *testing.T, s interfaces.StorageSetter, recordAmount int, pulse models.Pulse) models.JetDrop {
+	jetDrop := InitJetDropDB(pulse)
+	jetDrop.RecordAmount = recordAmount
+	record := make([]models.Record, recordAmount)
+	for i := 0; i < recordAmount; i++ {
+		record[i] = InitRecordDB(jetDrop)
+	}
+	err := s.SaveJetDropData(jetDrop, record, pulse.PulseNumber)
+	require.NoError(t, err)
+	return jetDrop
 }
 
 // createChildren is the recursion function which prepare jetdrops where jetID will be splited

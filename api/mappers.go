@@ -58,17 +58,17 @@ func RecordToAPI(record models.Record) server.Record {
 	return response
 }
 
-func PulseToAPI(pulse models.Pulse, jetDropAmount, recordAmount int64) server.Pulse {
+func PulseToAPI(pulse models.Pulse) server.Pulse {
 	pulseNumber := pulse.PulseNumber
 	prevPulseNumber := pulse.PrevPulseNumber
 	nextPulseNumber := pulse.NextPulseNumber
 	response := server.Pulse{
 		IsComplete:      &pulse.IsComplete,
-		JetDropAmount:   &jetDropAmount,
+		JetDropAmount:   &pulse.JetDropAmount,
 		NextPulseNumber: &nextPulseNumber,
 		PrevPulseNumber: &prevPulseNumber,
 		PulseNumber:     &pulseNumber,
-		RecordAmount:    &recordAmount,
+		RecordAmount:    &pulse.RecordAmount,
 		Timestamp:       &pulse.Timestamp,
 	}
 	return response
