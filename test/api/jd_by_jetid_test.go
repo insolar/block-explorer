@@ -329,6 +329,7 @@ func TestGetJetDropsByJetID_emptyJetID(t *testing.T) {
 	require.NoError(t, heavymock.ImportRecords(ts.ConMngr.ImporterClient, records))
 
 	ts.BE.PulseClient.SetNextFinalizedPulseFunc(ts.ConMngr.Importer)
+
 	ts.StartBE(t)
 	defer ts.StopBE(t)
 
