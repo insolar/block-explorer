@@ -25,6 +25,13 @@ jobs:
         uses: actions/checkout@master
         with:
           fetch-depth: 1
+      - name: Go mod cache setup
+        uses: actions/cache@v2
+        with:
+          path: ${{env.GOPATH}}/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
       - name: Build
         run: make all
   unit:
@@ -52,6 +59,13 @@ jobs:
         with:
           path: go/src/github.com/insolar/block-explorer
           fetch-depth: 1
+      - name: Go mod cache setup
+        uses: actions/cache@v2
+        with:
+          path: ${{env.GOPATH}}/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
       - name: Test
         run: make mod unit
         working-directory: ${{env.GOPATH}}/src/github.com/insolar/block-explorer
@@ -80,6 +94,13 @@ jobs:
         with:
           path: go/src/github.com/insolar/block-explorer
           fetch-depth: 1
+      - name: Go mod cache setup
+        uses: actions/cache@v2
+        with:
+          path: ${{env.GOPATH}}/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
       - name: Test
         run: make mod integration
         working-directory: ${{env.GOPATH}}/src/github.com/insolar/block-explorer
@@ -93,11 +114,12 @@ jobs:
         if: github.event_name == 'push'
         run: |
           echo "::set-env name=TEST_COUNT::10"
-          echo "::set-env name=TEST_ARGS::-json"
+          echo "::set-env name=TEST_ARGS::-timeout 30m -json"
       - name: set pull_request run params
         if: github.event_name == 'pull_request'
         run: |
           echo "::set-env name=TEST_COUNT::10"
+          echo "::set-env name=TEST_ARGS::-timeout 30m"
       - name: set scheduled run params
         if: github.event_name == 'schedule'
         run: |
@@ -113,6 +135,13 @@ jobs:
         with:
           path: go/src/github.com/insolar/block-explorer
           fetch-depth: 1
+      - name: Go mod cache setup
+        uses: actions/cache@v2
+        with:
+          path: ${{env.GOPATH}}/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
       - name: go mod download
         run: make mod
         working-directory: ${{env.GOPATH}}/src/github.com/insolar/block-explorer
@@ -150,6 +179,13 @@ jobs:
           fetch-depth: 1
       - name: Add bin to path
         run: echo "::add-path::${{env.GOPATH}}/bin"
+      - name: Go mod cache setup
+        uses: actions/cache@v2
+        with:
+          path: ${{env.GOPATH}}/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
       - name: Test
         run: make go-acc all test-with-coverage
         working-directory: ${{env.GOPATH}}/src/github.com/insolar/block-explorer

@@ -42,7 +42,7 @@ func TestNewProcessor(t *testing.T) {
 		atomic.AddInt32(&pulseSaves, 1)
 		return nil
 	})
-	sm.SaveJetDropDataMock.Set(func(jetDrop models.JetDrop, records []models.Record) (err error) {
+	sm.SaveJetDropDataMock.Set(func(jetDrop models.JetDrop, records []models.Record, pulseNumber int64) (err error) {
 		atomic.AddInt32(&jetDropSaves, 1)
 		wgStorage.Done()
 		return nil
@@ -64,13 +64,14 @@ func TestNewProcessor(t *testing.T) {
 	wgStorage.Add(5)
 	wgController.Add(5)
 	for i := 0; i < 5; i++ {
+		pn := int64(gen.PulseNumber())
 		JDC <- &types.JetDrop{
 			MainSection: &types.MainSection{
 				Start: types.DropStart{
 					PulseData: types.Pulse{
-						PulseNo:        int64(gen.PulseNumber()),
-						NextPulseDelta: 10,
-						PrevPulseDelta: 10,
+						PulseNo:         pn,
+						PrevPulseNumber: pn - 10,
+						NextPulseNumber: pn + 10,
 					},
 					JetDropPrefix:       "",
 					JetDropPrefixLength: 0,
@@ -104,11 +105,11 @@ func TestProcessor_process_EmptyPrev(t *testing.T) {
 	sm := mock.NewStorageSetterMock(t)
 	sm.SavePulseMock.Set(func(pulse models.Pulse) (err error) {
 		require.Equal(t, jd.MainSection.Start.PulseData.PulseNo, pulse.PulseNumber)
-		require.Equal(t, int64(jd.MainSection.Start.PulseData.PrevPulseDelta), pulse.PulseNumber-pulse.PrevPulseNumber)
-		require.Equal(t, int64(jd.MainSection.Start.PulseData.NextPulseDelta), pulse.NextPulseNumber-pulse.PulseNumber)
+		require.Equal(t, int64(jd.MainSection.Start.PulseData.PrevPulseNumber), pulse.PrevPulseNumber)
+		require.Equal(t, int64(jd.MainSection.Start.PulseData.NextPulseNumber), pulse.NextPulseNumber)
 		return nil
 	})
-	sm.SaveJetDropDataMock.Set(func(jetDrop models.JetDrop, records []models.Record) (err error) {
+	sm.SaveJetDropDataMock.Set(func(jetDrop models.JetDrop, records []models.Record, pulseNumber int64) (err error) {
 		require.Equal(t, jd.MainSection.Start.JetDropPrefix, jetDrop.JetID)
 		require.Len(t, records, len(jd.MainSection.Records))
 		return nil
@@ -144,11 +145,11 @@ func TestProcessor_process_SeveralPrev(t *testing.T) {
 	sm := mock.NewStorageSetterMock(t)
 	sm.SavePulseMock.Set(func(pulse models.Pulse) (err error) {
 		require.Equal(t, jd.MainSection.Start.PulseData.PulseNo, pulse.PulseNumber)
-		require.Equal(t, int64(jd.MainSection.Start.PulseData.PrevPulseDelta), pulse.PulseNumber-pulse.PrevPulseNumber)
-		require.Equal(t, int64(jd.MainSection.Start.PulseData.NextPulseDelta), pulse.NextPulseNumber-pulse.PulseNumber)
+		require.Equal(t, int64(jd.MainSection.Start.PulseData.PrevPulseNumber), pulse.PrevPulseNumber)
+		require.Equal(t, int64(jd.MainSection.Start.PulseData.NextPulseNumber), pulse.NextPulseNumber)
 		return nil
 	})
-	sm.SaveJetDropDataMock.Set(func(jetDrop models.JetDrop, records []models.Record) (err error) {
+	sm.SaveJetDropDataMock.Set(func(jetDrop models.JetDrop, records []models.Record, pulseNumber int64) (err error) {
 		require.Equal(t, jd.MainSection.Start.JetDropPrefix, jetDrop.JetID)
 		require.Equal(t, jd.MainSection.DropContinue.PrevDropHash[0], jetDrop.FirstPrevHash)
 		require.Equal(t, jd.MainSection.DropContinue.PrevDropHash[1], jetDrop.SecondPrevHash)
@@ -187,7 +188,7 @@ func TestProcessor_process_StorageSaveJetDropErr(t *testing.T) {
 	sm.SavePulseMock.Set(func(pulse models.Pulse) (err error) {
 		return nil
 	})
-	sm.SaveJetDropDataMock.Set(func(jetDrop models.JetDrop, records []models.Record) (err error) {
+	sm.SaveJetDropDataMock.Set(func(jetDrop models.JetDrop, records []models.Record, pulseNumber int64) (err error) {
 		return errors.New("test error")
 	})
 

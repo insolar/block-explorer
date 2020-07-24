@@ -43,11 +43,16 @@ func TestGetJetDropsByID(t *testing.T) {
 	recordInLastPulse := []*exporter.Record{testutils.GenerateRecordInNextPulse(lastPulse)}
 	require.NoError(t, heavymock.ImportRecords(ts.ConMngr.ImporterClient, recordInLastPulse))
 
-	ts.WaitRecordsCount(t, len(records), 5000)
+	ts.BE.PulseClient.SetNextFinalizedPulseFunc(ts.ConMngr.Importer)
+
+	ts.StartBE(t)
+	defer ts.StopBE(t)
+
+	ts.WaitRecordsCount(t, len(records)+1, 5000)
 
 	c := GetHTTPClient()
 	pulsesResp := c.Pulses(t, nil)
-	require.Len(t, pulsesResp.Result, pulsesCount)
+	require.Len(t, pulsesResp.Result, pulsesCount+1)
 
 	t.Run("check received data in jetdrops", func(t *testing.T) {
 		t.Log("C5240 Get JetDrop by JetDropID")
@@ -73,7 +78,13 @@ func TestGetJetDropsByID_negativeCases(t *testing.T) {
 	jetDropsCount := 2
 	records := testutils.GenerateRecordsWithDifferencePulsesSilence(pulsesCount, jetDropsCount)
 	require.NoError(t, heavymock.ImportRecords(ts.ConMngr.ImporterClient, records))
-	ts.WaitRecordsCount(t, len(records)-jetDropsCount, 5000)
+
+	ts.BE.PulseClient.SetNextFinalizedPulseFunc(ts.ConMngr.Importer)
+
+	ts.StartBE(t)
+	defer ts.StopBE(t)
+
+	ts.WaitRecordsCount(t, len(records), 5000)
 	c := GetHTTPClient()
 
 	nonExistentJetID := fmt.Sprintf("%v:%v",

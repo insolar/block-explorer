@@ -51,8 +51,8 @@ type StorageMock struct {
 	beforeGetSequentialPulseCounter uint64
 	GetSequentialPulseMock          mStorageMockGetSequentialPulse
 
-	funcSaveJetDropData          func(jetDrop models.JetDrop, records []models.Record) (err error)
-	inspectFuncSaveJetDropData   func(jetDrop models.JetDrop, records []models.Record)
+	funcSaveJetDropData          func(jetDrop models.JetDrop, records []models.Record, pulseNumber int64) (err error)
+	inspectFuncSaveJetDropData   func(jetDrop models.JetDrop, records []models.Record, pulseNumber int64)
 	afterSaveJetDropDataCounter  uint64
 	beforeSaveJetDropDataCounter uint64
 	SaveJetDropDataMock          mStorageMockSaveJetDropData
@@ -1275,8 +1275,9 @@ type StorageMockSaveJetDropDataExpectation struct {
 
 // StorageMockSaveJetDropDataParams contains parameters of the Storage.SaveJetDropData
 type StorageMockSaveJetDropDataParams struct {
-	jetDrop models.JetDrop
-	records []models.Record
+	jetDrop     models.JetDrop
+	records     []models.Record
+	pulseNumber int64
 }
 
 // StorageMockSaveJetDropDataResults contains results of the Storage.SaveJetDropData
@@ -1285,7 +1286,7 @@ type StorageMockSaveJetDropDataResults struct {
 }
 
 // Expect sets up expected params for Storage.SaveJetDropData
-func (mmSaveJetDropData *mStorageMockSaveJetDropData) Expect(jetDrop models.JetDrop, records []models.Record) *mStorageMockSaveJetDropData {
+func (mmSaveJetDropData *mStorageMockSaveJetDropData) Expect(jetDrop models.JetDrop, records []models.Record, pulseNumber int64) *mStorageMockSaveJetDropData {
 	if mmSaveJetDropData.mock.funcSaveJetDropData != nil {
 		mmSaveJetDropData.mock.t.Fatalf("StorageMock.SaveJetDropData mock is already set by Set")
 	}
@@ -1294,7 +1295,7 @@ func (mmSaveJetDropData *mStorageMockSaveJetDropData) Expect(jetDrop models.JetD
 		mmSaveJetDropData.defaultExpectation = &StorageMockSaveJetDropDataExpectation{}
 	}
 
-	mmSaveJetDropData.defaultExpectation.params = &StorageMockSaveJetDropDataParams{jetDrop, records}
+	mmSaveJetDropData.defaultExpectation.params = &StorageMockSaveJetDropDataParams{jetDrop, records, pulseNumber}
 	for _, e := range mmSaveJetDropData.expectations {
 		if minimock.Equal(e.params, mmSaveJetDropData.defaultExpectation.params) {
 			mmSaveJetDropData.mock.t.Fatalf("Expectation set by When has same params: %#v", *mmSaveJetDropData.defaultExpectation.params)
@@ -1305,7 +1306,7 @@ func (mmSaveJetDropData *mStorageMockSaveJetDropData) Expect(jetDrop models.JetD
 }
 
 // Inspect accepts an inspector function that has same arguments as the Storage.SaveJetDropData
-func (mmSaveJetDropData *mStorageMockSaveJetDropData) Inspect(f func(jetDrop models.JetDrop, records []models.Record)) *mStorageMockSaveJetDropData {
+func (mmSaveJetDropData *mStorageMockSaveJetDropData) Inspect(f func(jetDrop models.JetDrop, records []models.Record, pulseNumber int64)) *mStorageMockSaveJetDropData {
 	if mmSaveJetDropData.mock.inspectFuncSaveJetDropData != nil {
 		mmSaveJetDropData.mock.t.Fatalf("Inspect function is already set for StorageMock.SaveJetDropData")
 	}
@@ -1329,7 +1330,7 @@ func (mmSaveJetDropData *mStorageMockSaveJetDropData) Return(err error) *Storage
 }
 
 //Set uses given function f to mock the Storage.SaveJetDropData method
-func (mmSaveJetDropData *mStorageMockSaveJetDropData) Set(f func(jetDrop models.JetDrop, records []models.Record) (err error)) *StorageMock {
+func (mmSaveJetDropData *mStorageMockSaveJetDropData) Set(f func(jetDrop models.JetDrop, records []models.Record, pulseNumber int64) (err error)) *StorageMock {
 	if mmSaveJetDropData.defaultExpectation != nil {
 		mmSaveJetDropData.mock.t.Fatalf("Default expectation is already set for the Storage.SaveJetDropData method")
 	}
@@ -1344,14 +1345,14 @@ func (mmSaveJetDropData *mStorageMockSaveJetDropData) Set(f func(jetDrop models.
 
 // When sets expectation for the Storage.SaveJetDropData which will trigger the result defined by the following
 // Then helper
-func (mmSaveJetDropData *mStorageMockSaveJetDropData) When(jetDrop models.JetDrop, records []models.Record) *StorageMockSaveJetDropDataExpectation {
+func (mmSaveJetDropData *mStorageMockSaveJetDropData) When(jetDrop models.JetDrop, records []models.Record, pulseNumber int64) *StorageMockSaveJetDropDataExpectation {
 	if mmSaveJetDropData.mock.funcSaveJetDropData != nil {
 		mmSaveJetDropData.mock.t.Fatalf("StorageMock.SaveJetDropData mock is already set by Set")
 	}
 
 	expectation := &StorageMockSaveJetDropDataExpectation{
 		mock:   mmSaveJetDropData.mock,
-		params: &StorageMockSaveJetDropDataParams{jetDrop, records},
+		params: &StorageMockSaveJetDropDataParams{jetDrop, records, pulseNumber},
 	}
 	mmSaveJetDropData.expectations = append(mmSaveJetDropData.expectations, expectation)
 	return expectation
@@ -1364,15 +1365,15 @@ func (e *StorageMockSaveJetDropDataExpectation) Then(err error) *StorageMock {
 }
 
 // SaveJetDropData implements interfaces.Storage
-func (mmSaveJetDropData *StorageMock) SaveJetDropData(jetDrop models.JetDrop, records []models.Record) (err error) {
+func (mmSaveJetDropData *StorageMock) SaveJetDropData(jetDrop models.JetDrop, records []models.Record, pulseNumber int64) (err error) {
 	mm_atomic.AddUint64(&mmSaveJetDropData.beforeSaveJetDropDataCounter, 1)
 	defer mm_atomic.AddUint64(&mmSaveJetDropData.afterSaveJetDropDataCounter, 1)
 
 	if mmSaveJetDropData.inspectFuncSaveJetDropData != nil {
-		mmSaveJetDropData.inspectFuncSaveJetDropData(jetDrop, records)
+		mmSaveJetDropData.inspectFuncSaveJetDropData(jetDrop, records, pulseNumber)
 	}
 
-	mm_params := &StorageMockSaveJetDropDataParams{jetDrop, records}
+	mm_params := &StorageMockSaveJetDropDataParams{jetDrop, records, pulseNumber}
 
 	// Record call args
 	mmSaveJetDropData.SaveJetDropDataMock.mutex.Lock()
@@ -1389,7 +1390,7 @@ func (mmSaveJetDropData *StorageMock) SaveJetDropData(jetDrop models.JetDrop, re
 	if mmSaveJetDropData.SaveJetDropDataMock.defaultExpectation != nil {
 		mm_atomic.AddUint64(&mmSaveJetDropData.SaveJetDropDataMock.defaultExpectation.Counter, 1)
 		mm_want := mmSaveJetDropData.SaveJetDropDataMock.defaultExpectation.params
-		mm_got := StorageMockSaveJetDropDataParams{jetDrop, records}
+		mm_got := StorageMockSaveJetDropDataParams{jetDrop, records, pulseNumber}
 		if mm_want != nil && !minimock.Equal(*mm_want, mm_got) {
 			mmSaveJetDropData.t.Errorf("StorageMock.SaveJetDropData got unexpected parameters, want: %#v, got: %#v%s\n", *mm_want, mm_got, minimock.Diff(*mm_want, mm_got))
 		}
@@ -1401,9 +1402,9 @@ func (mmSaveJetDropData *StorageMock) SaveJetDropData(jetDrop models.JetDrop, re
 		return (*mm_results).err
 	}
 	if mmSaveJetDropData.funcSaveJetDropData != nil {
-		return mmSaveJetDropData.funcSaveJetDropData(jetDrop, records)
+		return mmSaveJetDropData.funcSaveJetDropData(jetDrop, records, pulseNumber)
 	}
-	mmSaveJetDropData.t.Fatalf("Unexpected call to StorageMock.SaveJetDropData. %v %v", jetDrop, records)
+	mmSaveJetDropData.t.Fatalf("Unexpected call to StorageMock.SaveJetDropData. %v %v %v", jetDrop, records, pulseNumber)
 	return
 }
 

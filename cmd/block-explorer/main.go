@@ -13,16 +13,16 @@ import (
 	"syscall"
 
 	"github.com/insolar/block-explorer/api"
-	"github.com/insolar/insconfig"
-	"github.com/insolar/insolar/ledger/heavy/exporter"
-	"github.com/pkg/errors"
-
 	"github.com/insolar/block-explorer/etl/connection"
 	"github.com/insolar/block-explorer/etl/controller"
+	"github.com/insolar/block-explorer/etl/dbconn/plugins"
 	"github.com/insolar/block-explorer/etl/extractor"
 	"github.com/insolar/block-explorer/etl/processor"
 	"github.com/insolar/block-explorer/etl/transformer"
 	"github.com/insolar/block-explorer/instrumentation/belogger"
+	"github.com/insolar/insconfig"
+	"github.com/insolar/insolar/ledger/heavy/exporter"
+	"github.com/pkg/errors"
 
 	"github.com/insolar/block-explorer/etl/dbconn"
 	"github.com/insolar/block-explorer/etl/storage"
@@ -31,6 +31,9 @@ import (
 )
 
 var stop = make(chan os.Signal, 1)
+
+// stopChannel is the global channel where you have to send signal to stop application
+var stopChannel = make(chan struct{})
 
 func main() {
 	cfg := &configuration.BlockExplorer{}
@@ -62,7 +65,9 @@ func main() {
 	defer client.GetGRPCConn().Close()
 
 	pulseExtractor := extractor.NewPlatformPulseExtractor(exporter.NewPulseExporterClient(client.GetGRPCConn()))
-	platformExtractor := extractor.NewPlatformExtractor(100, pulseExtractor, exporter.NewRecordExporterClient(client.GetGRPCConn()))
+	platformExtractor := extractor.NewPlatformExtractor(100, cfg.Replicator.ContinuousPulseRetrievingHalfPulseSeconds,
+		int32(cfg.Replicator.ParallelConnections),
+		pulseExtractor, exporter.NewRecordExporterClient(client.GetGRPCConn()))
 	err = platformExtractor.Start(ctx)
 	if err != nil {
 		logger.Fatal("cannot start platformExtractor: ", err)
@@ -96,6 +101,9 @@ func main() {
 			logger.Error(errors.Wrap(err, "failed to close database").Error())
 		}
 	}()
+
+	r := plugins.NewDefaultShutdownPlugin(stopChannel)
+	r.Apply(db)
 
 	storage := storage.NewStorage(db)
 
@@ -131,7 +139,12 @@ func main() {
 
 func graceful(ctx context.Context) {
 	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)
-	<-stop
 	logger := belogger.FromContext(ctx)
 	logger.Infof("gracefully stopping...")
+	select {
+	case <-stopChannel:
+		logger.Info("stopping by channel")
+	case <-stop:
+		logger.Info("stopping by signal")
+	}
 }

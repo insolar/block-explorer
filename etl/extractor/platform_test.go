@@ -10,6 +10,7 @@ package extractor
 import (
 	"context"
 	"fmt"
+	"io"
 	"testing"
 	"time"
 
@@ -17,6 +18,8 @@ import (
 	"github.com/insolar/block-explorer/etl/interfaces/mock"
 	"github.com/insolar/block-explorer/testutils"
 	"github.com/insolar/block-explorer/testutils/clients"
+	"github.com/insolar/insolar/insolar"
+	"github.com/insolar/insolar/insolar/record"
 	"github.com/insolar/insolar/ledger/heavy/exporter"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
@@ -28,9 +31,9 @@ func TestGetJetDrops(t *testing.T) {
 	mc := minimock.NewController(t)
 	recordClient := mock.NewRecordExporterClientMock(mc)
 
-	withDifferencePulses := testutils.GenerateRecordsWithDifferencePulses(pulseCount, 2)
+	withDifferencePulses := testutils.GenerateRecordsWithDifferencePulses(pulseCount, 2, StartPulseNumber)
 	expectedRecord, err := withDifferencePulses()
-	require.NoError(t, err)
+	require.NoError(t, err) // you are testing yours testutils
 
 	stream := recordStream{
 		recvFunc: withDifferencePulses,
@@ -41,9 +44,9 @@ func TestGetJetDrops(t *testing.T) {
 			return stream, nil
 		})
 
-	pulseClient := clients.GetTestPulseClient(1, nil)
+	pulseClient := clients.GetTestPulseClient(65537, nil)
 	pulseExtractor := NewPlatformPulseExtractor(pulseClient)
-	extractor := NewPlatformExtractor(uint32(pulseCount), pulseExtractor, recordClient)
+	extractor := NewPlatformExtractor(uint32(pulseCount), 0, 100, pulseExtractor, recordClient)
 	err = extractor.Start(ctx)
 	require.NoError(t, err)
 	defer extractor.Stop(ctx)
@@ -67,9 +70,21 @@ func TestGetJetDrops(t *testing.T) {
 				expectedRecord.Record.ID.String(),
 				jd.Records[0].Record.ID.String(),
 				"record reference should be different")
-		case <-time.After(time.Millisecond * 100):
+		case <-time.After(time.Second * 10):
 			t.Fatal("chan receive timeout ")
 		}
+	}
+}
+
+func recordTapeFunc(t *testing.T, tape []*exporter.Record) func() (record *exporter.Record, e error) {
+	used := 0
+	return func() (record *exporter.Record, e error) {
+		if len(tape) == used {
+			return nil, io.EOF
+		}
+		ret := tape[used]
+		used++
+		return ret, nil
 	}
 }
 
@@ -95,78 +110,62 @@ func TestLoadJetDrops_returnsRecordByPulses(t *testing.T) {
 
 	ctx := context.Background()
 	mc := minimock.NewController(t)
-	recordClient := mock.NewRecordExporterClientMock(mc)
-
 	for _, test := range tests {
 		t.Run(fmt.Sprintf("pulse-count=%d,record-count=%d", test.differentPulseCount, test.recordCount), func(t *testing.T) {
-			withDifferencePulses := testutils.GenerateRecordsWithDifferencePulses(test.differentPulseCount+1, test.recordCount)
-			expectedRecord, err := withDifferencePulses()
-			require.NoError(t, err)
-			startPulseNumber := int(expectedRecord.Record.ID.Pulse().AsUint32())
+			recordClient := mock.NewRecordExporterClientMock(mc)
 
-			stream := recordStream{
-				recvFunc: withDifferencePulses,
+			recordTape := make(map[int][]*exporter.Record)
+			startPulseNumber := 65537
+			for p := 0; p < test.differentPulseCount; p++ {
+				pulse := startPulseNumber + p*10
+				for r := 0; r < test.recordCount; r++ {
+					recordTape[pulse] = append(recordTape[pulse], &exporter.Record{
+						Record: record.Material{ID: *insolar.NewID(insolar.PulseNumber(pulse), nil)},
+					})
+				}
 			}
+			lastPulse := startPulseNumber + 10*test.differentPulseCount
+			lastRecord := &exporter.Record{
+				Record: record.Material{ID: *insolar.NewID(insolar.PulseNumber(lastPulse), nil)},
+			}
+			recordTape[lastPulse] = append(recordTape[lastPulse], lastRecord)
+
 			recordClient.ExportMock.Set(
 				func(ctx context.Context, in *exporter.GetRecords, opts ...grpc.CallOption) (
 					r1 exporter.RecordExporter_ExportClient, err error) {
-					return stream, nil
+					pu := int(in.PulseNumber)
+					slice := in.RecordNumber
+					if int(slice) > len(recordTape[pu]) {
+						return recordStream{
+							recvFunc: recordTapeFunc(t, recordTape[lastPulse]),
+						}, nil
+					}
+					return recordStream{
+						recvFunc: recordTapeFunc(t, append(recordTape[pu][slice:], lastRecord)),
+					}, nil
 				})
 
-			pulseClient := clients.GetTestPulseClient(1, nil)
-			pulseExtractor := NewPlatformPulseExtractor(pulseClient)
-			extractor := NewPlatformExtractor(uint32(test.recordCount), pulseExtractor, recordClient)
-			err = extractor.LoadJetDrops(ctx, int64(startPulseNumber), int64(startPulseNumber+10*test.differentPulseCount))
+			pulseIteration := 0
+			pulseExtractor := mock.NewPulseExtractorMock(t)
+			pulseExtractor.GetNextFinalizedPulseMock.Set(
+				func(ctx context.Context, p int64) (fp1 *exporter.FullPulse, err error) {
+					pp, err := clients.GetFullPulse(uint32(startPulseNumber + 10*pulseIteration))
+					pulseIteration++
+					return pp, err
+				})
+
+			extractor := NewPlatformExtractor(77, 0, 100, pulseExtractor, recordClient)
+			err := extractor.LoadJetDrops(ctx, int64(startPulseNumber-10), int64(startPulseNumber+10*(test.differentPulseCount-1)))
 			require.NoError(t, err)
-			// we are waiting only 2 times, because of 2 different pulses
-			for i := 0; i < test.differentPulseCount; {
+			for i := 0; i < test.differentPulseCount; i++ {
 				select {
 				case jd := <-extractor.GetJetDrops(ctx):
 					require.NotNil(t, jd)
-					if i == 0 {
-						// test.recordCount-1 because we have already received the  first record from fist pulse.
-						// see expectedRecord, err := withDifferencePulses()
-						require.Len(t, jd.Records, test.recordCount-1, "no records received")
-					} else {
-						// two in each pulses from generator
-						require.Len(t, jd.Records, test.recordCount, "no records received")
-					}
-					i++
+					require.Len(t, jd.Records, test.recordCount, "no records received")
 				case <-time.After(time.Millisecond * 100):
 					t.Fatal("chan receive timeout ")
 				}
 			}
 		})
 	}
-
-}
-
-func TestLoadJetDrops_fromPulseNumberCannotBeNegative(t *testing.T) {
-	ctx := context.Background()
-	mc := minimock.NewController(t)
-	recordClient := mock.NewRecordExporterClientMock(mc)
-
-	extractor := NewPlatformExtractor(1, nil, recordClient)
-	err := extractor.LoadJetDrops(ctx, -1, 10)
-	require.EqualError(t, err, "fromPulseNumber cannot be negative")
-}
-
-func TestLoadJetDrops_toPulseNumberCannotBeLess1(t *testing.T) {
-	ctx := context.Background()
-	mc := minimock.NewController(t)
-	recordClient := mock.NewRecordExporterClientMock(mc)
-
-	extractor := NewPlatformExtractor(1, nil, recordClient)
-	err := extractor.LoadJetDrops(ctx, 1, 0)
-	require.EqualError(t, err, "toPulseNumber cannot be less than 1")
-}
-
-func TestLoadJetDrops_toPulseNumberShouldBeGreater(t *testing.T) {
-	ctx := context.Background()
-	mc := minimock.NewController(t)
-	recordClient := mock.NewRecordExporterClientMock(mc)
-
-	extractor := NewPlatformExtractor(1, nil, recordClient)
-	err := extractor.LoadJetDrops(ctx, 10, 9)
-	require.EqualError(t, err, "fromPulseNumber cannot be greater than toPulseNumber")
 }

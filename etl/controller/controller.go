@@ -53,7 +53,12 @@ func NewController(cfg configuration.Controller, extractor interfaces.JetDropsEx
 		return nil, errors.Wrap(err, "can't get not complete pulses from storage")
 	}
 	for _, p := range pulses {
-		key := types.Pulse{PulseNo: p.PulseNumber}
+		key := types.Pulse{PulseNo: p.PulseNumber, PrevPulseNumber: p.PrevPulseNumber, NextPulseNumber: p.NextPulseNumber}
+		func() {
+			c.jetDropRegisterLock.Lock()
+			defer c.jetDropRegisterLock.Unlock()
+			c.jetDropRegister[key] = map[string]struct{}{}
+		}()
 		jetDrops, err := c.storage.GetJetDrops(p)
 		if err != nil {
 			return nil, errors.Wrapf(err, "can't get jetDrops for pulse %d from storage", p.PulseNumber)

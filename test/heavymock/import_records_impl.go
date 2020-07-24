@@ -9,6 +9,7 @@ import (
 	"io"
 	"sync"
 
+	"github.com/insolar/insolar/insolar"
 	"github.com/insolar/insolar/ledger/heavy/exporter"
 )
 
@@ -79,4 +80,15 @@ func (s *ImporterServer) collectRecords(records []*exporter.Record) {
 		slice[i] = &savedRecord{records[i], false}
 	}
 	s.records = append(s.records, slice...)
+}
+
+func (s *ImporterServer) GetLowestUnsentPulse() insolar.PulseNumber {
+	pulse := insolar.PulseNumber(1<<32 - 1)
+	for _, r := range s.GetUnsentRecords() {
+		if r.Record.ID.Pulse() > pulse {
+			continue
+		}
+		pulse = r.Record.ID.Pulse()
+	}
+	return pulse
 }

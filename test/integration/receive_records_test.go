@@ -53,7 +53,9 @@ func (a *receiveRecordsSuite) TestReceiveRecords_sendAndReceiveWithImporter() {
 	require.NoError(a.T(), err)
 	require.True(a.T(), reply.Ok)
 
-	request := &exporter.GetRecords{}
+	request := &exporter.GetRecords{
+		PulseNumber: heavymock.SimpleRecord.Record.ID.Pulse(),
+	}
 
 	expStream, err := a.c.ExporterClient.Export(context.Background(), request)
 	require.NoError(a.T(), err, "Error when sending export request")
@@ -65,8 +67,11 @@ func (a *receiveRecordsSuite) TestReceiveRecords_sendAndReceiveWithImporter() {
 			break
 		}
 		c++
+		if c == recordsCount { // lastrecord
+			break
+		}
 		require.NoError(a.T(), err, "Err listening stream")
-		require.True(a.T(), heavymock.SimpleRecord.Equal(record), "Incorrect record pulse number")
+		require.Equal(a.T(), heavymock.SimpleRecord.Record.ID.Pulse(), record.Record.ID.Pulse(), "Incorrect record pulse number")
 	}
 	require.Equal(a.T(), recordsCount, c)
 }

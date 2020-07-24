@@ -17,7 +17,7 @@ var SimpleRecord = &exporter.Record{
 	Polymorph:    1,
 	RecordNumber: 100,
 	Record: record.Material{
-		ID: insolar.ID{},
+		ID: *insolar.NewID(65537, nil),
 	},
 	ShouldIterateFrom: nil,
 }

@@ -66,6 +66,8 @@ type Pulse struct {
 	IsComplete      bool
 	IsSequential    bool
 	Timestamp       int64
+	JetDropAmount   int64
+	RecordAmount    int64
 }
 
 type JetDropID struct {

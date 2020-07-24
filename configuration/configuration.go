@@ -33,8 +33,10 @@ type API struct {
 }
 
 type DB struct {
-	URL      string `insconfig:"postgres://postgres@localhost/postgres?sslmode=disable| Path to postgres db"`
-	PoolSize int    `insconfig:"100| Maximum number of socket connections"`
+	URL             string        `insconfig:"postgres://postgres:secret@localhost:5432/postgres?sslmode=disable| Path to postgres db"`
+	MaxOpenConns    int           `insconfig:"100| The maximum number of open connections to the database"`
+	MaxIdleConns    int           `insconfig:"100| The maximum number of connections in the idle"`
+	ConnMaxLifetime time.Duration `insconfig:"600s| The maximum amount of time a connection may be reused"`
 }
 
 type TestDB struct {
@@ -47,9 +49,11 @@ type TestDB struct {
 
 // Replicator represents a configuration of the Platform connection
 type Replicator struct {
-	Addr            string `insconfig:"127.0.0.1:5678| The gRPC server address"`
-	MaxTransportMsg int    `insconfig:"1073741824| Maximum message size the client can send"`
-	Auth            Auth
+	Addr                                      string `insconfig:"127.0.0.1:5678| The gRPC server address"`
+	MaxTransportMsg                           int    `insconfig:"1073741824| Maximum message size the client can send"`
+	ContinuousPulseRetrievingHalfPulseSeconds uint32 `insconfig:"5| Half pulse in seconds"`
+	ParallelConnections                       uint32 `insconfig:"100| Maximum parallel pulse retrievers"`
+	Auth                                      Auth
 }
 
 // Auth represents the authentication of the Platform

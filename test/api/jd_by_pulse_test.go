@@ -46,11 +46,15 @@ func TestGetJetDropsByPulse(t *testing.T) {
 	lastRecordInPulse := []*exporter.Record{testutils.GenerateRecordInNextPulse(lastPulse)}
 	require.NoError(t, heavymock.ImportRecords(ts.ConMngr.ImporterClient, lastRecordInPulse))
 
-	ts.WaitRecordsCount(t, len(records), 5000)
+	ts.BE.PulseClient.SetNextFinalizedPulseFunc(ts.ConMngr.Importer)
+	ts.StartBE(t)
+	defer ts.StopBE(t)
+
+	ts.WaitRecordsCount(t, len(records)+1, 5000)
 
 	c := GetHTTPClient()
 	pulsesResp := c.Pulses(t, nil)
-	require.Len(t, pulsesResp.Result, pulsesCount)
+	require.Len(t, pulsesResp.Result, pulsesCount+1)
 
 	t.Run("check received data in jetdrops", func(t *testing.T) {
 		t.Log("C5223 Get Jet drops by Pulse number")
@@ -100,7 +104,7 @@ func TestGetJetDropsByPulse(t *testing.T) {
 			testutils.GenerateRecordInNextPulse(lastPulse + 30)}
 
 		require.NoError(t, heavymock.ImportRecords(ts.ConMngr.ImporterClient, newRecords[1:]))
-		ts.WaitRecordsCount(t, len(records)+2, 5000)
+		ts.WaitRecordsCount(t, len(records)+3, 5000)
 
 		emptyPulse := int64(newRecords[0].Record.ID.Pulse())
 
@@ -119,7 +123,11 @@ func TestGetJetDropsByPulse_severalRecordsInJD(t *testing.T) {
 	records := testutils.GenerateRecordsFromOneJetSilence(pulsesCount, recordsCount)
 	require.NoError(t, heavymock.ImportRecords(ts.ConMngr.ImporterClient, records))
 
-	ts.WaitRecordsCount(t, recordsCount*(pulsesCount-1), 1000)
+	ts.BE.PulseClient.SetNextFinalizedPulseFunc(ts.ConMngr.Importer)
+	ts.StartBE(t)
+	defer ts.StopBE(t)
+
+	ts.WaitRecordsCount(t, recordsCount*pulsesCount, 1000)
 	c := GetHTTPClient()
 	response := c.JetDropsByPulseNumber(t, int64(records[0].Record.ID.Pulse()), nil)
 	require.Equal(t, int64(1), response.Total)
@@ -140,7 +148,11 @@ func TestGetJetDropsByPulse_queryParams(t *testing.T) {
 	nextPulseRecords := []*exporter.Record{testutils.GenerateRecordInNextPulse(pn)}
 	require.NoError(t, heavymock.ImportRecords(ts.ConMngr.ImporterClient, nextPulseRecords))
 
-	ts.WaitRecordsCount(t, len(records), 10000)
+	ts.BE.PulseClient.SetNextFinalizedPulseFunc(ts.ConMngr.Importer)
+	ts.StartBE(t)
+	defer ts.StopBE(t)
+
+	ts.WaitRecordsCount(t, len(records)+1, 10000)
 	c := GetHTTPClient()
 	jdList := c.JetDropsByPulseNumber(t, int64(pn), &client.JetDropsByPulseNumberOpts{
 		Limit: optional.NewInt32(int32(jetDropsCount)),

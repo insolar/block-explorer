@@ -15,6 +15,9 @@ import (
 	"github.com/insolar/block-explorer/etl/types"
 	"github.com/insolar/block-explorer/instrumentation/converter"
 	"github.com/insolar/block-explorer/testutils"
+	"github.com/insolar/insolar/insolar"
+	"github.com/insolar/insolar/insolar/gen"
+	"github.com/insolar/insolar/ledger/heavy/exporter"
 	"github.com/stretchr/testify/require"
 )
 
@@ -28,6 +31,16 @@ func TestTransformer_withDifferentJetId(t *testing.T) {
 		record, err := recordGenFunc()
 		require.NoError(t, err)
 		jetDrops.Records = append(jetDrops.Records, record)
+	}
+	pulseNumber := gen.PulseNumber()
+	jetDrops.Pulse = &exporter.FullPulse{
+		PulseNumber:      pulseNumber,
+		PrevPulseNumber:  pulseNumber,
+		NextPulseNumber:  pulseNumber,
+		Entropy:          insolar.Entropy{},
+		PulseTimestamp:   0,
+		EpochPulseNumber: 0,
+		Jets:             nil,
 	}
 
 	dropsCh := make(chan *types.PlatformJetDrops)

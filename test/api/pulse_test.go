@@ -32,11 +32,16 @@ func TestGetPulse(t *testing.T) {
 
 	err := heavymock.ImportRecords(ts.ConMngr.ImporterClient, records)
 	require.NoError(t, err)
-	ts.WaitRecordsCount(t, size-1, 5000)
+
+	ts.BE.PulseClient.SetNextFinalizedPulseFunc(ts.ConMngr.Importer)
+	ts.StartBE(t)
+	defer ts.StopBE(t)
+
+	ts.WaitRecordsCount(t, size, 5000)
 
 	c := GetHTTPClient()
 	pulsesResp := c.Pulses(t, nil)
-	require.Len(t, pulsesResp.Result, size-1)
+	require.Len(t, pulsesResp.Result, size)
 
 	t.Run("existing pulses", func(t *testing.T) {
 		t.Log("C5218 Get pulse data")

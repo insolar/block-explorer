@@ -31,6 +31,13 @@ jobs:
            curl -sfL https://raw.githubusercontent.com/knqyf263/cob/master/install.sh | sudo sh -s -- -b /usr/local/bin
            make all
         working-directory: ${{env.GOPATH}}/src/github.com/insolar/block-explorer
+      - name: Go mod cache setup
+        uses: actions/cache@v2
+        with:
+          path: ${{env.GOPATH}}/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
       - name: go mod download
         run: make mod
         working-directory: ${{env.GOPATH}}/src/github.com/insolar/block-explorer
