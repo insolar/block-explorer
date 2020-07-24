@@ -40,14 +40,13 @@ func TestGetPulse(t *testing.T) {
 	ts.WaitRecordsCount(t, size, 5000)
 
 	c := GetHTTPClient()
-	pulsesResp, err := c.Pulses(t, nil)
+	pulsesResp := c.Pulses(t, nil)
 	require.Len(t, pulsesResp.Result, size)
 
 	t.Run("existing pulses", func(t *testing.T) {
 		t.Log("C5218 Get pulse data")
 		for i, p := range pulses[:len(pulses)-1] {
-			response, err := c.Pulse(t, int64(p))
-			require.NoError(t, err)
+			response := c.Pulse(t, int64(p))
 			require.Equal(t, pulsesResp.Result[len(pulsesResp.Result)-1-i].PulseNumber, response.PulseNumber)
 			require.Equal(t, int64(p), response.PulseNumber)
 			require.Equal(t, response.PulseNumber-10, response.PrevPulseNumber)
@@ -61,15 +60,11 @@ func TestGetPulse(t *testing.T) {
 	})
 	t.Run("non existing pulse", func(t *testing.T) {
 		t.Log("C5219 Get pulse, not found non existing pulse")
-		_, err := c.Pulse(t, int64(pulses[len(pulses)-1]+1000))
-		require.Error(t, err)
-		require.Equal(t, "404 Not Found", err.Error())
+		c.PulseWithError(t, int64(pulses[len(pulses)-1]+1000), notFound404)
 	})
 	t.Run("zero pulse", func(t *testing.T) {
 		t.Log("C5221 Get pulse, pulse is zero value")
-		_, err := c.Pulse(t, 0)
-		require.Error(t, err)
-		require.Equal(t, "404 Not Found", err.Error())
+		c.PulseWithError(t, int64(pulses[len(pulses)-1]+1000), notFound404)
 	})
 	t.Run("empty pulse", func(t *testing.T) {
 		t.Log("C5222 Get pulse, pulse is an empty pulse")
@@ -78,15 +73,14 @@ func TestGetPulse(t *testing.T) {
 			testutils.GenerateRecordInNextPulse(pulses[size-1] + 10),
 			testutils.GenerateRecordInNextPulse(pulses[size-1] + 20)}
 
-		err := heavymock.ImportRecords(ts.ConMngr.ImporterClient, newRecords[1:])
+		require.NoError(t, heavymock.ImportRecords(ts.ConMngr.ImporterClient, newRecords[1:]))
 		ts.WaitRecordsCount(t, size+1, 5000)
 
 		emptyPulse := int64(newRecords[0].Record.ID.Pulse())
 		// TODO check if emptyPulse exists or not in the pulses list
-		_, err = c.Pulses(t, nil)
-		require.NoError(t, err)
+		_ = c.Pulses(t, nil)
 
-		r, err := c.Pulse(t, emptyPulse)
+		r := c.Pulse(t, emptyPulse)
 		require.Equal(t, emptyPulse, r.PulseNumber)
 	})
 }
