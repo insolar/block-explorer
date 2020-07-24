@@ -16,6 +16,7 @@ import (
 	"github.com/insolar/insolar/insolar"
 	ins_record "github.com/insolar/insolar/insolar/record"
 	"github.com/insolar/insolar/ledger/heavy/exporter"
+	"github.com/insolar/insolar/pulse"
 	"github.com/stretchr/testify/require"
 )
 
@@ -78,7 +79,7 @@ func TestGenerateRecordsWithDifferencePulses(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(fmt.Sprintf("pulse-size=%d,record-count=%d", test.differentPulseSize, test.recordCount), func(t *testing.T) {
-			fn := GenerateRecordsWithDifferencePulses(test.differentPulseSize, test.recordCount)
+			fn := GenerateRecordsWithDifferencePulses(test.differentPulseSize, test.recordCount, int64(pulse.MinTimePulse))
 			lastPn := uint32(0)
 			for i := 0; i < test.differentPulseSize*test.recordCount+1; i++ {
 				record, _ := fn()

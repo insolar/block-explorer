@@ -20,6 +20,7 @@ import (
 	"github.com/insolar/insolar/insolar/gen"
 	insrecord "github.com/insolar/insolar/insolar/record"
 	"github.com/insolar/insolar/ledger/heavy/exporter"
+	"github.com/insolar/insolar/pulse"
 	"github.com/stretchr/testify/require"
 )
 
@@ -255,7 +256,7 @@ func GenerateRecords(batchSize int) func() (record *exporter.Record, e error) {
 }
 
 func GenerateRecordsWithDifferencePulsesSilence(differentPulseSize, recordCount int) []*exporter.Record {
-	record := GenerateRecordsWithDifferencePulses(differentPulseSize, recordCount)
+	record := GenerateRecordsWithDifferencePulses(differentPulseSize, recordCount, pulse.MinTimePulse)
 	result := make([]*exporter.Record, 0)
 	for i := 0; i < differentPulseSize*recordCount; i++ {
 		r, err := record()
@@ -278,11 +279,12 @@ func GenerateRecordsFromOneJetSilence(differentPulseSize, recordCount int) []*ex
 }
 
 // GenerateRecordsWithDifferencePulses generates records with recordCount for each pulse
-func GenerateRecordsWithDifferencePulses(differentPulseSize, recordCount int) func() (record *exporter.Record, e error) {
+func GenerateRecordsWithDifferencePulses(differentPulseSize, recordCount int, startpn int64) func() (record *exporter.Record, e error) {
 	var mu = &sync.Mutex{}
 	i := 0
 	localRecordCount := 0
 	var prevRecord *exporter.Record = GenerateRecordsSilence(1)[0]
+	prevRecord.Record.ID = *insolar.NewID(insolar.PulseNumber(startpn), nil)
 	fn := func() (*exporter.Record, error) {
 		mu.Lock()
 		defer mu.Unlock()
