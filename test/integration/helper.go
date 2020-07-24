@@ -9,6 +9,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/insolar/insolar/insolar"
+	"github.com/insolar/insolar/insolar/gen"
 	"github.com/insolar/insolar/ledger/heavy/exporter"
 	"github.com/stretchr/testify/require"
 
@@ -95,11 +97,14 @@ func (a *BlockExplorerTestSuite) CheckForRecordsNotChanged(t testing.TB, expCoun
 }
 
 // nolint
-func (a *BlockExplorerTestSuite) ImportRecordsMultipleJetDrops(t testing.TB, jetDrops int, records int) {
+func (a *BlockExplorerTestSuite) ImportRecordsMultipleJetDrops(t testing.TB, jetDrops int, records int, pulse insolar.PulseNumber) {
 	d := make([]*exporter.Record, 0)
 	for i := 0; i < jetDrops; i++ {
 		recs := testutils.GenerateRecordsFromOneJetSilence(1, records)
 		d = append(d, recs...)
+	}
+	for _, r := range d {
+		r.Record.ID = gen.IDWithPulse(pulse)
 	}
 	t.Logf("total records: %d", len(d))
 	err := heavymock.ImportRecords(a.ConMngr.ImporterClient, d)
