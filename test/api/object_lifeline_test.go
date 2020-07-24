@@ -47,8 +47,7 @@ func TestLifeline_onePulse(t *testing.T) {
 	ts.WaitRecordsCount(t, len(lifelineRecords)+1, 10000)
 
 	c := GetHTTPClient()
-	response, err := c.ObjectLifeline(t, lifeline.ObjID.String(), nil)
-	require.NoError(t, err)
+	response := c.ObjectLifeline(t, lifeline.ObjID.String(), nil)
 	require.Len(t, response.Result, len(lifeline.GetStateRecords()))
 	for _, res := range response.Result {
 		require.Contains(t, lifeline.ObjID.String(), res.ObjectReference)
@@ -81,8 +80,7 @@ func TestLifeline_severalPulses(t *testing.T) {
 	ts.WaitRecordsCount(t, len(lifelineRecords)+1, 5000)
 
 	c := GetHTTPClient()
-	response, err := c.ObjectLifeline(t, lifeline.ObjID.String(), &client.ObjectLifelineOpts{Limit: optional.NewInt32(100)})
-	require.NoError(t, err)
+	response := c.ObjectLifeline(t, lifeline.ObjID.String(), &client.ObjectLifelineOpts{Limit: optional.NewInt32(100)})
 	require.Len(t, response.Result, len(lifeline.GetStateRecords()))
 	pulses := make([]int64, pulsesNumber)
 	for i, s := range lifeline.StateRecords {
@@ -116,8 +114,7 @@ func TestLifeline_amendRecords(t *testing.T) {
 	ts.WaitRecordsCount(t, count+1, 10000)
 
 	c := GetHTTPClient()
-	response, err := c.ObjectLifeline(t, lifeline.ObjID.String(), &client.ObjectLifelineOpts{Limit: optional.NewInt32(100)})
-	require.NoError(t, err)
+	response := c.ObjectLifeline(t, lifeline.ObjID.String(), &client.ObjectLifelineOpts{Limit: optional.NewInt32(100)})
 	require.Len(t, response.Result, count)
 }
 
@@ -159,8 +156,7 @@ func TestLifeline_removedStatesBetweenPulses(t *testing.T) {
 	ts.WaitRecordsCount(t, expCount+1, 10000)
 
 	c := GetHTTPClient()
-	response, err := c.ObjectLifeline(t, objID.String(), &client.ObjectLifelineOpts{Limit: optional.NewInt32(100)})
-	require.NoError(t, err)
+	response := c.ObjectLifeline(t, objID.String(), &client.ObjectLifelineOpts{Limit: optional.NewInt32(100)})
 	require.Len(t, response.Result, expCount)
 }
 
@@ -191,8 +187,7 @@ func TestLifeline_removedStatesWithinPulses(t *testing.T) {
 	ts.WaitRecordsCount(t, recordsInPulse+1, 10000)
 
 	c := GetHTTPClient()
-	response, err := c.ObjectLifeline(t, lifeline.ObjID.String(), &client.ObjectLifelineOpts{Limit: optional.NewInt32(100)})
-	require.NoError(t, err)
+	response := c.ObjectLifeline(t, lifeline.ObjID.String(), &client.ObjectLifelineOpts{Limit: optional.NewInt32(100)})
 	require.Len(t, response.Result, recordsInPulse)
 }
 
@@ -228,8 +223,7 @@ func TestLifeline_recordsHaveSamePrevState(t *testing.T) {
 	ts.WaitRecordsCount(t, recordsInPulse+1, 10000)
 
 	c := GetHTTPClient()
-	response, err := c.ObjectLifeline(t, lifeline.ObjID.String(), &client.ObjectLifelineOpts{Limit: optional.NewInt32(100)})
-	require.NoError(t, err)
+	response := c.ObjectLifeline(t, lifeline.ObjID.String(), &client.ObjectLifelineOpts{Limit: optional.NewInt32(100)})
 	require.Len(t, response.Result, recordsInPulse)
 }
 
@@ -262,8 +256,7 @@ func TestLifeline_receiveNewObjectStates(t *testing.T) {
 	ts.WaitRecordsCount(t, recordsInPulse*5, 10000)
 
 	c := GetHTTPClient()
-	response, err := c.ObjectLifeline(t, lifeline.ObjID.String(), &client.ObjectLifelineOpts{Limit: optional.NewInt32(100)})
-	require.NoError(t, err)
+	response := c.ObjectLifeline(t, lifeline.ObjID.String(), &client.ObjectLifelineOpts{Limit: optional.NewInt32(100)})
 	require.Len(t, response.Result, recordsInPulse*pulsesNumber)
 }
 
@@ -303,7 +296,6 @@ func TestLifeline_fillMissedStates(t *testing.T) {
 	ts.WaitRecordsCount(t, lenExpRecords+1, 10000)
 
 	c := GetHTTPClient()
-	response, err := c.ObjectLifeline(t, lifeline.ObjID.String(), &client.ObjectLifelineOpts{Limit: optional.NewInt32(100)})
-	require.NoError(t, err)
+	response := c.ObjectLifeline(t, lifeline.ObjID.String(), &client.ObjectLifelineOpts{Limit: optional.NewInt32(100)})
 	require.Len(t, response.Result, lenExpRecords)
 }

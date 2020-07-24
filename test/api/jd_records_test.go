@@ -82,8 +82,7 @@ func TestGetRecordsByJetDropID(t *testing.T) {
 	t.Run("get records by jetdrops", func(t *testing.T) {
 		t.Log("C5323 Get records by different JetDropIDs")
 		for jd := range jds {
-			response, err := c.JetDropRecords(t, jd, nil)
-			require.NoError(t, err)
+			response := c.JetDropRecords(t, jd, nil)
 
 			require.Equal(t, int64(len(jds[jd])), response.Total)
 			require.Len(t, response.Result, len(jds[jd]))
@@ -103,16 +102,14 @@ func TestGetRecordsByJetDropID(t *testing.T) {
 		pn := gen.PulseNumber()
 		jetID := converter.JetIDToString(testutils.GenerateUniqueJetID())
 		val := fmt.Sprintf("%v:%v", jetID, pn)
-		response, err := c.JetDropRecords(t, val, nil)
-		require.NoError(t, err)
+		response := c.JetDropRecords(t, val, nil)
 		require.Empty(t, response.Result)
 		require.Empty(t, response.Total)
 	})
 	t.Run("value with star", func(t *testing.T) {
 		t.Log("C5325 Get records by JetDropID, no results if \"*:pulse\"")
 		val := "*:65538"
-		response, err := c.JetDropRecords(t, val, nil)
-		require.NoError(t, err)
+		response := c.JetDropRecords(t, val, nil)
 		require.Empty(t, response.Result)
 		require.Empty(t, response.Total)
 	})
@@ -149,8 +146,7 @@ func TestGetRecordsByJetDropID_queryParams(t *testing.T) {
 			Limit:  optional.NewInt32(int32(recordsInJetDropCount - 2)),
 			Offset: optional.NewInt32(int32(1)),
 		}
-		response, err := c.JetDropRecords(t, jetDropID, &queryParams)
-		require.NoError(t, err)
+		response := c.JetDropRecords(t, jetDropID, &queryParams)
 		require.Equal(t, int64(recordsInJetDropCount), response.Total)
 		require.Len(t, response.Result, recordsInJetDropCount-2)
 		require.Equal(t, records[1].Record.ID.String(), response.Result[0].Reference)
@@ -161,8 +157,7 @@ func TestGetRecordsByJetDropID_queryParams(t *testing.T) {
 		queryParams := client.JetDropRecordsOpts{
 			FromIndex: optional.NewString(fmt.Sprintf("%v:%v", lifeline.StateRecords[0].Pn, fromIdx)),
 		}
-		response, err := c.JetDropRecords(t, jetDropID, &queryParams)
-		require.NoError(t, err)
+		response := c.JetDropRecords(t, jetDropID, &queryParams)
 		require.Equal(t, int64(recordsInJetDropCount-fromIdx), response.Total)
 		require.Len(t, response.Result, recordsInJetDropCount-fromIdx)
 		require.Equal(t, records[fromIdx].Record.ID.String(), response.Result[0].Reference)
@@ -208,8 +203,7 @@ func TestGetRecordsByJetDropID_byType(t *testing.T) {
 			Type_: optional.NewString(stateType),
 			Limit: optional.NewInt32(int32(recordsInJetDropCount)),
 		}
-		response, err := c.JetDropRecords(t, jetDropID, &queryParams)
-		require.NoError(t, err)
+		response := c.JetDropRecords(t, jetDropID, &queryParams)
 		require.Equal(t, int64(recordsInJetDropCount), response.Total)
 		require.Len(t, response.Result, recordsInJetDropCount)
 		require.Equal(t, records[0].Record.ID.String(), response.Result[0].Reference)
@@ -221,8 +215,7 @@ func TestGetRecordsByJetDropID_byType(t *testing.T) {
 			Type_: optional.NewString(requestType),
 			Limit: optional.NewInt32(int32(recordsInJetDropCount)),
 		}
-		response, err := c.JetDropRecords(t, jetDropID, &queryParams)
-		require.NoError(t, err)
+		response := c.JetDropRecords(t, jetDropID, &queryParams)
 		require.Equal(t, int64(recordsInJetDropCount), response.Total)
 		require.Len(t, response.Result, recordsInJetDropCount)
 		require.Equal(t, requestRecord.Record.ID.String(), response.Result[0].Reference)
@@ -234,8 +227,7 @@ func TestGetRecordsByJetDropID_byType(t *testing.T) {
 			Type_: optional.NewString(resultType),
 			Limit: optional.NewInt32(int32(recordsInJetDropCount)),
 		}
-		response, err := c.JetDropRecords(t, jetDropID, &queryParams)
-		require.NoError(t, err)
+		response := c.JetDropRecords(t, jetDropID, &queryParams)
 		require.Equal(t, int64(recordsInJetDropCount), response.Total)
 		require.Len(t, response.Result, recordsInJetDropCount)
 		require.Equal(t, resultRecord.Record.ID.String(), response.Result[0].Reference)
@@ -273,8 +265,7 @@ func TestGetRecordsByJetDropID_star(t *testing.T) {
 
 	val := fmt.Sprintf("*:%v", pn.String())
 	c := GetHTTPClient()
-	response, err := c.JetDropRecords(t, val, nil)
-	require.NoError(t, err)
+	response := c.JetDropRecords(t, val, nil)
 	require.Len(t, response.Result, 2)
 	require.Equal(t, int64(2), response.Total)
 }
@@ -326,8 +317,7 @@ func TestGetRecordsByJetDropID_oneJdCheckFields(t *testing.T) {
 	ts.WaitRecordsCount(t, len(records)+1, 5000)
 
 	c := GetHTTPClient()
-	response, err := c.JetDropRecords(t, jetDropID, nil)
-	require.NoError(t, err)
+	response := c.JetDropRecords(t, jetDropID, nil)
 
 	require.Equal(t, int64(len(records)), response.Total)
 	require.Len(t, response.Result, len(records))
@@ -386,9 +376,7 @@ func TestGetRecordsByJetDropID_negative(t *testing.T) {
 	for _, tc := range tcs {
 		t.Run(tc.testName, func(t *testing.T) {
 			t.Log(tc.trTestCaseName)
-			_, err := c.JetDropRecords(t, tc.value, nil)
-			require.Error(t, err)
-			require.Equal(t, tc.expResult, err.Error())
+			c.JetDropRecordsWithError(t, tc.value, nil, tc.expResult)
 		})
 	}
 }

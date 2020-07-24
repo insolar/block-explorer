@@ -59,8 +59,7 @@ func TestRecordsWithoutObjectID(t *testing.T) {
 
 	t.Run("request", func(t *testing.T) {
 		t.Log("C5458 Receive request records with empty ObjectID")
-		res, err := c.JetDropRecords(t, jetDropID, nil)
-		require.NoError(t, err)
+		res := c.JetDropRecords(t, jetDropID, nil)
 		require.NotEmpty(t, res.Result)
 		for _, r := range res.Result {
 			if request.Record.ID.String() == r.Reference {
@@ -72,8 +71,7 @@ func TestRecordsWithoutObjectID(t *testing.T) {
 	})
 	t.Run("result", func(t *testing.T) {
 		t.Log("C5459 Receive result records with empty ObjectID")
-		res, err := c.JetDropRecords(t, jetDropID, nil)
-		require.NoError(t, err)
+		res := c.JetDropRecords(t, jetDropID, nil)
 		require.NotEmpty(t, res.Result)
 		for _, r := range res.Result {
 			if result.Record.ID.String() == r.Reference {

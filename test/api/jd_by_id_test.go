@@ -51,15 +51,13 @@ func TestGetJetDropsByID(t *testing.T) {
 	ts.WaitRecordsCount(t, len(records)+1, 5000)
 
 	c := GetHTTPClient()
-	pulsesResp, err := c.Pulses(t, nil)
-	require.NoError(t, err)
+	pulsesResp := c.Pulses(t, nil)
 	require.Len(t, pulsesResp.Result, pulsesCount+1)
 
 	t.Run("check received data in jetdrops", func(t *testing.T) {
 		t.Log("C5240 Get JetDrop by JetDropID")
 		for jd := range jds {
-			response, err := c.JetDropsByID(t, jd)
-			require.NoError(t, err)
+			response := c.JetDropsByID(t, jd)
 			require.Equal(t, jd, response.JetDropId)
 			require.Equal(t, int64(1), response.RecordAmount)
 			require.Empty(t, response.Message)
@@ -122,9 +120,7 @@ func TestGetJetDropsByID_negativeCases(t *testing.T) {
 	for _, tc := range tcs {
 		t.Run(tc.testName, func(t *testing.T) {
 			t.Log(tc.trTestCaseName)
-			_, err := c.JetDropsByID(t, tc.value)
-			require.Error(t, err)
-			require.Equal(t, tc.expResult, err.Error())
+			c.JetDropsByIDWithError(t, tc.value, tc.expResult)
 		})
 	}
 }
