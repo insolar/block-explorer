@@ -92,8 +92,7 @@ func TestShutDownPlugin(t *testing.T) {
 
 	var called int32 = 0
 	db.Callback().Update().Register("TestShutDownPlugin", func(scope *gorm.Scope) {
-		called = called + 1
-		atomic.CompareAndSwapInt32(&called, 0, 1)
+		atomic.AddInt32(&called, 1)
 	})
 
 	err = pool.Client.StopContainer(containerID, 0)
