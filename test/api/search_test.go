@@ -60,8 +60,7 @@ func TestSearchApi(t *testing.T) {
 
 	t.Run("get pulse", func(t *testing.T) {
 		t.Log("C5157 Search by existing pulse_number")
-		response, err := c.Search(t, pn.String())
-		require.NoError(t, err)
+		response := c.Search(t, pn.String())
 		exp := client.SearchResponse200{
 			Type: typePulse,
 			Meta: client.SearchResponse200Meta{
@@ -73,8 +72,7 @@ func TestSearchApi(t *testing.T) {
 	t.Run("get random pulse", func(t *testing.T) {
 		t.Log("C5163 Search by nonexistent pulse_number")
 		wrongPulse := lifeline.GetStateRecords()[0].Record.ID.Pulse() + 1000
-		response, err := c.Search(t, wrongPulse.String())
-		require.NoError(t, err)
+		response := c.Search(t, wrongPulse.String())
 		exp := client.SearchResponse200{
 			Type: typePulse,
 			Meta: client.SearchResponse200Meta{
@@ -85,8 +83,7 @@ func TestSearchApi(t *testing.T) {
 	})
 	t.Run("get jetDrop", func(t *testing.T) {
 		t.Log("C5159 Search by existing jetdrop_id")
-		response, err := c.Search(t, jetDropID)
-		require.NoError(t, err)
+		response := c.Search(t, jetDropID)
 		exp := client.SearchResponse200{
 			Type: typeJetDrop,
 			Meta: client.SearchResponse200Meta{
@@ -100,8 +97,7 @@ func TestSearchApi(t *testing.T) {
 		jetDrop := fmt.Sprintf("%v:%v",
 			strings.Split(converter.JetIDToString(records[0].Record.JetID), ":")[0],
 			records[2].Record.ID.Pulse())
-		response, err := c.Search(t, jetDrop)
-		require.NoError(t, err)
+		response := c.Search(t, jetDrop)
 		exp := client.SearchResponse200{
 			Type: typeJetDrop,
 			Meta: client.SearchResponse200Meta{
@@ -112,8 +108,7 @@ func TestSearchApi(t *testing.T) {
 	})
 	t.Run("get object ref", func(t *testing.T) {
 		t.Log("C5160 Search by existing object_reference")
-		response, err := c.Search(t, objRef)
-		require.NoError(t, err)
+		response := c.Search(t, objRef)
 		exp := client.SearchResponse200{
 			Type: typeRef,
 			Meta: client.SearchResponse200Meta{
@@ -125,8 +120,7 @@ func TestSearchApi(t *testing.T) {
 	t.Run("get random object ref", func(t *testing.T) {
 		t.Log("C5166 Search by nonexisting object_reference")
 		randomRef := gen.Reference().String()
-		response, err := c.Search(t, randomRef)
-		require.NoError(t, err)
+		response := c.Search(t, randomRef)
 		exp := client.SearchResponse200{
 			Type: typeRef,
 			Meta: client.SearchResponse200Meta{
@@ -143,8 +137,7 @@ func TestSearchApi(t *testing.T) {
 		ref := insolar.NewRecordReference(*insolar.NewIDFromBytes(id)).String()
 		pn := r.Record.ID.Pulse()
 
-		response, err := c.Search(t, ref)
-		require.NoError(t, err)
+		response := c.Search(t, ref)
 		exp := client.SearchResponse200{
 			Type: typeRecord,
 			Meta: client.SearchResponse200Meta{
@@ -183,9 +176,7 @@ func TestSearchApi(t *testing.T) {
 	for _, tc := range tcs {
 		t.Run(tc.testName, func(t *testing.T) {
 			t.Log(tc.trTestCaseName)
-			_, err := c.Search(t, tc.value)
-			require.Error(t, err)
-			require.Equal(t, tc.expResult, err.Error())
+			c.SearchWithError(t, tc.value, tc.expResult)
 		})
 	}
 }

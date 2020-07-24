@@ -77,8 +77,7 @@ func TestGetJetDropsByJetID(t *testing.T) {
 	t.Run("check jetDrops amount", func(t *testing.T) {
 		t.Log("C5410 Get JetDrops by JetID if JetID contains JetDrops from different pulses")
 		for expJetID := range jetIDs {
-			response, err := c.JetDropsByJetID(t, expJetID, nil)
-			require.NoError(t, err)
+			response := c.JetDropsByJetID(t, expJetID, nil)
 			require.Empty(t, response.Message)
 			require.Empty(t, response.Code)
 			require.Empty(t, response.Description)
@@ -105,8 +104,7 @@ func TestGetJetDropsByJetID(t *testing.T) {
 			values = append(values, jetID[:len(jetID)-int(math.Round(float64(len(jetID)/2)))])
 		}
 		for _, value := range values {
-			response, err := c.JetDropsByJetID(t, value, nil)
-			require.NoError(t, err)
+			response := c.JetDropsByJetID(t, value, nil)
 			require.NotEmpty(t, response.Result)
 			require.Greater(t, response.Total, int64(0))
 			require.Empty(t, response.ValidationFailures)
@@ -118,8 +116,7 @@ func TestGetJetDropsByJetID(t *testing.T) {
 	t.Run("check jetDrops amount", func(t *testing.T) {
 		t.Log("C5422 Get JetDrops by nonexistent JetID")
 		jetID := converter.JetIDToString(testutils.GenerateUniqueJetID())
-		response, err := c.JetDropsByJetID(t, jetID, nil)
-		require.NoError(t, err)
+		response := c.JetDropsByJetID(t, jetID, nil)
 		require.Empty(t, response.Result)
 		require.Equal(t, int64(0), response.Total)
 		require.Empty(t, int64(0), response.ValidationFailures)
@@ -167,8 +164,7 @@ func TestGetJetDropsByJetID_queryParams(t *testing.T) {
 		queryParams := client.JetDropsByJetIDOpts{
 			Limit: optional.NewInt32(int32(pulsesInJet - 1)),
 		}
-		response, err := c.JetDropsByJetID(t, jetID, &queryParams)
-		require.NoError(t, err)
+		response := c.JetDropsByJetID(t, jetID, &queryParams)
 		require.Equal(t, int64(pulsesInJet), response.Total)
 		require.Len(t, response.Result, pulsesInJet-1)
 	})
@@ -177,8 +173,7 @@ func TestGetJetDropsByJetID_queryParams(t *testing.T) {
 		queryParams := client.JetDropsByJetIDOpts{
 			SortBy: optional.NewString("pulse_number_asc,jet_id_desc"),
 		}
-		response, err := c.JetDropsByJetID(t, jetID, &queryParams)
-		require.NoError(t, err)
+		response := c.JetDropsByJetID(t, jetID, &queryParams)
 		require.Equal(t, int64(pulsesInJet), response.Total)
 		require.Len(t, response.Result, pulsesInJet)
 		var pulses []int64
@@ -195,8 +190,7 @@ func TestGetJetDropsByJetID_queryParams(t *testing.T) {
 		queryParams := client.JetDropsByJetIDOpts{
 			SortBy: optional.NewString("pulse_number_desc,jet_id_asc"),
 		}
-		response, err := c.JetDropsByJetID(t, jetID, &queryParams)
-		require.NoError(t, err)
+		response := c.JetDropsByJetID(t, jetID, &queryParams)
 		require.Equal(t, int64(pulsesInJet), response.Total)
 		require.Len(t, response.Result, pulsesInJet)
 		var pulses []int64
@@ -215,8 +209,7 @@ func TestGetJetDropsByJetID_queryParams(t *testing.T) {
 			PulseNumberGte: optional.NewInt32(int32(pn)),
 			SortBy:         optional.NewString("pulse_number_asc,jet_id_desc"),
 		}
-		response, err := c.JetDropsByJetID(t, jetID, &queryParams)
-		require.NoError(t, err)
+		response := c.JetDropsByJetID(t, jetID, &queryParams)
 		require.Equal(t, int64(pulsesInJet-1), response.Total)
 		require.Len(t, response.Result, pulsesInJet-1)
 		require.Equal(t, int64(pn), response.Result[0].PulseNumber)
@@ -229,8 +222,7 @@ func TestGetJetDropsByJetID_queryParams(t *testing.T) {
 			PulseNumberGt: optional.NewInt32(int32(pn)),
 			SortBy:        optional.NewString("pulse_number_asc,jet_id_desc"),
 		}
-		response, err := c.JetDropsByJetID(t, jetID, &queryParams)
-		require.NoError(t, err)
+		response := c.JetDropsByJetID(t, jetID, &queryParams)
 		require.Equal(t, int64(pulsesInJet-2), response.Total)
 		require.Len(t, response.Result, pulsesInJet-2)
 		require.Equal(t, int64(uniqPulses[2]), response.Result[0].PulseNumber)
@@ -242,8 +234,7 @@ func TestGetJetDropsByJetID_queryParams(t *testing.T) {
 		queryParams := client.JetDropsByJetIDOpts{
 			PulseNumberLte: optional.NewInt32(int32(pn)),
 		}
-		response, err := c.JetDropsByJetID(t, jetID, &queryParams)
-		require.NoError(t, err)
+		response := c.JetDropsByJetID(t, jetID, &queryParams)
 		require.Equal(t, int64(pulsesInJet-1), response.Total)
 		require.Len(t, response.Result, pulsesInJet-1)
 		require.Equal(t, int64(pn), response.Result[0].PulseNumber)
@@ -255,8 +246,7 @@ func TestGetJetDropsByJetID_queryParams(t *testing.T) {
 		queryParams := client.JetDropsByJetIDOpts{
 			PulseNumberLt: optional.NewInt32(int32(pn)),
 		}
-		response, err := c.JetDropsByJetID(t, jetID, &queryParams)
-		require.NoError(t, err)
+		response := c.JetDropsByJetID(t, jetID, &queryParams)
 		require.Equal(t, int64(pulsesInJet-2), response.Total)
 		require.Len(t, response.Result, pulsesInJet-2)
 		require.Equal(t, int64(uniqPulses[1]), response.Result[0].PulseNumber)
@@ -287,9 +277,7 @@ func TestGetJetDropsByJetID_negative(t *testing.T) {
 	for _, tc := range tcs {
 		t.Run(tc.testName, func(t *testing.T) {
 			t.Log(tc.trTestCaseName)
-			_, err := c.JetDropsByJetID(t, tc.value, nil)
-			require.Error(t, err)
-			require.Equal(t, tc.expResult, err.Error())
+			c.JetDropsByJetIDWithError(t, tc.value, nil, tc.expResult)
 		})
 	}
 }
