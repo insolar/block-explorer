@@ -48,7 +48,7 @@ func (a *BlockExplorerTestSuite) Stop(t testing.TB) {
 	a.ConMngr.Stop()
 }
 
-func (a *BlockExplorerTestSuite) StartBE(t *testing.T) {
+func (a *BlockExplorerTestSuite) StartBE(t testing.TB) {
 	err := a.BE.Start()
 	require.NoError(t, err)
 }
@@ -101,8 +101,6 @@ func (a *BlockExplorerTestSuite) ImportRecordsMultipleJetDrops(t testing.TB, jet
 		recs := testutils.GenerateRecordsFromOneJetSilence(1, records)
 		d = append(d, recs...)
 	}
-	notFinalizedRecords := testutils.GenerateRecordsFromOneJetSilence(1, 1)
-	d = append(d, notFinalizedRecords...)
 	t.Logf("total records: %d", len(d))
 	err := heavymock.ImportRecords(a.ConMngr.ImporterClient, d)
 	require.NoError(t, err)

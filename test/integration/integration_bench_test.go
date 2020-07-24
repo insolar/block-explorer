@@ -18,7 +18,10 @@ func BenchmarkFetchPulse500RecordsSingleJet(b *testing.B) {
 	jetDrops := 1
 	b.ResetTimer()
 	ts := NewBlockExplorerTestSetup(b)
+	ts.BE.PulseClient.SetNextFinalizedPulseFunc(ts.ConMngr.Importer)
+	ts.StartBE(b)
 	defer ts.Stop(b)
+
 	for i := 0; i < b.N; i++ {
 		b.StopTimer()
 		ts.ImportRecordsMultipleJetDrops(b, jetDrops, records)
@@ -34,7 +37,10 @@ func BenchmarkFetchPulse1kRecordsSingleJet(b *testing.B) {
 	jetDrops := 1
 	b.ResetTimer()
 	ts := NewBlockExplorerTestSetup(b)
+	ts.BE.PulseClient.SetNextFinalizedPulseFunc(ts.ConMngr.Importer)
+	ts.StartBE(b)
 	defer ts.Stop(b)
+
 	for i := 0; i < b.N; i++ {
 		b.StopTimer()
 		ts.ImportRecordsMultipleJetDrops(b, jetDrops, records)
@@ -50,7 +56,10 @@ func BenchmarkFetchPulse2kRecordsSingleJet(b *testing.B) {
 	jetDrops := 1
 	b.ResetTimer()
 	ts := NewBlockExplorerTestSetup(b)
+	ts.BE.PulseClient.SetNextFinalizedPulseFunc(ts.ConMngr.Importer)
+	ts.StartBE(b)
 	defer ts.Stop(b)
+
 	for i := 0; i < b.N; i++ {
 		b.StopTimer()
 		ts.ImportRecordsMultipleJetDrops(b, jetDrops, records)
@@ -66,7 +75,10 @@ func BenchmarkFetchPulse500Records5Jets(b *testing.B) {
 	jetDrops := 5
 	b.ResetTimer()
 	ts := NewBlockExplorerTestSetup(b)
+	ts.BE.PulseClient.SetNextFinalizedPulseFunc(ts.ConMngr.Importer)
+	ts.StartBE(b)
 	defer ts.Stop(b)
+
 	for i := 0; i < b.N; i++ {
 		b.StopTimer()
 		ts.ImportRecordsMultipleJetDrops(b, jetDrops, records)
@@ -82,7 +94,10 @@ func BenchmarkFetchPulse500Records10Jets(b *testing.B) {
 	jetDrops := 10
 	b.ResetTimer()
 	ts := NewBlockExplorerTestSetup(b)
+	ts.BE.PulseClient.SetNextFinalizedPulseFunc(ts.ConMngr.Importer)
+	ts.StartBE(b)
 	defer ts.Stop(b)
+
 	for i := 0; i < b.N; i++ {
 		b.StopTimer()
 		ts.ImportRecordsMultipleJetDrops(b, jetDrops, records)
@@ -98,7 +113,10 @@ func BenchmarkFetchPulse500Records20Jets(b *testing.B) {
 	jetDrops := 20
 	b.ResetTimer()
 	ts := NewBlockExplorerTestSetup(b)
+	ts.BE.PulseClient.SetNextFinalizedPulseFunc(ts.ConMngr.Importer)
+	ts.StartBE(b)
 	defer ts.Stop(b)
+
 	for i := 0; i < b.N; i++ {
 		b.StopTimer()
 		ts.ImportRecordsMultipleJetDrops(b, jetDrops, records)
