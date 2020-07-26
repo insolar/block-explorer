@@ -29,6 +29,7 @@ func NewBlockExplorerTestSetup(t testing.TB) *BlockExplorerTestSuite {
 	c.Start(t)
 	c.StartDB(t)
 	be := betest.NewBlockExplorer(c.ExporterClient, c.DB)
+	be.PulseClient.SetNextFinalizedPulseFunc(c.Importer)
 	return &BlockExplorerTestSuite{
 		ConMngr: c,
 		BE:      be,
