@@ -248,7 +248,7 @@ func (s *Server) JetDropsByJetID(ctx echo.Context, jetID server.JetIdPath, param
 	for _, jetDrop := range jetDrops {
 		add := func(hash []byte) {
 			key := base64.StdEncoding.EncodeToString(hash)
-			jetDropsByPrevHash[key] = append(jetDropsByPrevHash[key], transformPrevNextResp(jetDrop))
+			jetDropsByPrevHash[key] = append(jetDropsByPrevHash[key], transformPrevNextResp(jetDrop)) // nolint
 		}
 		add(jetDrop.FirstPrevHash)
 		add(jetDrop.SecondPrevHash)
