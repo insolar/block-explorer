@@ -8,9 +8,10 @@
 package integration
 
 import (
+	"testing"
+
 	"github.com/insolar/block-explorer/etl/models"
 	"github.com/insolar/block-explorer/testutils"
-	"testing"
 )
 
 func BenchmarkFetchPulse500RecordsSingleJet(b *testing.B) {
