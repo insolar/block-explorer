@@ -111,7 +111,7 @@ type StorageAPIFetcher interface {
 	// GetJetDropsWithParams returns jetDrops for provided pulse with limit and offset.
 	GetJetDropsWithParams(pulse models.Pulse, fromJetDropID *models.JetDropID, limit int, offset int) ([]models.JetDrop, int, error)
 	// GetJetDropByID returns JetDrop by JetDropID
-	GetJetDropByID(id models.JetDropID) (models.JetDrop, error)
+	GetJetDropByID(id models.JetDropID) (models.JetDrop, []models.JetDrop, []models.JetDrop, error)
 	// GetJetDropsByJetID returns jetDrops for provided jetID sorting and filtering by pulseNumber.
 	GetJetDropsByJetID(jetID string, pulseNumberLte, pulseNumberLt, pulseNumberGte, pulseNumberGt *int64, limit int, sortByPnAsc bool) ([]models.JetDrop, int, error)
 	// GetLifeline returns records for provided object reference, ordered by desc by pulse number and order fields.

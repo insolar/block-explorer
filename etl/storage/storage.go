@@ -386,10 +386,39 @@ func (s *Storage) GetJetDropsWithParams(pulse models.Pulse, fromJetDropID *model
 	return jetDrops, int(total), err
 }
 
-func (s *Storage) GetJetDropByID(id models.JetDropID) (models.JetDrop, error) {
+func (s *Storage) GetJetDropByID(id models.JetDropID) (models.JetDrop, []models.JetDrop, []models.JetDrop, error) {
 	var jetDrop models.JetDrop
 	err := s.db.Model(&jetDrop).Where("pulse_number = ? AND jet_id = ?", id.PulseNumber, id.JetID).Find(&jetDrop).Error
-	return jetDrop, err
+	if err != nil {
+		return jetDrop, nil, nil, err
+	}
+	// get prev and next pulse
+	var pulse models.Pulse
+	err = s.db.Where("pulse_number = ?", id.PulseNumber).First(&pulse).Error
+	if err != nil {
+		return jetDrop, nil, nil, err
+	}
+
+	siblings := []string{jetDrop.JetID, fmt.Sprintf("%s0", jetDrop.JetID), fmt.Sprintf("%s1", jetDrop.JetID)}
+	sz := len(jetDrop.JetID)
+	if sz > 0 {
+		siblings = append(siblings, jetDrop.JetID[:sz-1])
+	}
+
+	var nextJetDrops []models.JetDrop
+	err = s.db.Model(&nextJetDrops).Where("pulse_number = ? AND jet_id in (?)", pulse.NextPulseNumber, siblings).Find(&nextJetDrops).Error
+	if err != nil {
+		return jetDrop, nil, nil, err
+	}
+
+	var prevJetDrops []models.JetDrop
+	err = s.db.Model(&prevJetDrops).Where("pulse_number = ? AND jet_id in (?)", pulse.PrevPulseNumber, siblings).Find(&prevJetDrops).Error
+	if err != nil {
+		return jetDrop, nil, nil, err
+	}
+
+	pulse = s.updateNextPulse(pulse)
+	return jetDrop, prevJetDrops, nextJetDrops, err
 }
 
 func (s *Storage) GetJetDropsByJetID(jetID string, pulseNumberLte, pulseNumberLt, pulseNumberGte, pulseNumberGt *int64, limit int, sortByPnAsc bool) ([]models.JetDrop, int, error) {

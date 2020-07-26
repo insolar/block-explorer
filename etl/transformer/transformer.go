@@ -9,7 +9,6 @@ import (
 	"context"
 
 	"github.com/insolar/insolar/pulse"
-	"golang.org/x/crypto/sha3"
 
 	"github.com/insolar/block-explorer/instrumentation"
 	"github.com/insolar/block-explorer/instrumentation/converter"
@@ -36,7 +35,8 @@ func Transform(ctx context.Context, jd *types.PlatformJetDrops) ([]*types.JetDro
 	}
 
 	log := belogger.FromContext(ctx).WithField("service", "transformer")
-	for _, jetid := range jd.Pulse.Jets {
+	for _, jet := range jd.Pulse.Jets {
+		jetid := jet.JetID
 		if _, ok := m[jetid]; ok {
 			log.Debug("full ", jetid.DebugString())
 			continue
@@ -46,10 +46,12 @@ func Transform(ctx context.Context, jd *types.PlatformJetDrops) ([]*types.JetDro
 	}
 
 	result := make([]*types.JetDrop, 0)
-	for jetID, records := range m {
-		localJetDrop, err := getJetDrop(ctx, jetID, records, pulseData)
+	for _, jet := range jd.Pulse.Jets {
+		jetid := jet.JetID
+		records := m[jetid]
+		localJetDrop, err := getJetDrop(ctx, jetid, records, pulseData, jet.Hash, jet.PrevDropHashes)
 		if err != nil {
-			return nil, errors.Wrapf(err, "cannot create jet drop for jetID %s", jetID.DebugString())
+			return nil, errors.Wrapf(err, "cannot create jet drop for jetID %s", jetid.DebugString())
 		}
 		if localJetDrop == nil {
 			continue
@@ -60,7 +62,7 @@ func Transform(ctx context.Context, jd *types.PlatformJetDrops) ([]*types.JetDro
 	return result, nil
 }
 
-func getJetDrop(ctx context.Context, jetID insolar.JetID, records []types.Record, pulseData types.Pulse) (*types.JetDrop, error) {
+func getJetDrop(ctx context.Context, jetID insolar.JetID, records []types.Record, pulseData types.Pulse, hash []byte, prevDropHash [][]byte) (*types.JetDrop, error) {
 	sections := make([]types.Section, 0)
 	var prefix string
 	if jetID.IsValid() {
@@ -79,13 +81,16 @@ func getJetDrop(ctx context.Context, jetID insolar.JetID, records []types.Record
 			JetDropPrefix:       prefix,
 			JetDropPrefixLength: uint(len(prefix)),
 		},
-		DropContinue: types.DropContinue{},
-		Records:      records,
+		DropContinue: types.DropContinue{
+			PrevDropHash: prevDropHash,
+		},
+		Records: records,
 	}
 
 	localJetDrop := types.JetDrop{
 		MainSection: mainSection,
 		Sections:    sections,
+		Hash:        hash,
 	}
 
 	rawData, err := serialize(localJetDrop.MainSection)
@@ -93,8 +98,7 @@ func getJetDrop(ctx context.Context, jetID insolar.JetID, records []types.Record
 		return nil, errors.Wrapf(err, "cannot calculate JetDrop hash")
 	}
 	localJetDrop.RawData = rawData
-	hash := sha3.Sum224(rawData)
-	localJetDrop.Hash = hash[:]
+
 	return &localJetDrop, nil
 }
 
@@ -198,8 +202,8 @@ func getRecords(jd *types.PlatformJetDrops) (map[insolar.JetID][]types.Record, e
 
 	if len(jd.Records) == 0 && jd.Pulse != nil {
 		// we don't have a record but have a pulse
-		for _, jetID := range jd.Pulse.Jets {
-			res[jetID] = nil
+		for _, jet := range jd.Pulse.Jets {
+			res[jet.JetID] = nil
 		}
 		return res, nil
 	}

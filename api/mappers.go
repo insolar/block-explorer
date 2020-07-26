@@ -9,9 +9,10 @@ import (
 	"encoding/base64"
 	"fmt"
 
-	"github.com/insolar/block-explorer/instrumentation"
 	"github.com/insolar/insolar/insolar"
 	"github.com/insolar/spec-insolar-block-explorer-api/v1/server"
+
+	"github.com/insolar/block-explorer/instrumentation"
 
 	"github.com/insolar/block-explorer/etl/models"
 )
@@ -74,15 +75,9 @@ func PulseToAPI(pulse models.Pulse) server.Pulse {
 	return response
 }
 
-func JetDropToAPI(jetDrop models.JetDrop) server.JetDrop {
+func JetDropToAPI(jetDrop models.JetDrop, prevJetDropID, nextJetDropID []server.NextPrevJetDrop) server.JetDrop {
 	pulseNumber := jetDrop.PulseNumber
 	recordAmount := int64(jetDrop.RecordAmount)
-	// TODO: set correct prev and next after PENV-348
-	nextJetDropID := []server.NextPrevJetDrop{{
-		JetId:     NullableString("test"),
-		JetDropId: NullableString("test:1234"),
-	}}
-	prevJetDropID := []server.NextPrevJetDrop{{}}
 
 	jetDropID := models.NewJetDropID(jetDrop.JetID, jetDrop.PulseNumber)
 	result := server.JetDrop{

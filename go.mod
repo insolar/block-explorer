@@ -15,7 +15,7 @@ require (
 	github.com/gotestyourself/gotestyourself v2.2.0+incompatible // indirect
 	github.com/insolar/assured-ledger/ledger-core/v2 v2.0.0-20200512113104-4973d6ba44e9
 	github.com/insolar/insconfig v0.0.0-20200430133349-77f6f1624abf
-	github.com/insolar/insolar v1.6.3-0.20200720164814-d013aca52fa4
+	github.com/insolar/insolar v1.6.3-0.20200724151802-c2b59c12afce
 	github.com/insolar/spec-insolar-block-explorer-api v1.2.0
 	github.com/jinzhu/gorm v1.9.12
 	github.com/kelindar/binary v1.0.9
@@ -34,7 +34,7 @@ require (
 	github.com/ugorji/go/codec v0.0.0-20181204163529-d75b2dcb6bc8 // indirect
 	github.com/urfave/cli/v2 v2.2.0 // indirect
 	go.opencensus.io v0.22.1
-	golang.org/x/crypto v0.0.0-20200510223506-06a226fb4e37
+	golang.org/x/crypto v0.0.0-20200510223506-06a226fb4e37 // indirect
 	golang.org/x/exp v0.0.0-20190510132918-efd6b22b2522 // indirect
 	golang.org/x/sys v0.0.0-20200602225109-6fdc65e7d980 // indirect
 	google.golang.org/appengine v1.6.1 // indirect
