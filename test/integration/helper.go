@@ -58,8 +58,6 @@ func (a *BlockExplorerTestSuite) StartBE(t testing.TB) {
 func (a *BlockExplorerTestSuite) StopBE(t *testing.T) {
 	err := a.BE.Stop()
 	require.NoError(t, err)
-	// TODO remove sleep after resolving https://insolar.atlassian.net/browse/PENV-343
-	time.Sleep(time.Second * 1)
 }
 
 func (a *BlockExplorerTestSuite) WithHTTPServer(t testing.TB) *BlockExplorerTestSuite {
