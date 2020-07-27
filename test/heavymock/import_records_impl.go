@@ -92,10 +92,10 @@ func (s *ImporterServer) GetLowestUnsentPulse() (insolar.PulseNumber, []exporter
 			continue
 		}
 		pulse = r.Record.ID.Pulse()
-		if jets[r.Record.ID.Pulse()] == nil {
-			jets[r.Record.ID.Pulse()] = map[insolar.JetID]exporter.JetDropContinue{}
+		if jets[pulse] == nil {
+			jets[pulse] = map[insolar.JetID]exporter.JetDropContinue{}
 		}
-		jets[r.Record.ID.Pulse()][r.Record.JetID] = exporter.JetDropContinue{JetID: r.Record.JetID, Hash: testutils.GenerateRandBytes()}
+		jets[pulse][r.Record.JetID] = exporter.JetDropContinue{JetID: r.Record.JetID, Hash: testutils.GenerateRandBytes()}
 	}
 	var res []exporter.JetDropContinue
 	for _, jetDrop := range jets[pulse] {
