@@ -9,7 +9,12 @@ package integration
 
 import (
 	"github.com/insolar/block-explorer/etl/models"
+	"github.com/insolar/block-explorer/test/heavymock"
 	"github.com/insolar/block-explorer/testutils"
+	"github.com/insolar/insolar/insolar/gen"
+	"github.com/insolar/insolar/ledger/heavy/exporter"
+	"github.com/stretchr/testify/require"
+
 	"testing"
 )
 
@@ -18,13 +23,27 @@ func BenchmarkFetchPulse500RecordsSingleJet(b *testing.B) {
 	jetDrops := 1
 	b.ResetTimer()
 	ts := NewBlockExplorerTestSetup(b)
+
+	pn := gen.PulseNumber()
+	firstRecord := testutils.GenerateRecordsSilence(1)[0]
+	firstRecord.Record.ID = gen.IDWithPulse(pn)
+	firstRecord.ShouldIterateFrom = nil
+	err := heavymock.ImportRecords(ts.ConMngr.ImporterClient, []*exporter.Record{firstRecord})
+	require.NoError(b, err)
+
+	ts.BE.PulseClient.SetNextFinalizedPulseFunc(ts.ConMngr.Importer)
+	ts.StartBE(b)
 	defer ts.Stop(b)
+
 	for i := 0; i < b.N; i++ {
+		pn += 10
 		b.StopTimer()
-		ts.ImportRecordsMultipleJetDrops(b, jetDrops, records)
+		ts.ImportRecordsMultipleJetDrops(b, jetDrops, records, pn)
+
 		b.StartTimer()
-		ts.WaitRecordsCount(b, jetDrops*records, 60000)
+		ts.WaitRecordsCount(b, jetDrops*records+1, 60000)
 		b.StopTimer()
+
 		testutils.TruncateTables(b, ts.BE.DB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
 	}
 }
@@ -34,12 +53,24 @@ func BenchmarkFetchPulse1kRecordsSingleJet(b *testing.B) {
 	jetDrops := 1
 	b.ResetTimer()
 	ts := NewBlockExplorerTestSetup(b)
+
+	pn := gen.PulseNumber()
+	firstRecord := testutils.GenerateRecordsSilence(1)[0]
+	firstRecord.Record.ID = gen.IDWithPulse(pn)
+	firstRecord.ShouldIterateFrom = nil
+	err := heavymock.ImportRecords(ts.ConMngr.ImporterClient, []*exporter.Record{firstRecord})
+	require.NoError(b, err)
+
+	ts.BE.PulseClient.SetNextFinalizedPulseFunc(ts.ConMngr.Importer)
+	ts.StartBE(b)
 	defer ts.Stop(b)
+
 	for i := 0; i < b.N; i++ {
+		pn += 10
 		b.StopTimer()
-		ts.ImportRecordsMultipleJetDrops(b, jetDrops, records)
+		ts.ImportRecordsMultipleJetDrops(b, jetDrops, records, pn)
 		b.StartTimer()
-		ts.WaitRecordsCount(b, jetDrops*records, 60000)
+		ts.WaitRecordsCount(b, jetDrops*records+1, 60000)
 		b.StopTimer()
 		testutils.TruncateTables(b, ts.BE.DB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
 	}
@@ -50,12 +81,24 @@ func BenchmarkFetchPulse2kRecordsSingleJet(b *testing.B) {
 	jetDrops := 1
 	b.ResetTimer()
 	ts := NewBlockExplorerTestSetup(b)
+
+	pn := gen.PulseNumber()
+	firstRecord := testutils.GenerateRecordsSilence(1)[0]
+	firstRecord.Record.ID = gen.IDWithPulse(pn)
+	firstRecord.ShouldIterateFrom = nil
+	err := heavymock.ImportRecords(ts.ConMngr.ImporterClient, []*exporter.Record{firstRecord})
+	require.NoError(b, err)
+
+	ts.BE.PulseClient.SetNextFinalizedPulseFunc(ts.ConMngr.Importer)
+	ts.StartBE(b)
 	defer ts.Stop(b)
+
 	for i := 0; i < b.N; i++ {
+		pn += 10
 		b.StopTimer()
-		ts.ImportRecordsMultipleJetDrops(b, jetDrops, records)
+		ts.ImportRecordsMultipleJetDrops(b, jetDrops, records, pn)
 		b.StartTimer()
-		ts.WaitRecordsCount(b, jetDrops*records, 60000)
+		ts.WaitRecordsCount(b, jetDrops*records+1, 60000)
 		b.StopTimer()
 		testutils.TruncateTables(b, ts.BE.DB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
 	}
@@ -66,12 +109,24 @@ func BenchmarkFetchPulse500Records5Jets(b *testing.B) {
 	jetDrops := 5
 	b.ResetTimer()
 	ts := NewBlockExplorerTestSetup(b)
+
+	pn := gen.PulseNumber()
+	firstRecord := testutils.GenerateRecordsSilence(1)[0]
+	firstRecord.Record.ID = gen.IDWithPulse(pn)
+	firstRecord.ShouldIterateFrom = nil
+	err := heavymock.ImportRecords(ts.ConMngr.ImporterClient, []*exporter.Record{firstRecord})
+	require.NoError(b, err)
+
+	ts.BE.PulseClient.SetNextFinalizedPulseFunc(ts.ConMngr.Importer)
+	ts.StartBE(b)
 	defer ts.Stop(b)
+
 	for i := 0; i < b.N; i++ {
+		pn += 10
 		b.StopTimer()
-		ts.ImportRecordsMultipleJetDrops(b, jetDrops, records)
+		ts.ImportRecordsMultipleJetDrops(b, jetDrops, records, pn)
 		b.StartTimer()
-		ts.WaitRecordsCount(b, jetDrops*records, 60000)
+		ts.WaitRecordsCount(b, jetDrops*records+1, 60000)
 		b.StopTimer()
 		testutils.TruncateTables(b, ts.BE.DB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
 	}
@@ -82,12 +137,24 @@ func BenchmarkFetchPulse500Records10Jets(b *testing.B) {
 	jetDrops := 10
 	b.ResetTimer()
 	ts := NewBlockExplorerTestSetup(b)
+
+	pn := gen.PulseNumber()
+	firstRecord := testutils.GenerateRecordsSilence(1)[0]
+	firstRecord.Record.ID = gen.IDWithPulse(pn)
+	firstRecord.ShouldIterateFrom = nil
+	err := heavymock.ImportRecords(ts.ConMngr.ImporterClient, []*exporter.Record{firstRecord})
+	require.NoError(b, err)
+
+	ts.BE.PulseClient.SetNextFinalizedPulseFunc(ts.ConMngr.Importer)
+	ts.StartBE(b)
 	defer ts.Stop(b)
+
 	for i := 0; i < b.N; i++ {
+		pn += 10
 		b.StopTimer()
-		ts.ImportRecordsMultipleJetDrops(b, jetDrops, records)
+		ts.ImportRecordsMultipleJetDrops(b, jetDrops, records, pn)
 		b.StartTimer()
-		ts.WaitRecordsCount(b, jetDrops*records, 60000)
+		ts.WaitRecordsCount(b, jetDrops*records+1, 60000)
 		b.StopTimer()
 		testutils.TruncateTables(b, ts.BE.DB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
 	}
@@ -98,12 +165,24 @@ func BenchmarkFetchPulse500Records20Jets(b *testing.B) {
 	jetDrops := 20
 	b.ResetTimer()
 	ts := NewBlockExplorerTestSetup(b)
+
+	pn := gen.PulseNumber()
+	firstRecord := testutils.GenerateRecordsSilence(1)[0]
+	firstRecord.Record.ID = gen.IDWithPulse(pn)
+	firstRecord.ShouldIterateFrom = nil
+	err := heavymock.ImportRecords(ts.ConMngr.ImporterClient, []*exporter.Record{firstRecord})
+	require.NoError(b, err)
+
+	ts.BE.PulseClient.SetNextFinalizedPulseFunc(ts.ConMngr.Importer)
+	ts.StartBE(b)
 	defer ts.Stop(b)
+
 	for i := 0; i < b.N; i++ {
+		pn += 10
 		b.StopTimer()
-		ts.ImportRecordsMultipleJetDrops(b, jetDrops, records)
+		ts.ImportRecordsMultipleJetDrops(b, jetDrops, records, pn)
 		b.StartTimer()
-		ts.WaitRecordsCount(b, jetDrops*records, 60000)
+		ts.WaitRecordsCount(b, jetDrops*records+1, 60000)
 		b.StopTimer()
 		testutils.TruncateTables(b, ts.BE.DB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
 	}
