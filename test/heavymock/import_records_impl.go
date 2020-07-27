@@ -86,13 +86,20 @@ func (s *ImporterServer) collectRecords(records []*exporter.Record) {
 
 func (s *ImporterServer) GetLowestUnsentPulse() (insolar.PulseNumber, []exporter.JetDropContinue) {
 	pulse := insolar.PulseNumber(1<<32 - 1)
-	jets := map[insolar.PulseNumber][]exporter.JetDropContinue{}
+	jets := map[insolar.PulseNumber]map[insolar.JetID]exporter.JetDropContinue{}
 	for _, r := range s.GetUnsentRecords() {
 		if r.Record.ID.Pulse() > pulse {
 			continue
 		}
 		pulse = r.Record.ID.Pulse()
-		jets[r.Record.ID.Pulse()] = append(jets[r.Record.ID.Pulse()], exporter.JetDropContinue{JetID: r.Record.JetID, Hash: testutils.GenerateRandBytes()})
+		if jets[r.Record.ID.Pulse()] == nil {
+			jets[r.Record.ID.Pulse()] = map[insolar.JetID]exporter.JetDropContinue{}
+		}
+		jets[r.Record.ID.Pulse()][r.Record.JetID] = exporter.JetDropContinue{JetID: r.Record.JetID, Hash: testutils.GenerateRandBytes()}
 	}
-	return pulse, jets[pulse]
+	var res []exporter.JetDropContinue
+	for _, jetDrop := range jets[pulse] {
+		res = append(res, jetDrop)
+	}
+	return pulse, res
 }
