@@ -10,9 +10,11 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"net/http"
+	"time"
 
 	"github.com/insolar/block-explorer/configuration"
 	"github.com/insolar/block-explorer/instrumentation/belogger"
+	"google.golang.org/grpc/connectivity"
 	"google.golang.org/grpc/credentials"
 
 	"github.com/pkg/errors"
@@ -89,4 +91,21 @@ func GetClientConfiguration(addr string) configuration.Replicator {
 		Addr:            addr,
 		MaxTransportMsg: 100500,
 	}
+}
+
+func (c *GRPCClientConnection) NotifyShutdown(ctx context.Context, stopChannel chan<- struct{}, waitForStateChange time.Duration) {
+	go func(ctx context.Context, conn *grpc.ClientConn, stopChannel chan<- struct{}, waitForStateChange time.Duration) {
+		for {
+			if conn.GetState() == connectivity.TransientFailure {
+				ctx, cancel := context.WithTimeout(ctx, waitForStateChange)
+				defer cancel()
+				if !conn.WaitForStateChange(ctx, connectivity.TransientFailure) {
+					belogger.FromContext(ctx).Error("GRPC connection failed. Status is ", conn.GetState())
+					stopChannel <- struct{}{}
+					return
+				}
+			}
+			time.Sleep(time.Second * 10)
+		}
+	}(ctx, c.GetGRPCConn(), stopChannel, waitForStateChange)
 }

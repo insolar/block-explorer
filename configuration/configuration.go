@@ -49,10 +49,11 @@ type TestDB struct {
 
 // Replicator represents a configuration of the Platform connection
 type Replicator struct {
-	Addr                                      string `insconfig:"127.0.0.1:5678| The gRPC server address"`
-	MaxTransportMsg                           int    `insconfig:"1073741824| Maximum message size the client can send"`
-	ContinuousPulseRetrievingHalfPulseSeconds uint32 `insconfig:"5| Half pulse in seconds"`
-	ParallelConnections                       uint32 `insconfig:"100| Maximum parallel pulse retrievers"`
+	Addr                                      string        `insconfig:"127.0.0.1:5678| The gRPC server address"`
+	MaxTransportMsg                           int           `insconfig:"1073741824| Maximum message size the client can send"`
+	WaitForConnectionRecoveryTimeout          time.Duration `insconfig:"30s| Connection recovery timeout"`
+	ContinuousPulseRetrievingHalfPulseSeconds uint32        `insconfig:"5| Half pulse in seconds"`
+	ParallelConnections                       uint32        `insconfig:"100| Maximum parallel pulse retrievers"`
 	Auth                                      Auth
 }
 

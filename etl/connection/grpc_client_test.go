@@ -8,9 +8,12 @@
 package connection
 
 import (
+	"context"
 	"testing"
+	"time"
 
 	"github.com/insolar/block-explorer/configuration"
+	"github.com/insolar/block-explorer/etl/interfaces/mock"
 	"github.com/insolar/block-explorer/instrumentation/belogger"
 	"github.com/stretchr/testify/require"
 )
@@ -57,4 +60,25 @@ func TestConnection_GRPC_no_auth(t *testing.T) {
 	require.NoError(t, err)
 	defer client.GetGRPCConn().Close()
 	require.NotNil(t, client.GetGRPCConn())
+}
+
+func TestConnection_NotifyShutdown(t *testing.T) {
+	ctx := belogger.TestContext(t)
+	stopChannel := make(chan struct{})
+	isSend := false
+
+	client := mock.NewClientMock(t)
+	client.NotifyShutdownMock.Set(func(ctx context.Context, stopChannel chan<- struct{}, waitForStateChange time.Duration) {
+		isSend = true
+		go func() { stopChannel <- struct{}{} }()
+	})
+	client.NotifyShutdown(ctx, stopChannel, time.Millisecond)
+
+	select {
+	case <-stopChannel:
+		// error happened
+		require.True(t, isSend)
+	case <-time.After(time.Millisecond * 100):
+		t.Fatal("chan receive timeout. Stop signal was not received")
+	}
 }

@@ -7,6 +7,7 @@ package interfaces
 
 import (
 	"context"
+	"time"
 
 	"github.com/insolar/insolar/ledger/heavy/exporter"
 
@@ -69,6 +70,8 @@ type Transformer interface {
 type Client interface {
 	// GetGRPCConn returns a configured GRPC connection
 	GetGRPCConn() *grpc.ClientConn
+	// NotifyShutdown sends a notification to the channel when connection has errors
+	NotifyShutdown(ctx context.Context, stopChannel chan<- struct{}, waitForStateChange time.Duration)
 }
 
 // Processor saves canonical data to database
