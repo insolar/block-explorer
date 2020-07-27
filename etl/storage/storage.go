@@ -398,12 +398,9 @@ func (s *Storage) GetJetDropByID(id models.JetDropID) (models.JetDrop, []models.
 	if err != nil {
 		return jetDrop, nil, nil, err
 	}
+	pulse = s.updateNextPulse(pulse)
 
-	siblings := []string{jetDrop.JetID, fmt.Sprintf("%s0", jetDrop.JetID), fmt.Sprintf("%s1", jetDrop.JetID)}
-	sz := len(jetDrop.JetID)
-	if sz > 0 {
-		siblings = append(siblings, jetDrop.JetID[:sz-1])
-	}
+	siblings := jetDrop.Siblings()
 
 	var nextJetDrops []models.JetDrop
 	err = s.db.Model(&nextJetDrops).Where("pulse_number = ? AND jet_id in (?)", pulse.NextPulseNumber, siblings).Find(&nextJetDrops).Error
@@ -417,7 +414,6 @@ func (s *Storage) GetJetDropByID(id models.JetDropID) (models.JetDrop, []models.
 		return jetDrop, nil, nil, err
 	}
 
-	pulse = s.updateNextPulse(pulse)
 	return jetDrop, prevJetDrops, nextJetDrops, err
 }
 

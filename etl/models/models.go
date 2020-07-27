@@ -59,6 +59,15 @@ type JetDrop struct {
 	RecordAmount   int
 }
 
+func (j *JetDrop) Siblings() []string {
+	siblings := []string{j.JetID, fmt.Sprintf("%s0", j.JetID), fmt.Sprintf("%s1", j.JetID)}
+	sz := len(j.JetID)
+	if sz > 0 {
+		siblings = append(siblings, j.JetID[:sz-1])
+	}
+	return siblings
+}
+
 type Pulse struct {
 	PulseNumber     int64 `gorm:"primary_key;auto_increment:false"`
 	PrevPulseNumber int64
