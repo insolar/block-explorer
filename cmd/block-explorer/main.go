@@ -63,6 +63,7 @@ func main() {
 		logger.Fatal("cannot connect to GRPC server: ", err)
 	}
 	defer client.GetGRPCConn().Close()
+	client.NotifyShutdown(ctx, stopChannel, cfg.Replicator.WaitForConnectionRecoveryTimeout)
 
 	pulseExtractor := extractor.NewPlatformPulseExtractor(exporter.NewPulseExporterClient(client.GetGRPCConn()))
 	platformExtractor := extractor.NewPlatformExtractor(100, cfg.Replicator.ContinuousPulseRetrievingHalfPulseSeconds,
