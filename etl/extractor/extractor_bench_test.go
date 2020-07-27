@@ -42,7 +42,7 @@ func BenchmarkPlatformExtractorGetJetDrops(b *testing.B) {
 
 		pulseClient := clients.GetTestPulseClient(1, nil)
 		extractor := NewPlatformExtractor(uint32(defaultLocalBatchSize), 0, 100, NewPlatformPulseExtractor(pulseClient), &RecordExporterClient{})
-		fullPulse, err := clients.GetFullPulse(uint32(StartPulseNumber))
+		fullPulse, err := clients.GetFullPulse(uint32(StartPulseNumber), nil)
 		require.NoError(b, err)
 		go extractor.retrieveRecords(ctx, fullPulse)
 

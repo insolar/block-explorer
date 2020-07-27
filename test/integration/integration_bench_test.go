@@ -8,14 +8,15 @@
 package integration
 
 import (
-	"github.com/insolar/block-explorer/etl/models"
-	"github.com/insolar/block-explorer/test/heavymock"
-	"github.com/insolar/block-explorer/testutils"
+	"testing"
+
 	"github.com/insolar/insolar/insolar/gen"
 	"github.com/insolar/insolar/ledger/heavy/exporter"
 	"github.com/stretchr/testify/require"
 
-	"testing"
+	"github.com/insolar/block-explorer/etl/models"
+	"github.com/insolar/block-explorer/test/heavymock"
+	"github.com/insolar/block-explorer/testutils"
 )
 
 func BenchmarkFetchPulse500RecordsSingleJet(b *testing.B) {

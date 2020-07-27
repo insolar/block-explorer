@@ -149,7 +149,7 @@ func TestLoadJetDrops_returnsRecordByPulses(t *testing.T) {
 			pulseExtractor := mock.NewPulseExtractorMock(t)
 			pulseExtractor.GetNextFinalizedPulseMock.Set(
 				func(ctx context.Context, p int64) (fp1 *exporter.FullPulse, err error) {
-					pp, err := clients.GetFullPulse(uint32(startPulseNumber + 10*pulseIteration))
+					pp, err := clients.GetFullPulse(uint32(startPulseNumber+10*pulseIteration), nil)
 					pulseIteration++
 					return pp, err
 				})

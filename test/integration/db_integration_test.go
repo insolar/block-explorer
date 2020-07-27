@@ -19,6 +19,7 @@ import (
 	"github.com/insolar/block-explorer/test/heavymock"
 	"github.com/insolar/block-explorer/testutils"
 	"github.com/insolar/block-explorer/testutils/clients"
+	"github.com/insolar/insolar/insolar"
 	"github.com/insolar/insolar/ledger/heavy/exporter"
 	"github.com/insolar/insolar/pulse"
 	"github.com/stretchr/testify/require"
@@ -54,14 +55,20 @@ func TestIntegrationWithDb_GetRecords(t *testing.T) {
 	require.Len(t, records, pulsesNumber)
 
 	jetDrops := make([]types.PlatformJetDrops, 0)
+	jetsInPulse := map[insolar.PulseNumber][]exporter.JetDropContinue{}
 	for _, r := range records {
-		p, err := clients.GetFullPulse(uint32(r.Record.ID.Pulse()))
+		p, err := clients.GetFullPulse(uint32(r.Record.ID.Pulse()), nil)
 		require.NoError(t, err)
 		jetDrop := types.PlatformJetDrops{Pulse: p,
 			Records: []*exporter.Record{r}}
 		jetDrops = append(jetDrops, jetDrop)
+		jetsInPulse[r.Record.ID.Pulse()] = append(jetsInPulse[r.Record.ID.Pulse()], exporter.JetDropContinue{JetID: r.Record.JetID, Hash: testutils.GenerateRandBytes()})
 	}
 	require.Len(t, jetDrops, pulsesNumber)
+
+	for _, jetDrop := range jetDrops {
+		jetDrop.Pulse.Jets = jetsInPulse[jetDrop.Pulse.PulseNumber]
+	}
 
 	ts.StartBE(t)
 	defer ts.StopBE(t)

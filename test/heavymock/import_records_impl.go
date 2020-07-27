@@ -11,6 +11,8 @@ import (
 
 	"github.com/insolar/insolar/insolar"
 	"github.com/insolar/insolar/ledger/heavy/exporter"
+
+	"github.com/insolar/block-explorer/testutils"
 )
 
 type ImporterServer struct {
@@ -82,13 +84,22 @@ func (s *ImporterServer) collectRecords(records []*exporter.Record) {
 	s.records = append(s.records, slice...)
 }
 
-func (s *ImporterServer) GetLowestUnsentPulse() insolar.PulseNumber {
+func (s *ImporterServer) GetLowestUnsentPulse() (insolar.PulseNumber, []exporter.JetDropContinue) {
 	pulse := insolar.PulseNumber(1<<32 - 1)
+	jets := map[insolar.PulseNumber]map[insolar.JetID]exporter.JetDropContinue{}
 	for _, r := range s.GetUnsentRecords() {
 		if r.Record.ID.Pulse() > pulse {
 			continue
 		}
 		pulse = r.Record.ID.Pulse()
+		if jets[pulse] == nil {
+			jets[pulse] = map[insolar.JetID]exporter.JetDropContinue{}
+		}
+		jets[pulse][r.Record.JetID] = exporter.JetDropContinue{JetID: r.Record.JetID, Hash: testutils.GenerateRandBytes()}
 	}
-	return pulse
+	var res []exporter.JetDropContinue
+	for _, jetDrop := range jets[pulse] {
+		res = append(res, jetDrop)
+	}
+	return pulse, res
 }

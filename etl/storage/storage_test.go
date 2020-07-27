@@ -387,7 +387,7 @@ func TestStorage_GetJetDropsByID(t *testing.T) {
 	err = testutils.CreateJetDrop(testDB, jetDropForSecondPulse)
 	require.NoError(t, err)
 
-	jetDrop, err := s.GetJetDropByID(*models.NewJetDropID(jetDropForSecondPulse.JetID, int64(jetDropForSecondPulse.PulseNumber)))
+	jetDrop, _, _, err := s.GetJetDropByID(*models.NewJetDropID(jetDropForSecondPulse.JetID, jetDropForSecondPulse.PulseNumber))
 	require.NoError(t, err)
 	require.EqualValues(t, jetDropForSecondPulse, jetDrop)
 }

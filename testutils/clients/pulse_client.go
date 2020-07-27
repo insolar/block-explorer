@@ -47,12 +47,12 @@ func GetTestPulseClient(pn uint32, err error) *TestPulseClient {
 		return getTestTopSyncPulseResponse(pn), err
 	}
 	client.NextFinalizedPulseFunc = func(ctx context.Context, in *exporter.GetNextFinalizedPulse, opts ...grpc.CallOption) (*exporter.FullPulse, error) {
-		return GetFullPulse(pn)
+		return GetFullPulse(pn, nil)
 	}
 	return client
 }
 
-func GetFullPulse(pn uint32) (*exporter.FullPulse, error) {
+func GetFullPulse(pn uint32, jetDropContinue []exporter.JetDropContinue) (*exporter.FullPulse, error) {
 	time, err := insolar.PulseNumber(pn).AsApproximateTime()
 	if err != nil {
 		return nil, err
@@ -64,17 +64,18 @@ func GetFullPulse(pn uint32) (*exporter.FullPulse, error) {
 		Entropy:          insolar.Entropy{},
 		PulseTimestamp:   time.Unix(),
 		EpochPulseNumber: 0,
-		Jets:             nil,
+		Jets:             jetDropContinue,
 	}
 	return res, nil
 }
 
 func (c *TestPulseClient) SetNextFinalizedPulseFunc(importer *heavymock.ImporterServer) {
 	c.NextFinalizedPulseFunc = func(ctx context.Context, in *exporter.GetNextFinalizedPulse, opts ...grpc.CallOption) (*exporter.FullPulse, error) {
-		p := uint32(importer.GetLowestUnsentPulse())
+		pulse, jetDropContinue := importer.GetLowestUnsentPulse()
+		p := uint32(pulse)
 		if p == 1<<32-1 {
 			return nil, errors.New("unready yet")
 		}
-		return GetFullPulse(p)
+		return GetFullPulse(p, jetDropContinue)
 	}
 }

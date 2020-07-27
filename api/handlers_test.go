@@ -1361,7 +1361,7 @@ func TestServer_JetDropsByJetID(t *testing.T) {
 		require.EqualValues(t, totalCount, int(*response.Total))
 		require.Len(t, *response.Result, totalCount)
 		for _, drop := range preparedJetDrops {
-			require.Contains(t, *response.Result, JetDropToAPI(drop))
+			require.Contains(t, *response.Result, JetDropToAPI(drop, []server.NextPrevJetDrop{}, []server.NextPrevJetDrop{}))
 		}
 	})
 
@@ -1406,7 +1406,7 @@ func TestServer_JetDropsByJetID(t *testing.T) {
 		require.Equal(t, expectedCount, int(*response.Total))
 		require.Len(t, *response.Result, expectedCount)
 		for i := 0; i < expectedCount; i++ {
-			expected := JetDropToAPI(preparedJetDrops[expectedCount-i-1])
+			expected := JetDropToAPI(preparedJetDrops[expectedCount-i-1], []server.NextPrevJetDrop{}, []server.NextPrevJetDrop{})
 			received := (*response.Result)[i]
 			checkJetDrops(t, expected, received)
 		}
@@ -1420,7 +1420,7 @@ func TestServer_JetDropsByJetID(t *testing.T) {
 		require.Equal(t, expectedCount, int(*response.Total))
 		require.Len(t, *response.Result, expectedCount)
 		for i := 0; i < expectedCount; i++ {
-			expected := JetDropToAPI(preparedJetDrops[expectedCount-i-1])
+			expected := JetDropToAPI(preparedJetDrops[expectedCount-i-1], []server.NextPrevJetDrop{}, []server.NextPrevJetDrop{})
 			received := (*response.Result)[i]
 			checkJetDrops(t, expected, received)
 		}
@@ -1434,7 +1434,7 @@ func TestServer_JetDropsByJetID(t *testing.T) {
 		require.Equal(t, expectedCount, int(*response.Total))
 		require.Len(t, *response.Result, expectedCount)
 		for i := 0; i < expectedCount; i++ {
-			expected := JetDropToAPI(preparedJetDrops[expectedCount-i-1])
+			expected := JetDropToAPI(preparedJetDrops[expectedCount-i-1], []server.NextPrevJetDrop{}, []server.NextPrevJetDrop{})
 			received := (*response.Result)[i]
 			checkJetDrops(t, expected, received)
 		}
@@ -1457,7 +1457,7 @@ func TestServer_JetDropsByJetID(t *testing.T) {
 		require.Equal(t, expectedCount, int(*response.Total))
 		require.Len(t, *response.Result, expectedCount)
 		for i, j := 1, 0; i < expectedCount; i, j = i+1, j+1 {
-			expected := JetDropToAPI(preparedJetDrops[totalCount-j-1])
+			expected := JetDropToAPI(preparedJetDrops[totalCount-j-1], []server.NextPrevJetDrop{}, []server.NextPrevJetDrop{})
 			received := (*response.Result)[j]
 			checkJetDrops(t, expected, received)
 		}
@@ -1471,7 +1471,7 @@ func TestServer_JetDropsByJetID(t *testing.T) {
 		require.Equal(t, expectedCount, int(*response.Total))
 		require.Len(t, *response.Result, expectedCount)
 		for i := 0; i < expectedCount; i++ {
-			expected := JetDropToAPI(preparedJetDrops[expectedCount-i-1])
+			expected := JetDropToAPI(preparedJetDrops[expectedCount-i-1], []server.NextPrevJetDrop{}, []server.NextPrevJetDrop{})
 			received := (*response.Result)[i]
 			checkJetDrops(t, expected, received)
 		}
@@ -1485,7 +1485,7 @@ func TestServer_JetDropsByJetID(t *testing.T) {
 		require.Equal(t, expectedCount, int(*response.Total))
 		require.Len(t, *response.Result, expectedCount)
 		for i := 0; i < expectedCount; i++ {
-			expected := JetDropToAPI(preparedJetDrops[totalCount-i-1])
+			expected := JetDropToAPI(preparedJetDrops[totalCount-i-1], []server.NextPrevJetDrop{}, []server.NextPrevJetDrop{})
 			received := (*response.Result)[i]
 			checkJetDrops(t, expected, received)
 		}
@@ -1510,7 +1510,7 @@ func TestServer_JetDropsByJetID(t *testing.T) {
 		require.Equal(t, expectedCount, int(*response.Total))
 		require.Len(t, *response.Result, expectedCount)
 		for i, j := 1, 0; i < expectedCount; i, j = i+1, j+1 {
-			expected := JetDropToAPI(preparedJetDrops[totalCount-i-1])
+			expected := JetDropToAPI(preparedJetDrops[totalCount-i-1], []server.NextPrevJetDrop{}, []server.NextPrevJetDrop{})
 			received := (*response.Result)[j]
 			checkJetDrops(t, expected, received)
 		}
@@ -1526,7 +1526,7 @@ func TestServer_JetDropsByJetID(t *testing.T) {
 		require.Equal(t, expectedCount, int(*response.Total))
 		require.Len(t, *response.Result, expectedCount)
 		for i, j := 1, 0; i < expectedCount; i, j = i+1, j+1 {
-			expected := JetDropToAPI(preparedJetDrops[i])
+			expected := JetDropToAPI(preparedJetDrops[i], []server.NextPrevJetDrop{}, []server.NextPrevJetDrop{})
 			received := (*response.Result)[expectedCount-j-1]
 			checkJetDrops(t, expected, received)
 		}
@@ -1542,7 +1542,7 @@ func TestServer_JetDropsByJetID(t *testing.T) {
 		require.Equal(t, expectedCount, int(*response.Total))
 		require.Len(t, *response.Result, expectedCount)
 		for i, j := 1, 0; i < expectedCount; i, j = i+1, j+1 {
-			expected := JetDropToAPI(preparedJetDrops[i])
+			expected := JetDropToAPI(preparedJetDrops[i], []server.NextPrevJetDrop{}, []server.NextPrevJetDrop{})
 			received := (*response.Result)[expectedCount-j-1]
 			checkJetDrops(t, expected, received)
 		}
@@ -1558,7 +1558,7 @@ func TestServer_JetDropsByJetID(t *testing.T) {
 		require.Equal(t, expectedCount, int(*response.Total))
 		require.Len(t, *response.Result, expectedCount)
 		for i, j := 2, 0; i < expectedCount; i, j = i+1, j+1 {
-			expected := JetDropToAPI(preparedJetDrops[i])
+			expected := JetDropToAPI(preparedJetDrops[i], []server.NextPrevJetDrop{}, []server.NextPrevJetDrop{})
 			received := (*response.Result)[expectedCount-j-1]
 			checkJetDrops(t, expected, received)
 		}

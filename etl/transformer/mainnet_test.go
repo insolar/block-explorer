@@ -27,10 +27,12 @@ func TestTransformer_withDifferentJetId(t *testing.T) {
 	recordGenFunc := testutils.GenerateRecords(differentJetIdCount)
 
 	jetDrops := new(types.PlatformJetDrops)
+	jets := []exporter.JetDropContinue{}
 	for i := 0; i < differentJetIdCount; i++ {
 		record, err := recordGenFunc()
 		require.NoError(t, err)
 		jetDrops.Records = append(jetDrops.Records, record)
+		jets = append(jets, exporter.JetDropContinue{JetID: record.Record.JetID})
 	}
 	pulseNumber := gen.PulseNumber()
 	jetDrops.Pulse = &exporter.FullPulse{
@@ -40,7 +42,7 @@ func TestTransformer_withDifferentJetId(t *testing.T) {
 		Entropy:          insolar.Entropy{},
 		PulseTimestamp:   0,
 		EpochPulseNumber: 0,
-		Jets:             nil,
+		Jets:             jets,
 	}
 
 	dropsCh := make(chan *types.PlatformJetDrops)
