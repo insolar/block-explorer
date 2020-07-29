@@ -145,7 +145,7 @@ func TestIntegrationWithDb_GetRecords_ErrorSameRecords(t *testing.T) {
 
 	jetDrops := make([]types.PlatformJetDrops, 0)
 	var notSavedRefs [][]byte
-	jetsInPulse := map[insolar.PulseNumber][]exporter.JetDropContinue{}
+	var jetsInPulse []exporter.JetDropContinue
 	var recs []*exporter.Record
 	for i, r := range records {
 		p, err := clients.GetFullPulse(uint32(r.Record.ID.Pulse()), nil)
@@ -155,11 +155,11 @@ func TestIntegrationWithDb_GetRecords_ErrorSameRecords(t *testing.T) {
 			continue
 		}
 		recs = append(recs, r)
+		jetsInPulse = append(jetsInPulse, exporter.JetDropContinue{JetID: r.Record.JetID, Hash: testutils.GenerateRandBytes()})
 		if i%recordsInPulse == (recordsInPulse - 1) {
 			jetDrop := types.PlatformJetDrops{Pulse: p,
 				Records: recs}
 			jetDrops = append(jetDrops, jetDrop)
-			jetsInPulse[r.Record.ID.Pulse()] = append(jetsInPulse[r.Record.ID.Pulse()], exporter.JetDropContinue{JetID: r.Record.JetID, Hash: testutils.GenerateRandBytes()})
 			recs = []*exporter.Record{}
 		}
 	}
@@ -167,7 +167,7 @@ func TestIntegrationWithDb_GetRecords_ErrorSameRecords(t *testing.T) {
 	require.Len(t, jetDrops, pulsesNumber-1)
 
 	for _, jetDrop := range jetDrops {
-		jetDrop.Pulse.Jets = jetsInPulse[jetDrop.Pulse.PulseNumber]
+		jetDrop.Pulse.Jets = jetsInPulse
 	}
 
 	ts.StartBE(t)
@@ -182,14 +182,16 @@ func TestIntegrationWithDb_GetRecords_ErrorSameRecords(t *testing.T) {
 			return
 		}
 		for _, tr := range transform {
-			r := tr.MainSection.Records
-			require.NotEmpty(t, r)
-			ref := r[0].Ref
-			require.NotEmpty(t, ref)
-			refs = append(refs, ref)
+			records := tr.MainSection.Records
+			require.NotEmpty(t, records)
+			for _, r := range records {
+				ref := r.Ref
+				require.NotEmpty(t, ref)
+				refs = append(refs, ref)
+			}
 		}
 	}
-	require.Len(t, refs, pulsesNumber-1)
+	require.Len(t, refs, recordsInPulse)
 
 	// last record with the biggest pulse number won't be processed, so we do not expect this record in DB
 	expRecordsCount := recordsInPulse * (pulsesNumber - 1)
