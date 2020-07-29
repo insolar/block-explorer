@@ -215,6 +215,8 @@ github.com/insolar/insolar v1.6.3-0.20200723113352-f10eba185fa6 h1:6NY7WM9I+bpCV
 github.com/insolar/insolar v1.6.3-0.20200723113352-f10eba185fa6/go.mod h1:XiGnCY/+n3ljgZZysQbzRk62ovTqt5ls3svxG7dIG1s=
 github.com/insolar/insolar v1.6.3-0.20200724151802-c2b59c12afce h1:82EH1USOhluOZgMGPJMpLomFeq432wg8kwssNLx5j34=
 github.com/insolar/insolar v1.6.3-0.20200724151802-c2b59c12afce/go.mod h1:0l0OdVqaWBCUOBv42Tm4v+ueTttffgUCs2u9b13l9lI=
+github.com/insolar/insolar v1.6.6-0.20200727081822-68505e6410cb h1:hvbGZqqW8fvG+RGt29ep3a7eP8QhoDGSVWLm3//qftM=
+github.com/insolar/insolar v1.6.6-0.20200727081822-68505e6410cb/go.mod h1:0l0OdVqaWBCUOBv42Tm4v+ueTttffgUCs2u9b13l9lI=
 github.com/insolar/rpc v1.2.2-0.20190812143745-c27e1d218f1f/go.mod h1:BZcTsPtQu8QG8RqqQdAnuNAG8n6TOrdNxIHro0h99Ik=
 github.com/insolar/rpc v1.2.2-0.20200331123021-db57b8833f82/go.mod h1:BZcTsPtQu8QG8RqqQdAnuNAG8n6TOrdNxIHro0h99Ik=
 github.com/insolar/spec-insolar-block-explorer-api v1.1.0 h1:CHJd7YFl8zgUX9e0oMHXWUzrj9IlZsSGpcHYAOyTbgQ=
