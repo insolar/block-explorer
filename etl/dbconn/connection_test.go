@@ -50,6 +50,7 @@ func TestConnect_WrongURL(t *testing.T) {
 }
 
 func TestShutDownPlugin(t *testing.T) {
+	stopChannel := make(chan struct{})
 	dbName := "test_db"
 	dbPassword := "secret"
 	hostPort, pool, resource, poolCleaner := testutils.RunDBInDockerWithPortBindings(dbName, dbPassword)
@@ -70,7 +71,11 @@ func TestShutDownPlugin(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, db)
 
-	stopChannel := make(chan struct{})
+	var called int32 = 0
+	db.Callback().Update().Register("TestShutDownPlugin", func(scope *gorm.Scope) {
+		atomic.AddInt32(&called, 1)
+	})
+
 	r := plugins.NewDefaultShutdownPlugin(stopChannel)
 	r.Apply(db)
 
@@ -89,11 +94,6 @@ func TestShutDownPlugin(t *testing.T) {
 	// try to save and it's working
 	err = db.Save(&User{ID: 100, Name: "test user"}).Error
 	require.NoError(t, err)
-
-	var called int32 = 0
-	db.Callback().Update().Register("TestShutDownPlugin", func(scope *gorm.Scope) {
-		atomic.AddInt32(&called, 1)
-	})
 
 	err = pool.Client.StopContainer(containerID, 0)
 	require.NoError(t, err)
@@ -114,7 +114,8 @@ func TestShutDownPlugin(t *testing.T) {
 		t.Fatal("chan receive timeout. Stop signal was not received")
 	}
 
-	require.Equal(t, atomic.LoadInt32(&called), int32(1), "plugin should be called once")
+	// plugin should be called twice because we had called save 2 times
+	require.Equal(t, atomic.LoadInt32(&called), int32(2), "plugin should be called twice")
 
 	err = pool.Client.StartContainer(containerID, nil)
 	require.NoError(t, err)
