@@ -8,9 +8,13 @@ package converter
 import (
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/insolar/insolar/insolar"
 )
+
+// NanosecondsInSecond contains a count of the nanoseconds in one second
+const NanosecondsInSecond = int64(time.Second / time.Nanosecond)
 
 // JetIDToString returns the string representation of JetID
 func JetIDToString(id insolar.JetID) string {
@@ -28,4 +32,14 @@ func JetIDToString(id insolar.JetID) string {
 		res.WriteString(bitString)
 	}
 	return res.String()
+}
+
+// SecondsToNanos convert the seconds to a nanosecond
+func SecondsToNanos(seconds uint32) int64 {
+	return int64(seconds) * NanosecondsInSecond
+}
+
+// NanosToSeconds convert the nanosecond to a seconds
+func NanosToSeconds(nanoseconds int64) int64 {
+	return nanoseconds / NanosecondsInSecond
 }
