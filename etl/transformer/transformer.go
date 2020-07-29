@@ -186,7 +186,7 @@ func getPulseData(pn *exporter.FullPulse) types.Pulse {
 	return types.Pulse{
 		PulseNo:         int64(pulse.AsUint32()),
 		EpochPulseNo:    int64(pulse.AsEpoch()),
-		PulseTimestamp:  pn.GetPulseTimestamp(),
+		PulseTimestamp:  converter.NanosToSeconds(pn.GetPulseTimestamp()),
 		NextPulseNumber: int64(pn.NextPulseNumber.AsUint32()),
 		PrevPulseNumber: int64(pn.PrevPulseNumber.AsUint32()),
 	}

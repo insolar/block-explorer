@@ -62,7 +62,7 @@ func GetFullPulse(pn uint32, jetDropContinue []exporter.JetDropContinue) (*expor
 		PrevPulseNumber:  insolar.PulseNumber(pn - 10),
 		NextPulseNumber:  insolar.PulseNumber(pn + 10),
 		Entropy:          insolar.Entropy{},
-		PulseTimestamp:   time.Unix(),
+		PulseTimestamp:   time.UnixNano(),
 		EpochPulseNumber: 0,
 		Jets:             jetDropContinue,
 	}
