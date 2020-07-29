@@ -147,6 +147,29 @@ func TestTransform_sortRecords_ErrorNoPrevRecord(t *testing.T) {
 	require.Nil(t, result)
 }
 
+func TestTransform_sortRecords_ErrorSameRecord(t *testing.T) {
+	firstObj := gen.Reference().Bytes()
+	record1 := testutils.CreateRecordCanonical()
+	record1.ObjectReference = firstObj
+	record2 := testutils.CreateRecordCanonical()
+	record2.ObjectReference = firstObj
+	record3 := testutils.CreateRecordCanonical()
+	record3.ObjectReference = firstObj
+	record4 := testutils.CreateRecordCanonical()
+	record4.ObjectReference = firstObj
+
+	// make lifeline: 1 <- 2 <- 3 <- 4
+	record4.PrevRecordReference = record3.Ref
+	record3.PrevRecordReference = record2.Ref
+	record2.PrevRecordReference = record1.Ref
+
+	// provide record1 and record3 two times
+	result, err := sortRecords([]types.Record{record1, record2, record3, record1, record3})
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "Number of records before sorting (5) changes after (3)")
+	require.Nil(t, result)
+}
+
 func TestTransform_transferToCanonicalRecord_SkipUnsortedRecord(t *testing.T) {
 	unsupportedRecord := &exporter.Record{
 		Record: ins_record.Material{

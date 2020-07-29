@@ -12,6 +12,11 @@ import (
 	"io"
 	"testing"
 
+	"github.com/insolar/insolar/insolar"
+	"github.com/insolar/insolar/ledger/heavy/exporter"
+	"github.com/insolar/insolar/pulse"
+	"github.com/stretchr/testify/require"
+
 	"github.com/insolar/block-explorer/etl/models"
 	"github.com/insolar/block-explorer/etl/transformer"
 	"github.com/insolar/block-explorer/etl/types"
@@ -19,10 +24,6 @@ import (
 	"github.com/insolar/block-explorer/test/heavymock"
 	"github.com/insolar/block-explorer/testutils"
 	"github.com/insolar/block-explorer/testutils/clients"
-	"github.com/insolar/insolar/insolar"
-	"github.com/insolar/insolar/ledger/heavy/exporter"
-	"github.com/insolar/insolar/pulse"
-	"github.com/stretchr/testify/require"
 )
 
 func TestIntegrationWithDb_GetRecords(t *testing.T) {
@@ -101,6 +102,113 @@ func TestIntegrationWithDb_GetRecords(t *testing.T) {
 		require.NoError(t, err, "Error executing GetRecord from db")
 		require.NotEmpty(t, record, "Record is empty")
 		require.Equal(t, modelRef, record.Reference, "Reference not equal")
+	}
+}
+
+func TestIntegrationWithDb_GetRecords_ErrorSameRecords(t *testing.T) {
+	t.Log("C5498 Process same records; duplicated records not saved in database")
+	ts := NewBlockExplorerTestSetup(t)
+	defer ts.Stop(t)
+	records := make([]*exporter.Record, 0)
+
+	pulsesNumber := 2
+	recordsInPulse := 5
+	recordsWithDifferencePulses := testutils.GenerateRecordsWithDifferencePulses(pulsesNumber, recordsInPulse, int64(pulse.MinTimePulse))
+	stream, err := ts.ConMngr.ImporterClient.Import(context.Background())
+	require.NoError(t, err)
+
+	ts.BE.PulseClient.SetNextFinalizedPulseFunc(ts.ConMngr.Importer)
+
+	for i := 0; i < pulsesNumber*recordsInPulse; i++ {
+		record, _ := recordsWithDifferencePulses()
+		records = append(records, record)
+		if err := stream.Send(record); err != nil {
+			if err == io.EOF {
+				break
+			}
+			t.Fatal("Error sending to stream", err)
+		}
+		// send record second times for first pulse
+		if i < recordsInPulse {
+			if err := stream.Send(record); err != nil {
+				if err == io.EOF {
+					break
+				}
+				t.Fatal("Error sending to stream", err)
+			}
+		}
+	}
+	reply, err := stream.CloseAndRecv()
+	require.NoError(t, err)
+	require.True(t, reply.Ok)
+	require.Len(t, records, pulsesNumber*recordsInPulse)
+
+	jetDrops := make([]types.PlatformJetDrops, 0)
+	var notSavedRefs [][]byte
+	var jetsInPulse []exporter.JetDropContinue
+	var recs []*exporter.Record
+	for i, r := range records {
+		p, err := clients.GetFullPulse(uint32(r.Record.ID.Pulse()), nil)
+		require.NoError(t, err)
+		if p.PulseNumber == pulse.MinTimePulse {
+			notSavedRefs = append(notSavedRefs, r.Record.ID.Bytes())
+			continue
+		}
+		recs = append(recs, r)
+		jetsInPulse = append(jetsInPulse, exporter.JetDropContinue{JetID: r.Record.JetID, Hash: testutils.GenerateRandBytes()})
+		if i%recordsInPulse == (recordsInPulse - 1) {
+			jetDrop := types.PlatformJetDrops{Pulse: p,
+				Records: recs}
+			jetDrops = append(jetDrops, jetDrop)
+			recs = []*exporter.Record{}
+		}
+	}
+
+	require.Len(t, jetDrops, pulsesNumber-1)
+
+	for _, jetDrop := range jetDrops {
+		jetDrop.Pulse.Jets = jetsInPulse
+	}
+
+	ts.StartBE(t)
+	defer ts.StopBE(t)
+
+	refs := make([]types.Reference, 0)
+	ctx := context.Background()
+	for _, jd := range jetDrops {
+		transform, err := transformer.Transform(ctx, &jd)
+		if err != nil {
+			t.Logf("error transforming record: %v", err)
+			return
+		}
+		for _, tr := range transform {
+			records := tr.MainSection.Records
+			require.NotEmpty(t, records)
+			for _, r := range records {
+				ref := r.Ref
+				require.NotEmpty(t, ref)
+				refs = append(refs, ref)
+			}
+		}
+	}
+	require.Len(t, refs, recordsInPulse)
+
+	// last record with the biggest pulse number won't be processed, so we do not expect this record in DB
+	expRecordsCount := recordsInPulse * (pulsesNumber - 1)
+	ts.WaitRecordsCount(t, expRecordsCount, 6000)
+
+	for _, ref := range refs[:expRecordsCount] {
+		modelRef := models.ReferenceFromTypes(ref)
+		record, err := ts.BE.Storage().GetRecord(modelRef)
+		require.NoError(t, err, "Error executing GetRecord from db")
+		require.NotEmpty(t, record, "Record is empty")
+		require.Equal(t, modelRef, record.Reference, "Reference not equal")
+	}
+	for _, ref := range notSavedRefs {
+		modelRef := models.ReferenceFromTypes(ref)
+		_, err := ts.BE.Storage().GetRecord(modelRef)
+		require.Error(t, err, "Record must be not saved")
+		require.Equal(t, err.Error(), "record not found", "Wrong error message")
 	}
 }
 

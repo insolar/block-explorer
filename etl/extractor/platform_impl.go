@@ -13,12 +13,13 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/insolar/block-explorer/etl/interfaces"
-	"github.com/insolar/block-explorer/etl/types"
-	"github.com/insolar/block-explorer/instrumentation/belogger"
 	"github.com/insolar/insolar/insolar"
 	"github.com/insolar/insolar/insolar/pulse"
 	"github.com/insolar/insolar/ledger/heavy/exporter"
+
+	"github.com/insolar/block-explorer/etl/interfaces"
+	"github.com/insolar/block-explorer/etl/types"
+	"github.com/insolar/block-explorer/instrumentation/belogger"
 )
 
 type PlatformExtractor struct {
@@ -100,12 +101,13 @@ func closeStream(ctx context.Context, stream exporter.RecordExporter_ExportClien
 func (e *PlatformExtractor) retrievePulses(ctx context.Context, from, until int64) {
 	pu := &exporter.FullPulse{PulseNumber: insolar.PulseNumber(from)}
 	var err error
-	log := belogger.FromContext(ctx).WithField("pulse_number", pu.PulseNumber)
-
-	log.Debug("retrievePulses(): Start")
+	log := belogger.FromContext(ctx)
 
 	halfPulse := time.Duration(e.continuousPulseRetrievingHalfPulseSeconds) * time.Second
 	for {
+		log = log.WithField("pulse_number", pu.PulseNumber)
+		log.Debug("retrievePulses(): Start")
+
 		select {
 		case <-ctx.Done(): // we need context with cancel
 			log.Debug("retrievePulses(): terminating")
@@ -126,7 +128,7 @@ func (e *PlatformExtractor) retrievePulses(ctx context.Context, from, until int6
 				time.Sleep(halfPulse)
 				continue
 			}
-			log.Errorf("retrievePulses(): before=%d err=%s", before, err)
+			log.Errorf("retrievePulses(): before=%d err=%s", before.PulseNumber, err)
 			time.Sleep(time.Second)
 			continue
 		}
