@@ -66,8 +66,8 @@ func TestStorage_SaveJetDropData(t *testing.T) {
 	err = testDB.Find(&recordInDB).Error
 	require.NoError(t, err)
 	require.Len(t, recordInDB, 2)
-	require.EqualValues(t, firstRecord, recordInDB[0])
-	require.EqualValues(t, secondRecord, recordInDB[1])
+	require.Contains(t, recordInDB, firstRecord)
+	require.Contains(t, recordInDB, secondRecord)
 }
 
 func TestStorage_SaveJetDropData_PulseUpdated(t *testing.T) {
