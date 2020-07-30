@@ -7,7 +7,15 @@ package connectionmanager
 
 import (
 	"context"
+	"net/http"
 	"testing"
+	"time"
+
+	"github.com/insolar/insolar/ledger/heavy/exporter"
+	"github.com/insolar/spec-insolar-block-explorer-api/v1/server"
+	"github.com/jinzhu/gorm"
+	"github.com/labstack/echo/v4"
+	"github.com/stretchr/testify/require"
 
 	"github.com/insolar/block-explorer/api"
 	"github.com/insolar/block-explorer/configuration"
@@ -15,11 +23,6 @@ import (
 	"github.com/insolar/block-explorer/etl/storage"
 	"github.com/insolar/block-explorer/test/heavymock"
 	"github.com/insolar/block-explorer/testutils"
-	"github.com/insolar/insolar/ledger/heavy/exporter"
-	"github.com/insolar/spec-insolar-block-explorer-api/v1/server"
-	"github.com/jinzhu/gorm"
-	"github.com/labstack/echo/v4"
-	"github.com/stretchr/testify/require"
 )
 
 const DefaultAPIPort = ":8081"
@@ -82,7 +85,12 @@ func (c *ConnectionManager) StartAPIServer(t testing.TB) {
 	server.RegisterHandlers(e, apiServer)
 
 	go func() {
-		err := c.echo.Start(cfg.Listen)
+		srv := &http.Server{
+			Addr:         cfg.Listen,
+			ReadTimeout:  time.Second * 60,
+			WriteTimeout: time.Second * 60,
+		}
+		err := c.echo.StartServer(srv)
 		if err != nil {
 			require.Contains(t, err.Error(), "http: Server closed", "HTTP server stopped unexpected")
 		}
