@@ -7,9 +7,8 @@ package connectionmanager
 
 import (
 	"context"
-	"net/http"
+	"net"
 	"testing"
-	"time"
 
 	"github.com/insolar/insolar/ledger/heavy/exporter"
 	"github.com/insolar/spec-insolar-block-explorer-api/v1/server"
@@ -37,7 +36,6 @@ type ConnectionManager struct {
 	DB             *gorm.DB
 	dbPoolCleaner  func()
 	echo           *echo.Echo
-	server         *http.Server
 	ctx            context.Context
 }
 
@@ -85,14 +83,13 @@ func (c *ConnectionManager) StartAPIServer(t testing.TB) {
 	apiServer := api.NewServer(c.ctx, s, cfg)
 	server.RegisterHandlers(e, apiServer)
 
+	l, err := net.Listen("tcp", cfg.Listen)
+	if err != nil {
+		require.Fail(t, "can't start listen", err.Error())
+	}
+	c.echo.Listener = l
 	go func() {
-		srv := &http.Server{
-			Addr:         cfg.Listen,
-			ReadTimeout:  time.Second * 60,
-			WriteTimeout: time.Second * 60,
-		}
-		c.server = srv
-		err := c.echo.StartServer(srv)
+		err := c.echo.Start(cfg.Listen)
 		if err != nil {
 			require.Contains(t, err.Error(), "http: Server closed", "HTTP server stopped unexpected")
 		}
@@ -107,6 +104,6 @@ func (c *ConnectionManager) Stop() {
 		f()
 	}
 	if e := c.echo; e != nil {
-		_ = c.server.Shutdown(c.ctx)
+		_ = c.echo.Shutdown(c.ctx)
 	}
 }
