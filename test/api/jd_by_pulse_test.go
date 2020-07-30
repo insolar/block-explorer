@@ -127,7 +127,7 @@ func TestGetJetDropsByPulse_severalRecordsInJD(t *testing.T) {
 	ts.StartBE(t)
 	defer ts.StopBE(t)
 
-	ts.WaitRecordsCount(t, recordsCount*pulsesCount, 1000)
+	ts.WaitRecordsCount(t, recordsCount*pulsesCount, 5000)
 	c := GetHTTPClient()
 	response := c.JetDropsByPulseNumber(t, int64(records[0].Record.ID.Pulse()), nil)
 	require.Equal(t, int64(1), response.Total)
