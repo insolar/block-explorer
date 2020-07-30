@@ -48,6 +48,7 @@ func (a *BlockExplorerTestSuite) Start(t testing.TB) {
 }
 
 func (a *BlockExplorerTestSuite) Stop(t testing.TB) {
+	testutils.TruncateTables(t, a.BE.DB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
 	a.ConMngr.Stop()
 }
 
