@@ -37,6 +37,7 @@ type ConnectionManager struct {
 	DB             *gorm.DB
 	dbPoolCleaner  func()
 	echo           *echo.Echo
+	server         *http.Server
 	ctx            context.Context
 }
 
@@ -90,6 +91,7 @@ func (c *ConnectionManager) StartAPIServer(t testing.TB) {
 			ReadTimeout:  time.Second * 60,
 			WriteTimeout: time.Second * 60,
 		}
+		c.server = srv
 		err := c.echo.StartServer(srv)
 		if err != nil {
 			require.Contains(t, err.Error(), "http: Server closed", "HTTP server stopped unexpected")
@@ -105,6 +107,6 @@ func (c *ConnectionManager) Stop() {
 		f()
 	}
 	if e := c.echo; e != nil {
-		_ = c.echo.Shutdown(c.ctx)
+		_ = c.server.Shutdown(c.ctx)
 	}
 }
