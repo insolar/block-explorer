@@ -29,6 +29,7 @@ require (
 	github.com/rs/zerolog v1.15.0
 	github.com/skudasov/loadgen v0.0.22
 	github.com/spf13/cast v1.3.1 // indirect
+	github.com/stackimpact/stackimpact-go v2.3.10+incompatible // indirect
 	github.com/stretchr/testify v1.5.1
 	github.com/ugorji/go/codec v0.0.0-20181204163529-d75b2dcb6bc8 // indirect
 	github.com/urfave/cli/v2 v2.2.0 // indirect

@@ -23,6 +23,7 @@ import (
 	"github.com/insolar/insconfig"
 	"github.com/insolar/insolar/ledger/heavy/exporter"
 	"github.com/pkg/errors"
+	"github.com/stackimpact/stackimpact-go"
 
 	"github.com/insolar/block-explorer/etl/dbconn"
 	"github.com/insolar/block-explorer/etl/storage"
@@ -48,6 +49,11 @@ func main() {
 	fmt.Println("Starts with configuration:\n", insConfigurator.ToYaml(cfg))
 	ctx, logger := belogger.InitLogger(context.Background(), cfg.Log, "block_explorer")
 	logger.Info("Config and logger were initialized")
+
+	_ = stackimpact.Start(stackimpact.Options{
+		AgentKey: "5256279e53f4aa857af6ee782a4c53e72034b0da",
+		AppName:  "gbe",
+	})
 
 	router := api.NewRouter()
 	_ = router.Start(ctx)
