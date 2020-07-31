@@ -14,6 +14,7 @@ import (
 	"github.com/insolar/spec-insolar-block-explorer-api/v1/server"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	"github.com/stackimpact/stackimpact-go"
 
 	"github.com/insolar/block-explorer/api"
 	"github.com/insolar/block-explorer/configuration"
@@ -36,6 +37,11 @@ func main() {
 	ctx := context.Background()
 	ctx, logger := belogger.InitLogger(ctx, cfg.Log, "block_explorer_api")
 	logger.Info("Config and logger were initialized")
+
+	_ = stackimpact.Start(stackimpact.Options{
+		AgentKey: "5256279e53f4aa857af6ee782a4c53e72034b0da",
+		AppName:  "api",
+	})
 
 	router := api.NewRouter()
 	err := router.Start(ctx)
