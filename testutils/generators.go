@@ -13,15 +13,16 @@ import (
 	"testing"
 	"time"
 
-	fuzz "github.com/google/gofuzz"
-	"github.com/insolar/block-explorer/etl/interfaces"
-	"github.com/insolar/block-explorer/etl/models"
 	"github.com/insolar/insolar/insolar"
 	"github.com/insolar/insolar/insolar/gen"
 	insrecord "github.com/insolar/insolar/insolar/record"
 	"github.com/insolar/insolar/ledger/heavy/exporter"
 	"github.com/insolar/insolar/pulse"
+	uuid "github.com/satori/go.uuid"
 	"github.com/stretchr/testify/require"
+
+	"github.com/insolar/block-explorer/etl/interfaces"
+	"github.com/insolar/block-explorer/etl/models"
 )
 
 var letterRunes = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
@@ -361,9 +362,11 @@ func RandNumberOverRange(min int64, max int64) int64 {
 
 // GenerateRandBytes generates random bytes array
 func GenerateRandBytes() []byte {
-	var hash []byte
-	fuzz.New().NilChance(0).Fuzz(&hash)
-	return hash
+	u, err := uuid.NewV4()
+	if err != nil {
+		panic("can't create uuid:" + err.Error())
+	}
+	return u.Bytes()
 }
 
 // Generate random string with specified length
