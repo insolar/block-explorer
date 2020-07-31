@@ -23,6 +23,7 @@ import (
 )
 
 func main() {
+	// test pr
 	cfg := &configuration.API{}
 	params := insconfig.Params{
 		EnvPrefix:        "block_explorer_api",
