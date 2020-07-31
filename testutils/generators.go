@@ -362,10 +362,7 @@ func RandNumberOverRange(min int64, max int64) int64 {
 
 // GenerateRandBytes generates random bytes array
 func GenerateRandBytes() []byte {
-	u, err := uuid.NewV4()
-	if err != nil {
-		panic("can't create uuid:" + err.Error())
-	}
+	u, _ := uuid.NewV4()
 	return u.Bytes()
 }
 
