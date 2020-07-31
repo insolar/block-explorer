@@ -84,9 +84,7 @@ func (c *ConnectionManager) StartAPIServer(t testing.TB) {
 	server.RegisterHandlers(e, apiServer)
 
 	l, err := net.Listen("tcp", cfg.Listen)
-	if err != nil {
-		require.Fail(t, "can't start listen", err.Error())
-	}
+	require.NoError(t, err, "can't start listen")
 	c.echo.Listener = l
 	go func() {
 		err := c.echo.Start(cfg.Listen)
