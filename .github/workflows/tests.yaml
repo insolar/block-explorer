@@ -48,7 +48,7 @@ jobs:
         if: github.event_name == 'schedule'
         run: |
           echo "::set-env name=TEST_COUNT::1000"
-          echo "::set-env name=TEST_ARGS::-timeout 60m"
+          echo "::set-env name=TEST_ARGS::-timeout 60m -json"
       - name: set up go ${{env.GO_VERSION}}
         uses: actions/setup-go@v1
         id: go
@@ -83,7 +83,7 @@ jobs:
         if: github.event_name == 'schedule'
         run: |
           echo "::set-env name=TEST_COUNT::1000"
-          echo "::set-env name=TEST_ARGS::-timeout 240m"
+          echo "::set-env name=TEST_ARGS::-timeout 240m -json"
       - name: set up go ${{env.GO_VERSION}}
         uses: actions/setup-go@v1
         id: go
