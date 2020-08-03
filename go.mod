@@ -28,6 +28,7 @@ require (
 	github.com/satori/go.uuid v1.2.1-0.20181028125025-b2ce2384e17b
 	github.com/skudasov/loadgen v0.0.22
 	github.com/spf13/cast v1.3.1 // indirect
+	github.com/stackimpact/stackimpact-go v2.3.10+incompatible // indirect
 	github.com/stretchr/testify v1.5.1
 	go.opencensus.io v0.22.1
 	golang.org/x/crypto v0.0.0-20200510223506-06a226fb4e37 // indirect
