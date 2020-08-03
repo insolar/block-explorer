@@ -1327,6 +1327,7 @@ func TestServer_JetDropByID(t *testing.T) {
 }
 
 func TestServer_JetDropsByJetID(t *testing.T) {
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
 	totalCount := 5
 	jetID, preparedJetDrops, preparedPulses := testutils.GenerateJetDropsWithSomeJetID(t, totalCount)
 	err := testutils.CreatePulses(testDB, preparedPulses)
