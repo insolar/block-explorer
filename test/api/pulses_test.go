@@ -12,12 +12,13 @@ import (
 
 	"github.com/antihax/optional"
 	"github.com/gogo/protobuf/sortkeys"
-	"github.com/insolar/block-explorer/test/heavymock"
-	"github.com/insolar/block-explorer/test/integration"
-	"github.com/insolar/block-explorer/testutils"
 	"github.com/insolar/insolar/ledger/heavy/exporter"
 	"github.com/insolar/spec-insolar-block-explorer-api/v1/client"
 	"github.com/stretchr/testify/require"
+
+	"github.com/insolar/block-explorer/test/heavymock"
+	"github.com/insolar/block-explorer/test/integration"
+	"github.com/insolar/block-explorer/testutils"
 )
 
 func TestPulsesAPI(t *testing.T) {
@@ -54,10 +55,15 @@ func TestPulsesAPI(t *testing.T) {
 		require.NoError(t, err)
 		require.Len(t, response.Result, defaultLimit)
 		require.Equal(t, pulsesNumber, int(response.Total))
-		for _, res := range response.Result {
+		for i, res := range response.Result {
 			require.Contains(t, pulses, res.PulseNumber)
 			require.Equal(t, res.PulseNumber-10, res.PrevPulseNumber)
-			require.Equal(t, res.PulseNumber+10, res.NextPulseNumber)
+			// last pulse in db don't have next
+			if i == 0 {
+				require.EqualValues(t, 0, res.NextPulseNumber)
+			} else {
+				require.Equal(t, res.PulseNumber+10, res.NextPulseNumber)
+			}
 			require.Equal(t, recordsInPulse, int(res.JetDropAmount))
 			require.Equal(t, recordsInPulse, int(res.RecordAmount))
 			require.NotEmpty(t, res.Timestamp)

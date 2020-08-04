@@ -251,6 +251,7 @@ func (s *Storage) GetPulse(pulseNumber int64) (models.Pulse, error) {
 	}
 
 	pulse = s.updateNextPulse(pulse)
+	pulse = s.updatePrevPulse(pulse)
 
 	return pulse, err
 }
@@ -273,14 +274,20 @@ func (s *Storage) GetPulses(fromPulse *int64, timestampLte, timestampGte *int64,
 		return nil, 0, errors.Wrap(err, "error while select pulses from db")
 	}
 
-	// set real NextPulseNumber to every pulse (if we know it)
-	for i := 0; i < len(pulses)-1; i++ {
+	// set real NextPulseNumber and PrevPulseNumber to every pulse (if we don't know it, set -1)
+	pulsesLen := len(pulses)
+	for i := 0; i < pulsesLen-1; i++ {
 		if pulses[i].PrevPulseNumber == pulses[i+1].PulseNumber {
 			pulses[i+1].NextPulseNumber = pulses[i].PulseNumber
+		} else {
+			pulses[i+1].NextPulseNumber = -1
+			pulses[i].PrevPulseNumber = -1
 		}
-		if i == 0 {
-			pulses[i] = s.updateNextPulse(pulses[i])
-		}
+	}
+
+	if pulsesLen > 0 {
+		pulses[0] = s.updateNextPulse(pulses[0])
+		pulses[pulsesLen-1] = s.updatePrevPulse(pulses[pulsesLen-1])
 	}
 
 	return pulses, total, err
@@ -290,9 +297,20 @@ func (s *Storage) updateNextPulse(pulse models.Pulse) models.Pulse {
 	var nextPulse models.Pulse
 	err := s.db.Where("prev_pulse_number = ?", pulse.PulseNumber).First(&nextPulse).Error
 	if err != nil {
-		return pulse
+		pulse.NextPulseNumber = -1
+	} else {
+		pulse.NextPulseNumber = nextPulse.PulseNumber
 	}
-	pulse.NextPulseNumber = nextPulse.PulseNumber
+
+	return pulse
+}
+
+func (s *Storage) updatePrevPulse(pulse models.Pulse) models.Pulse {
+	var prevPulse models.Pulse
+	err := s.db.Where("pulse_number = ?", pulse.PrevPulseNumber).First(&prevPulse).Error
+	if err != nil {
+		pulse.PrevPulseNumber = -1
+	}
 	return pulse
 }
 
@@ -403,9 +421,12 @@ func (s *Storage) GetJetDropByID(id models.JetDropID) (models.JetDrop, []models.
 	siblings := jetDrop.Siblings()
 
 	var nextJetDrops []models.JetDrop
-	err = s.db.Model(&nextJetDrops).Where("pulse_number = ? AND jet_id in (?)", pulse.NextPulseNumber, siblings).Find(&nextJetDrops).Error
-	if err != nil {
-		return jetDrop, nil, nil, err
+	// If NextPulseNumber == -1 after call to updateNextPulse, it doesn't exist in db
+	if pulse.NextPulseNumber != -1 {
+		err = s.db.Model(&nextJetDrops).Where("pulse_number = ? AND jet_id in (?)", pulse.NextPulseNumber, siblings).Find(&nextJetDrops).Error
+		if err != nil {
+			return jetDrop, nil, nil, err
+		}
 	}
 
 	var prevJetDrops []models.JetDrop

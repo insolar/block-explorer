@@ -425,6 +425,32 @@ func TestPulses_HappyPath(t *testing.T) {
 	require.EqualValues(t, 2, *received.Total)
 }
 
+func TestPulses_OnePulse(t *testing.T) {
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+
+	// insert pulse
+	pulse, err := testutils.InitPulseDB()
+	require.NoError(t, err)
+	err = testutils.CreatePulse(testDB, pulse)
+	require.NoError(t, err)
+
+	// request pulses
+	resp, err := http.Get("http://" + apihost + "/api/v1/pulses")
+	require.NoError(t, err)
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+	bodyBytes, err := ioutil.ReadAll(resp.Body)
+	require.NoError(t, err)
+
+	var received server.PulsesResponse
+	err = json.Unmarshal(bodyBytes, &received)
+	require.NoError(t, err)
+	require.Len(t, *received.Result, 1)
+	require.EqualValues(t, pulse.PulseNumber, *(*received.Result)[0].PulseNumber)
+	require.Nil(t, (*received.Result)[0].PrevPulseNumber)
+	require.Nil(t, (*received.Result)[0].NextPulseNumber)
+	require.EqualValues(t, 1, *received.Total)
+}
+
 func TestPulses_PulsesWithRecords(t *testing.T) {
 	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
 
