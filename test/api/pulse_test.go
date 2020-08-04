@@ -49,7 +49,12 @@ func TestGetPulse(t *testing.T) {
 			response := c.Pulse(t, int64(p))
 			require.Equal(t, pulsesResp.Result[len(pulsesResp.Result)-1-i].PulseNumber, response.PulseNumber)
 			require.Equal(t, int64(p), response.PulseNumber)
-			require.Equal(t, response.PulseNumber-10, response.PrevPulseNumber)
+			// first pulse in db don't have prev
+			if i == 0 {
+				require.EqualValues(t, 0, response.PrevPulseNumber)
+			} else {
+				require.Equal(t, response.PulseNumber-10, response.PrevPulseNumber)
+			}
 			require.Equal(t, response.PulseNumber+10, response.NextPulseNumber)
 			require.Equal(t, recordsCount, int(response.JetDropAmount))
 			require.Equal(t, recordsCount, int(response.RecordAmount))

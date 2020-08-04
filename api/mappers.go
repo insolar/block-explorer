@@ -64,13 +64,17 @@ func PulseToAPI(pulse models.Pulse) server.Pulse {
 	prevPulseNumber := pulse.PrevPulseNumber
 	nextPulseNumber := pulse.NextPulseNumber
 	response := server.Pulse{
-		IsComplete:      &pulse.IsComplete,
-		JetDropAmount:   &pulse.JetDropAmount,
-		NextPulseNumber: &nextPulseNumber,
-		PrevPulseNumber: &prevPulseNumber,
-		PulseNumber:     &pulseNumber,
-		RecordAmount:    &pulse.RecordAmount,
-		Timestamp:       &pulse.Timestamp,
+		IsComplete:    &pulse.IsComplete,
+		JetDropAmount: &pulse.JetDropAmount,
+		PulseNumber:   &pulseNumber,
+		RecordAmount:  &pulse.RecordAmount,
+		Timestamp:     &pulse.Timestamp,
+	}
+	if prevPulseNumber != -1 {
+		response.PrevPulseNumber = &prevPulseNumber
+	}
+	if nextPulseNumber != -1 {
+		response.NextPulseNumber = &nextPulseNumber
 	}
 	return response
 }

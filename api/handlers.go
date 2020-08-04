@@ -157,9 +157,9 @@ func (s *Server) JetDropsByJetID(ctx echo.Context, jetID server.JetIdPath, param
 	var failures []server.CodeValidationFailures
 	limit, _, failures := checkLimitOffset(params.Limit, nil)
 	// FIXME here PENV-505
-	if params.Limit == nil {
-		limit = 1000
-	}
+	// if params.Limit == nil {
+	// 	limit = 1000
+	// }
 	id, validationError := checkJetID(jetID)
 	if validationError != nil {
 		failures = append(failures, validationError...)
