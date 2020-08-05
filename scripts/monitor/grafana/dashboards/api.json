@@ -24,8 +24,7 @@
   "editable": true,
   "gnetId": 10913,
   "graphTooltip": 1,
-  "id": 3,
-  "iteration": 1596625698346,
+  "iteration": 1596641964994,
   "links": [],
   "panels": [
     {
@@ -67,6 +66,9 @@
       "linewidth": 2,
       "links": [],
       "nullPointMode": "connected",
+      "options": {
+        "dataLinks": []
+      },
       "percentage": false,
       "pluginVersion": "7.1.1",
       "pointradius": 5,
@@ -130,7 +132,6 @@
     },
     {
       "collapsed": false,
-      "datasource": null,
       "gridPos": {
         "h": 1,
         "w": 24,
@@ -148,6 +149,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "$datasource",
+      "description": "",
       "fieldConfig": {
         "defaults": {
           "custom": {}
@@ -157,8 +159,8 @@
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
-        "h": 9,
-        "w": 24,
+        "h": 8,
+        "w": 12,
         "x": 0,
         "y": 8
       },
@@ -177,6 +179,9 @@
       "linewidth": 1,
       "links": [],
       "nullPointMode": "null",
+      "options": {
+        "dataLinks": []
+      },
       "percentage": false,
       "pluginVersion": "7.1.1",
       "pointradius": 5,
@@ -226,7 +231,7 @@
       "timeFrom": null,
       "timeRegions": [],
       "timeShift": null,
-      "title": "Traffic - Req/s",
+      "title": "Traffic(Number of HTTP operations) - Req/s",
       "tooltip": {
         "shared": true,
         "sort": 2,
@@ -278,10 +283,10 @@
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
-        "h": 9,
-        "w": 24,
-        "x": 0,
-        "y": 17
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 8
       },
       "hiddenSeries": false,
       "id": 34,
@@ -298,6 +303,9 @@
       "linewidth": 1,
       "links": [],
       "nullPointMode": "null",
+      "options": {
+        "dataLinks": []
+      },
       "percentage": false,
       "pluginVersion": "7.1.1",
       "pointradius": 5,
@@ -386,12 +394,11 @@
     },
     {
       "collapsed": false,
-      "datasource": null,
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 26
+        "y": 16
       },
       "id": 43,
       "panels": [],
@@ -413,10 +420,10 @@
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
-        "h": 9,
-        "w": 24,
+        "h": 7,
+        "w": 12,
         "x": 0,
-        "y": 27
+        "y": 17
       },
       "hiddenSeries": false,
       "id": 35,
@@ -433,6 +440,9 @@
       "linewidth": 1,
       "links": [],
       "nullPointMode": "null",
+      "options": {
+        "dataLinks": []
+      },
       "percentage": false,
       "pluginVersion": "7.1.1",
       "pointradius": 5,
@@ -536,10 +546,10 @@
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
-        "h": 9,
-        "w": 24,
-        "x": 0,
-        "y": 36
+        "h": 7,
+        "w": 12,
+        "x": 12,
+        "y": 17
       },
       "hiddenSeries": false,
       "id": 36,
@@ -556,6 +566,9 @@
       "linewidth": 1,
       "links": [],
       "nullPointMode": "null",
+      "options": {
+        "dataLinks": []
+      },
       "percentage": false,
       "pluginVersion": "7.1.1",
       "pointradius": 5,
@@ -646,12 +659,11 @@
     },
     {
       "collapsed": false,
-      "datasource": null,
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 45
+        "y": 24
       },
       "id": 45,
       "panels": [],
@@ -676,7 +688,7 @@
         "h": 9,
         "w": 24,
         "x": 0,
-        "y": 46
+        "y": 25
       },
       "hiddenSeries": false,
       "id": 37,
@@ -693,6 +705,9 @@
       "linewidth": 1,
       "links": [],
       "nullPointMode": "null",
+      "options": {
+        "dataLinks": []
+      },
       "percentage": false,
       "pluginVersion": "7.1.1",
       "pointradius": 5,
@@ -813,7 +828,7 @@
         "h": 9,
         "w": 24,
         "x": 0,
-        "y": 55
+        "y": 34
       },
       "hiddenSeries": false,
       "id": 38,
@@ -830,6 +845,9 @@
       "linewidth": 1,
       "links": [],
       "nullPointMode": "null",
+      "options": {
+        "dataLinks": []
+      },
       "percentage": false,
       "pluginVersion": "7.1.1",
       "pointradius": 5,
@@ -950,7 +968,7 @@
         "h": 9,
         "w": 24,
         "x": 0,
-        "y": 64
+        "y": 43
       },
       "hiddenSeries": false,
       "id": 39,
@@ -967,6 +985,9 @@
       "linewidth": 1,
       "links": [],
       "nullPointMode": "null",
+      "options": {
+        "dataLinks": []
+      },
       "percentage": false,
       "pluginVersion": "7.1.1",
       "pointradius": 5,
@@ -1070,15 +1091,14 @@
       }
     }
   ],
-  "refresh": "10s",
-  "schemaVersion": 26,
+  "refresh": false,
+  "schemaVersion": 19,
   "style": "dark",
   "tags": [],
   "templating": {
     "list": [
       {
         "current": {
-          "selected": false,
           "text": "Prometheus",
           "value": "Prometheus"
         },
@@ -1098,7 +1118,6 @@
       {
         "allValue": null,
         "current": {
-          "selected": false,
           "text": "All",
           "value": "$__all"
         },
@@ -1124,7 +1143,6 @@
       {
         "allValue": null,
         "current": {
-          "selected": false,
           "text": "All",
           "value": "$__all"
         },
@@ -1150,9 +1168,9 @@
       {
         "allValue": null,
         "current": {
-          "selected": false,
-          "text": "All",
-          "value": "$__all"
+          "tags": [],
+          "text": "/api/v1/pulses",
+          "value": "/api/v1/pulses"
         },
         "datasource": "$datasource",
         "definition": "",
@@ -1176,8 +1194,8 @@
     ]
   },
   "time": {
-    "from": "now-15m",
-    "to": "now"
+    "from": "2020-08-05T15:44:05.711Z",
+    "to": "2020-08-05T15:46:40.399Z"
   },
   "timepicker": {
     "refresh_intervals": [
@@ -1206,5 +1224,5 @@
   "timezone": "browser",
   "title": "GBE API",
   "uid": "KzznqEpZz",
-  "version": 3
+  "version": 1
 }
