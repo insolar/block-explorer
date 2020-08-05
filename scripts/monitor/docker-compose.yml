@@ -1,0 +1,24 @@
+version: '3.7'
+services:
+  prometheus:
+    image: "prom/prometheus:v2.12.0"
+    volumes:
+      - ./prometheus:/etc/prometheus:ro
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yaml'
+    ports:
+      - '9090:9090'
+
+  grafana:
+    image: grafana/grafana:6.3.3
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=pass
+      - GF_EXPLORE_ENABLED=true
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning
+      - ./grafana/config.ini:/etc/grafana/config.ini
+      - ./grafana/dashboards:/var/lib/grafana/dashboards
+    depends_on:
+      - prometheus
+    ports:
+      - "3000:3000"

@@ -8,6 +8,7 @@ require (
 	github.com/emirpasic/gods v1.12.0
 	github.com/fortytw2/leaktest v1.3.0
 	github.com/fsnotify/fsnotify v1.4.9 // indirect
+	github.com/globocom/echo-prometheus v0.1.2
 	github.com/gogo/protobuf v1.3.1
 	github.com/gojuno/minimock/v3 v3.0.8
 	github.com/gotestyourself/gotestyourself v2.2.0+incompatible // indirect
@@ -23,7 +24,7 @@ require (
 	github.com/ory/dockertest/v3 v3.5.2
 	github.com/pelletier/go-toml v1.8.0 // indirect
 	github.com/pkg/errors v0.9.1
-	github.com/prometheus/client_golang v1.1.0 // indirect
+	github.com/prometheus/client_golang v1.1.0
 	github.com/rs/zerolog v1.15.0
 	github.com/satori/go.uuid v1.2.1-0.20181028125025-b2ce2384e17b
 	github.com/skudasov/loadgen v0.0.22
