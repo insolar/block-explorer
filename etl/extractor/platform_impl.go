@@ -192,9 +192,11 @@ func (e *PlatformExtractor) retrieveRecords(ctx context.Context, pu *exporter.Fu
 					time.Sleep(time.Duration(e.continuousPulseRetrievingHalfPulseSeconds) * time.Second)
 					go e.retrievePulses(ctx, int64(pu.PrevPulseNumber), int64(pu.PulseNumber)) // goroutine to split the stack
 					log.Infof("Rerequest pulse=%d err=%s", pu.PulseNumber, err)
+					closeStream(ctx, stream)
 					return
 				}
 				log.Errorf("retrieveRecords(): empty response: err=%s", err)
+				closeStream(ctx, stream)
 				return
 			}
 			if resp.ShouldIterateFrom != nil || resp.Record.ID.Pulse() != pu.PulseNumber { // next pulse packet
