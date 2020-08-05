@@ -190,7 +190,7 @@ func GenerateObjectLifeline(pulseCount, recordsInPulse int) ObjectLifeline {
 		if len(amends) > 0 {
 			prevState = amends[len(amends)-1].Record.ID
 		}
-		if i == pulseCount-1 {
+		if i == pulseCount-1 && recordsInPulse > 1 {
 			prevState = amends[len(amends)-2].Record.ID
 			deactivate := GenerateVirtualDeactivateRecord(pn, objectID, prevState)
 			deactivate.Record.JetID = jetID
@@ -372,6 +372,11 @@ func RandomString(n int) string {
 	return string(b)
 }
 
+// generate records with split JetDrops
+func GenerateRecordsWithSplitJetDrops(t *testing.T) {
+
+}
+
 // GenerateJetDropsWithSplit returns a jetdrops with splited by depth in different pulse
 func GenerateJetDropsWithSplit(t *testing.T, pulseCount, jDCount int, depth int) ([]models.JetDrop, []models.Pulse) {
 	pulses := make([]models.Pulse, pulseCount)
@@ -427,5 +432,3 @@ func createChildren(pulse models.Pulse, jetID string, depth int) []models.JetDro
 	drops = append(drops, createChildren(pulse, right, depth-1)...)
 	return drops
 }
-
-// func Generate
