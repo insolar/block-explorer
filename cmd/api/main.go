@@ -10,10 +10,12 @@ import (
 	"fmt"
 	"net/http"
 
+	echoPrometheus "github.com/globocom/echo-prometheus"
 	"github.com/insolar/insconfig"
 	"github.com/insolar/spec-insolar-block-explorer-api/v1/server"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/stackimpact/stackimpact-go"
 
 	"github.com/insolar/block-explorer/api"
@@ -58,6 +60,9 @@ func main() {
 	e := echo.New()
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
+
+	e.Use(echoPrometheus.MetricsMiddleware())
+	e.GET("/metrics", echo.WrapHandler(promhttp.Handler()))
 
 	s := storage.NewStorage(db)
 
