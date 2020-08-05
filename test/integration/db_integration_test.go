@@ -15,7 +15,9 @@ import (
 	"github.com/insolar/insolar/insolar"
 	"github.com/insolar/insolar/ledger/heavy/exporter"
 	"github.com/insolar/insolar/pulse"
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc"
 
 	"github.com/insolar/block-explorer/etl/models"
 	"github.com/insolar/block-explorer/etl/transformer"
@@ -260,4 +262,129 @@ func TestIntegrationWithDb_GetJetDrops(t *testing.T) {
 	require.Equal(t, recordsCount, jetDropsDB[0].RecordAmount)
 	require.Equal(t, recordsCount, jetDropsDB[1].RecordAmount)
 	require.Equal(t, recordsCount, jetDropsDB[2].RecordAmount)
+}
+
+func TestIntegrationWithDb_GetPulse(t *testing.T) {
+	t.Log("CXXXX Process records and get saved pulses by pulse number from database")
+
+	ts := NewBlockExplorerTestSetup(t)
+	defer ts.Stop(t)
+
+	recordsCount := 2
+	pulses := 2
+	expRecordsJet1 := testutils.GenerateRecordsFromOneJetSilence(pulses, recordsCount)
+	expRecordsJet2 := testutils.GenerateRecordsFromOneJetSilence(pulses, recordsCount)
+	expRecords := make([]*exporter.Record, 0)
+	expRecords = append(expRecords, expRecordsJet1...)
+	expRecords = append(expRecords, expRecordsJet2...)
+
+	pulseNumbers := map[int64]bool{}
+	for _, r := range expRecords {
+		pulseNumbers[int64(r.Record.ID.Pulse())] = true
+	}
+
+	ts.BE.PulseClient.SetNextFinalizedPulseFunc(ts.ConMngr.Importer)
+
+	err := heavymock.ImportRecords(ts.ConMngr.ImporterClient, expRecords)
+	require.NoError(t, err)
+
+	ts.StartBE(t)
+	defer ts.StopBE(t)
+
+	ts.WaitRecordsCount(t, len(expRecords), 6000)
+
+	var pulsesDB []models.Pulse
+	for pulse, _ := range pulseNumbers {
+		p, err := ts.BE.Storage().GetPulse(pulse)
+		require.NoError(t, err)
+		pulsesDB = append(pulsesDB, p)
+	}
+
+	require.Len(t, pulsesDB, pulses, "pulses count in db not as expected")
+
+	for i := 0; i < pulses; i++ {
+		require.Contains(t, pulseNumbers, pulsesDB[i].PulseNumber)
+		// there is two jetDrops in every pulse
+		require.EqualValues(t, 2, pulsesDB[i].JetDropAmount)
+		require.EqualValues(t, recordsCount*2, pulsesDB[i].RecordAmount)
+	}
+}
+
+// save data for two pulses
+// save data for first pulse again, change PrevPulseNumber and jetDrops hashes to new values
+// check pulse in db have new value at PrevPulseNumber
+func TestIntegrationWithDb_GetPulse_ReloadData(t *testing.T) {
+	t.Log("CXXXX Process records twice (as if reloading data happened) and get saved pulse by pulse number from database")
+
+	ts := NewBlockExplorerTestSetup(t)
+	defer ts.Stop(t)
+
+	ts.BE.DB.LogMode(true)
+
+	updatedPrevPulseNumber := insolar.PulseNumber(100000000)
+	updatedHash := testutils.GenerateRandBytes()
+	recordsCount := 2
+	pulses := 2
+	expRecordsJet1 := testutils.GenerateRecordsFromOneJetSilence(pulses, recordsCount)
+	expRecordsJet2 := testutils.GenerateRecordsFromOneJetSilence(pulses, recordsCount)
+	expRecords := make([]*exporter.Record, 0)
+	expRecords = append(expRecords, expRecordsJet1...)
+	expRecords = append(expRecords, expRecordsJet2...)
+
+	pulseNumber := int64(expRecords[0].Record.ID.Pulse())
+
+	ts.BE.PulseClient.SetNextFinalizedPulseFunc(ts.ConMngr.Importer)
+
+	sendSamePulse := false
+	var nextFinalizedPulseFirst *exporter.FullPulse
+	var p uint32
+	ts.BE.PulseClient.NextFinalizedPulseFunc = func(ctx context.Context, in *exporter.GetNextFinalizedPulse, opts ...grpc.CallOption) (*exporter.FullPulse, error) {
+		if sendSamePulse {
+			nextFinalizedPulseFirst.PrevPulseNumber = updatedPrevPulseNumber
+			for i := 0; i < len(nextFinalizedPulseFirst.Jets); i++ {
+				nextFinalizedPulseFirst.Jets[i].Hash = updatedHash
+			}
+			return nextFinalizedPulseFirst, nil
+		}
+		pulse, jetDropContinue := ts.ConMngr.Importer.GetLowestUnsentPulse()
+		if p == uint32(pulse) {
+			return nil, errors.New("unready yet")
+		}
+		p = uint32(pulse)
+		fullPulse, err := clients.GetFullPulse(p, jetDropContinue)
+		if nextFinalizedPulseFirst == nil {
+			nextFinalizedPulseFirst = fullPulse
+		}
+		return fullPulse, err
+	}
+
+	err := heavymock.ImportRecords(ts.ConMngr.ImporterClient, expRecords)
+	require.NoError(t, err)
+
+	ts.StartBE(t)
+	defer ts.StopBE(t)
+
+	ts.WaitRecordsCount(t, len(expRecords), 6000)
+
+	pulse, err := ts.BE.Storage().GetPulse(pulseNumber)
+	require.NoError(t, err)
+
+	require.Equal(t, pulseNumber, pulse.PulseNumber)
+	require.EqualValues(t, 2, pulse.JetDropAmount)
+	require.EqualValues(t, 2*recordsCount, pulse.RecordAmount)
+
+	sendSamePulse = true
+
+	expectedPulse := pulse
+	expectedPulse.PrevPulseNumber = int64(updatedPrevPulseNumber)
+	for i := 0; i < len(nextFinalizedPulseFirst.Jets); i++ {
+		jdID := models.NewJetDropID(converter.JetIDToString(nextFinalizedPulseFirst.Jets[i].JetID), pulse.PulseNumber)
+		ts.WaitJetDropHash(t, *jdID, updatedHash, 6000)
+	}
+
+	pulse, err = ts.BE.Storage().GetPulse(pulseNumber)
+	require.NoError(t, err)
+
+	require.EqualValues(t, 2, pulse.JetDropAmount)
+	require.EqualValues(t, 2*recordsCount, pulse.RecordAmount)
 }

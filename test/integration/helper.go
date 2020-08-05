@@ -6,6 +6,7 @@
 package integration
 
 import (
+	"bytes"
 	"testing"
 	"time"
 
@@ -81,6 +82,21 @@ func (a *BlockExplorerTestSuite) WaitRecordsCount(t testing.TB, expCount int, ti
 	}
 	t.Logf("Found %v rows", c)
 	require.Equal(t, expCount, c, "Records count in DB not as expected")
+}
+
+func (a *BlockExplorerTestSuite) WaitJetDropHash(t testing.TB, id models.JetDropID, expectedHash []byte, timeoutMs int) {
+	interval := 100
+	jetDrop := models.JetDrop{}
+	for i := 0; i < timeoutMs/interval; i++ {
+		a.BE.DB.Where("pulse_number = ? AND jet_id = ?", id.PulseNumber, id.JetID).Find(&jetDrop)
+		t.Logf("Select from jetDrops, expected jetDrop hash %v, actual=%v, attempt: %v", expectedHash, jetDrop.Hash, i)
+		if bytes.Equal(expectedHash, jetDrop.Hash) {
+			break
+		}
+		time.Sleep(time.Duration(interval) * time.Millisecond)
+	}
+	t.Logf("Found jetDrop with hash %v", jetDrop.Hash)
+	require.Equal(t, expectedHash, jetDrop.Hash, "JetDrop hash in DB not as expected")
 }
 
 func (a *BlockExplorerTestSuite) CheckForRecordsNotChanged(t testing.TB, expCount int, timeoutMs int) {
