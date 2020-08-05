@@ -190,15 +190,12 @@ func GenerateObjectLifeline(pulseCount, recordsInPulse int) ObjectLifeline {
 		if len(amends) > 0 {
 			prevState = amends[len(amends)-1].Record.ID
 		}
-		// TODO uncomment after resolving https://insolar.atlassian.net/browse/PENV-368
-		// if i == pulseCount-1 {
-		// 	deactivate := GenerateVirtualDeactivateRecord(pn, objectID, prevState)
-		// 	deactivate.Record.JetID = jetID
-		// 	sideRecords[1] = RecordsByPulse{
-		// 		Pn:      pn,
-		// 		Records: []*exporter.Record{deactivate},
-		// 	}
-		// }
+		if i == pulseCount-1 {
+			prevState = amends[len(amends)-2].Record.ID
+			deactivate := GenerateVirtualDeactivateRecord(pn, objectID, prevState)
+			deactivate.Record.JetID = jetID
+			records[len(records)-1] = deactivate
+		}
 
 		stateRecords[i] = RecordsByPulse{
 			Pn:      pn,
@@ -430,3 +427,5 @@ func createChildren(pulse models.Pulse, jetID string, depth int) []models.JetDro
 	drops = append(drops, createChildren(pulse, right, depth-1)...)
 	return drops
 }
+
+// func Generate

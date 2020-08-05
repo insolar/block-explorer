@@ -118,6 +118,7 @@ func TestGenerateObjectLifeline(t *testing.T) {
 
 	var amendCount int
 	var activateCount int
+	var deactivateCount int
 	var unknown int
 	for _, r := range allRecords {
 		require.Equal(t, objID, r.Record.ObjectID)
@@ -128,13 +129,16 @@ func TestGenerateObjectLifeline(t *testing.T) {
 			amendCount++
 		case *ins_record.Virtual_Activate:
 			activateCount++
+		case *ins_record.Virtual_Deactivate:
+			deactivateCount++
 		default:
 			unknown++
 		}
 	}
 	require.Equal(t, 0, unknown)
-	require.Equal(t, pulsesNumber*recordsNumber-1, amendCount)
+	require.Equal(t, pulsesNumber*recordsNumber-2, amendCount) // 2 = one activate record + one deactivate record
 	require.Equal(t, 1, activateCount)
+	require.Equal(t, 1, deactivateCount)
 
 	sideRecords := make([]*exporter.Record, 0)
 	for i := 0; i < len(lifeline.SideRecords); i++ {
