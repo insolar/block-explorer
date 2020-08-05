@@ -160,7 +160,14 @@ func TestGetJetDropsByJetID_queryParams(t *testing.T) {
 	sortkeys.Uint32s(uniqPulses)
 	jetID := converter.JetIDToString(records[0].Record.JetID)
 	require.NoError(t, heavymock.ImportRecords(ts.ConMngr.ImporterClient, records))
-	require.NoError(t, heavymock.ImportRecords(ts.ConMngr.ImporterClient, []*exporter.Record{testutils.GenerateRecordInNextPulse(maxPn)}))
+	// jetID in next pulse must not be related to test jetID
+	var nextPulseJetID string
+	var record *exporter.Record
+	for strings.HasPrefix(nextPulseJetID, jetID) || strings.HasPrefix(jetID, nextPulseJetID) {
+		record = testutils.GenerateRecordInNextPulse(maxPn)
+		nextPulseJetID = converter.JetIDToString(record.Record.JetID)
+	}
+	require.NoError(t, heavymock.ImportRecords(ts.ConMngr.ImporterClient, []*exporter.Record{record}))
 
 	ts.BE.PulseClient.SetNextFinalizedPulseFunc(ts.ConMngr.Importer)
 	ts.StartBE(t)
