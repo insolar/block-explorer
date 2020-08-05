@@ -37,7 +37,7 @@ func (s *Storage) SaveJetDropData(jetDrop models.JetDrop, records []models.Recor
 		return nil
 	}
 	if strings.Contains(err.Error(), "error while saving jetDrop") {
-		return s.updateJD(jetDrop, records, pulseNumber)
+		return s.updateJD(jetDrop, records)
 	}
 	return err
 }
@@ -67,7 +67,7 @@ func (s *Storage) initJD(jetDrop models.JetDrop, records []models.Record, pulseN
 	})
 }
 
-func (s *Storage) updateJD(jetDrop models.JetDrop, records []models.Record, pulseNumber int64) error {
+func (s *Storage) updateJD(jetDrop models.JetDrop, records []models.Record) error {
 	return s.db.Transaction(func(tx *gorm.DB) error {
 		jd := &jetDrop
 		if err := tx.Save(jd).Error; err != nil {
