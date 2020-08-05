@@ -266,7 +266,7 @@ func TestIntegrationWithDb_GetJetDrops(t *testing.T) {
 }
 
 func TestIntegrationWithDb_GetPulse(t *testing.T) {
-	t.Log("CXXXX Process records and get saved pulses by pulse number from database")
+	t.Log("C5648 Process records and get saved pulses by pulse number from database")
 
 	ts := NewBlockExplorerTestSetup(t)
 	defer ts.Stop(t)
@@ -315,7 +315,7 @@ func TestIntegrationWithDb_GetPulse(t *testing.T) {
 // save data for first pulse again, change PrevPulseNumber and jetDrops hashes to new values
 // check pulse in db have new value at PrevPulseNumber
 func TestIntegrationWithDb_GetPulse_ReloadData(t *testing.T) {
-	t.Log("CXXXX Process records twice (as if reloading data happened) and get saved pulse by pulse number from database")
+	t.Log("C5649 Process records twice (as if reloading data happened) and get saved pulse by pulse number from database")
 
 	ts := NewBlockExplorerTestSetup(t)
 	defer ts.Stop(t)
