@@ -10,6 +10,7 @@ package integration
 import (
 	"context"
 	"io"
+	"sync/atomic"
 	"testing"
 
 	"github.com/insolar/insolar/insolar"
@@ -319,8 +320,6 @@ func TestIntegrationWithDb_GetPulse_ReloadData(t *testing.T) {
 	ts := NewBlockExplorerTestSetup(t)
 	defer ts.Stop(t)
 
-	ts.BE.DB.LogMode(true)
-
 	updatedPrevPulseNumber := insolar.PulseNumber(100000000)
 	updatedHash := testutils.GenerateRandBytes()
 	recordsCount := 2
@@ -335,11 +334,15 @@ func TestIntegrationWithDb_GetPulse_ReloadData(t *testing.T) {
 
 	ts.BE.PulseClient.SetNextFinalizedPulseFunc(ts.ConMngr.Importer)
 
-	sendSamePulse := false
+	var sendSamePulse int32
 	var nextFinalizedPulseFirst *exporter.FullPulse
 	var p uint32
 	ts.BE.PulseClient.NextFinalizedPulseFunc = func(ctx context.Context, in *exporter.GetNextFinalizedPulse, opts ...grpc.CallOption) (*exporter.FullPulse, error) {
-		if sendSamePulse {
+		if atomic.LoadInt32(&sendSamePulse) == 1 {
+			if p == uint32(nextFinalizedPulseFirst.PulseNumber) {
+				return nil, errors.New("unready yet")
+			}
+			p = uint32(nextFinalizedPulseFirst.PulseNumber)
 			nextFinalizedPulseFirst.PrevPulseNumber = updatedPrevPulseNumber
 			for i := 0; i < len(nextFinalizedPulseFirst.Jets); i++ {
 				nextFinalizedPulseFirst.Jets[i].Hash = updatedHash
@@ -373,7 +376,7 @@ func TestIntegrationWithDb_GetPulse_ReloadData(t *testing.T) {
 	require.EqualValues(t, 2, pulse.JetDropAmount)
 	require.EqualValues(t, 2*recordsCount, pulse.RecordAmount)
 
-	sendSamePulse = true
+	atomic.AddInt32(&sendSamePulse, 1)
 
 	expectedPulse := pulse
 	expectedPulse.PrevPulseNumber = int64(updatedPrevPulseNumber)
