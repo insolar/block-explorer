@@ -101,11 +101,11 @@ func closeStream(ctx context.Context, stream exporter.RecordExporter_ExportClien
 func (e *PlatformExtractor) retrievePulses(ctx context.Context, from, until int64) {
 	pu := &exporter.FullPulse{PulseNumber: insolar.PulseNumber(from)}
 	var err error
-	log := belogger.FromContext(ctx)
+	logger := belogger.FromContext(ctx)
 
 	halfPulse := time.Duration(e.continuousPulseRetrievingHalfPulseSeconds) * time.Second
 	for {
-		log = log.WithField("pulse_number", pu.PulseNumber)
+		log := logger.WithField("pulse_number", pu.PulseNumber)
 		log.Debug("retrievePulses(): Start")
 
 		select {

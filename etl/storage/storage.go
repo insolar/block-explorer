@@ -32,6 +32,42 @@ func NewStorage(db *gorm.DB) *Storage {
 // SaveJetDropData saves provided jetDrop and records to db in one transaction.
 // increase jet_drop_amount and record_amount
 func (s *Storage) SaveJetDropData(jetDrop models.JetDrop, records []models.Record, pulseNumber int64) error {
+	err := s.initJD(jetDrop, records, pulseNumber)
+	if err == nil {
+		return nil
+	}
+	if strings.Contains(err.Error(), "error while saving jetDrop") {
+		return s.updateJD(jetDrop, records)
+	}
+	return err
+}
+
+func (s *Storage) initJD(jetDrop models.JetDrop, records []models.Record, pulseNumber int64) error {
+	return s.db.Transaction(func(tx *gorm.DB) error {
+		jd := &jetDrop
+		if err := tx.Create(jd).Error; err != nil {
+			return errors.Wrap(err, "error while saving jetDrop")
+		}
+
+		for _, record := range records {
+			if err := tx.Save(&record).Error; err != nil { // nolint
+				return errors.Wrap(err, "error while saving record")
+			}
+		}
+
+		err := tx.Model(&models.Pulse{PulseNumber: pulseNumber}).
+			UpdateColumns(map[string]interface{}{
+				"jet_drop_amount": gorm.Expr("jet_drop_amount + ?", 1),
+				"record_amount":   gorm.Expr("record_amount + ?", len(records)),
+			}).Error
+		if err != nil {
+			return errors.Wrap(err, "error to update pulse data")
+		}
+		return nil
+	})
+}
+
+func (s *Storage) updateJD(jetDrop models.JetDrop, records []models.Record) error {
 	return s.db.Transaction(func(tx *gorm.DB) error {
 		jd := &jetDrop
 		if err := tx.Save(jd).Error; err != nil {
@@ -43,14 +79,6 @@ func (s *Storage) SaveJetDropData(jetDrop models.JetDrop, records []models.Recor
 				return errors.Wrap(err, "error while saving record")
 			}
 		}
-
-		err := tx.Model(&models.Pulse{PulseNumber: pulseNumber}).
-			UpdateColumn("jet_drop_amount", gorm.Expr("jet_drop_amount + ?", 1)).
-			UpdateColumn("record_amount", gorm.Expr("record_amount + ?", len(records))).Error
-
-		if err != nil {
-			return errors.Wrap(err, "error to update pulse data")
-		}
 		return nil
 	})
 }
@@ -59,7 +87,11 @@ func (s *Storage) SaveJetDropData(jetDrop models.JetDrop, records []models.Recor
 func (s *Storage) SavePulse(pulse models.Pulse) error {
 	s.savePulseLock.Lock()
 	defer s.savePulseLock.Unlock()
-	return errors.Wrap(s.db.Save(&pulse).Error, "error while saving pulse")
+	err := s.db.Set("gorm:insert_option", ""+
+		"ON CONFLICT (pulse_number) DO UPDATE SET prev_pulse_number=EXCLUDED.prev_pulse_number, "+
+		"next_pulse_number=EXCLUDED.next_pulse_number, timestamp=EXCLUDED.timestamp",
+	).Create(&pulse).Error
+	return errors.Wrap(err, "error while saving pulse")
 }
 
 // CompletePulse update pulse with provided number to completeness in db.
