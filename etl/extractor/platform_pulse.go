@@ -8,9 +8,10 @@ package extractor
 import (
 	"context"
 
-	"github.com/insolar/block-explorer/instrumentation/belogger"
 	"github.com/insolar/insolar/ledger/heavy/exporter"
 	"github.com/pkg/errors"
+
+	"github.com/insolar/block-explorer/instrumentation/belogger"
 )
 
 type PlatformPulseExtractor struct {
@@ -49,7 +50,7 @@ func (ppe *PlatformPulseExtractor) GetNextFinalizedPulse(ctx context.Context, p 
 	req := &exporter.GetNextFinalizedPulse{p} // nolint
 
 	log := belogger.FromContext(ctx)
-	log.Debug("GetNextFinalizedPulse")
+	log.WithField("pulse_number", p).Debug("GetNextFinalizedPulse")
 
 	// fatal error: signal_recv: inconsistent state
 	ret, err := c.NextFinalizedPulse(ctx, req)

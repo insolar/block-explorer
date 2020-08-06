@@ -34,15 +34,12 @@ func Transform(ctx context.Context, jd *types.PlatformJetDrops) ([]*types.JetDro
 		return nil, err
 	}
 
-	log := belogger.FromContext(ctx).WithField("service", "transformer")
 	for _, jet := range jd.Pulse.Jets {
 		jetid := jet.JetID
 		if _, ok := m[jetid]; ok {
-			log.Debug("full ", jetid.DebugString())
 			continue
 		}
 		m[jetid] = nil
-		log.Debug("empty ", jetid.DebugString())
 	}
 
 	result := make([]*types.JetDrop, 0)
