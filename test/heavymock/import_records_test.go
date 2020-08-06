@@ -19,7 +19,7 @@ import (
 )
 
 func TestHeavymockImporter_import(t *testing.T) {
-	server := testutils.CreateTestGRPCServer(t)
+	server := testutils.CreateTestGRPCServer(t, nil)
 	importer := NewHeavymockImporter()
 	RegisterHeavymockImporterServer(server.Server, importer)
 	server.Serve(t)

@@ -15,14 +15,16 @@ import (
 	"time"
 
 	"github.com/gojuno/minimock/v3"
-	"github.com/insolar/block-explorer/etl/interfaces/mock"
-	"github.com/insolar/block-explorer/testutils"
-	"github.com/insolar/block-explorer/testutils/clients"
 	"github.com/insolar/insolar/insolar"
 	"github.com/insolar/insolar/insolar/record"
 	"github.com/insolar/insolar/ledger/heavy/exporter"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
+
+	"github.com/insolar/block-explorer/etl/interfaces/mock"
+	"github.com/insolar/block-explorer/testutils"
+	"github.com/insolar/block-explorer/testutils/clients"
 )
 
 func TestGetJetDrops(t *testing.T) {
@@ -41,6 +43,11 @@ func TestGetJetDrops(t *testing.T) {
 	recordClient.ExportMock.Set(
 		func(ctx context.Context, in *exporter.GetRecords, opts ...grpc.CallOption) (
 			r1 exporter.RecordExporter_ExportClient, err error) {
+			mtd, ok := metadata.FromOutgoingContext(ctx)
+			require.True(t, ok)
+			require.Equal(t, exporter.ValidateHeavyVersion.String(), mtd.Get(exporter.KeyClientType)[0])
+			require.Equal(t, PlatformAPIVersion, mtd.Get(exporter.KeyClientVersionHeavy)[0])
+
 			return stream, nil
 		})
 
@@ -73,6 +80,41 @@ func TestGetJetDrops(t *testing.T) {
 		case <-time.After(time.Second * 10):
 			t.Fatal("chan receive timeout ")
 		}
+	}
+}
+
+// todo probably gbe should stop on version error
+func TestGetJetDrops_WrongVersionError(t *testing.T) {
+	ctx := context.Background()
+	pulseCount := 1
+	mc := minimock.NewController(t)
+	recordClient := mock.NewRecordExporterClientMock(mc)
+
+	recordClient.ExportMock.Set(
+		func(ctx context.Context, in *exporter.GetRecords, opts ...grpc.CallOption) (
+			r1 exporter.RecordExporter_ExportClient, err error) {
+
+			mtd, ok := metadata.FromOutgoingContext(ctx)
+			require.True(t, ok)
+			require.Equal(t, exporter.ValidateHeavyVersion.String(), mtd.Get(exporter.KeyClientType)[0])
+			require.Equal(t, PlatformAPIVersion, mtd.Get(exporter.KeyClientVersionHeavy)[0])
+			return recordStream{}, exporter.ErrDeprecatedClientVersion
+		})
+
+	pulseClient := clients.GetTestPulseClient(65537, nil)
+	pulseExtractor := NewPlatformPulseExtractor(pulseClient)
+	extractor := NewPlatformExtractor(uint32(pulseCount), 0, 100, pulseExtractor, recordClient)
+	err := extractor.Start(ctx)
+	defer extractor.Stop(ctx)
+	require.NoError(t, err)
+
+	jetDrops := extractor.GetJetDrops(ctx)
+
+	select {
+	case <-jetDrops:
+		require.True(t, false, "received something")
+	case <-time.After(time.Second * 3):
+		t.Log("received nothing. ok")
 	}
 }
 

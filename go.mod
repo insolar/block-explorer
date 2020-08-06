@@ -12,9 +12,10 @@ require (
 	github.com/gogo/protobuf v1.3.1
 	github.com/gojuno/minimock/v3 v3.0.8
 	github.com/gotestyourself/gotestyourself v2.2.0+incompatible // indirect
+	github.com/grpc-ecosystem/go-grpc-middleware v1.0.0
 	github.com/insolar/assured-ledger/ledger-core/v2 v2.0.0-20200512113104-4973d6ba44e9
 	github.com/insolar/insconfig v0.0.0-20200430133349-77f6f1624abf
-	github.com/insolar/insolar v1.6.6-0.20200727081822-68505e6410cb
+	github.com/insolar/insolar v1.7.1-0.20200805102103-dcdb870557f8
 	github.com/insolar/spec-insolar-block-explorer-api v1.2.0
 	github.com/jinzhu/gorm v1.9.12
 	github.com/kelindar/binary v1.0.9

@@ -26,7 +26,7 @@ func BenchmarkPlatformExtractorGetJetDrops(b *testing.B) {
 		b.StopTimer()
 
 		ctx := context.Background()
-		server := testutils.CreateTestGRPCServer(b)
+		server := testutils.CreateTestGRPCServer(b, nil)
 		exporter.RegisterRecordExporterServer(server.Server, &RecordExporterServer{})
 		server.Serve(b)
 

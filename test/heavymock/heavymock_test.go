@@ -22,7 +22,7 @@ import (
 )
 
 func TestConnect(t *testing.T) {
-	server := testutils.CreateTestGRPCServer(t)
+	server := testutils.CreateTestGRPCServer(t, nil)
 	exporter.RegisterRecordExporterServer(server.Server, NewRecordExporter(&ImporterServer{}))
 	server.Serve(t)
 	defer server.Server.Stop()
@@ -59,7 +59,7 @@ func TestConnect(t *testing.T) {
 }
 
 func TestHeavymockImporter_storeAndSend(t *testing.T) {
-	server := testutils.CreateTestGRPCServer(t)
+	server := testutils.CreateTestGRPCServer(t, nil)
 	importer := NewHeavymockImporter()
 	RegisterHeavymockImporterServer(server.Server, importer)
 	exporter.RegisterRecordExporterServer(server.Server, NewRecordExporter(importer))

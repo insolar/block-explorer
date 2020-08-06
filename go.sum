@@ -159,6 +159,7 @@ github.com/gorilla/websocket v1.4.0/go.mod h1:E7qHFY5m1UJ88s3WnNqhKjPHQ0heANvMoA
 github.com/gotestyourself/gotestyourself v1.3.0/go.mod h1:zZKM6oeNM8k+FRljX1mnzVYeS8wiGgQyvST1/GafPbY=
 github.com/gotestyourself/gotestyourself v2.2.0+incompatible h1:AQwinXlbQR2HvPjQZOmDhRqsv5mZf+Jb1RnSLxcqZcI=
 github.com/gotestyourself/gotestyourself v2.2.0+incompatible/go.mod h1:zZKM6oeNM8k+FRljX1mnzVYeS8wiGgQyvST1/GafPbY=
+github.com/grpc-ecosystem/go-grpc-middleware v1.0.0 h1:Iju5GlWwrvL6UBg4zJJt3btmonfrMlCDdsejg4CZE7c=
 github.com/grpc-ecosystem/go-grpc-middleware v1.0.0/go.mod h1:FiyG127CGDf3tlThmgyCl78X/SZQqEOJBCDaAfeWzPs=
 github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0/go.mod h1:8NvIoxWQoOIhqOTXgfV/d3M/q6VIi02HzZEHgUlZvzk=
 github.com/grpc-ecosystem/grpc-gateway v1.9.0/go.mod h1:vNeuVxBJEsws4ogUvrchl83t/GYV9WGTSLVdBhOQFDY=
@@ -174,6 +175,7 @@ github.com/hashicorp/hcl v1.0.0 h1:0Anlzjpi4vEasTeNFn2mLJgTSwt0+6sfsiTG8qcWGx4=
 github.com/hashicorp/hcl v1.0.0/go.mod h1:E5yfLk+7swimpb2L/Alb/PJmXilQ/rhwaUYs4T20WEQ=
 github.com/hexdigest/gowrap v1.1.7 h1:1oQVkm/O7Aw4LQnThr3BnjnmGA0MhavxPjXi3XzwOL0=
 github.com/hexdigest/gowrap v1.1.7/go.mod h1:Z+nBFUDLa01iaNM+/jzoOA1JJ7sm51rnYFauKFUB5fs=
+github.com/hexdigest/gowrap v1.1.8 h1:xGTnuMvHou3sa+PSHphOCxPJTJyqNRvGl21t/p3eLes=
 github.com/hexdigest/gowrap v1.1.8/go.mod h1:H/JiFmQMp//tedlV8qt2xBdGzmne6bpbaSuiHmygnMw=
 github.com/hpcloud/tail v1.0.0/go.mod h1:ab1qPbhIpdTxEkNHXyeSf5vhxWSCs/tWer42PpOxQnU=
 github.com/iancoleman/strcase v0.0.0-20191112232945-16388991a334 h1:VHgatEHNcBFEB7inlalqfNqw65aNkM1lGX2yt3NmbS8=
@@ -192,6 +194,10 @@ github.com/insolar/insconfig v0.0.0-20200430133349-77f6f1624abf h1:0qV5CBHe7ykbb
 github.com/insolar/insconfig v0.0.0-20200430133349-77f6f1624abf/go.mod h1:zB9bawcGFKS4hwXcu6yH4rYH06EZnGlFfhl0+KMKM9k=
 github.com/insolar/insolar v1.6.6-0.20200727081822-68505e6410cb h1:hvbGZqqW8fvG+RGt29ep3a7eP8QhoDGSVWLm3//qftM=
 github.com/insolar/insolar v1.6.6-0.20200727081822-68505e6410cb/go.mod h1:0l0OdVqaWBCUOBv42Tm4v+ueTttffgUCs2u9b13l9lI=
+github.com/insolar/insolar v1.7.0 h1:t344BD7NzkhE+MtjDjKwEVXSMrJ/S0IeEwhO04smpls=
+github.com/insolar/insolar v1.7.0/go.mod h1:njbrBINqSm5ek4TZj06D1xQE9fI3NOG5rG/fvNnfAGY=
+github.com/insolar/insolar v1.7.1-0.20200805102103-dcdb870557f8 h1:P6o710wveri7ZWZfGRcfJkwk0DMKlOFPLzqzLX3U6YE=
+github.com/insolar/insolar v1.7.1-0.20200805102103-dcdb870557f8/go.mod h1:njbrBINqSm5ek4TZj06D1xQE9fI3NOG5rG/fvNnfAGY=
 github.com/insolar/rpc v1.2.2-0.20190812143745-c27e1d218f1f/go.mod h1:BZcTsPtQu8QG8RqqQdAnuNAG8n6TOrdNxIHro0h99Ik=
 github.com/insolar/rpc v1.2.2-0.20200331123021-db57b8833f82/go.mod h1:BZcTsPtQu8QG8RqqQdAnuNAG8n6TOrdNxIHro0h99Ik=
 github.com/insolar/spec-insolar-block-explorer-api v1.2.0 h1:t1EErSFoEekwdC95tFJTO8ivkrRKeYrCrdxNRpNT9PM=
@@ -422,6 +428,7 @@ github.com/spf13/afero v1.2.2/go.mod h1:9ZxEEn6pIJ8Rxe320qSDBk6AsU0r9pR7Q4OcevTd
 github.com/spf13/cast v1.3.0/go.mod h1:Qx5cxh0v+4UWYiBimWS+eyWzqEqokIECu5etghLkUJE=
 github.com/spf13/cast v1.3.1 h1:nFm6S0SMdyzrzcmThSipiEubIDy8WEXKNZ0UOgiRpng=
 github.com/spf13/cast v1.3.1/go.mod h1:Qx5cxh0v+4UWYiBimWS+eyWzqEqokIECu5etghLkUJE=
+github.com/spf13/cobra v0.0.5 h1:f0B+LkLX6DtmRH1isoNA9VTtNUK9K8xYd28JNNfOv/s=
 github.com/spf13/cobra v0.0.5/go.mod h1:3K3wKZymM7VvHMDS9+Akkh4K60UwM26emMESw8tLCHU=
 github.com/spf13/jwalterweatherman v1.0.0/go.mod h1:cQK4TGJAtQXfYWX+Ddv3mKDzgVb68N+wFjFa4jdeBTo=
 github.com/spf13/jwalterweatherman v1.1.0 h1:ue6voC5bR5F8YxI5S67j9i582FU4Qvo2bmqnqMYADFk=

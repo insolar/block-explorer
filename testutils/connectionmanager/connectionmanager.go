@@ -26,23 +26,29 @@ import (
 
 const DefaultAPIPort = ":8081"
 
+type ConnectionConfig struct {
+	GRPCConfig testutils.TestGRPCServerConfig
+}
+
 // struct that represents all connections that can be used throughout integration tests
 type ConnectionManager struct {
-	grpcServer     *testutils.TestGRPCServer
-	grpcClientConn *connection.GRPCClientConnection
-	ExporterClient exporter.RecordExporterClient
-	ImporterClient heavymock.HeavymockImporterClient
-	Importer       *heavymock.ImporterServer
-	DB             *gorm.DB
-	dbPoolCleaner  func()
-	echo           *echo.Echo
-	ctx            context.Context
+	grpcServer       *testutils.TestGRPCServer
+	grpcClientConn   *connection.GRPCClientConnection
+	ExporterClient   exporter.RecordExporterClient
+	ImporterClient   heavymock.HeavymockImporterClient
+	Importer         *heavymock.ImporterServer
+	DB               *gorm.DB
+	dbPoolCleaner    func()
+	echo             *echo.Echo
+	connectionConfig ConnectionConfig
+	ctx              context.Context
 }
 
 // Starts GRPC server and initializes connection from GRPC clients
 func (c *ConnectionManager) Start(t testing.TB) {
 	var err error
-	c.grpcServer = testutils.CreateTestGRPCServer(t)
+	// todo get config ConnectionConfig from test and insert into CreateTestGRPCServer
+	c.grpcServer = testutils.CreateTestGRPCServer(t, nil)
 	c.Importer = heavymock.NewHeavymockImporter()
 	heavymock.RegisterHeavymockImporterServer(c.grpcServer.Server, c.Importer)
 	exporter.RegisterRecordExporterServer(c.grpcServer.Server, heavymock.NewRecordExporter(c.Importer))

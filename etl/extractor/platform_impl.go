@@ -16,11 +16,14 @@ import (
 	"github.com/insolar/insolar/insolar"
 	"github.com/insolar/insolar/insolar/pulse"
 	"github.com/insolar/insolar/ledger/heavy/exporter"
+	"google.golang.org/grpc/metadata"
 
 	"github.com/insolar/block-explorer/etl/interfaces"
 	"github.com/insolar/block-explorer/etl/types"
 	"github.com/insolar/block-explorer/instrumentation/belogger"
 )
+
+const PlatformAPIVersion = "2"
 
 type PlatformExtractor struct {
 	hasStarted     bool
@@ -102,6 +105,7 @@ func (e *PlatformExtractor) retrievePulses(ctx context.Context, from, until int6
 	pu := &exporter.FullPulse{PulseNumber: insolar.PulseNumber(from)}
 	var err error
 	logger := belogger.FromContext(ctx)
+	ctx = appendPlatformVersionToCtx(ctx)
 
 	halfPulse := time.Duration(e.continuousPulseRetrievingHalfPulseSeconds) * time.Second
 	for {
@@ -167,7 +171,8 @@ func (e *PlatformExtractor) retrieveRecords(ctx context.Context, pu *exporter.Fu
 		}
 		stream, err := e.client.Export(ctx, &exporter.GetRecords{PulseNumber: pu.PulseNumber,
 			RecordNumber: uint32(len(jetDrops.Records)),
-			Count:        e.batchSize})
+			Count:        e.batchSize},
+		)
 		if err != nil {
 			log.Error("retrieveRecords() on rpc call: ", err.Error())
 			time.Sleep(time.Second)
@@ -210,4 +215,9 @@ func (e *PlatformExtractor) retrieveRecords(ctx context.Context, pu *exporter.Fu
 		}
 	}
 
+}
+
+func appendPlatformVersionToCtx(ctx context.Context) context.Context {
+	ctx = metadata.AppendToOutgoingContext(ctx, exporter.KeyClientType, exporter.ValidateHeavyVersion.String())
+	return metadata.AppendToOutgoingContext(ctx, exporter.KeyClientVersionHeavy, PlatformAPIVersion)
 }
