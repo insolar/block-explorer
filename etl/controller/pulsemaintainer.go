@@ -33,11 +33,22 @@ func (c *Controller) pulseMaintainer(ctx context.Context) {
 }
 
 func eraseJetDropRegister(ctx context.Context, c *Controller, log log.Logger) {
-	c.jetDropRegisterLock.Lock()
-	defer c.jetDropRegisterLock.Unlock()
+	jetDropRegisterCopy := map[types.Pulse]map[string]struct{}{}
+	func() {
+		c.jetDropRegisterLock.Lock()
+		defer c.jetDropRegisterLock.Unlock()
+		for k, v := range c.jetDropRegister {
+			jetDropsCopy := map[string]struct{}{}
+			for jetID := range v {
+				jetDropsCopy[jetID] = struct{}{}
+			}
+			jetDropRegisterCopy[k] = jetDropsCopy
+		}
+	}()
 
-	for p, d := range c.jetDropRegister {
+	for p, d := range jetDropRegisterCopy {
 		if pulseIsComplete(p, d) {
+			log.Infof("Pulse %d completed, update it in db", p.PulseNo)
 			if func() bool {
 
 				if err := c.storage.CompletePulse(p.PulseNo); err != nil {
@@ -45,20 +56,23 @@ func eraseJetDropRegister(ctx context.Context, c *Controller, log log.Logger) {
 					return false
 				}
 
-				delete(c.jetDropRegister, p)
+				func() {
+					c.jetDropRegisterLock.Lock()
+					defer c.jetDropRegisterLock.Unlock()
+					delete(c.jetDropRegister, p)
+				}()
 				return true
 
 			}() {
 				log.Infof("Pulse %d completed and saved", p.PulseNo)
 			}
 		} else {
-			c.reloadData(ctx, p.PrevPulseNumber, p.PulseNo)
+			go c.reloadData(ctx, p.PrevPulseNumber, p.PulseNo)
 		}
 	}
 }
 
 func (c *Controller) pulseSequence(ctx context.Context) {
-	log := belogger.FromContext(ctx)
 	emptyPulse := models.Pulse{}
 	for {
 		select {
@@ -72,7 +86,8 @@ func (c *Controller) pulseSequence(ctx context.Context) {
 		func() {
 			c.sequentialPulseLock.Lock()
 			defer c.sequentialPulseLock.Unlock()
-			log.WithField("sequential_pulse", c.sequentialPulse)
+			log := belogger.FromContext(ctx)
+			log = log.WithField("sequential_pulse", c.sequentialPulse)
 
 			nextSequential, err = c.storage.GetPulseByPrev(c.sequentialPulse)
 			if err != nil && !gorm.IsRecordNotFoundError(err) {
