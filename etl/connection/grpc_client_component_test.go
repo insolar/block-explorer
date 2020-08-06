@@ -76,7 +76,9 @@ func TestClient_GetGRPCConnIsWorking(t *testing.T) {
 }
 
 func TestClient_GetGRPCConn_Version_Error(t *testing.T) {
-	server := testutils.CreateTestGRPCServer(t, &testutils.TestGRPCServerConfig{VersionChecker: true})
+	server := testutils.CreateTestGRPCServer(t, &testutils.TestGRPCServerConfig{
+		VersionChecker: true,
+	})
 	pb.RegisterRecordExporterServer(server.Server, &recExpServer{})
 	server.Serve(t)
 	defer server.Server.Stop()

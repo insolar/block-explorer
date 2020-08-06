@@ -138,11 +138,8 @@ func (e *PlatformExtractor) retrievePulses(ctx context.Context, from, until int6
 		if err != nil { // network error ?
 			pu = &before
 			// todo add all possible errors
-			if err == exporter.ErrDeprecatedClientVersion ||
-				strings.Contains(err.Error(), "block explorer should send client type 1") {
-				if e.shutdownBE != nil {
-					e.shutdownBE()
-				}
+			if isVersionError(err) {
+				e.shutdownBE()
 				break
 			}
 			if strings.Contains(err.Error(), pulse.ErrNotFound.Error()) { // seems this pulse already last
@@ -192,11 +189,8 @@ func (e *PlatformExtractor) retrieveRecords(ctx context.Context, pu *exporter.Fu
 		)
 		if err != nil {
 			log.Error("retrieveRecords() on rpc call: ", err.Error())
-			if err == exporter.ErrDeprecatedClientVersion ||
-				strings.Contains(err.Error(), "block explorer should send client type 1") {
-				if e.shutdownBE != nil {
-					e.shutdownBE()
-				}
+			if isVersionError(err) {
+				e.shutdownBE()
 				break
 			}
 			time.Sleep(time.Second)
@@ -244,4 +238,12 @@ func (e *PlatformExtractor) retrieveRecords(ctx context.Context, pu *exporter.Fu
 func appendPlatformVersionToCtx(ctx context.Context) context.Context {
 	ctx = metadata.AppendToOutgoingContext(ctx, exporter.KeyClientType, exporter.ValidateHeavyVersion.String())
 	return metadata.AppendToOutgoingContext(ctx, exporter.KeyClientVersionHeavy, PlatformAPIVersion)
+}
+
+func isVersionError(err error) bool {
+	return err == exporter.ErrDeprecatedClientVersion ||
+		strings.Contains(err.Error(), "block explorer should send client type 1") ||
+		strings.Contains(err.Error(), "unknown type client") ||
+		strings.Contains(err.Error(), "incorrect format of the heavy_version")
+
 }
