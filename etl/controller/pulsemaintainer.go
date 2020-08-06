@@ -38,7 +38,11 @@ func eraseJetDropRegister(ctx context.Context, c *Controller, log log.Logger) {
 		c.jetDropRegisterLock.Lock()
 		defer c.jetDropRegisterLock.Unlock()
 		for k, v := range c.jetDropRegister {
-			jetDropRegisterCopy[k] = v
+			jetDropsCopy := map[string]struct{}{}
+			for jetID := range v {
+				jetDropsCopy[jetID] = struct{}{}
+			}
+			jetDropRegisterCopy[k] = jetDropsCopy
 		}
 	}()
 
@@ -69,7 +73,6 @@ func eraseJetDropRegister(ctx context.Context, c *Controller, log log.Logger) {
 }
 
 func (c *Controller) pulseSequence(ctx context.Context) {
-	log := belogger.FromContext(ctx)
 	emptyPulse := models.Pulse{}
 	for {
 		select {
@@ -83,7 +86,8 @@ func (c *Controller) pulseSequence(ctx context.Context) {
 		func() {
 			c.sequentialPulseLock.Lock()
 			defer c.sequentialPulseLock.Unlock()
-			log.WithField("sequential_pulse", c.sequentialPulse)
+			log := belogger.FromContext(ctx)
+			log = log.WithField("sequential_pulse", c.sequentialPulse)
 
 			nextSequential, err = c.storage.GetPulseByPrev(c.sequentialPulse)
 			if err != nil && !gorm.IsRecordNotFoundError(err) {
@@ -188,6 +192,7 @@ Main:
 }
 
 func (c *Controller) reloadData(ctx context.Context, fromPulseNumber int64, toPulseNumber int64) {
+	return
 	log := belogger.FromContext(ctx)
 	if fromPulseNumber == 0 {
 		fromPulseNumber = pulse.MinTimePulse - 1
