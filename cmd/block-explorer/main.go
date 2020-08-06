@@ -12,6 +12,11 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/insolar/insconfig"
+	"github.com/insolar/insolar/ledger/heavy/exporter"
+	"github.com/pkg/errors"
+	"github.com/stackimpact/stackimpact-go"
+
 	"github.com/insolar/block-explorer/api"
 	"github.com/insolar/block-explorer/etl/connection"
 	"github.com/insolar/block-explorer/etl/controller"
@@ -20,10 +25,6 @@ import (
 	"github.com/insolar/block-explorer/etl/processor"
 	"github.com/insolar/block-explorer/etl/transformer"
 	"github.com/insolar/block-explorer/instrumentation/belogger"
-	"github.com/insolar/insconfig"
-	"github.com/insolar/insolar/ledger/heavy/exporter"
-	"github.com/pkg/errors"
-	"github.com/stackimpact/stackimpact-go"
 
 	"github.com/insolar/block-explorer/etl/dbconn"
 	"github.com/insolar/block-explorer/etl/storage"
@@ -72,9 +73,14 @@ func main() {
 	client.NotifyShutdown(ctx, stopChannel, cfg.Replicator.WaitForConnectionRecoveryTimeout)
 
 	pulseExtractor := extractor.NewPlatformPulseExtractor(exporter.NewPulseExporterClient(client.GetGRPCConn()))
-	platformExtractor := extractor.NewPlatformExtractor(100, cfg.Replicator.ContinuousPulseRetrievingHalfPulseSeconds,
+	platformExtractor := extractor.NewPlatformExtractor(
+		100,
+		cfg.Replicator.ContinuousPulseRetrievingHalfPulseSeconds,
 		int32(cfg.Replicator.ParallelConnections),
-		pulseExtractor, exporter.NewRecordExporterClient(client.GetGRPCConn()))
+		pulseExtractor,
+		exporter.NewRecordExporterClient(client.GetGRPCConn()),
+		shutdownBE,
+	)
 	err = platformExtractor.Start(ctx)
 	if err != nil {
 		logger.Fatal("cannot start platformExtractor: ", err)
@@ -154,4 +160,8 @@ func graceful(ctx context.Context) {
 	case <-stop:
 		logger.Info("stopping by signal")
 	}
+}
+
+func shutdownBE() {
+	stopChannel <- struct{}{}
 }

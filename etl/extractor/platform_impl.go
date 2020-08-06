@@ -40,10 +40,18 @@ type PlatformExtractor struct {
 
 	batchSize                                 uint32
 	continuousPulseRetrievingHalfPulseSeconds uint32
+
+	shutdownBE func()
 }
 
-func NewPlatformExtractor(batchSize uint32, continuousPulseRetrievingHalfPulseSeconds uint32, maxWorkers int32,
-	pulseExtractor interfaces.PulseExtractor, exporterClient exporter.RecordExporterClient) *PlatformExtractor {
+func NewPlatformExtractor(
+	batchSize uint32,
+	continuousPulseRetrievingHalfPulseSeconds uint32,
+	maxWorkers int32,
+	pulseExtractor interfaces.PulseExtractor,
+	exporterClient exporter.RecordExporterClient,
+	shutdownBE func(),
+) *PlatformExtractor {
 	request := &exporter.GetRecords{Count: batchSize}
 	return &PlatformExtractor{
 		startStopMutex:   &sync.Mutex{},
@@ -55,6 +63,7 @@ func NewPlatformExtractor(batchSize uint32, continuousPulseRetrievingHalfPulseSe
 		batchSize:      batchSize,
 		continuousPulseRetrievingHalfPulseSeconds: continuousPulseRetrievingHalfPulseSeconds,
 		maxWorkers: maxWorkers,
+		shutdownBE: shutdownBE,
 	}
 }
 
@@ -128,6 +137,14 @@ func (e *PlatformExtractor) retrievePulses(ctx context.Context, from, until int6
 		pu, err = e.pulseExtractor.GetNextFinalizedPulse(ctx, int64(int32(before.PulseNumber)))
 		if err != nil { // network error ?
 			pu = &before
+			// todo add all possible errors
+			if err == exporter.ErrDeprecatedClientVersion ||
+				strings.Contains(err.Error(), "block explorer should send client type 1") {
+				if e.shutdownBE != nil {
+					e.shutdownBE()
+				}
+				break
+			}
 			if strings.Contains(err.Error(), pulse.ErrNotFound.Error()) { // seems this pulse already last
 				time.Sleep(halfPulse)
 				continue
@@ -175,6 +192,13 @@ func (e *PlatformExtractor) retrieveRecords(ctx context.Context, pu *exporter.Fu
 		)
 		if err != nil {
 			log.Error("retrieveRecords() on rpc call: ", err.Error())
+			if err == exporter.ErrDeprecatedClientVersion ||
+				strings.Contains(err.Error(), "block explorer should send client type 1") {
+				if e.shutdownBE != nil {
+					e.shutdownBE()
+				}
+				break
+			}
 			time.Sleep(time.Second)
 			continue
 		}

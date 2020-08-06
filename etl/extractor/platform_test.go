@@ -9,6 +9,7 @@ package extractor
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"testing"
@@ -53,7 +54,7 @@ func TestGetJetDrops(t *testing.T) {
 
 	pulseClient := clients.GetTestPulseClient(65537, nil)
 	pulseExtractor := NewPlatformPulseExtractor(pulseClient)
-	extractor := NewPlatformExtractor(uint32(pulseCount), 0, 100, pulseExtractor, recordClient)
+	extractor := NewPlatformExtractor(uint32(pulseCount), 0, 100, pulseExtractor, recordClient, func() {})
 	err = extractor.Start(ctx)
 	require.NoError(t, err)
 	defer extractor.Stop(ctx)
@@ -83,10 +84,38 @@ func TestGetJetDrops(t *testing.T) {
 	}
 }
 
-// todo probably gbe should stop on version error
-func TestGetJetDrops_WrongVersionError(t *testing.T) {
+func TestGetJetDrops_WrongVersionOnPulseError(t *testing.T) {
 	ctx := context.Background()
-	pulseCount := 1
+	mc := minimock.NewController(t)
+	recordClient := mock.NewRecordExporterClientMock(mc)
+
+	i := 0
+	shutdownBETestFunc := func() {
+		i++
+	}
+	pulseExtractor := mock.NewPulseExtractorMock(mc)
+	pulseExtractor.GetNextFinalizedPulseMock.Set(func(ctx context.Context, p int64) (fp1 *exporter.FullPulse, err error) {
+		return nil, errors.New("block explorer should send client type 1")
+	})
+	extractor := NewPlatformExtractor(uint32(1), 0, 100, pulseExtractor, recordClient, shutdownBETestFunc)
+	err := extractor.Start(ctx)
+	defer extractor.Stop(ctx)
+	require.NoError(mc, err)
+
+	jetDrops := extractor.GetJetDrops(ctx)
+
+	select {
+	case <-jetDrops:
+		require.True(t, false, "received something")
+	case <-time.After(time.Second * 1):
+		t.Log("received nothing. ok")
+	}
+	// shutdownBETestFunc invoked
+	require.Equal(t, 1, i)
+}
+
+func TestGetJetDrops_WrongVersionOnRecordError(t *testing.T) {
+	ctx := context.Background()
 	mc := minimock.NewController(t)
 	recordClient := mock.NewRecordExporterClientMock(mc)
 
@@ -100,22 +129,27 @@ func TestGetJetDrops_WrongVersionError(t *testing.T) {
 			require.Equal(t, PlatformAPIVersion, mtd.Get(exporter.KeyClientVersionHeavy)[0])
 			return recordStream{}, exporter.ErrDeprecatedClientVersion
 		})
-
+	i := 0
+	shutdownBETestFunc := func() {
+		i++
+	}
 	pulseClient := clients.GetTestPulseClient(65537, nil)
 	pulseExtractor := NewPlatformPulseExtractor(pulseClient)
-	extractor := NewPlatformExtractor(uint32(pulseCount), 0, 100, pulseExtractor, recordClient)
+	extractor := NewPlatformExtractor(uint32(1), 0, 100, pulseExtractor, recordClient, shutdownBETestFunc)
 	err := extractor.Start(ctx)
 	defer extractor.Stop(ctx)
-	require.NoError(t, err)
+	require.NoError(mc, err)
 
 	jetDrops := extractor.GetJetDrops(ctx)
 
 	select {
 	case <-jetDrops:
 		require.True(t, false, "received something")
-	case <-time.After(time.Second * 3):
+	case <-time.After(time.Second * 1):
 		t.Log("received nothing. ok")
 	}
+	// shutdownBETestFunc invoked
+	require.Equal(t, 1, i)
 }
 
 func recordTapeFunc(t *testing.T, tape []*exporter.Record) func() (record *exporter.Record, e error) {
@@ -196,7 +230,7 @@ func TestLoadJetDrops_returnsRecordByPulses(t *testing.T) {
 					return pp, err
 				})
 
-			extractor := NewPlatformExtractor(77, 0, 100, pulseExtractor, recordClient)
+			extractor := NewPlatformExtractor(77, 0, 100, pulseExtractor, recordClient, func() {})
 			err := extractor.LoadJetDrops(ctx, int64(startPulseNumber-10), int64(startPulseNumber+10*(test.differentPulseCount-1)))
 			require.NoError(t, err)
 			for i := 0; i < test.differentPulseCount; i++ {
