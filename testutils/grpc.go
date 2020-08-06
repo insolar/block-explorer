@@ -14,6 +14,7 @@ import (
 	"time"
 
 	grpcmiddleware "github.com/grpc-ecosystem/go-grpc-middleware"
+	"github.com/insolar/insolar/instrumentation/inslogger"
 	"github.com/insolar/insolar/ledger/heavy/exporter"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
@@ -21,8 +22,6 @@ import (
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 )
-
-var testHeavyGRPCVersion = exporter.AllowedOnHeavyVersion
 
 type TestGRPCServerConfig struct {
 	VersionChecker bool
@@ -42,14 +41,43 @@ func CreateTestGRPCServer(t testing.TB, config *TestGRPCServerConfig) *TestGRPCS
 	}
 	listener, err := net.Listen("tcp", "127.0.0.1:0")
 	require.NoError(t, err, "failed to listen")
+
+	versionCheckerUnary := func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+		md, ok := metadata.FromIncomingContext(ctx)
+		if !ok {
+			return nil, status.Error(codes.InvalidArgument, "failed to retrieve metadata")
+		}
+		hv := exporter.AllowedOnHeavyVersion
+		if config.HeavyVersion != nil {
+			hv = *config.HeavyVersion
+		}
+		err := validateClientVersion(md, int64(hv))
+		if err != nil {
+			return nil, err
+		}
+		return handler(ctx, req)
+	}
+	versionCheckerStream := func(srv interface{}, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+		md, ok := metadata.FromIncomingContext(stream.Context())
+		if !ok {
+			return status.Error(codes.InvalidArgument, "failed to retrieve metadata")
+		}
+		hv := exporter.AllowedOnHeavyVersion
+		if config.HeavyVersion != nil {
+			hv = *config.HeavyVersion
+		}
+		err := validateClientVersion(md, int64(hv))
+		if err != nil {
+			return err
+		}
+		return handler(srv, stream)
+	}
+
 	var grpcServer *grpc.Server
 	if config.VersionChecker {
-		if config.HeavyVersion != nil {
-			testHeavyGRPCVersion = *config.HeavyVersion
-		}
 		grpcServer = grpc.NewServer(
-			grpc.UnaryInterceptor(grpcmiddleware.ChainUnaryServer(versionCheckUnary)),
-			grpc.StreamInterceptor(grpcmiddleware.ChainStreamServer(versionCheckStream)),
+			grpc.UnaryInterceptor(grpcmiddleware.ChainUnaryServer(versionCheckerUnary)),
+			grpc.StreamInterceptor(grpcmiddleware.ChainStreamServer(versionCheckerStream)),
 		)
 	} else {
 		grpcServer = grpc.NewServer()
@@ -79,31 +107,7 @@ func (s *TestGRPCServer) Serve(t testing.TB) {
 	}()
 }
 
-func versionCheckUnary(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-	md, ok := metadata.FromIncomingContext(ctx)
-	if !ok {
-		return nil, status.Error(codes.InvalidArgument, "failed to retrieve metadata")
-	}
-	err := validateClientVersion(md)
-	if err != nil {
-		return nil, err
-	}
-	return handler(ctx, req)
-}
-
-func versionCheckStream(srv interface{}, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
-	md, ok := metadata.FromIncomingContext(stream.Context())
-	if !ok {
-		return status.Error(codes.InvalidArgument, "failed to retrieve metadata")
-	}
-	err := validateClientVersion(md)
-	if err != nil {
-		return err
-	}
-	return handler(srv, stream)
-}
-
-func validateClientVersion(metaDataFromRequest metadata.MD) error {
+func validateClientVersion(metaDataFromRequest metadata.MD, heavyVersion int64) error {
 	typeClient, ok := metaDataFromRequest[exporter.KeyClientType]
 	if !ok || len(typeClient) == 0 || typeClient[0] == exporter.Unknown.String() {
 		return status.Error(codes.InvalidArgument, "unknown type client")
@@ -117,7 +121,7 @@ func validateClientVersion(metaDataFromRequest metadata.MD) error {
 		return status.Error(codes.InvalidArgument, "unknown type client")
 	}
 	// validate protocol version from client
-	err := compareAllowedVersion(exporter.KeyClientVersionHeavy, int64(testHeavyGRPCVersion), metaDataFromRequest)
+	err := compareAllowedVersion(exporter.KeyClientVersionHeavy, heavyVersion, metaDataFromRequest)
 	if err != nil {
 		return err
 	}
@@ -134,6 +138,8 @@ func compareAllowedVersion(nameVersion string, allowedVersion int64, metaDataFro
 		return status.Error(codes.InvalidArgument, fmt.Sprintf("incorrect format of the %s", nameVersion))
 	}
 	if versionClient == 0 || versionClient < allowedVersion {
+		log := inslogger.FromContext(context.Background())
+		log.Errorf("heavy ver: %d, client ver: %d", allowedVersion, versionClient)
 		return exporter.ErrDeprecatedClientVersion
 	}
 	return nil
