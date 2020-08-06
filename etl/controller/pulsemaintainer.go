@@ -192,7 +192,6 @@ Main:
 }
 
 func (c *Controller) reloadData(ctx context.Context, fromPulseNumber int64, toPulseNumber int64) {
-	return
 	log := belogger.FromContext(ctx)
 	if fromPulseNumber == 0 {
 		fromPulseNumber = pulse.MinTimePulse - 1
