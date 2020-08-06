@@ -26,22 +26,17 @@ import (
 
 const DefaultAPIPort = ":8081"
 
-type ConnectionConfig struct {
-	GRPCConfig testutils.TestGRPCServerConfig
-}
-
 // struct that represents all connections that can be used throughout integration tests
 type ConnectionManager struct {
-	grpcServer       *testutils.TestGRPCServer
-	grpcClientConn   *connection.GRPCClientConnection
-	ExporterClient   exporter.RecordExporterClient
-	ImporterClient   heavymock.HeavymockImporterClient
-	Importer         *heavymock.ImporterServer
-	DB               *gorm.DB
-	dbPoolCleaner    func()
-	echo             *echo.Echo
-	connectionConfig ConnectionConfig
-	ctx              context.Context
+	grpcServer     *testutils.TestGRPCServer
+	grpcClientConn *connection.GRPCClientConnection
+	ExporterClient exporter.RecordExporterClient
+	ImporterClient heavymock.HeavymockImporterClient
+	Importer       *heavymock.ImporterServer
+	DB             *gorm.DB
+	dbPoolCleaner  func()
+	echo           *echo.Echo
+	ctx            context.Context
 }
 
 // Starts GRPC server and initializes connection from GRPC clients

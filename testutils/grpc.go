@@ -112,7 +112,7 @@ func validateClientVersion(metaDataFromRequest metadata.MD) error {
 	switch typeClient[0] {
 	case exporter.ValidateHeavyVersion.String():
 	case exporter.ValidateContractVersion.String():
-		return status.Error(codes.InvalidArgument, fmt.Sprint("block explorer should send client type 1"))
+		return status.Error(codes.InvalidArgument, "block explorer should send client type 1")
 	default:
 		return status.Error(codes.InvalidArgument, "unknown type client")
 	}

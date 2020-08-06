@@ -12,6 +12,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -89,9 +90,9 @@ func TestGetJetDrops_WrongVersionOnPulseError(t *testing.T) {
 	mc := minimock.NewController(t)
 	recordClient := mock.NewRecordExporterClientMock(mc)
 
-	i := 0
+	var called int32 = 0
 	shutdownBETestFunc := func() {
-		i++
+		atomic.AddInt32(&called, 1)
 	}
 	pulseExtractor := mock.NewPulseExtractorMock(mc)
 	pulseExtractor.GetNextFinalizedPulseMock.Set(func(ctx context.Context, p int64) (fp1 *exporter.FullPulse, err error) {
@@ -110,8 +111,7 @@ func TestGetJetDrops_WrongVersionOnPulseError(t *testing.T) {
 	case <-time.After(time.Second * 1):
 		t.Log("received nothing. ok")
 	}
-	// shutdownBETestFunc invoked
-	require.Equal(t, 1, i)
+	require.Equal(t, atomic.LoadInt32(&called), int32(1), "shutdownBETestFunc should be invoked")
 }
 
 func TestGetJetDrops_WrongVersionOnRecordError(t *testing.T) {
@@ -129,9 +129,9 @@ func TestGetJetDrops_WrongVersionOnRecordError(t *testing.T) {
 			require.Equal(t, PlatformAPIVersion, mtd.Get(exporter.KeyClientVersionHeavy)[0])
 			return recordStream{}, exporter.ErrDeprecatedClientVersion
 		})
-	i := 0
+	var called int32 = 0
 	shutdownBETestFunc := func() {
-		i++
+		atomic.AddInt32(&called, 1)
 	}
 	pulseClient := clients.GetTestPulseClient(65537, nil)
 	pulseExtractor := NewPlatformPulseExtractor(pulseClient)
@@ -148,8 +148,7 @@ func TestGetJetDrops_WrongVersionOnRecordError(t *testing.T) {
 	case <-time.After(time.Second * 1):
 		t.Log("received nothing. ok")
 	}
-	// shutdownBETestFunc invoked
-	require.Equal(t, 1, i)
+	require.Equal(t, atomic.LoadInt32(&called), int32(1), "shutdownBETestFunc should be invoked")
 }
 
 func recordTapeFunc(t *testing.T, tape []*exporter.Record) func() (record *exporter.Record, e error) {
