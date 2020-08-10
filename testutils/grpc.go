@@ -6,13 +6,27 @@
 package testutils
 
 import (
+	"context"
+	"fmt"
 	"net"
+	"strconv"
 	"testing"
 	"time"
 
+	grpcmiddleware "github.com/grpc-ecosystem/go-grpc-middleware"
+	"github.com/insolar/insolar/instrumentation/inslogger"
+	"github.com/insolar/insolar/ledger/heavy/exporter"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/status"
 )
+
+type TestGRPCServerConfig struct {
+	VersionChecker bool
+	HeavyVersion   *int
+}
 
 type TestGRPCServer struct {
 	Listener net.Listener
@@ -21,10 +35,53 @@ type TestGRPCServer struct {
 	Address  string
 }
 
-func CreateTestGRPCServer(t testing.TB) *TestGRPCServer {
+func CreateTestGRPCServer(t testing.TB, config *TestGRPCServerConfig) *TestGRPCServer {
+	if config == nil {
+		config = &TestGRPCServerConfig{}
+	}
 	listener, err := net.Listen("tcp", "127.0.0.1:0")
 	require.NoError(t, err, "failed to listen")
-	grpcServer := grpc.NewServer()
+
+	versionCheckerUnary := func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+		md, ok := metadata.FromIncomingContext(ctx)
+		if !ok {
+			return nil, status.Error(codes.InvalidArgument, "failed to retrieve metadata")
+		}
+		hv := exporter.AllowedOnHeavyVersion
+		if config.HeavyVersion != nil {
+			hv = *config.HeavyVersion
+		}
+		err := validateClientVersion(md, int64(hv))
+		if err != nil {
+			return nil, err
+		}
+		return handler(ctx, req)
+	}
+	versionCheckerStream := func(srv interface{}, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+		md, ok := metadata.FromIncomingContext(stream.Context())
+		if !ok {
+			return status.Error(codes.InvalidArgument, "failed to retrieve metadata")
+		}
+		hv := exporter.AllowedOnHeavyVersion
+		if config.HeavyVersion != nil {
+			hv = *config.HeavyVersion
+		}
+		err := validateClientVersion(md, int64(hv))
+		if err != nil {
+			return err
+		}
+		return handler(srv, stream)
+	}
+
+	var grpcServer *grpc.Server
+	if config.VersionChecker {
+		grpcServer = grpc.NewServer(
+			grpc.UnaryInterceptor(grpcmiddleware.ChainUnaryServer(versionCheckerUnary)),
+			grpc.StreamInterceptor(grpcmiddleware.ChainStreamServer(versionCheckerStream)),
+		)
+	} else {
+		grpcServer = grpc.NewServer()
+	}
 
 	return &TestGRPCServer{
 		Listener: listener,
@@ -48,4 +105,42 @@ func (s *TestGRPCServer) Serve(t testing.TB) {
 		}
 		require.Error(t, err, "server exited with error")
 	}()
+}
+
+func validateClientVersion(metaDataFromRequest metadata.MD, heavyVersion int64) error {
+	typeClient, ok := metaDataFromRequest[exporter.KeyClientType]
+	if !ok || len(typeClient) == 0 || typeClient[0] == exporter.Unknown.String() {
+		return status.Error(codes.InvalidArgument, "unknown type client")
+	}
+
+	switch typeClient[0] {
+	case exporter.ValidateHeavyVersion.String():
+	case exporter.ValidateContractVersion.String():
+		return status.Error(codes.InvalidArgument, "block explorer should send client type 1")
+	default:
+		return status.Error(codes.InvalidArgument, "unknown type client")
+	}
+	// validate protocol version from client
+	err := compareAllowedVersion(exporter.KeyClientVersionHeavy, heavyVersion, metaDataFromRequest)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func compareAllowedVersion(nameVersion string, allowedVersion int64, metaDataFromRequest metadata.MD) error {
+	versionClientMD, ok := metaDataFromRequest[nameVersion]
+	if !ok || len(versionClientMD) == 0 {
+		return status.Error(codes.InvalidArgument, fmt.Sprintf("unknown %s", nameVersion))
+	}
+	versionClient, err := strconv.ParseInt(versionClientMD[0], 10, 64)
+	if err != nil || versionClient < 0 {
+		return status.Error(codes.InvalidArgument, fmt.Sprintf("incorrect format of the %s", nameVersion))
+	}
+	if versionClient == 0 || versionClient < allowedVersion {
+		log := inslogger.FromContext(context.Background())
+		log.Errorf("heavy ver: %d, client ver: %d", allowedVersion, versionClient)
+		return exporter.ErrDeprecatedClientVersion
+	}
+	return nil
 }

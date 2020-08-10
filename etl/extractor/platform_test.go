@@ -9,20 +9,24 @@ package extractor
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
+	"sync/atomic"
 	"testing"
 	"time"
 
 	"github.com/gojuno/minimock/v3"
-	"github.com/insolar/block-explorer/etl/interfaces/mock"
-	"github.com/insolar/block-explorer/testutils"
-	"github.com/insolar/block-explorer/testutils/clients"
 	"github.com/insolar/insolar/insolar"
 	"github.com/insolar/insolar/insolar/record"
 	"github.com/insolar/insolar/ledger/heavy/exporter"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
+
+	"github.com/insolar/block-explorer/etl/interfaces/mock"
+	"github.com/insolar/block-explorer/testutils"
+	"github.com/insolar/block-explorer/testutils/clients"
 )
 
 func TestGetJetDrops(t *testing.T) {
@@ -41,12 +45,17 @@ func TestGetJetDrops(t *testing.T) {
 	recordClient.ExportMock.Set(
 		func(ctx context.Context, in *exporter.GetRecords, opts ...grpc.CallOption) (
 			r1 exporter.RecordExporter_ExportClient, err error) {
+			mtd, ok := metadata.FromOutgoingContext(ctx)
+			require.True(t, ok)
+			require.Equal(t, exporter.ValidateHeavyVersion.String(), mtd.Get(exporter.KeyClientType)[0])
+			require.Equal(t, PlatformAPIVersion, mtd.Get(exporter.KeyClientVersionHeavy)[0])
+
 			return stream, nil
 		})
 
 	pulseClient := clients.GetTestPulseClient(65537, nil)
 	pulseExtractor := NewPlatformPulseExtractor(pulseClient)
-	extractor := NewPlatformExtractor(uint32(pulseCount), 0, 100, pulseExtractor, recordClient)
+	extractor := NewPlatformExtractor(uint32(pulseCount), 0, 100, pulseExtractor, recordClient, func() {})
 	err = extractor.Start(ctx)
 	require.NoError(t, err)
 	defer extractor.Stop(ctx)
@@ -74,6 +83,72 @@ func TestGetJetDrops(t *testing.T) {
 			t.Fatal("chan receive timeout ")
 		}
 	}
+}
+
+func TestGetJetDrops_WrongVersionOnPulseError(t *testing.T) {
+	ctx := context.Background()
+	mc := minimock.NewController(t)
+	recordClient := mock.NewRecordExporterClientMock(mc)
+
+	var called int32 = 0
+	shutdownBETestFunc := func() {
+		atomic.AddInt32(&called, 1)
+	}
+	pulseExtractor := mock.NewPulseExtractorMock(mc)
+	pulseExtractor.GetNextFinalizedPulseMock.Set(func(ctx context.Context, p int64) (fp1 *exporter.FullPulse, err error) {
+		return nil, errors.New("block explorer should send client type 1")
+	})
+	extractor := NewPlatformExtractor(uint32(1), 0, 100, pulseExtractor, recordClient, shutdownBETestFunc)
+	err := extractor.Start(ctx)
+	defer extractor.Stop(ctx)
+	require.NoError(mc, err)
+
+	jetDrops := extractor.GetJetDrops(ctx)
+
+	select {
+	case <-jetDrops:
+		require.True(t, false, "received something")
+	case <-time.After(time.Second * 1):
+		t.Log("received nothing. ok")
+	}
+	require.Equal(t, atomic.LoadInt32(&called), int32(1), "shutdownBETestFunc should be invoked")
+}
+
+func TestGetJetDrops_WrongVersionOnRecordError(t *testing.T) {
+	ctx := context.Background()
+	mc := minimock.NewController(t)
+	recordClient := mock.NewRecordExporterClientMock(mc)
+
+	recordClient.ExportMock.Set(
+		func(ctx context.Context, in *exporter.GetRecords, opts ...grpc.CallOption) (
+			r1 exporter.RecordExporter_ExportClient, err error) {
+
+			mtd, ok := metadata.FromOutgoingContext(ctx)
+			require.True(t, ok)
+			require.Equal(t, exporter.ValidateHeavyVersion.String(), mtd.Get(exporter.KeyClientType)[0])
+			require.Equal(t, PlatformAPIVersion, mtd.Get(exporter.KeyClientVersionHeavy)[0])
+			return recordStream{}, exporter.ErrDeprecatedClientVersion
+		})
+	var called int32 = 0
+	shutdownBETestFunc := func() {
+		atomic.AddInt32(&called, 1)
+	}
+	pulseClient := clients.GetTestPulseClient(65537, nil)
+	pulseExtractor := NewPlatformPulseExtractor(pulseClient)
+	extractor := NewPlatformExtractor(uint32(1), 0, 100, pulseExtractor, recordClient, shutdownBETestFunc)
+	err := extractor.Start(ctx)
+	defer extractor.Stop(ctx)
+	require.NoError(mc, err)
+
+	jetDrops := extractor.GetJetDrops(ctx)
+
+	select {
+	case <-jetDrops:
+		require.True(t, false, "received something")
+	case <-time.After(time.Second * 1):
+		t.Log("received nothing. ok")
+	}
+	require.Equal(t, atomic.LoadInt32(&called), int32(1), "shutdownBETestFunc should be invoked")
 }
 
 func recordTapeFunc(t *testing.T, tape []*exporter.Record) func() (record *exporter.Record, e error) {
@@ -154,7 +229,7 @@ func TestLoadJetDrops_returnsRecordByPulses(t *testing.T) {
 					return pp, err
 				})
 
-			extractor := NewPlatformExtractor(77, 0, 100, pulseExtractor, recordClient)
+			extractor := NewPlatformExtractor(77, 0, 100, pulseExtractor, recordClient, func() {})
 			err := extractor.LoadJetDrops(ctx, int64(startPulseNumber-10), int64(startPulseNumber+10*(test.differentPulseCount-1)))
 			require.NoError(t, err)
 			for i := 0; i < test.differentPulseCount; i++ {

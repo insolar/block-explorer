@@ -42,7 +42,8 @@ type ConnectionManager struct {
 // Starts GRPC server and initializes connection from GRPC clients
 func (c *ConnectionManager) Start(t testing.TB) {
 	var err error
-	c.grpcServer = testutils.CreateTestGRPCServer(t)
+	// todo get config ConnectionConfig from test and insert into CreateTestGRPCServer
+	c.grpcServer = testutils.CreateTestGRPCServer(t, nil)
 	c.Importer = heavymock.NewHeavymockImporter()
 	heavymock.RegisterHeavymockImporterServer(c.grpcServer.Server, c.Importer)
 	exporter.RegisterRecordExporterServer(c.grpcServer.Server, heavymock.NewRecordExporter(c.Importer))

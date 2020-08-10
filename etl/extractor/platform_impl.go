@@ -16,11 +16,14 @@ import (
 	"github.com/insolar/insolar/insolar"
 	"github.com/insolar/insolar/insolar/pulse"
 	"github.com/insolar/insolar/ledger/heavy/exporter"
+	"google.golang.org/grpc/metadata"
 
 	"github.com/insolar/block-explorer/etl/interfaces"
 	"github.com/insolar/block-explorer/etl/types"
 	"github.com/insolar/block-explorer/instrumentation/belogger"
 )
+
+const PlatformAPIVersion = "2"
 
 type PlatformExtractor struct {
 	hasStarted     bool
@@ -37,10 +40,18 @@ type PlatformExtractor struct {
 
 	batchSize                                 uint32
 	continuousPulseRetrievingHalfPulseSeconds uint32
+
+	shutdownBE func()
 }
 
-func NewPlatformExtractor(batchSize uint32, continuousPulseRetrievingHalfPulseSeconds uint32, maxWorkers int32,
-	pulseExtractor interfaces.PulseExtractor, exporterClient exporter.RecordExporterClient) *PlatformExtractor {
+func NewPlatformExtractor(
+	batchSize uint32,
+	continuousPulseRetrievingHalfPulseSeconds uint32,
+	maxWorkers int32,
+	pulseExtractor interfaces.PulseExtractor,
+	exporterClient exporter.RecordExporterClient,
+	shutdownBE func(),
+) *PlatformExtractor {
 	request := &exporter.GetRecords{Count: batchSize}
 	return &PlatformExtractor{
 		startStopMutex:   &sync.Mutex{},
@@ -52,6 +63,7 @@ func NewPlatformExtractor(batchSize uint32, continuousPulseRetrievingHalfPulseSe
 		batchSize:      batchSize,
 		continuousPulseRetrievingHalfPulseSeconds: continuousPulseRetrievingHalfPulseSeconds,
 		maxWorkers: maxWorkers,
+		shutdownBE: shutdownBE,
 	}
 }
 
@@ -102,6 +114,7 @@ func (e *PlatformExtractor) retrievePulses(ctx context.Context, from, until int6
 	pu := &exporter.FullPulse{PulseNumber: insolar.PulseNumber(from)}
 	var err error
 	logger := belogger.FromContext(ctx)
+	ctx = appendPlatformVersionToCtx(ctx)
 
 	halfPulse := time.Duration(e.continuousPulseRetrievingHalfPulseSeconds) * time.Second
 	for {
@@ -124,6 +137,11 @@ func (e *PlatformExtractor) retrievePulses(ctx context.Context, from, until int6
 		pu, err = e.pulseExtractor.GetNextFinalizedPulse(ctx, int64(int32(before.PulseNumber)))
 		if err != nil { // network error ?
 			pu = &before
+			// todo add all possible errors
+			if isVersionError(err) {
+				e.shutdownBE()
+				break
+			}
 			if strings.Contains(err.Error(), pulse.ErrNotFound.Error()) { // seems this pulse already last
 				time.Sleep(halfPulse)
 				continue
@@ -167,9 +185,14 @@ func (e *PlatformExtractor) retrieveRecords(ctx context.Context, pu *exporter.Fu
 		}
 		stream, err := e.client.Export(ctx, &exporter.GetRecords{PulseNumber: pu.PulseNumber,
 			RecordNumber: uint32(len(jetDrops.Records)),
-			Count:        e.batchSize})
+			Count:        e.batchSize},
+		)
 		if err != nil {
 			log.Error("retrieveRecords() on rpc call: ", err.Error())
+			if isVersionError(err) {
+				e.shutdownBE()
+				break
+			}
 			time.Sleep(time.Second)
 			continue
 		}
@@ -209,5 +232,18 @@ func (e *PlatformExtractor) retrieveRecords(ctx context.Context, pu *exporter.Fu
 			jetDrops.Records = append(jetDrops.Records, resp)
 		}
 	}
+
+}
+
+func appendPlatformVersionToCtx(ctx context.Context) context.Context {
+	ctx = metadata.AppendToOutgoingContext(ctx, exporter.KeyClientType, exporter.ValidateHeavyVersion.String())
+	return metadata.AppendToOutgoingContext(ctx, exporter.KeyClientVersionHeavy, PlatformAPIVersion)
+}
+
+func isVersionError(err error) bool {
+	return err == exporter.ErrDeprecatedClientVersion ||
+		strings.Contains(err.Error(), "block explorer should send client type 1") ||
+		strings.Contains(err.Error(), "unknown type client") ||
+		strings.Contains(err.Error(), "incorrect format of the heavy_version")
 
 }
