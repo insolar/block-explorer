@@ -7,6 +7,7 @@ package extractor
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"strings"
 	"sync"
@@ -137,8 +138,8 @@ func (e *PlatformExtractor) retrievePulses(ctx context.Context, from, until int6
 		pu, err = e.pulseExtractor.GetNextFinalizedPulse(ctx, int64(int32(before.PulseNumber)))
 		if err != nil { // network error ?
 			pu = &before
-			// todo add all possible errors
 			if isVersionError(err) {
+				log.Errorf("version error occurred, debug: %s", debugVersionError(ctx))
 				e.shutdownBE()
 				break
 			}
@@ -235,13 +236,21 @@ func (e *PlatformExtractor) retrieveRecords(ctx context.Context, pu *exporter.Fu
 
 }
 
+func debugVersionError(ctx context.Context) string {
+	mtd, ok := metadata.FromOutgoingContext(ctx)
+	if !ok {
+		return "metadata not found"
+	}
+	return fmt.Sprintf("Client Type: %s, Client version: %s", mtd.Get(exporter.KeyClientType), mtd.Get(exporter.KeyClientVersionHeavy))
+}
+
 func appendPlatformVersionToCtx(ctx context.Context) context.Context {
 	ctx = metadata.AppendToOutgoingContext(ctx, exporter.KeyClientType, exporter.ValidateHeavyVersion.String())
 	return metadata.AppendToOutgoingContext(ctx, exporter.KeyClientVersionHeavy, PlatformAPIVersion)
 }
 
 func isVersionError(err error) bool {
-	return err == exporter.ErrDeprecatedClientVersion ||
+	return strings.Contains(err.Error(), exporter.ErrDeprecatedClientVersion.Error()) ||
 		strings.Contains(err.Error(), "block explorer should send client type 1") ||
 		strings.Contains(err.Error(), "unknown type client") ||
 		strings.Contains(err.Error(), "incorrect format of the heavy_version")
