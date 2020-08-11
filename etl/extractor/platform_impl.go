@@ -100,10 +100,7 @@ func (e *PlatformExtractor) Start(ctx context.Context) error {
 	return nil
 }
 
-func closeStream(ctx context.Context, stream exporter.RecordExporter_ExportClient, cancelFunc context.CancelFunc) {
-	if cancelFunc != nil {
-		cancelFunc()
-	}
+func closeStream(ctx context.Context, stream exporter.RecordExporter_ExportClient) {
 	if stream != nil {
 		streamError := stream.CloseSend()
 		if streamError != nil {
@@ -177,6 +174,7 @@ func (e *PlatformExtractor) retrieveRecords(ctx context.Context, pu *exporter.Fu
 	atomic.AddInt32(&e.workers, 1)
 	defer atomic.AddInt32(&e.workers, -1)
 	cancelCtx, cancelFunc := context.WithCancel(ctx)
+	defer cancelFunc()
 
 	logger := belogger.FromContext(cancelCtx)
 	log := logger.WithField("pulse_number", pu.PulseNumber)
@@ -197,7 +195,7 @@ func (e *PlatformExtractor) retrieveRecords(ctx context.Context, pu *exporter.Fu
 			log.Error("retrieveRecords() on rpc call: ", err.Error())
 			if isVersionError(err) {
 				e.shutdownBE()
-				break
+				return
 			}
 			time.Sleep(time.Second)
 			continue
@@ -206,7 +204,7 @@ func (e *PlatformExtractor) retrieveRecords(ctx context.Context, pu *exporter.Fu
 		for { // per record in request
 			select {
 			case <-cancelCtx.Done():
-				closeStream(cancelCtx, stream, cancelFunc)
+				closeStream(cancelCtx, stream)
 				return
 			default:
 			}
@@ -219,17 +217,17 @@ func (e *PlatformExtractor) retrieveRecords(ctx context.Context, pu *exporter.Fu
 				if strings.Contains(err.Error(), "trying to get a non-finalized pulse data") ||
 					strings.Contains(err.Error(), "pulse not found") {
 					time.Sleep(time.Duration(e.continuousPulseRetrievingHalfPulseSeconds) * time.Second)
-					go e.retrievePulses(cancelCtx, int64(pu.PrevPulseNumber), int64(pu.PulseNumber)) // goroutine to split the stack
+					go e.retrievePulses(ctx, int64(pu.PrevPulseNumber), int64(pu.PulseNumber)) // goroutine to split the stack
 					log.Infof("Rerequest pulse=%d err=%s", pu.PulseNumber, err)
-					closeStream(cancelCtx, stream, cancelFunc)
+					closeStream(cancelCtx, stream)
 					return
 				}
 				log.Errorf("retrieveRecords(): empty response: err=%s", err)
-				closeStream(cancelCtx, stream, cancelFunc)
+				closeStream(cancelCtx, stream)
 				return
 			}
 			if resp.ShouldIterateFrom != nil || resp.Record.ID.Pulse() != pu.PulseNumber { // next pulse packet
-				closeStream(cancelCtx, stream, cancelFunc)
+				closeStream(cancelCtx, stream)
 				e.mainJetDropsChan <- jetDrops
 				log.Debug("retrieveRecords(): Sent")
 				return // we have whole pulse
