@@ -25,7 +25,8 @@ require (
 	github.com/ory/dockertest/v3 v3.5.2
 	github.com/pelletier/go-toml v1.8.0 // indirect
 	github.com/pkg/errors v0.9.1
-	github.com/prometheus/client_golang v1.1.0
+	github.com/profects/gormetrics v0.0.0-20191223155940-04d3339500ab // indirect
+	github.com/prometheus/client_golang v1.7.0
 	github.com/rs/zerolog v1.15.0
 	github.com/satori/go.uuid v1.2.1-0.20181028125025-b2ce2384e17b
 	github.com/skudasov/loadgen v0.0.22
@@ -35,12 +36,12 @@ require (
 	go.opencensus.io v0.22.1
 	golang.org/x/crypto v0.0.0-20200510223506-06a226fb4e37 // indirect
 	golang.org/x/exp v0.0.0-20190510132918-efd6b22b2522 // indirect
-	golang.org/x/sys v0.0.0-20200602225109-6fdc65e7d980 // indirect
 	google.golang.org/appengine v1.6.1 // indirect
 	google.golang.org/grpc v1.27.1
 	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15 // indirect
 	gopkg.in/gormigrate.v1 v1.6.0
 	gopkg.in/ini.v1 v1.57.0 // indirect
+	gorm.io/plugin/prometheus v0.0.0-20200703122141-392583bf3ae3 // indirect
 	gotest.tools v2.2.0+incompatible // indirect
 )
 
