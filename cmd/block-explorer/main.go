@@ -20,14 +20,14 @@ import (
 	"github.com/insolar/block-explorer/api"
 	"github.com/insolar/block-explorer/etl/connection"
 	"github.com/insolar/block-explorer/etl/controller"
+	"github.com/insolar/block-explorer/etl/dbconn"
 	"github.com/insolar/block-explorer/etl/dbconn/plugins"
 	"github.com/insolar/block-explorer/etl/extractor"
 	"github.com/insolar/block-explorer/etl/processor"
+	"github.com/insolar/block-explorer/etl/storage"
 	"github.com/insolar/block-explorer/etl/transformer"
 	"github.com/insolar/block-explorer/instrumentation/belogger"
-
-	"github.com/insolar/block-explorer/etl/dbconn"
-	"github.com/insolar/block-explorer/etl/storage"
+	"github.com/insolar/block-explorer/instrumentation/metrics"
 
 	"github.com/insolar/block-explorer/configuration"
 )
@@ -118,9 +118,9 @@ func main() {
 	r := plugins.NewDefaultShutdownPlugin(stopChannel)
 	r.Apply(db)
 
-	storage := storage.NewStorage(db)
+	repository := storage.NewStorage(db)
 
-	controller, err := controller.NewController(cfg.Controller, platformExtractor, storage)
+	controller, err := controller.NewController(cfg.Controller, platformExtractor, repository)
 	if err != nil {
 		logger.Fatal("cannot initialize controller: ", err)
 	}
@@ -135,7 +135,7 @@ func main() {
 		}
 	}()
 
-	proc := processor.NewProcessor(mainNetTransformer, storage, controller, cfg.Processor.Workers)
+	proc := processor.NewProcessor(mainNetTransformer, repository, controller, cfg.Processor.Workers)
 	err = proc.Start(ctx)
 	if err != nil {
 		logger.Fatal("cannot start processor: ", err)
@@ -146,6 +146,19 @@ func main() {
 			logger.Fatal("cannot stop processor: ", err)
 		}
 	}()
+
+	metricConfig := metrics.Config{
+		RefreshInterval: cfg.Metrics.RefreshInterval,
+		StartServer:     cfg.Metrics.StartServer,
+		HTTPServerPort:  cfg.Metrics.HTTPServerPort,
+		MetricsCollectors: []metrics.Collector{
+			storage.NewPostgresCollector(nil, db),
+			storage.NewStatsCollector(db, nil),
+			storage.Metrics{},
+		},
+	}
+
+	_ = metrics.New(metricConfig).Initialize()
 
 	graceful(ctx)
 }
