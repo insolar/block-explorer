@@ -73,7 +73,7 @@ func (pg *PostgresCollector) Metrics(p *metrics.Prometheus) []prometheus.Collect
 func (pg *PostgresCollector) collect() {
 	sql := "select " +
 		"(select count(*) from jet_drops) as jetdrops, " +
-		"(select count(*)from pulses) as pulses, " +
+		"(select count(*) from pulses) as pulses, " +
 		"(select count(*) from records) as records"
 	rows, err := pg.Raw(sql).Rows()
 	if err != nil {
