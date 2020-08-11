@@ -24,8 +24,7 @@
   "editable": true,
   "gnetId": 10913,
   "graphTooltip": 1,
-  "id": 2,
-  "iteration": 1597134971328,
+  "iteration": 1597147089744,
   "links": [],
   "panels": [
     {
@@ -94,9 +93,9 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "go_goroutines{job=\"$job\"}",
+          "expr": "go_goroutines",
           "intervalFactor": 2,
-          "legendFormat": "{{job}}",
+          "legendFormat": "{{ job }} - {{ instance }} ",
           "metric": "go_goroutines",
           "refId": "A",
           "step": 4
@@ -197,7 +196,7 @@
             "filter": ""
           },
           "expr": "gbe_gorm_status_all_jetdrop_count",
-          "format": "table",
+          "format": "time_series",
           "functions": [],
           "group": {
             "filter": ""
@@ -324,7 +323,7 @@
             "filter": ""
           },
           "expr": "gbe_gorm_status_all_pulse_count",
-          "format": "table",
+          "format": "time_series",
           "functions": [],
           "group": {
             "filter": ""
@@ -451,7 +450,7 @@
             "filter": ""
           },
           "expr": "gbe_gorm_status_all_record_count",
-          "format": "table",
+          "format": "time_series",
           "functions": [],
           "group": {
             "filter": ""
@@ -2843,7 +2842,7 @@
     ]
   },
   "timezone": "browser",
-  "title": "GEB Storage",
+  "title": "GBE Storage",
   "uid": "GBE_STORAGE_ID",
-  "version": 14
+  "version": 1
 }
