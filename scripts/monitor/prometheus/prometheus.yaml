@@ -20,4 +20,5 @@ scrape_configs:
       - targets:
           - localhost:9090
           - docker.for.mac.localhost:8080
+          - docker.for.mac.localhost:8081
 

@@ -22,6 +22,7 @@ type BlockExplorer struct {
 	Replicator Replicator
 	Controller Controller
 	Processor  Processor
+	Metrics    Metrics
 }
 
 type API struct {
@@ -30,6 +31,7 @@ type API struct {
 	WriteTimeout time.Duration `insconfig:"60s| The maximum duration before timing out writes of the response"`
 	DB           DB
 	Log          Log
+	Metrics      Metrics
 }
 
 type DB struct {
@@ -55,6 +57,13 @@ type Replicator struct {
 	ContinuousPulseRetrievingHalfPulseSeconds uint32        `insconfig:"5| Half pulse in seconds"`
 	ParallelConnections                       uint32        `insconfig:"100| Maximum parallel pulse retrievers"`
 	Auth                                      Auth
+}
+
+// Metrics represents a configuration for expose metrics
+type Metrics struct {
+	HTTPServerPort  uint32        `insconfig:":8081| http server port"`
+	RefreshInterval time.Duration `insconfig:"10s| Refresh metrics interval"`
+	StartServer     bool          `insconfig:"true| if true, create http server to expose metrics"`
 }
 
 // Auth represents the authentication of the Platform

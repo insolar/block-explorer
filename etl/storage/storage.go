@@ -13,6 +13,7 @@ import (
 
 	"github.com/jinzhu/gorm"
 	"github.com/pkg/errors"
+	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/insolar/block-explorer/etl/models"
 )
@@ -32,6 +33,9 @@ func NewStorage(db *gorm.DB) *Storage {
 // SaveJetDropData saves provided jetDrop and records to db in one transaction.
 // increase jet_drop_amount and record_amount
 func (s *Storage) SaveJetDropData(jetDrop models.JetDrop, records []models.Record, pulseNumber int64) error {
+	timer := prometheus.NewTimer(SaveJetDropDataDuration)
+	defer timer.ObserveDuration()
+
 	err := s.initJD(jetDrop, records, pulseNumber)
 	if err == nil {
 		return nil
@@ -85,6 +89,9 @@ func (s *Storage) updateJD(jetDrop models.JetDrop, records []models.Record) erro
 
 // SavePulse saves provided pulse to db.
 func (s *Storage) SavePulse(pulse models.Pulse) error {
+	timer := prometheus.NewTimer(SavePulseDuration)
+	defer timer.ObserveDuration()
+
 	s.savePulseLock.Lock()
 	defer s.savePulseLock.Unlock()
 	err := s.db.Set("gorm:insert_option", ""+
@@ -96,6 +103,8 @@ func (s *Storage) SavePulse(pulse models.Pulse) error {
 
 // CompletePulse update pulse with provided number to completeness in db.
 func (s *Storage) CompletePulse(pulseNumber int64) error {
+	timer := prometheus.NewTimer(CompletePulseDuration)
+	defer timer.ObserveDuration()
 	return s.db.Transaction(func(tx *gorm.DB) error {
 		pulse := models.Pulse{PulseNumber: pulseNumber}
 		update := tx.Model(&pulse).Update(models.Pulse{IsComplete: true})
@@ -115,6 +124,8 @@ func (s *Storage) CompletePulse(pulseNumber int64) error {
 
 // SequencePulse update pulse with provided number to sequential in db.
 func (s *Storage) SequencePulse(pulseNumber int64) error {
+	timer := prometheus.NewTimer(SequencePulseDuration)
+	defer timer.ObserveDuration()
 	return s.db.Transaction(func(tx *gorm.DB) error {
 		pulse := models.Pulse{PulseNumber: pulseNumber}
 		update := tx.Model(&pulse).Update(models.Pulse{IsSequential: true})
@@ -134,6 +145,8 @@ func (s *Storage) SequencePulse(pulseNumber int64) error {
 
 // GetJetDrops returns records with provided reference from db.
 func (s *Storage) GetRecord(ref models.Reference) (models.Record, error) {
+	timer := prometheus.NewTimer(GetRecordDuration)
+	defer timer.ObserveDuration()
 	record := models.Record{}
 	err := s.db.Where("reference = ?", []byte(ref)).First(&record).Error
 	return record, err
@@ -251,6 +264,9 @@ func getPulses(query *gorm.DB, limit, offset int) ([]models.Pulse, int, error) {
 
 // GetLifeline returns records for provided object reference, ordered by pulse number and order fields.
 func (s *Storage) GetLifeline(objRef []byte, fromIndex *string, pulseNumberLt, pulseNumberGt, timestampLte, timestampGte *int64, limit, offset int, sortByIndexAsc bool) ([]models.Record, int, error) {
+	timer := prometheus.NewTimer(GetLifelineDuration)
+	defer timer.ObserveDuration()
+
 	query := s.db.Model(&models.Record{}).Where("object_reference = ?", objRef).Where("type = ?", models.State)
 
 	query = filterByPulse(query, pulseNumberLt, pulseNumberGt)
@@ -276,6 +292,9 @@ func (s *Storage) GetLifeline(objRef []byte, fromIndex *string, pulseNumberLt, p
 
 // GetPulse returns pulse with provided pulse number from db.
 func (s *Storage) GetPulse(pulseNumber int64) (models.Pulse, error) {
+	timer := prometheus.NewTimer(GetPulseDuration)
+	defer timer.ObserveDuration()
+
 	var pulse models.Pulse
 	err := s.db.Where("pulse_number = ?", pulseNumber).First(&pulse).Error
 	if err != nil {
@@ -290,6 +309,9 @@ func (s *Storage) GetPulse(pulseNumber int64) (models.Pulse, error) {
 
 // GetPulses returns pulses from db.
 func (s *Storage) GetPulses(fromPulse *int64, timestampLte, timestampGte *int64, limit, offset int) ([]models.Pulse, int, error) {
+	timer := prometheus.NewTimer(GetPulsesDuration)
+	defer timer.ObserveDuration()
+
 	query := s.db.Model(&models.Pulse{})
 
 	query = filterByTimestamp(query, timestampLte, timestampGte)
@@ -348,6 +370,9 @@ func (s *Storage) updatePrevPulse(pulse models.Pulse) models.Pulse {
 
 // GetRecordsByJetDrop returns records for provided jet drop, ordered by order field.
 func (s *Storage) GetRecordsByJetDrop(jetDropID models.JetDropID, fromIndex, recordType *string, limit, offset int) ([]models.Record, int, error) {
+	timer := prometheus.NewTimer(GetRecordsByJetDropDuration)
+	defer timer.ObserveDuration()
+
 	query := s.db.Model(&models.Record{}).Where("pulse_number = ?", jetDropID.PulseNumber).Where("jet_id = ?", jetDropID.JetID)
 
 	if recordType != nil {
@@ -373,6 +398,9 @@ func (s *Storage) GetRecordsByJetDrop(jetDropID models.JetDropID, fromIndex, rec
 
 // GetIncompletePulses returns pulses that are not complete from db.
 func (s *Storage) GetIncompletePulses() ([]models.Pulse, error) {
+	timer := prometheus.NewTimer(GetIncompletePulsesDuration)
+	defer timer.ObserveDuration()
+
 	var pulses []models.Pulse
 	err := s.db.Where("is_complete = ?", false).Find(&pulses).Error
 	return pulses, err
@@ -380,6 +408,9 @@ func (s *Storage) GetIncompletePulses() ([]models.Pulse, error) {
 
 // GetPulseByPrev returns pulse with provided prev pulse number from db.
 func (s *Storage) GetPulseByPrev(prevPulse models.Pulse) (models.Pulse, error) {
+	timer := prometheus.NewTimer(GetPulseByPrevDuration)
+	defer timer.ObserveDuration()
+
 	var pulse models.Pulse
 	err := s.db.Where("prev_pulse_number = ?", prevPulse.PulseNumber).First(&pulse).Error
 	return pulse, err
@@ -387,6 +418,9 @@ func (s *Storage) GetPulseByPrev(prevPulse models.Pulse) (models.Pulse, error) {
 
 // GetSequentialPulse returns max pulse that have is_sequential as true from db.
 func (s *Storage) GetSequentialPulse() (models.Pulse, error) {
+	timer := prometheus.NewTimer(GetSequentialPulseDuration)
+	defer timer.ObserveDuration()
+
 	var pulses []models.Pulse
 	err := s.db.Where("is_sequential = ?", true).Order("pulse_number desc").Limit(1).Find(&pulses).Error
 	if err != nil {
@@ -400,6 +434,9 @@ func (s *Storage) GetSequentialPulse() (models.Pulse, error) {
 
 // GetNextSavedPulse returns first pulse with pulse number bigger then fromPulseNumber from db.
 func (s *Storage) GetNextSavedPulse(fromPulseNumber models.Pulse) (models.Pulse, error) {
+	timer := prometheus.NewTimer(GetNextSavedPulseDuration)
+	defer timer.ObserveDuration()
+
 	var pulses []models.Pulse
 	err := s.db.Where("pulse_number > ?", fromPulseNumber.PulseNumber).Order("pulse_number asc").Limit(1).Find(&pulses).Error
 	if err != nil {
@@ -413,12 +450,18 @@ func (s *Storage) GetNextSavedPulse(fromPulseNumber models.Pulse) (models.Pulse,
 
 // GetJetDrops returns jetDrops for provided pulse from db.
 func (s *Storage) GetJetDrops(pulse models.Pulse) ([]models.JetDrop, error) {
+	timer := prometheus.NewTimer(GetJetDropsDuration)
+	defer timer.ObserveDuration()
+
 	var jetDrops []models.JetDrop
 	err := s.db.Where("pulse_number = ?", pulse.PulseNumber).Find(&jetDrops).Error
 	return jetDrops, err
 }
 
 func (s *Storage) GetJetDropsWithParams(pulse models.Pulse, fromJetDropID *models.JetDropID, limit int, offset int) ([]models.JetDrop, int, error) {
+	timer := prometheus.NewTimer(GetJetDropsWithParamsDuration)
+	defer timer.ObserveDuration()
+
 	var jetDrops []models.JetDrop
 	q := s.db.Model(&jetDrops).Where("pulse_number = ?", pulse.PulseNumber).Order("jet_id asc")
 	if fromJetDropID != nil {
@@ -437,6 +480,9 @@ func (s *Storage) GetJetDropsWithParams(pulse models.Pulse, fromJetDropID *model
 }
 
 func (s *Storage) GetJetDropByID(id models.JetDropID) (models.JetDrop, []models.JetDrop, []models.JetDrop, error) {
+	timer := prometheus.NewTimer(GetJetDropByIDDuration)
+	defer timer.ObserveDuration()
+
 	var jetDrop models.JetDrop
 	err := s.db.Model(&jetDrop).Where("pulse_number = ? AND jet_id = ?", id.PulseNumber, id.JetID).Find(&jetDrop).Error
 	if err != nil {
@@ -471,6 +517,9 @@ func (s *Storage) GetJetDropByID(id models.JetDropID) (models.JetDrop, []models.
 }
 
 func (s *Storage) GetJetDropsByJetID(jetID string, pulseNumberLte, pulseNumberLt, pulseNumberGte, pulseNumberGt *int64, limit int, sortByPnAsc bool) ([]models.JetDrop, int, error) {
+	timer := prometheus.NewTimer(GetJetDropsByJetIDDuration)
+	defer timer.ObserveDuration()
+
 	var jetDrops []models.JetDrop
 	var total int64
 
