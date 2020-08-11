@@ -381,6 +381,23 @@ func RandomString(n int) string {
 	return string(b)
 }
 
+// generate records with split JetDrops
+func GenerateRecordsWIthSplitJetDrops(pn insolar.PulseNumber, depth int, recordsInJetDrop int) []*exporter.Record {
+	result := make([]*exporter.Record, 0)
+	jdTree := GenerateJetIDTree(pn, depth)
+	for p, jds := range jdTree {
+		for _, jd := range jds {
+			records := GenerateRecordsSilence(recordsInJetDrop)
+			for _, r := range records {
+				r.Record.ID = gen.IDWithPulse(p)
+				r.Record.JetID = jd
+			}
+			result = append(result, records...)
+		}
+	}
+	return result
+}
+
 // Generate map of pulses and related list of splitted JetDrops
 func GenerateJetIDTree(pn insolar.PulseNumber, depth int) map[insolar.PulseNumber][]insolar.JetID {
 	timeout := time.After(5 * time.Second)
