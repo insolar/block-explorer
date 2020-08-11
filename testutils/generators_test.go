@@ -14,6 +14,7 @@ import (
 	"testing"
 
 	"github.com/insolar/insolar/insolar"
+	"github.com/insolar/insolar/insolar/gen"
 	ins_record "github.com/insolar/insolar/insolar/record"
 	"github.com/insolar/insolar/ledger/heavy/exporter"
 	"github.com/insolar/insolar/pulse"
@@ -219,4 +220,29 @@ func TestRandomString(t *testing.T) {
 	str := RandomString(l)
 	require.Equal(t, l, len(str))
 	require.True(t, strings.ContainsAny(string(letterRunes), str))
+}
+
+func TestGenerateJetIDTree(t *testing.T) {
+	tests := map[string]struct {
+		depth int
+		total int // (2^(depth + 1) - 1)
+	}{
+		"depth=0, total=1":  {0, 1},
+		"depth=1, total=6":  {1, 3},
+		"depth=2, total=7":  {2, 7},
+		"depth=3, total=15": {3, 15},
+		"depth=4, total=15": {4, 31},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			jDcount := 0
+			pn := gen.PulseNumber()
+			res := GenerateJetIDTree(pn, tc.depth)
+			for _, v := range res {
+				jDcount += len(v)
+			}
+			require.Equal(t, tc.total, jDcount)
+		})
+	}
 }

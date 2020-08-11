@@ -15,6 +15,7 @@ import (
 
 	"github.com/insolar/insolar/insolar"
 	"github.com/insolar/insolar/insolar/gen"
+	"github.com/insolar/insolar/insolar/jet"
 	insrecord "github.com/insolar/insolar/insolar/record"
 	"github.com/insolar/insolar/ledger/heavy/exporter"
 	"github.com/insolar/insolar/pulse"
@@ -337,19 +338,27 @@ var mutex = &sync.Mutex{}
 func GenerateUniqueJetID() insolar.JetID {
 	for {
 		jetID := gen.JetID()
-		id := binary.BigEndian.Uint64(jetID.Prefix())
-		if id == 0 {
+		if !isUniqueJetId(jetID) {
 			continue
 		}
-		mutex.Lock()
-		_, hasKey := uniqueJetID[id]
-		if !hasKey {
-			uniqueJetID[id] = true
-			mutex.Unlock()
-			return jetID
-		}
-		mutex.Unlock()
+		return jetID
 	}
+}
+
+func isUniqueJetId(jetID insolar.JetID) bool {
+	id := binary.BigEndian.Uint64(jetID.Prefix())
+	if id == 0 {
+		return false
+	}
+	mutex.Lock()
+	_, hasKey := uniqueJetID[id]
+	if !hasKey {
+		uniqueJetID[id] = true
+		mutex.Unlock()
+		return true
+	}
+	mutex.Unlock()
+	return false
 }
 
 // RandNumberOverRange generates random number over a range
@@ -372,9 +381,62 @@ func RandomString(n int) string {
 	return string(b)
 }
 
-// generate records with split JetDrops
-func GenerateRecordsWithSplitJetDrops(t *testing.T) {
+// Generate map of pulses and related list of splitted JetDrops
+func GenerateJetIDTree(pn insolar.PulseNumber, depth int) map[insolar.PulseNumber][]insolar.JetID {
+	timeout := time.After(5 * time.Second)
+	result := make(map[insolar.PulseNumber][]insolar.JetID, 0)
+	for {
+		select {
+		case <-timeout:
+			return map[insolar.PulseNumber][]insolar.JetID{}
+		default:
+		}
+		rootJetID := *insolar.NewJetID(20, gen.IDWithPulse(pn).Bytes())
+		if !isUniqueJetId(rootJetID) {
+			continue
+		}
+		result[pn] = []insolar.JetID{rootJetID}
 
+		childs := siblings(rootJetID, pn, depth)
+		for p, c := range childs {
+			result[p] = c
+		}
+
+		return result
+	}
+}
+
+func siblings(parent insolar.JetID, parentPn insolar.PulseNumber, depth int) map[insolar.PulseNumber][]insolar.JetID {
+	if depth == 0 {
+		return nil
+	}
+
+	pn := parentPn
+	result := make(map[insolar.PulseNumber][]insolar.JetID, 0)
+	left, right := jet.Siblings(parent)
+	pn += 10
+	result[pn] = []insolar.JetID{left, right}
+
+	l := siblings(left, pn, depth-1)
+	for k, v := range l {
+		if jds := result[k]; jds == nil {
+			result[k] = v
+		} else {
+			jds = append(jds, v...)
+			result[k] = jds
+		}
+	}
+	r := siblings(right, pn, depth-1)
+	for k, v := range r {
+		if jds := result[k]; jds == nil {
+			result[k] = v
+		} else {
+			jds = append(jds, v...)
+			result[k] = jds
+		}
+	}
+
+	return result
 }
 
 // GenerateJetDropsWithSplit returns a jetdrops with splited by depth in different pulse
