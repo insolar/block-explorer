@@ -338,14 +338,14 @@ var mutex = &sync.Mutex{}
 func GenerateUniqueJetID() insolar.JetID {
 	for {
 		jetID := gen.JetID()
-		if !isUniqueJetId(jetID) {
+		if !isUniqueJetID(jetID) {
 			continue
 		}
 		return jetID
 	}
 }
 
-func isUniqueJetId(jetID insolar.JetID) bool {
+func isUniqueJetID(jetID insolar.JetID) bool {
 	id := binary.BigEndian.Uint64(jetID.Prefix())
 	if id == 0 {
 		return false
@@ -401,7 +401,7 @@ func GenerateRecordsWIthSplitJetDrops(pn insolar.PulseNumber, depth int, records
 // Generate map of pulses and related list of splitted JetDrops
 func GenerateJetIDTree(pn insolar.PulseNumber, depth int) map[insolar.PulseNumber][]insolar.JetID {
 	timeout := time.After(5 * time.Second)
-	result := make(map[insolar.PulseNumber][]insolar.JetID, 0)
+	result := make(map[insolar.PulseNumber][]insolar.JetID)
 	for {
 		select {
 		case <-timeout:
@@ -409,7 +409,7 @@ func GenerateJetIDTree(pn insolar.PulseNumber, depth int) map[insolar.PulseNumbe
 		default:
 		}
 		rootJetID := *insolar.NewJetID(20, gen.IDWithPulse(pn).Bytes())
-		if !isUniqueJetId(rootJetID) {
+		if !isUniqueJetID(rootJetID) {
 			continue
 		}
 		result[pn] = []insolar.JetID{rootJetID}
@@ -429,7 +429,7 @@ func siblings(parent insolar.JetID, parentPn insolar.PulseNumber, depth int) map
 	}
 
 	pn := parentPn
-	result := make(map[insolar.PulseNumber][]insolar.JetID, 0)
+	result := make(map[insolar.PulseNumber][]insolar.JetID)
 	left, right := jet.Siblings(parent)
 	pn += 10
 	result[pn] = []insolar.JetID{left, right}
