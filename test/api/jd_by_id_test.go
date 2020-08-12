@@ -17,6 +17,8 @@ import (
 	"github.com/insolar/block-explorer/test/heavymock"
 	"github.com/insolar/block-explorer/test/integration"
 	"github.com/insolar/block-explorer/testutils"
+	"github.com/insolar/insolar/insolar/gen"
+	"github.com/insolar/insolar/insolar/jet"
 	"github.com/insolar/insolar/ledger/heavy/exporter"
 	"github.com/insolar/insolar/pulse"
 	"github.com/stretchr/testify/require"
@@ -123,4 +125,40 @@ func TestGetJetDropsByID_negativeCases(t *testing.T) {
 			c.JetDropsByIDWithError(t, tc.value, tc.expResult)
 		})
 	}
+}
+
+func TestGetJetDropsByID_genesisJetDropsAsStarValue(t *testing.T) {
+	t.Log("C5671 Get JetDrop by JetDropID, get genesis records by a star char")
+	ts := integration.NewBlockExplorerTestSetup(t).WithHTTPServer(t)
+	defer ts.Stop(t)
+
+	pulsesCount, recordsInJetDropCount := 1, 9
+	records := testutils.GenerateRecordsFromOneJetSilence(pulsesCount, recordsInJetDropCount)
+	for i := 2; i < 4; i++ {
+		records[i].Record.JetID = jet.NewIDFromString("")
+	}
+	recordsNextPulse := testutils.GenerateRecordsFromOneJetSilence(pulsesCount, recordsInJetDropCount)
+	pn := records[0].Record.ID.Pulse()
+	nexPn := pn + 10
+	for _, r := range recordsNextPulse {
+		r.Record.ID = gen.IDWithPulse(nexPn)
+		r.Record.JetID = jet.NewIDFromString("")
+	}
+	require.NoError(t, heavymock.ImportRecords(ts.ConMngr.ImporterClient, records))
+	require.NoError(t, heavymock.ImportRecords(ts.ConMngr.ImporterClient, recordsNextPulse))
+
+	ts.BE.PulseClient.SetNextFinalizedPulseFunc(ts.ConMngr.Importer)
+	ts.StartBE(t)
+	defer ts.StopBE(t)
+
+	ts.WaitRecordsCount(t, recordsInJetDropCount*2, 5000)
+
+	val := fmt.Sprintf("*:%v", pn.String())
+	c := GetHTTPClient()
+	response := c.JetDropsByID(t, val)
+	require.Equal(t, "*", response.JetId)
+	require.Equal(t, int64(pn.AsUint32()), response.PulseNumber)
+	require.Equal(t, int64(2), response.RecordAmount)
+	require.NotEmpty(t, response.Timestamp)
+	require.NotEmpty(t, response.Hash)
 }
