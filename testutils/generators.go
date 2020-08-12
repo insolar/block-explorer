@@ -391,6 +391,7 @@ func GenerateRecordsWIthSplitJetDrops(pn insolar.PulseNumber, depth int, records
 			for _, r := range records {
 				r.Record.ID = gen.IDWithPulse(p)
 				r.Record.JetID = jd
+				r.ShouldIterateFrom = nil
 			}
 			result = append(result, records...)
 		}

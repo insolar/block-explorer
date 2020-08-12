@@ -342,3 +342,33 @@ func TestGetJetDropsByJetID_emptyJetID(t *testing.T) {
 		require.True(t, pulses[p])
 	}
 }
+
+func TestPrevNextJetDrops_JetDropsByJetID(t *testing.T) {
+	ts := integration.NewBlockExplorerTestSetup(t).WithHTTPServer(t)
+	defer ts.Stop(t)
+
+	pn := gen.PulseNumber()
+	records := testutils.GenerateRecordsWIthSplitJetDrops(pn, 4, 1)
+	require.NoError(t, heavymock.ImportRecords(ts.ConMngr.ImporterClient, records))
+
+	ts.BE.PulseClient.SetNextFinalizedPulseFunc(ts.ConMngr.Importer)
+
+	ts.StartBE(t)
+	defer ts.StopBE(t)
+
+	ts.WaitRecordsCount(t, len(records), 5000)
+	c := GetHTTPClient()
+
+	jetIDs := make(map[string]bool, 0)
+	for _, r := range records {
+		toString := converter.JetIDToString(r.Record.JetID)
+		t.Log(toString)
+		jetIDs[toString] = true
+	}
+	for j := range jetIDs {
+		response := c.JetDropsByJetID(t, j, nil)
+		// TODO add assertions on prev next jet drop
+		// before that, must implement pulse extractor in heavymock
+		require.Greater(t, response.Total, int64(0))
+	}
+}
