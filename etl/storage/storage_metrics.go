@@ -84,7 +84,7 @@ var (
 		Objectives: quntitile,
 	})
 	GetJetDropsWithParamsDuration = prometheus.NewSummary(prometheus.SummaryOpts{
-		Name:       "gbe_storage_stats_Duration",
+		Name:       "gbe_storage_stats_GetJetDropsWithParamsDuration",
 		Help:       "The duration of the GetJetDropsWithParams function execution",
 		Objectives: quntitile,
 	})

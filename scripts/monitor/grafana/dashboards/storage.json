@@ -24,7 +24,7 @@
   "editable": true,
   "gnetId": 10913,
   "graphTooltip": 1,
-  "iteration": 1597147089744,
+  "iteration": 1597230875123,
   "links": [],
   "panels": [
     {
@@ -869,7 +869,7 @@
           "application": {
             "filter": ""
           },
-          "expr": "gbe_storage_stats_SaveJetDropDataDuration",
+          "expr": "gbe_storage_stats_SavePulseDuration",
           "format": "time_series",
           "functions": [],
           "group": {
@@ -907,7 +907,7 @@
       "timeFrom": null,
       "timeRegions": [],
       "timeShift": null,
-      "title": "The duration of the SaveJetDropData",
+      "title": "The duration of the SavePulse",
       "tooltip": {
         "shared": true,
         "sort": 2,
@@ -996,7 +996,7 @@
           "application": {
             "filter": ""
           },
-          "expr": "gbe_storage_stats_SaveJetDropDataDuration",
+          "expr": "gbe_storage_stats_CompletePulseDuration",
           "format": "time_series",
           "functions": [],
           "group": {
@@ -1034,7 +1034,7 @@
       "timeFrom": null,
       "timeRegions": [],
       "timeShift": null,
-      "title": "The duration of the SaveJetDropData",
+      "title": "The duration of the CompletePulse",
       "tooltip": {
         "shared": true,
         "sort": 2,
@@ -1613,7 +1613,7 @@
         "y": 55
       },
       "hiddenSeries": false,
-      "id": 58,
+      "id": 73,
       "legend": {
         "avg": false,
         "current": false,
@@ -1644,7 +1644,7 @@
           "application": {
             "filter": ""
           },
-          "expr": "gbe_storage_stats_GetIncompletePulsesDuration",
+          "expr": "gbe_storage_stats_GetJetDropsWithParamsDuration",
           "format": "time_series",
           "functions": [],
           "group": {
@@ -1682,7 +1682,7 @@
       "timeFrom": null,
       "timeRegions": [],
       "timeShift": null,
-      "title": "The duration of the GetIncompletePulses",
+      "title": "The duration of the GetJetDropsWithParams",
       "tooltip": {
         "shared": true,
         "sort": 2,
@@ -1867,7 +1867,7 @@
         "y": 64
       },
       "hiddenSeries": false,
-      "id": 56,
+      "id": 58,
       "legend": {
         "avg": false,
         "current": false,
@@ -1898,7 +1898,7 @@
           "application": {
             "filter": ""
           },
-          "expr": "gbe_storage_stats_GetJetDropsByJetIDDuration",
+          "expr": "gbe_storage_stats_GetIncompletePulsesDuration",
           "format": "time_series",
           "functions": [],
           "group": {
@@ -1936,7 +1936,7 @@
       "timeFrom": null,
       "timeRegions": [],
       "timeShift": null,
-      "title": "The duration of the GetJetDropsByJetID",
+      "title": "The duration of the GetIncompletePulses",
       "tooltip": {
         "shared": true,
         "sort": 2,
@@ -2121,7 +2121,7 @@
         "y": 73
       },
       "hiddenSeries": false,
-      "id": 54,
+      "id": 56,
       "legend": {
         "avg": false,
         "current": false,
@@ -2152,7 +2152,7 @@
           "application": {
             "filter": ""
           },
-          "expr": "gbe_storage_stats_GetNextSavedPulseDuration",
+          "expr": "gbe_storage_stats_GetJetDropsByJetIDDuration",
           "format": "time_series",
           "functions": [],
           "group": {
@@ -2190,7 +2190,7 @@
       "timeFrom": null,
       "timeRegions": [],
       "timeShift": null,
-      "title": "The duration of the GetNextSavedPulse",
+      "title": "The duration of the GetJetDropsByJetID",
       "tooltip": {
         "shared": true,
         "sort": 2,
@@ -2375,7 +2375,7 @@
         "y": 82
       },
       "hiddenSeries": false,
-      "id": 52,
+      "id": 54,
       "legend": {
         "avg": false,
         "current": false,
@@ -2406,7 +2406,7 @@
           "application": {
             "filter": ""
           },
-          "expr": "gbe_storage_stats_GetPulseDuration",
+          "expr": "gbe_storage_stats_GetNextSavedPulseDuration",
           "format": "time_series",
           "functions": [],
           "group": {
@@ -2444,7 +2444,7 @@
       "timeFrom": null,
       "timeRegions": [],
       "timeShift": null,
-      "title": "The duration of the GetPulse",
+      "title": "The duration of the GetNextSavedPulse",
       "tooltip": {
         "shared": true,
         "sort": 2,
@@ -2627,6 +2627,133 @@
         "w": 12,
         "x": 12,
         "y": 91
+      },
+      "hiddenSeries": false,
+      "id": 52,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "options": {
+        "dataLinks": []
+      },
+      "percentage": false,
+      "pluginVersion": "7.1.1",
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "application": {
+            "filter": ""
+          },
+          "expr": "gbe_storage_stats_GetPulseDuration",
+          "format": "time_series",
+          "functions": [],
+          "group": {
+            "filter": ""
+          },
+          "hide": false,
+          "host": {
+            "filter": ""
+          },
+          "instant": false,
+          "interval": "",
+          "intervalFactor": 1,
+          "item": {
+            "filter": ""
+          },
+          "legendFormat": "{{ job }} - {{ instance }} - {{ quantile }}",
+          "mode": 0,
+          "options": {
+            "showDisabledItems": false,
+            "skipEmptyValues": false
+          },
+          "refId": "A",
+          "resultFormat": "time_series",
+          "table": {
+            "skipEmptyValues": false
+          },
+          "triggers": {
+            "acknowledged": 2,
+            "count": true,
+            "minSeverity": 3
+          }
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "The duration of the GetPulse",
+      "tooltip": {
+        "shared": true,
+        "sort": 2,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "s",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "$datasource",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {}
+        },
+        "overrides": []
+      },
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 12,
+        "y": 100
       },
       "hiddenSeries": false,
       "id": 50,
@@ -2813,7 +2940,7 @@
     ]
   },
   "time": {
-    "from": "now-5m",
+    "from": "now-30m",
     "to": "now"
   },
   "timepicker": {
@@ -2844,5 +2971,5 @@
   "timezone": "browser",
   "title": "GBE Storage",
   "uid": "GBE_STORAGE_ID",
-  "version": 1
+  "version": 4
 }
