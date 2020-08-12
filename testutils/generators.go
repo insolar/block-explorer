@@ -382,11 +382,12 @@ func RandomString(n int) string {
 }
 
 // generate records with split JetDrops
-func GenerateRecordsWIthSplitJetDrops(pn insolar.PulseNumber, depth int, recordsInJetDrop int) []*exporter.Record {
+func GenerateRecordsWIthSplitJetDrops(pn insolar.PulseNumber, depth int, recordsInJetDrop int) (
+	records []*exporter.Record, jetDropTree map[insolar.PulseNumber]map[insolar.JetID][][]byte) {
 	result := make([]*exporter.Record, 0)
 	jdTree := GenerateJetIDTree(pn, depth)
 	for p, jds := range jdTree {
-		for _, jd := range jds {
+		for jd := range jds {
 			records := GenerateRecordsSilence(recordsInJetDrop)
 			for _, r := range records {
 				r.Record.ID = gen.IDWithPulse(p)
@@ -396,26 +397,30 @@ func GenerateRecordsWIthSplitJetDrops(pn insolar.PulseNumber, depth int, records
 			result = append(result, records...)
 		}
 	}
-	return result
+	return result, jdTree
 }
 
 // Generate map of pulses and related list of splitted JetDrops
-func GenerateJetIDTree(pn insolar.PulseNumber, depth int) map[insolar.PulseNumber][]insolar.JetID {
+func GenerateJetIDTree(pn insolar.PulseNumber, depth int) map[insolar.PulseNumber]map[insolar.JetID][][]byte {
 	timeout := time.After(5 * time.Second)
-	result := make(map[insolar.PulseNumber][]insolar.JetID)
+	result := make(map[insolar.PulseNumber]map[insolar.JetID][][]byte)
 	for {
 		select {
 		case <-timeout:
-			return map[insolar.PulseNumber][]insolar.JetID{}
+			return map[insolar.PulseNumber]map[insolar.JetID][][]byte{}
 		default:
 		}
 		rootJetID := *insolar.NewJetID(20, gen.IDWithPulse(pn).Bytes())
 		if !isUniqueJetID(rootJetID) {
 			continue
 		}
-		result[pn] = []insolar.JetID{rootJetID}
+		familyJetDropIDMap := make(map[insolar.JetID][][]byte)
+		prevHashFirst := GenerateRandBytes()
+		prevHashSecond := GenerateRandBytes()
+		familyJetDropIDMap[rootJetID] = [][]byte{prevHashFirst, prevHashSecond, nil}
+		result[pn] = familyJetDropIDMap
 
-		childs := siblings(rootJetID, pn, depth)
+		childs := siblings(rootJetID, pn, depth, [][]byte{prevHashFirst, prevHashSecond})
 		for p, c := range childs {
 			result[p] = c
 		}
@@ -424,33 +429,41 @@ func GenerateJetIDTree(pn insolar.PulseNumber, depth int) map[insolar.PulseNumbe
 	}
 }
 
-func siblings(parent insolar.JetID, parentPn insolar.PulseNumber, depth int) map[insolar.PulseNumber][]insolar.JetID {
+func siblings(parent insolar.JetID, parentPn insolar.PulseNumber, depth int, prevJetDropHashes [][]byte) map[insolar.PulseNumber]map[insolar.JetID][][]byte {
 	if depth == 0 {
 		return nil
 	}
 
 	pn := parentPn
-	result := make(map[insolar.PulseNumber][]insolar.JetID)
+	result := make(map[insolar.PulseNumber]map[insolar.JetID][][]byte)
 	left, right := jet.Siblings(parent)
 	pn += 10
-	result[pn] = []insolar.JetID{left, right}
 
-	l := siblings(left, pn, depth-1)
-	for k, v := range l {
-		if jds := result[k]; jds == nil {
-			result[k] = v
+	familyJetDropIDMap := make(map[insolar.JetID][][]byte)
+	familyJetDropIDMap[left] = [][]byte{GenerateRandBytes(), GenerateRandBytes(), prevJetDropHashes[0]}
+	familyJetDropIDMap[right] = [][]byte{GenerateRandBytes(), GenerateRandBytes(), prevJetDropHashes[1]}
+	result[pn] = familyJetDropIDMap
+
+	l := siblings(left, pn, depth-1, familyJetDropIDMap[left])
+	for p, j := range l {
+		if jds := result[p]; jds == nil {
+			result[p] = j
 		} else {
-			jds = append(jds, v...)
-			result[k] = jds
+			for jd, b := range j {
+				jds[jd] = b
+			}
+			result[p] = jds
 		}
 	}
-	r := siblings(right, pn, depth-1)
-	for k, v := range r {
-		if jds := result[k]; jds == nil {
-			result[k] = v
+	r := siblings(right, pn, depth-1, familyJetDropIDMap[right])
+	for p, j := range r {
+		if jds := result[p]; jds == nil {
+			result[p] = j
 		} else {
-			jds = append(jds, v...)
-			result[k] = jds
+			for jd, b := range j {
+				jds[jd] = b
+			}
+			result[p] = jds
 		}
 	}
 
