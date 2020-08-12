@@ -19,6 +19,7 @@ import (
 	"github.com/insolar/block-explorer/instrumentation/belogger"
 )
 
+// pulseMaintainer checks if we have not finished pulse data in db and reloads data
 func (c *Controller) pulseMaintainer(ctx context.Context) {
 	log := belogger.FromContext(ctx)
 	for {
@@ -60,6 +61,7 @@ func eraseJetDropRegister(ctx context.Context, c *Controller, log log.Logger) {
 					c.jetDropRegisterLock.Lock()
 					defer c.jetDropRegisterLock.Unlock()
 					delete(c.jetDropRegister, p)
+					DataQueue.Dec()
 				}()
 				return true
 
@@ -68,10 +70,12 @@ func eraseJetDropRegister(ctx context.Context, c *Controller, log log.Logger) {
 			}
 		} else {
 			go c.reloadData(ctx, p.PrevPulseNumber, p.PulseNo)
+			CurrentIncompletePulse.Set(float64(p.PrevPulseNumber))
 		}
 	}
 }
 
+// pulseSequence check if we have spaces between pulses and rerequests this pulses
 func (c *Controller) pulseSequence(ctx context.Context) {
 	emptyPulse := models.Pulse{}
 	for {
@@ -88,6 +92,7 @@ func (c *Controller) pulseSequence(ctx context.Context) {
 			defer c.sequentialPulseLock.Unlock()
 			log := belogger.FromContext(ctx)
 			log = log.WithField("sequential_pulse", c.sequentialPulse)
+			CurrentSeqPulse.Set(float64(c.sequentialPulse.PulseNumber))
 
 			nextSequential, err = c.storage.GetPulseByPrev(c.sequentialPulse)
 			if err != nil && !gorm.IsRecordNotFoundError(err) {

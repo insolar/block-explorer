@@ -16,7 +16,7 @@ import (
 type JetDropsExtractorMock struct {
 	t minimock.Tester
 
-	funcGetJetDrops          func(ctx context.Context) (ch1 <-chan *types.PlatformJetDrops)
+	funcGetJetDrops          func(ctx context.Context) (ch1 <-chan *types.PlatformPulseData)
 	inspectFuncGetJetDrops   func(ctx context.Context)
 	afterGetJetDropsCounter  uint64
 	beforeGetJetDropsCounter uint64
@@ -87,7 +87,7 @@ type JetDropsExtractorMockGetJetDropsParams struct {
 
 // JetDropsExtractorMockGetJetDropsResults contains results of the JetDropsExtractor.GetJetDrops
 type JetDropsExtractorMockGetJetDropsResults struct {
-	ch1 <-chan *types.PlatformJetDrops
+	ch1 <-chan *types.PlatformPulseData
 }
 
 // Expect sets up expected params for JetDropsExtractor.GetJetDrops
@@ -122,7 +122,7 @@ func (mmGetJetDrops *mJetDropsExtractorMockGetJetDrops) Inspect(f func(ctx conte
 }
 
 // Return sets up results that will be returned by JetDropsExtractor.GetJetDrops
-func (mmGetJetDrops *mJetDropsExtractorMockGetJetDrops) Return(ch1 <-chan *types.PlatformJetDrops) *JetDropsExtractorMock {
+func (mmGetJetDrops *mJetDropsExtractorMockGetJetDrops) Return(ch1 <-chan *types.PlatformPulseData) *JetDropsExtractorMock {
 	if mmGetJetDrops.mock.funcGetJetDrops != nil {
 		mmGetJetDrops.mock.t.Fatalf("JetDropsExtractorMock.GetJetDrops mock is already set by Set")
 	}
@@ -135,7 +135,7 @@ func (mmGetJetDrops *mJetDropsExtractorMockGetJetDrops) Return(ch1 <-chan *types
 }
 
 //Set uses given function f to mock the JetDropsExtractor.GetJetDrops method
-func (mmGetJetDrops *mJetDropsExtractorMockGetJetDrops) Set(f func(ctx context.Context) (ch1 <-chan *types.PlatformJetDrops)) *JetDropsExtractorMock {
+func (mmGetJetDrops *mJetDropsExtractorMockGetJetDrops) Set(f func(ctx context.Context) (ch1 <-chan *types.PlatformPulseData)) *JetDropsExtractorMock {
 	if mmGetJetDrops.defaultExpectation != nil {
 		mmGetJetDrops.mock.t.Fatalf("Default expectation is already set for the JetDropsExtractor.GetJetDrops method")
 	}
@@ -164,13 +164,13 @@ func (mmGetJetDrops *mJetDropsExtractorMockGetJetDrops) When(ctx context.Context
 }
 
 // Then sets up JetDropsExtractor.GetJetDrops return parameters for the expectation previously defined by the When method
-func (e *JetDropsExtractorMockGetJetDropsExpectation) Then(ch1 <-chan *types.PlatformJetDrops) *JetDropsExtractorMock {
+func (e *JetDropsExtractorMockGetJetDropsExpectation) Then(ch1 <-chan *types.PlatformPulseData) *JetDropsExtractorMock {
 	e.results = &JetDropsExtractorMockGetJetDropsResults{ch1}
 	return e.mock
 }
 
 // GetJetDrops implements interfaces.JetDropsExtractor
-func (mmGetJetDrops *JetDropsExtractorMock) GetJetDrops(ctx context.Context) (ch1 <-chan *types.PlatformJetDrops) {
+func (mmGetJetDrops *JetDropsExtractorMock) GetJetDrops(ctx context.Context) (ch1 <-chan *types.PlatformPulseData) {
 	mm_atomic.AddUint64(&mmGetJetDrops.beforeGetJetDropsCounter, 1)
 	defer mm_atomic.AddUint64(&mmGetJetDrops.afterGetJetDropsCounter, 1)
 
