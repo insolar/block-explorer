@@ -400,7 +400,7 @@ func GenerateRecordsWIthSplitJetDrops(pn insolar.PulseNumber, depth int, records
 	return result, jdTree
 }
 
-// Generate map of pulses and related list of splitted JetDrops
+// Generate tree of splitted JetDrops with specified depth
 func GenerateJetIDTree(pn insolar.PulseNumber, depth int) map[insolar.PulseNumber]map[insolar.JetID][][]byte {
 	timeout := time.After(5 * time.Second)
 	result := make(map[insolar.PulseNumber]map[insolar.JetID][][]byte)

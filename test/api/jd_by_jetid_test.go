@@ -348,6 +348,7 @@ func TestGetJetDropsByJetID_emptyJetID(t *testing.T) {
 }
 
 func TestPrevNextJetDrops_JetDropsByJetID(t *testing.T) {
+	t.Log("C5672 Get JetDrops by JetID, response contains Prev and Next JetDropIDs")
 	ts := integration.NewBlockExplorerTestSetup(t).WithHTTPServer(t)
 	defer ts.Stop(t)
 
@@ -356,8 +357,9 @@ func TestPrevNextJetDrops_JetDropsByJetID(t *testing.T) {
 	records, jetDropTree := testutils.GenerateRecordsWIthSplitJetDrops(lowestPulse, depth, 1)
 	require.NoError(t, heavymock.ImportRecords(ts.ConMngr.ImporterClient, records))
 
-	// this func based on heavymock.GetLowestUnsentPulse() with one addition: it sets PrevDropHashes
-	// for the existing records
+	// this func based on heavymock.GetLowestUnsentPulse() with one addition:
+	// it sets PrevDropHashes for the existing records.
+	// It is expected that BE will process Prev and Next JetDropIDs for JetDrops.
 	getLowestUnsentPulseOverride := func(importer *heavymock.ImporterServer) (insolar.PulseNumber, []exporter.JetDropContinue) {
 		pulse := insolar.PulseNumber(1<<32 - 1)
 		jets := map[insolar.PulseNumber]map[insolar.JetID]exporter.JetDropContinue{}
@@ -400,13 +402,6 @@ func TestPrevNextJetDrops_JetDropsByJetID(t *testing.T) {
 
 	ts.WaitRecordsCount(t, len(records), 5000)
 	c := GetHTTPClient()
-
-	jetIDs := make(map[string]bool, 0)
-	for _, r := range records {
-		toString := converter.JetIDToString(r.Record.JetID)
-		t.Log(toString)
-		jetIDs[toString] = true
-	}
 
 	checkPrevJetDropIDListResponse := func(jd client.JetDropByIdResponse200) {
 		require.Len(t, jd.PrevJetDropId, 2)
