@@ -110,7 +110,7 @@ type StorageAPIFetcher interface {
 	// GetPulse returns pulse with provided pulse number from db.
 	GetPulse(pulseNumber int64) (models.Pulse, error)
 	// GetPulse returns pulses from db.
-	GetPulses(fromPulse *int64, timestampLte, timestampGte, pulseNumberLte, pulseNumberLt, pulseNumberGte, pulseNumberGt *int64, limit, offset int) ([]models.Pulse, int, error)
+	GetPulses(fromPulse *int64, timestampLte, timestampGte, pulseNumberLte, pulseNumberLt, pulseNumberGte, pulseNumberGt *int64, sortByAsc bool, limit, offset int) ([]models.Pulse, int, error)
 	// GetJetDropsWithParams returns jetDrops for provided pulse with limit and offset.
 	GetJetDropsWithParams(pulse models.Pulse, fromJetDropID *models.JetDropID, limit int, offset int) ([]models.JetDrop, int, error)
 	// GetJetDropByID returns JetDrop by JetDropID, with slices of previous jetDrops and next jetDrops.

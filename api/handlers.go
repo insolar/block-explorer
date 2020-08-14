@@ -351,6 +351,11 @@ func (s *Server) Pulses(ctx echo.Context, params server.PulsesParams) error {
 		}
 	}
 
+	sortByAsc, validationFailures := checkSortByPulseNumberParameter(params.SortBy)
+	if validationFailures != nil {
+		failures = append(failures, validationFailures...)
+	}
+
 	if failures != nil {
 		response := server.CodeValidationError{
 			Code:               NullableString(http.StatusText(http.StatusBadRequest)),
@@ -373,6 +378,7 @@ func (s *Server) Pulses(ctx echo.Context, params server.PulsesParams) error {
 		fromPulseString,
 		timestampLte, timestampGte,
 		pulseNumberLte, pulseNumberLt, pulseNumberGte, pulseNumberGt,
+		sortByAsc,
 		limit, offset,
 	)
 	if err != nil {
@@ -717,6 +723,28 @@ func checkLimitOffset(l *server.Limit, o *server.OffsetParam) (int, int, []serve
 func checkSortByPulseParameter(sortBy *server.SortByPulse) (bool, []server.CodeValidationFailures) {
 	pnAsc := string(server.SortByPulse_pulse_number_asc_jet_id_desc)
 	pnDesc := string(server.SortByPulse_pulse_number_desc_jet_id_asc)
+	var sortByPnAsc bool
+	if sortBy != nil {
+		s := string(*sortBy)
+		if s != pnAsc && s != pnDesc {
+			errResponse := []server.CodeValidationFailures{
+				{
+					Property:      NullableString("sort_by"),
+					FailureReason: NullableString(fmt.Sprintf("query parameter 'sort_by' should be '%s' or '%s'", pnAsc, pnDesc)),
+				},
+			}
+			return false, errResponse
+		}
+		if s == pnAsc {
+			sortByPnAsc = true
+		}
+	}
+	return sortByPnAsc, nil
+}
+
+func checkSortByPulseNumberParameter(sortBy *server.SortByPulseNumber) (bool, []server.CodeValidationFailures) {
+	pnAsc := string(server.SortByPulseNumber_pulse_number_asc)
+	pnDesc := string(server.SortByPulseNumber_pulse_number_desc)
 	var sortByPnAsc bool
 	if sortBy != nil {
 		s := string(*sortBy)
