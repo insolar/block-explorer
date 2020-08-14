@@ -26,7 +26,7 @@ func TestTransformer_withDifferentJetId(t *testing.T) {
 	var differentJetIdCount = 2
 	recordGenFunc := testutils.GenerateRecords(differentJetIdCount)
 
-	jetDrops := new(types.PlatformJetDrops)
+	jetDrops := new(types.PlatformPulseData)
 	jets := []exporter.JetDropContinue{}
 	for i := 0; i < differentJetIdCount; i++ {
 		record, err := recordGenFunc()
@@ -45,7 +45,7 @@ func TestTransformer_withDifferentJetId(t *testing.T) {
 		Jets:             jets,
 	}
 
-	dropsCh := make(chan *types.PlatformJetDrops)
+	dropsCh := make(chan *types.PlatformPulseData)
 	var transformer interfaces.Transformer = NewMainNetTransformer(dropsCh)
 	err := transformer.Start(ctx)
 	require.NoError(t, err)

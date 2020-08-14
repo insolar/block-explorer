@@ -26,7 +26,7 @@ import (
 )
 
 // Transform transforms thr row JetDrops to canonical JetDrops
-func Transform(ctx context.Context, jd *types.PlatformJetDrops) ([]*types.JetDrop, error) {
+func Transform(ctx context.Context, jd *types.PlatformPulseData) ([]*types.JetDrop, error) {
 	pulseData := getPulseData(jd.Pulse)
 
 	m, err := getRecords(jd)
@@ -190,7 +190,7 @@ func getPulseData(pn *exporter.FullPulse) types.Pulse {
 }
 
 // getRecords - order records to map by jetid
-func getRecords(jd *types.PlatformJetDrops) (map[insolar.JetID][]types.Record, error) {
+func getRecords(jd *types.PlatformPulseData) (map[insolar.JetID][]types.Record, error) {
 	// map need to collect records by JetID
 	res := make(map[insolar.JetID][]types.Record)
 	if jd == nil {
@@ -216,6 +216,7 @@ func getRecords(jd *types.PlatformJetDrops) (map[insolar.JetID][]types.Record, e
 		}
 		// collect records with some jetID
 		res[r.Record.JetID] = append(res[r.Record.JetID], record)
+		TransformedRecords.Inc()
 	}
 
 	return res, nil

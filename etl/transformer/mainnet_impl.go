@@ -14,15 +14,15 @@ import (
 
 type MainNetTransformer struct {
 	stopSignal      chan bool
-	extractorChan   <-chan *types.PlatformJetDrops
+	extractorChan   <-chan *types.PlatformPulseData
 	transformerChan chan *types.JetDrop
 }
 
-func NewMainNetTransformer(ch <-chan *types.PlatformJetDrops) *MainNetTransformer {
+func NewMainNetTransformer(ch <-chan *types.PlatformPulseData) *MainNetTransformer {
 	return &MainNetTransformer{
 		stopSignal:      make(chan bool, 1),
 		extractorChan:   ch,
-		transformerChan: make(chan *types.JetDrop),
+		transformerChan: make(chan *types.JetDrop, 1000),
 	}
 }
 
@@ -64,8 +64,10 @@ func (m *MainNetTransformer) run(ctx context.Context) {
 	select {
 	case jd := <-m.extractorChan:
 		transform, err := Transform(ctx, jd)
+		TransformedPulses.Inc()
 		if err != nil {
 			belogger.FromContext(ctx).Errorf("cannot transform jet drop %v, error: %s", jd, err.Error())
+			Errors.Inc()
 			return
 		}
 		go func() {
@@ -74,8 +76,9 @@ func (m *MainNetTransformer) run(ctx context.Context) {
 			} else {
 				belogger.FromContext(ctx).
 					Infof("transformed jet drop to canonical for pulse: %d", transform[0].MainSection.Start.PulseData.PulseNo)
-				for _, t := range transform {
-					m.transformerChan <- t
+				for _, jetDrop := range transform {
+					m.transformerChan <- jetDrop
+					FromTransformerDataQueue.Set(float64(len(m.transformerChan)))
 				}
 			}
 		}()

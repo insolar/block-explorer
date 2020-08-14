@@ -58,12 +58,12 @@ func TestIntegrationWithDb_GetRecords(t *testing.T) {
 	require.True(t, reply.Ok)
 	require.Len(t, records, pulsesNumber)
 
-	jetDrops := make([]types.PlatformJetDrops, 0)
+	jetDrops := make([]types.PlatformPulseData, 0)
 	jetsInPulse := map[insolar.PulseNumber][]exporter.JetDropContinue{}
 	for _, r := range records {
 		p, err := clients.GetFullPulse(uint32(r.Record.ID.Pulse()), nil)
 		require.NoError(t, err)
-		jetDrop := types.PlatformJetDrops{Pulse: p,
+		jetDrop := types.PlatformPulseData{Pulse: p,
 			Records: []*exporter.Record{r}}
 		jetDrops = append(jetDrops, jetDrop)
 		jetsInPulse[r.Record.ID.Pulse()] = append(jetsInPulse[r.Record.ID.Pulse()], exporter.JetDropContinue{JetID: r.Record.JetID, Hash: testutils.GenerateRandBytes()})
@@ -146,7 +146,7 @@ func TestIntegrationWithDb_GetRecords_ErrorSameRecords(t *testing.T) {
 	require.True(t, reply.Ok)
 	require.Len(t, records, pulsesNumber*recordsInPulse)
 
-	jetDrops := make([]types.PlatformJetDrops, 0)
+	jetDrops := make([]types.PlatformPulseData, 0)
 	var notSavedRefs [][]byte
 	var jetsInPulse []exporter.JetDropContinue
 	var recs []*exporter.Record
@@ -160,7 +160,7 @@ func TestIntegrationWithDb_GetRecords_ErrorSameRecords(t *testing.T) {
 		recs = append(recs, r)
 		jetsInPulse = append(jetsInPulse, exporter.JetDropContinue{JetID: r.Record.JetID, Hash: testutils.GenerateRandBytes()})
 		if i%recordsInPulse == (recordsInPulse - 1) {
-			jetDrop := types.PlatformJetDrops{Pulse: p,
+			jetDrop := types.PlatformPulseData{Pulse: p,
 				Records: recs}
 			jetDrops = append(jetDrops, jetDrop)
 			recs = []*exporter.Record{}

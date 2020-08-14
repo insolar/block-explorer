@@ -106,7 +106,6 @@ func (pg *PostgresCollector) setStats(variableName string, variableValue int) {
 		})
 
 		pg.status[variableName] = gauge
-		_ = prometheus.Register(gauge)
 	}
 
 	gauge.Set(float64(variableValue))

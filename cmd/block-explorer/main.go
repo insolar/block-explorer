@@ -120,22 +120,22 @@ func main() {
 
 	repository := storage.NewStorage(db)
 
-	controller, err := controller.NewController(cfg.Controller, platformExtractor, repository)
+	gbeController, err := controller.NewController(cfg.Controller, platformExtractor, repository)
 	if err != nil {
-		logger.Fatal("cannot initialize controller: ", err)
+		logger.Fatal("cannot initialize gbeController: ", err)
 	}
-	err = controller.Start(ctx)
+	err = gbeController.Start(ctx)
 	if err != nil {
-		logger.Fatal("cannot start controller: ", err)
+		logger.Fatal("cannot start gbeController: ", err)
 	}
 	defer func() {
-		err := controller.Stop(ctx)
+		err := gbeController.Stop(ctx)
 		if err != nil {
-			logger.Fatal("cannot stop controller: ", err)
+			logger.Fatal("cannot stop gbeController: ", err)
 		}
 	}()
 
-	proc := processor.NewProcessor(mainNetTransformer, repository, controller, cfg.Processor.Workers)
+	proc := processor.NewProcessor(mainNetTransformer, repository, gbeController, cfg.Processor.Workers)
 	err = proc.Start(ctx)
 	if err != nil {
 		logger.Fatal("cannot start processor: ", err)
@@ -155,6 +155,9 @@ func main() {
 			storage.NewPostgresCollector(nil, db),
 			storage.NewStatsCollector(db, nil),
 			storage.Metrics{},
+			extractor.Metrics{},
+			transformer.Metrics{},
+			controller.Metrics{},
 		},
 	}
 

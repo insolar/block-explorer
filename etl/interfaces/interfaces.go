@@ -35,7 +35,7 @@ type JetDropsExtractor interface {
 	Starter
 	Stopper
 	// GetJetDrops stores JetDrop data in the main JetDrop channel
-	GetJetDrops(ctx context.Context) <-chan *types.PlatformJetDrops
+	GetJetDrops(ctx context.Context) <-chan *types.PlatformPulseData
 	// LoadJetDrops loads JetDrop data between pulse numbers: (fromPulseNumber, toPulseNumber]
 	LoadJetDrops(ctx context.Context, fromPulseNumber int64, toPulseNumber int64) error
 }

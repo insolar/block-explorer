@@ -108,29 +108,23 @@ func (s Metrics) Refresh() {
 }
 
 func (s Metrics) Metrics(p *metrics.Prometheus) []prometheus.Collector {
-	collectors := make([]prometheus.Collector, 0)
-
-	collectors = append(collectors, SaveJetDropDataDuration)
-	collectors = append(collectors, SavePulseDuration)
-	collectors = append(collectors, CompletePulseDuration)
-	collectors = append(collectors, SequencePulseDuration)
-	collectors = append(collectors, GetRecordDuration)
-	collectors = append(collectors, GetLifelineDuration)
-	collectors = append(collectors, GetPulseDuration)
-	collectors = append(collectors, GetPulsesDuration)
-	collectors = append(collectors, GetRecordsByJetDropDuration)
-	collectors = append(collectors, GetIncompletePulsesDuration)
-	collectors = append(collectors, GetPulseByPrevDuration)
-	collectors = append(collectors, GetSequentialPulseDuration)
-	collectors = append(collectors, GetNextSavedPulseDuration)
-	collectors = append(collectors, GetJetDropsDuration)
-	collectors = append(collectors, GetJetDropsWithParamsDuration)
-	collectors = append(collectors, GetJetDropByIDDuration)
-	collectors = append(collectors, GetJetDropsByJetIDDuration)
-
-	for _, collector := range collectors {
-		_ = prometheus.Register(collector)
+	return []prometheus.Collector{
+		SaveJetDropDataDuration,
+		SavePulseDuration,
+		CompletePulseDuration,
+		SequencePulseDuration,
+		GetRecordDuration,
+		GetLifelineDuration,
+		GetPulseDuration,
+		GetPulsesDuration,
+		GetRecordsByJetDropDuration,
+		GetIncompletePulsesDuration,
+		GetPulseByPrevDuration,
+		GetSequentialPulseDuration,
+		GetNextSavedPulseDuration,
+		GetJetDropsDuration,
+		GetJetDropsWithParamsDuration,
+		GetJetDropByIDDuration,
+		GetJetDropsByJetIDDuration,
 	}
-
-	return collectors
 }

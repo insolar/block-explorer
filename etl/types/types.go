@@ -15,8 +15,8 @@ func init() {
 	view.Unregister(&view.View{Name: "log_write_delays"})
 }
 
-// PlatformJetDrops represents on the missing struct in the Platform
-type PlatformJetDrops struct {
+// PlatformPulseData represents on the missing struct in the Platform
+type PlatformPulseData struct {
 	Pulse   *exporter.FullPulse
 	Records []*exporter.Record
 }
