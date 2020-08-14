@@ -775,6 +775,48 @@ func TestPulses_PulseNumberFilters(t *testing.T) {
 		require.EqualValues(t, 1, *received.Total)
 		require.EqualValues(t, fourthPulse.PulseNumber, *(*received.Result)[0].PulseNumber)
 	})
+
+	t.Run("sort_by asc", func(t *testing.T) {
+		resp, err := http.Get("http://" + apihost +
+			fmt.Sprintf("/api/v1/pulses?sort_by=%s", server.SortByPulseNumber_pulse_number_asc),
+		)
+
+		require.NoError(t, err)
+		require.Equal(t, http.StatusOK, resp.StatusCode)
+		bodyBytes, err := ioutil.ReadAll(resp.Body)
+		require.NoError(t, err)
+
+		var received server.PulsesResponse
+		err = json.Unmarshal(bodyBytes, &received)
+		require.NoError(t, err)
+		require.Len(t, *received.Result, 4)
+		require.EqualValues(t, 4, *received.Total)
+		require.EqualValues(t, firstPulse.PulseNumber, *(*received.Result)[0].PulseNumber)
+		require.EqualValues(t, secondPulse.PulseNumber, *(*received.Result)[1].PulseNumber)
+		require.EqualValues(t, thirdPulse.PulseNumber, *(*received.Result)[2].PulseNumber)
+		require.EqualValues(t, fourthPulse.PulseNumber, *(*received.Result)[3].PulseNumber)
+	})
+
+	t.Run("sort_by desc", func(t *testing.T) {
+		resp, err := http.Get("http://" + apihost +
+			fmt.Sprintf("/api/v1/pulses?sort_by=%s", server.SortByPulseNumber_pulse_number_desc),
+		)
+
+		require.NoError(t, err)
+		require.Equal(t, http.StatusOK, resp.StatusCode)
+		bodyBytes, err := ioutil.ReadAll(resp.Body)
+		require.NoError(t, err)
+
+		var received server.PulsesResponse
+		err = json.Unmarshal(bodyBytes, &received)
+		require.NoError(t, err)
+		require.Len(t, *received.Result, 4)
+		require.EqualValues(t, 4, *received.Total)
+		require.EqualValues(t, firstPulse.PulseNumber, *(*received.Result)[3].PulseNumber)
+		require.EqualValues(t, secondPulse.PulseNumber, *(*received.Result)[2].PulseNumber)
+		require.EqualValues(t, thirdPulse.PulseNumber, *(*received.Result)[1].PulseNumber)
+		require.EqualValues(t, fourthPulse.PulseNumber, *(*received.Result)[0].PulseNumber)
+	})
 }
 
 func TestServer_JetDropsByPulseNumber(t *testing.T) {
