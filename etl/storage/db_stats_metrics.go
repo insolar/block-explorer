@@ -74,11 +74,6 @@ func NewStatsCollector(db *gorm.DB, labels map[string]string) *DBStats {
 			ConstLabels: labels,
 		}),
 	}
-
-	for _, collector := range stats.Collectors() {
-		_ = prometheus.Register(collector)
-	}
-
 	return stats
 }
 
@@ -94,7 +89,7 @@ func (stats *DBStats) Set(dbStats sql.DBStats) {
 	stats.MaxLifetimeClosed.Set(float64(dbStats.MaxLifetimeClosed))
 }
 
-//Collectors returns collector in stats
+// Collectors returns collector in stats
 func (stats *DBStats) Collectors() (collector []prometheus.Collector) {
 	collector = append(collector, stats.MaxOpenConnections)
 	collector = append(collector, stats.OpenConnections)

@@ -186,7 +186,7 @@ func (e *PlatformExtractor) retrieveRecords(ctx context.Context, pu *exporter.Fu
 	logger := belogger.FromContext(cancelCtx)
 	log := logger.WithField("pulse_number", pu.PulseNumber)
 	log.Debug("retrieveRecords(): Start")
-	jetDrops := &types.PlatformPulseData{Pulse: pu} // save pulse info
+	pulseData := &types.PlatformPulseData{Pulse: pu} // save pulse info
 
 	for { // each portion
 		select {
@@ -195,7 +195,7 @@ func (e *PlatformExtractor) retrieveRecords(ctx context.Context, pu *exporter.Fu
 		default:
 		}
 		stream, err := e.client.Export(cancelCtx, &exporter.GetRecords{PulseNumber: pu.PulseNumber,
-			RecordNumber: uint32(len(jetDrops.Records)),
+			RecordNumber: uint32(len(pulseData.Records)),
 			Count:        e.batchSize},
 		)
 		if err != nil {
@@ -237,13 +237,13 @@ func (e *PlatformExtractor) retrieveRecords(ctx context.Context, pu *exporter.Fu
 			}
 			if resp.ShouldIterateFrom != nil || resp.Record.ID.Pulse() != pu.PulseNumber { // next pulse packet
 				closeStream(cancelCtx, stream)
-				e.mainPulseDataChan <- jetDrops
-				DataQueue.Set(float64(len(e.mainPulseDataChan)))
+				e.mainPulseDataChan <- pulseData
+				FromExtractorDataQueue.Set(float64(len(e.mainPulseDataChan)))
 				log.Debug("retrieveRecords(): Sent")
 				return // we have whole pulse
 			}
 
-			jetDrops.Records = append(jetDrops.Records, resp)
+			pulseData.Records = append(pulseData.Records, resp)
 			ReceivedRecords.Inc()
 		}
 	}

@@ -76,9 +76,9 @@ func (m *MainNetTransformer) run(ctx context.Context) {
 			} else {
 				belogger.FromContext(ctx).
 					Infof("transformed jet drop to canonical for pulse: %d", transform[0].MainSection.Start.PulseData.PulseNo)
-				for _, t := range transform {
-					m.transformerChan <- t
-					DataQueue.Set(float64(len(m.transformerChan)))
+				for _, jetDrop := range transform {
+					m.transformerChan <- jetDrop
+					FromTransformerDataQueue.Set(float64(len(m.transformerChan)))
 				}
 			}
 		}()

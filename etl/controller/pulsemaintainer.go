@@ -61,7 +61,7 @@ func eraseJetDropRegister(ctx context.Context, c *Controller, log log.Logger) {
 					c.jetDropRegisterLock.Lock()
 					defer c.jetDropRegisterLock.Unlock()
 					delete(c.jetDropRegister, p)
-					DataQueue.Dec()
+					IncompletePulsesQueue.Dec()
 				}()
 				return true
 

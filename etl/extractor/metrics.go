@@ -21,7 +21,7 @@ var (
 		Name: "gbe_extractor_process_count",
 		Help: "The number of processes fetching data from heavy",
 	})
-	DataQueue = prometheus.NewGauge(prometheus.GaugeOpts{
+	FromExtractorDataQueue = prometheus.NewGauge(prometheus.GaugeOpts{
 		Name: "gbe_extractor_data_queue",
 		Help: "The number of elements in extractor export data queue",
 	})
@@ -52,12 +52,12 @@ func (s Metrics) Refresh() {
 }
 
 func (s Metrics) Metrics(p *metrics.Prometheus) []prometheus.Collector {
-	_ = prometheus.Register(ExtractProcessCount)
-	_ = prometheus.Register(DataQueue)
-	_ = prometheus.Register(LastPulseFetched)
-	_ = prometheus.Register(Errors)
-	_ = prometheus.Register(ReceivedPulses)
-	_ = prometheus.Register(ReceivedRecords)
-
-	return []prometheus.Collector{}
+	return []prometheus.Collector{
+		ExtractProcessCount,
+		FromExtractorDataQueue,
+		LastPulseFetched,
+		Errors,
+		ReceivedRecords,
+		ReceivedPulses,
+	}
 }

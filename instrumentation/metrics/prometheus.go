@@ -73,6 +73,13 @@ func (p *Prometheus) Initialize() error { // can be called repeatedly
 			p.collectors = append(p.collectors, mc.Metrics(p)...)
 		}
 
+		for _, collector := range p.collectors {
+			err := prometheus.Register(collector)
+			if err != nil {
+				p.Logger.Error(err)
+			}
+		}
+
 		go func() {
 			for range time.Tick(p.Config.RefreshInterval) {
 				for _, v := range p.MetricsRefreshers {

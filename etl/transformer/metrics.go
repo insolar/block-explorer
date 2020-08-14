@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	DataQueue = prometheus.NewGauge(prometheus.GaugeOpts{
+	FromTransformerDataQueue = prometheus.NewGauge(prometheus.GaugeOpts{
 		Name: "gbe_transformer_data_queue",
 		Help: "The number of jetdrops in transformer export data queue",
 	})
@@ -37,10 +37,10 @@ func (s Metrics) Refresh() {
 }
 
 func (s Metrics) Metrics(p *metrics.Prometheus) []prometheus.Collector {
-	_ = prometheus.Register(DataQueue)
-	_ = prometheus.Register(TransformedPulses)
-	_ = prometheus.Register(TransformedRecords)
-	_ = prometheus.Register(Errors)
-
-	return []prometheus.Collector{}
+	return []prometheus.Collector{
+		FromTransformerDataQueue,
+		TransformedRecords,
+		TransformedPulses,
+		Errors,
+	}
 }

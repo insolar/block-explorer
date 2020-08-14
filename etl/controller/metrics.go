@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	DataQueue = prometheus.NewGauge(prometheus.GaugeOpts{
+	IncompletePulsesQueue = prometheus.NewGauge(prometheus.GaugeOpts{
 		Name: "gbe_controller_data_queue",
 		Help: "The number of pulses in controller's incomplete pulses queue",
 	})
@@ -33,9 +33,9 @@ func (s Metrics) Refresh() {
 }
 
 func (s Metrics) Metrics(p *metrics.Prometheus) []prometheus.Collector {
-	_ = prometheus.Register(DataQueue)
-	_ = prometheus.Register(CurrentSeqPulse)
-	_ = prometheus.Register(CurrentIncompletePulse)
-
-	return []prometheus.Collector{}
+	return []prometheus.Collector{
+		IncompletePulsesQueue,
+		CurrentSeqPulse,
+		CurrentSeqPulse,
+	}
 }
