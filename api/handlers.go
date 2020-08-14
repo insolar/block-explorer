@@ -172,51 +172,19 @@ func (s *Server) JetDropsByJetID(ctx echo.Context, jetID server.JetIdPath, param
 
 	var pulseNumberLte, pulseNumberLt, pulseNumberGte, pulseNumberGt *int64
 	if params.PulseNumberGt != nil {
-		unptr := int(*params.PulseNumberGt)
-		_int64 := int64(unptr)
-		pulseNumberGt = &_int64
-		if !pulse.IsValidAsPulseNumber(unptr) {
-			failures = append(failures, server.CodeValidationFailures{
-				FailureReason: NullableString("invalid value"),
-				Property:      NullableString("pulse_number_gt"),
-			})
-		}
+		pulseNumberGt, failures = getPulseNumberValue(int(*params.PulseNumberGt), "pulse_number_gt", failures)
 	}
 
 	if params.PulseNumberGte != nil {
-		unptr := int(*params.PulseNumberGte)
-		_int64 := int64(unptr)
-		pulseNumberGte = &_int64
-		if !pulse.IsValidAsPulseNumber(unptr) {
-			failures = append(failures, server.CodeValidationFailures{
-				FailureReason: NullableString("invalid value"),
-				Property:      NullableString("pulse_number_gte"),
-			})
-		}
+		pulseNumberGte, failures = getPulseNumberValue(int(*params.PulseNumberGte), "pulse_number_gte", failures)
 	}
 
 	if params.PulseNumberLt != nil {
-		unptr := int(*params.PulseNumberLt)
-		_int64 := int64(unptr)
-		pulseNumberLt = &_int64
-		if !pulse.IsValidAsPulseNumber(unptr) {
-			failures = append(failures, server.CodeValidationFailures{
-				FailureReason: NullableString("invalid value"),
-				Property:      NullableString("pulse_number_lt"),
-			})
-		}
+		pulseNumberLt, failures = getPulseNumberValue(int(*params.PulseNumberLt), "pulse_number_lt", failures)
 	}
 
 	if params.PulseNumberLte != nil {
-		unptr := int(*params.PulseNumberLte)
-		_int64 := int64(unptr)
-		pulseNumberLte = &_int64
-		if !pulse.IsValidAsPulseNumber(unptr) {
-			failures = append(failures, server.CodeValidationFailures{
-				FailureReason: NullableString("invalid value"),
-				Property:      NullableString("pulse_number_lte"),
-			})
-		}
+		pulseNumberLte, failures = getPulseNumberValue(int(*params.PulseNumberLte), "pulse_number_lte", failures)
 	}
 
 	if len(failures) > 0 {
@@ -284,6 +252,18 @@ func (s *Server) JetDropsByJetID(ctx echo.Context, jetID server.JetIdPath, param
 	})
 }
 
+func getPulseNumberValue(unptr int, propertyName string, failures []server.CodeValidationFailures) (*int64, []server.CodeValidationFailures) {
+	_int64 := int64(unptr)
+	pulseNumber := &_int64
+	if !pulse.IsValidAsPulseNumber(unptr) {
+		failures = append(failures, server.CodeValidationFailures{
+			FailureReason: NullableString("invalid value"),
+			Property:      NullableString(propertyName),
+		})
+	}
+	return pulseNumber, failures
+}
+
 func (s *Server) Pulses(ctx echo.Context, params server.PulsesParams) error {
 	limit, offset, failures := checkLimitOffset(params.Limit, params.Offset)
 
@@ -304,51 +284,16 @@ func (s *Server) Pulses(ctx echo.Context, params server.PulsesParams) error {
 
 	var pulseNumberLte, pulseNumberLt, pulseNumberGte, pulseNumberGt *int64
 	if params.PulseNumberGt != nil {
-		unptr := int(*params.PulseNumberGt)
-		_int64 := int64(unptr)
-		pulseNumberGt = &_int64
-		if !pulse.IsValidAsPulseNumber(unptr) {
-			failures = append(failures, server.CodeValidationFailures{
-				FailureReason: NullableString("invalid value"),
-				Property:      NullableString("pulse_number_gt"),
-			})
-		}
+		pulseNumberGt, failures = getPulseNumberValue(int(*params.PulseNumberGt), "pulse_number_gt", failures)
 	}
-
 	if params.PulseNumberGte != nil {
-		unptr := int(*params.PulseNumberGte)
-		_int64 := int64(unptr)
-		pulseNumberGte = &_int64
-		if !pulse.IsValidAsPulseNumber(unptr) {
-			failures = append(failures, server.CodeValidationFailures{
-				FailureReason: NullableString("invalid value"),
-				Property:      NullableString("pulse_number_gte"),
-			})
-		}
+		pulseNumberGte, failures = getPulseNumberValue(int(*params.PulseNumberGte), "pulse_number_gte", failures)
 	}
-
 	if params.PulseNumberLt != nil {
-		unptr := int(*params.PulseNumberLt)
-		_int64 := int64(unptr)
-		pulseNumberLt = &_int64
-		if !pulse.IsValidAsPulseNumber(unptr) {
-			failures = append(failures, server.CodeValidationFailures{
-				FailureReason: NullableString("invalid value"),
-				Property:      NullableString("pulse_number_lt"),
-			})
-		}
+		pulseNumberLt, failures = getPulseNumberValue(int(*params.PulseNumberLt), "pulse_number_lt", failures)
 	}
-
 	if params.PulseNumberLte != nil {
-		unptr := int(*params.PulseNumberLte)
-		_int64 := int64(unptr)
-		pulseNumberLte = &_int64
-		if !pulse.IsValidAsPulseNumber(unptr) {
-			failures = append(failures, server.CodeValidationFailures{
-				FailureReason: NullableString("invalid value"),
-				Property:      NullableString("pulse_number_lte"),
-			})
-		}
+		pulseNumberLte, failures = getPulseNumberValue(int(*params.PulseNumberLte), "pulse_number_lte", failures)
 	}
 
 	sortByAsc, validationFailures := checkSortByPulseNumberParameter(params.SortBy)
@@ -608,27 +553,11 @@ func (s *Server) ObjectLifeline(ctx echo.Context, objectReference server.ObjectR
 			})
 		}
 	}
-	if params.PulseNumberLt != nil {
-		unptr := int(*params.PulseNumberLt)
-		_int64 := int64(unptr)
-		pulseNumberLt = &_int64
-		if !pulse.IsValidAsPulseNumber(unptr) {
-			failures = append(failures, server.CodeValidationFailures{
-				FailureReason: NullableString("invalid"),
-				Property:      NullableString("pulse_number_lt"),
-			})
-		}
-	}
 	if params.PulseNumberGt != nil {
-		unptr := int(*params.PulseNumberGt)
-		_int64 := int64(unptr)
-		pulseNumberGt = &_int64
-		if !pulse.IsValidAsPulseNumber(unptr) {
-			failures = append(failures, server.CodeValidationFailures{
-				FailureReason: NullableString("invalid"),
-				Property:      NullableString("pulse_number_gt"),
-			})
-		}
+		pulseNumberGt, failures = getPulseNumberValue(int(*params.PulseNumberGt), "pulse_number_gt", failures)
+	}
+	if params.PulseNumberLt != nil {
+		pulseNumberLt, failures = getPulseNumberValue(int(*params.PulseNumberLt), "pulse_number_lt", failures)
 	}
 
 	if failures != nil {
