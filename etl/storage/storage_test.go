@@ -1327,6 +1327,100 @@ func TestStorage_GetPulses_AllParams(t *testing.T) {
 	require.EqualValues(t, 2, total)
 }
 
+func TestStorage_GetPulses_PulseNumberFilters(t *testing.T) {
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+	s := NewStorage(testDB)
+	totalPulseCount := 10
+	pulses := make([]models.Pulse, totalPulseCount)
+	pulse, err := testutils.InitPulseDB()
+	pulses[0] = pulse
+
+	for i := 1; i < totalPulseCount; i++ {
+		pulse, err := testutils.InitNextPulseDB(pulses[i-1].PulseNumber)
+		require.NoError(t, err)
+		pulses[i] = pulse
+	}
+
+	err = testutils.CreatePulses(testDB, pulses)
+	require.NoError(t, err)
+
+	t.Run("pulseNumberLte", func(t *testing.T) {
+		var fromPulse, timestampLte, timestampGte, pulseNumberLte, pulseNumberLt, pulseNumberGte, pulseNumberGt *int64
+		var limit, offset int = -1, 0
+		pulseNumberLte = &pulses[totalPulseCount-2].PulseNumber // second-to-last
+
+		dbPulses, dbTotal, err := s.GetPulses(fromPulse,
+			timestampLte, timestampGte,
+			pulseNumberLte, pulseNumberLt, pulseNumberGte, pulseNumberGt,
+			limit, offset)
+		require.NoError(t, err)
+		require.Equal(t, totalPulseCount-1, dbTotal)
+
+		for i := 0; i < totalPulseCount-1; i++ {
+			expected := pulses[i].PulseNumber
+			received := dbPulses[dbTotal-i-1].PulseNumber
+			require.Equal(t, expected, received)
+		}
+	})
+
+	t.Run("pulseNumberLt", func(t *testing.T) {
+		var fromPulse, timestampLte, timestampGte, pulseNumberLte, pulseNumberLt, pulseNumberGte, pulseNumberGt *int64
+		var limit, offset int = -1, 0
+		pulseNumberLt = &pulses[totalPulseCount-2].PulseNumber // second-to-last
+
+		dbPulses, dbTotal, err := s.GetPulses(fromPulse,
+			timestampLte, timestampGte,
+			pulseNumberLte, pulseNumberLt, pulseNumberGte, pulseNumberGt,
+			limit, offset)
+		require.NoError(t, err)
+		require.Equal(t, totalPulseCount-2, dbTotal)
+
+		for i := 0; i < totalPulseCount-2; i++ {
+			expected := pulses[i].PulseNumber
+			received := dbPulses[dbTotal-i-1].PulseNumber
+			require.Equal(t, expected, received)
+		}
+	})
+
+	t.Run("pulseNumberGte", func(t *testing.T) {
+		var fromPulse, timestampLte, timestampGte, pulseNumberLte, pulseNumberLt, pulseNumberGte, pulseNumberGt *int64
+		var limit, offset int = -1, 0
+		pulseNumberGte = &pulses[2].PulseNumber // second-to-last
+
+		dbPulses, dbTotal, err := s.GetPulses(fromPulse,
+			timestampLte, timestampGte,
+			pulseNumberLte, pulseNumberLt, pulseNumberGte, pulseNumberGt,
+			limit, offset)
+		require.NoError(t, err)
+		require.Equal(t, totalPulseCount-2, dbTotal)
+
+		for i := 0; i < totalPulseCount-2; i++ {
+			expected := pulses[i+2].PulseNumber
+			received := dbPulses[dbTotal-i-1].PulseNumber
+			require.Equal(t, expected, received)
+		}
+	})
+
+	t.Run("pulseNumberGt", func(t *testing.T) {
+		var fromPulse, timestampLte, timestampGte, pulseNumberLte, pulseNumberLt, pulseNumberGte, pulseNumberGt *int64
+		var limit, offset int = -1, 0
+		pulseNumberGt = &pulses[2].PulseNumber // second-to-last
+
+		dbPulses, dbTotal, err := s.GetPulses(fromPulse,
+			timestampLte, timestampGte,
+			pulseNumberLte, pulseNumberLt, pulseNumberGte, pulseNumberGt,
+			limit, offset)
+		require.NoError(t, err)
+		require.Equal(t, totalPulseCount-3, dbTotal)
+
+		for i := 0; i < totalPulseCount-3; i++ {
+			expected := pulses[i+3].PulseNumber
+			received := dbPulses[dbTotal-i-1].PulseNumber
+			require.Equal(t, expected, received)
+		}
+	})
+}
+
 func TestStorage_GetPulses_DifferentNextAtLastPulse(t *testing.T) {
 	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
 	s := NewStorage(testDB)
