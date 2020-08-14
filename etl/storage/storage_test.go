@@ -1103,7 +1103,7 @@ func TestStorage_GetPulses(t *testing.T) {
 	secondPulse.PrevPulseNumber = -1
 	secondPulse.NextPulseNumber = -1
 
-	pulses, total, err := s.GetPulses(nil, nil, nil, 100, 0)
+	pulses, total, err := s.GetPulses(nil, nil, nil, nil, nil, nil, nil, 100, 0)
 	require.NoError(t, err)
 	require.Len(t, pulses, 2)
 	require.Contains(t, pulses, firstPulse)
@@ -1142,7 +1142,7 @@ func TestStorage_GetPulses_Limit(t *testing.T) {
 	require.NoError(t, err)
 	thirdPulse.NextPulseNumber = -1
 
-	pulses, total, err := s.GetPulses(nil, nil, nil, 2, 0)
+	pulses, total, err := s.GetPulses(nil, nil, nil, nil, nil, nil, nil, 2, 0)
 	require.NoError(t, err)
 	require.Equal(t, []models.Pulse{thirdPulse, secondPulse}, pulses)
 	require.EqualValues(t, 3, total)
@@ -1179,7 +1179,7 @@ func TestStorage_GetPulses_Offset(t *testing.T) {
 	require.NoError(t, err)
 	thirdPulse.NextPulseNumber = -1
 
-	pulses, total, err := s.GetPulses(nil, nil, nil, 100, 1)
+	pulses, total, err := s.GetPulses(nil, nil, nil, nil, nil, nil, nil, 100, 1)
 	require.NoError(t, err)
 	require.Equal(t, []models.Pulse{secondPulse, firstPulse}, pulses)
 	require.EqualValues(t, 3, total)
@@ -1229,7 +1229,7 @@ func TestStorage_GetPulses_TimestampRange(t *testing.T) {
 	require.NoError(t, err)
 	fourthPulse.NextPulseNumber = -1
 
-	pulses, total, err := s.GetPulses(nil, &thirdPulse.PulseNumber, &secondPulse.PulseNumber, 100, 0)
+	pulses, total, err := s.GetPulses(nil, &thirdPulse.PulseNumber, &secondPulse.PulseNumber, nil, nil, nil, nil, 100, 0)
 	require.NoError(t, err)
 	require.Equal(t, []models.Pulse{thirdPulse, secondPulse}, pulses)
 	require.EqualValues(t, 2, total)
@@ -1270,7 +1270,7 @@ func TestStorage_GetPulses_FromPulse(t *testing.T) {
 	thirdPulse.NextPulseNumber = -1
 
 	fromPulse := int64(secondPulse.PulseNumber)
-	pulses, total, err := s.GetPulses(&fromPulse, nil, nil, 100, 0)
+	pulses, total, err := s.GetPulses(&fromPulse, nil, nil, nil, nil, nil, nil, 100, 0)
 	require.NoError(t, err)
 	require.Equal(t, []models.Pulse{secondPulse, firstPulse}, pulses)
 	require.EqualValues(t, 2, total)
@@ -1321,7 +1321,7 @@ func TestStorage_GetPulses_AllParams(t *testing.T) {
 	fourthPulse.NextPulseNumber = -1
 
 	fromPulse := int64(thirdPulse.PulseNumber)
-	pulses, total, err := s.GetPulses(&fromPulse, &fourthPulse.PulseNumber, &secondPulse.PulseNumber, 1, 1)
+	pulses, total, err := s.GetPulses(&fromPulse, &fourthPulse.PulseNumber, &secondPulse.PulseNumber, nil, nil, nil, nil, 1, 1)
 	require.NoError(t, err)
 	require.Equal(t, []models.Pulse{secondPulse}, pulses)
 	require.EqualValues(t, 2, total)
@@ -1364,7 +1364,7 @@ func TestStorage_GetPulses_DifferentNextAtLastPulse(t *testing.T) {
 	require.NoError(t, err)
 	thirdPulse.NextPulseNumber = -1
 
-	pulses, total, err := s.GetPulses(nil, nil, nil, 100, 0)
+	pulses, total, err := s.GetPulses(nil, nil, nil, nil, nil, nil, nil, 100, 0)
 	require.NoError(t, err)
 	require.Len(t, pulses, 3)
 
@@ -1419,7 +1419,7 @@ func TestStorage_GetPulses_MissingData_DifferentNext(t *testing.T) {
 	require.NoError(t, err)
 	thirdPulse.NextPulseNumber = -1
 
-	pulses, total, err := s.GetPulses(nil, nil, nil, 100, 0)
+	pulses, total, err := s.GetPulses(nil, nil, nil, nil, nil, nil, nil, 100, 0)
 	require.NoError(t, err)
 	require.Len(t, pulses, 3)
 
@@ -1472,7 +1472,7 @@ func TestStorage_GetPulses_MissingData_DifferentNextInTop(t *testing.T) {
 	err = testutils.CreatePulse(testDB, thirdPulse)
 	require.NoError(t, err)
 
-	pulses, total, err := s.GetPulses(nil, nil, nil, 100, 1)
+	pulses, total, err := s.GetPulses(nil, nil, nil, nil, nil, nil, nil, 100, 1)
 	require.NoError(t, err)
 	require.Len(t, pulses, 2)
 

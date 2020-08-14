@@ -308,13 +308,13 @@ func (s *Storage) GetPulse(pulseNumber int64) (models.Pulse, error) {
 }
 
 // GetPulses returns pulses from db.
-func (s *Storage) GetPulses(fromPulse *int64, timestampLte, timestampGte *int64, limit, offset int) ([]models.Pulse, int, error) {
+func (s *Storage) GetPulses(fromPulse *int64, timestampLte, timestampGte, pulseNumberLte, pulseNumberLt, pulseNumberGte, pulseNumberGt *int64, limit, offset int) ([]models.Pulse, int, error) {
 	timer := prometheus.NewTimer(GetPulsesDuration)
 	defer timer.ObserveDuration()
 
 	query := s.db.Model(&models.Pulse{})
-
 	query = filterByTimestamp(query, timestampLte, timestampGte)
+	query = filterByPulseNumber(query, pulseNumberLte, pulseNumberLt, pulseNumberGte, pulseNumberGt)
 
 	var err error
 	if fromPulse != nil {

@@ -302,6 +302,55 @@ func (s *Server) Pulses(ctx echo.Context, params server.PulsesParams) error {
 		}
 	}
 
+	var pulseNumberLte, pulseNumberLt, pulseNumberGte, pulseNumberGt *int64
+	if params.PulseNumberGt != nil {
+		unptr := int(*params.PulseNumberGt)
+		_int64 := int64(unptr)
+		pulseNumberGt = &_int64
+		if !pulse.IsValidAsPulseNumber(unptr) {
+			failures = append(failures, server.CodeValidationFailures{
+				FailureReason: NullableString("invalid value"),
+				Property:      NullableString("pulse_number_gt"),
+			})
+		}
+	}
+
+	if params.PulseNumberGte != nil {
+		unptr := int(*params.PulseNumberGte)
+		_int64 := int64(unptr)
+		pulseNumberGte = &_int64
+		if !pulse.IsValidAsPulseNumber(unptr) {
+			failures = append(failures, server.CodeValidationFailures{
+				FailureReason: NullableString("invalid value"),
+				Property:      NullableString("pulse_number_gte"),
+			})
+		}
+	}
+
+	if params.PulseNumberLt != nil {
+		unptr := int(*params.PulseNumberLt)
+		_int64 := int64(unptr)
+		pulseNumberLt = &_int64
+		if !pulse.IsValidAsPulseNumber(unptr) {
+			failures = append(failures, server.CodeValidationFailures{
+				FailureReason: NullableString("invalid value"),
+				Property:      NullableString("pulse_number_lt"),
+			})
+		}
+	}
+
+	if params.PulseNumberLte != nil {
+		unptr := int(*params.PulseNumberLte)
+		_int64 := int64(unptr)
+		pulseNumberLte = &_int64
+		if !pulse.IsValidAsPulseNumber(unptr) {
+			failures = append(failures, server.CodeValidationFailures{
+				FailureReason: NullableString("invalid value"),
+				Property:      NullableString("pulse_number_lte"),
+			})
+		}
+	}
+
 	if failures != nil {
 		response := server.CodeValidationError{
 			Code:               NullableString(http.StatusText(http.StatusBadRequest)),
@@ -323,6 +372,7 @@ func (s *Server) Pulses(ctx echo.Context, params server.PulsesParams) error {
 	pulses, count, err := s.storage.GetPulses(
 		fromPulseString,
 		timestampLte, timestampGte,
+		pulseNumberLte, pulseNumberLt, pulseNumberGte, pulseNumberGt,
 		limit, offset,
 	)
 	if err != nil {
