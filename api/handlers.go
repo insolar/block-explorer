@@ -172,51 +172,19 @@ func (s *Server) JetDropsByJetID(ctx echo.Context, jetID server.JetIdPath, param
 
 	var pulseNumberLte, pulseNumberLt, pulseNumberGte, pulseNumberGt *int64
 	if params.PulseNumberGt != nil {
-		unptr := int(*params.PulseNumberGt)
-		_int64 := int64(unptr)
-		pulseNumberGt = &_int64
-		if !pulse.IsValidAsPulseNumber(unptr) {
-			failures = append(failures, server.CodeValidationFailures{
-				FailureReason: NullableString("invalid value"),
-				Property:      NullableString("pulse_number_gt"),
-			})
-		}
+		pulseNumberGt, failures = getPulseNumberValue(int(*params.PulseNumberGt), "pulse_number_gt", failures)
 	}
 
 	if params.PulseNumberGte != nil {
-		unptr := int(*params.PulseNumberGte)
-		_int64 := int64(unptr)
-		pulseNumberGte = &_int64
-		if !pulse.IsValidAsPulseNumber(unptr) {
-			failures = append(failures, server.CodeValidationFailures{
-				FailureReason: NullableString("invalid value"),
-				Property:      NullableString("pulse_number_gte"),
-			})
-		}
+		pulseNumberGte, failures = getPulseNumberValue(int(*params.PulseNumberGte), "pulse_number_gte", failures)
 	}
 
 	if params.PulseNumberLt != nil {
-		unptr := int(*params.PulseNumberLt)
-		_int64 := int64(unptr)
-		pulseNumberLt = &_int64
-		if !pulse.IsValidAsPulseNumber(unptr) {
-			failures = append(failures, server.CodeValidationFailures{
-				FailureReason: NullableString("invalid value"),
-				Property:      NullableString("pulse_number_lt"),
-			})
-		}
+		pulseNumberLt, failures = getPulseNumberValue(int(*params.PulseNumberLt), "pulse_number_lt", failures)
 	}
 
 	if params.PulseNumberLte != nil {
-		unptr := int(*params.PulseNumberLte)
-		_int64 := int64(unptr)
-		pulseNumberLte = &_int64
-		if !pulse.IsValidAsPulseNumber(unptr) {
-			failures = append(failures, server.CodeValidationFailures{
-				FailureReason: NullableString("invalid value"),
-				Property:      NullableString("pulse_number_lte"),
-			})
-		}
+		pulseNumberLte, failures = getPulseNumberValue(int(*params.PulseNumberLte), "pulse_number_lte", failures)
 	}
 
 	if len(failures) > 0 {
@@ -284,6 +252,18 @@ func (s *Server) JetDropsByJetID(ctx echo.Context, jetID server.JetIdPath, param
 	})
 }
 
+func getPulseNumberValue(unptr int, propertyName string, failures []server.CodeValidationFailures) (*int64, []server.CodeValidationFailures) {
+	_int64 := int64(unptr)
+	pulseNumber := &_int64
+	if !pulse.IsValidAsPulseNumber(unptr) {
+		failures = append(failures, server.CodeValidationFailures{
+			FailureReason: NullableString("invalid value"),
+			Property:      NullableString(propertyName),
+		})
+	}
+	return pulseNumber, failures
+}
+
 func (s *Server) Pulses(ctx echo.Context, params server.PulsesParams) error {
 	limit, offset, failures := checkLimitOffset(params.Limit, params.Offset)
 
@@ -300,6 +280,25 @@ func (s *Server) Pulses(ctx echo.Context, params server.PulsesParams) error {
 				Property:      NullableString("pulse"),
 			})
 		}
+	}
+
+	var pulseNumberLte, pulseNumberLt, pulseNumberGte, pulseNumberGt *int64
+	if params.PulseNumberGt != nil {
+		pulseNumberGt, failures = getPulseNumberValue(int(*params.PulseNumberGt), "pulse_number_gt", failures)
+	}
+	if params.PulseNumberGte != nil {
+		pulseNumberGte, failures = getPulseNumberValue(int(*params.PulseNumberGte), "pulse_number_gte", failures)
+	}
+	if params.PulseNumberLt != nil {
+		pulseNumberLt, failures = getPulseNumberValue(int(*params.PulseNumberLt), "pulse_number_lt", failures)
+	}
+	if params.PulseNumberLte != nil {
+		pulseNumberLte, failures = getPulseNumberValue(int(*params.PulseNumberLte), "pulse_number_lte", failures)
+	}
+
+	sortByAsc, validationFailures := checkSortByPulseNumberParameter(params.SortBy)
+	if validationFailures != nil {
+		failures = append(failures, validationFailures...)
 	}
 
 	if failures != nil {
@@ -323,6 +322,8 @@ func (s *Server) Pulses(ctx echo.Context, params server.PulsesParams) error {
 	pulses, count, err := s.storage.GetPulses(
 		fromPulseString,
 		timestampLte, timestampGte,
+		pulseNumberLte, pulseNumberLt, pulseNumberGte, pulseNumberGt,
+		sortByAsc,
 		limit, offset,
 	)
 	if err != nil {
@@ -552,27 +553,11 @@ func (s *Server) ObjectLifeline(ctx echo.Context, objectReference server.ObjectR
 			})
 		}
 	}
-	if params.PulseNumberLt != nil {
-		unptr := int(*params.PulseNumberLt)
-		_int64 := int64(unptr)
-		pulseNumberLt = &_int64
-		if !pulse.IsValidAsPulseNumber(unptr) {
-			failures = append(failures, server.CodeValidationFailures{
-				FailureReason: NullableString("invalid"),
-				Property:      NullableString("pulse_number_lt"),
-			})
-		}
-	}
 	if params.PulseNumberGt != nil {
-		unptr := int(*params.PulseNumberGt)
-		_int64 := int64(unptr)
-		pulseNumberGt = &_int64
-		if !pulse.IsValidAsPulseNumber(unptr) {
-			failures = append(failures, server.CodeValidationFailures{
-				FailureReason: NullableString("invalid"),
-				Property:      NullableString("pulse_number_gt"),
-			})
-		}
+		pulseNumberGt, failures = getPulseNumberValue(int(*params.PulseNumberGt), "pulse_number_gt", failures)
+	}
+	if params.PulseNumberLt != nil {
+		pulseNumberLt, failures = getPulseNumberValue(int(*params.PulseNumberLt), "pulse_number_lt", failures)
 	}
 
 	if failures != nil {
@@ -667,6 +652,28 @@ func checkLimitOffset(l *server.Limit, o *server.OffsetParam) (int, int, []serve
 func checkSortByPulseParameter(sortBy *server.SortByPulse) (bool, []server.CodeValidationFailures) {
 	pnAsc := string(server.SortByPulse_pulse_number_asc_jet_id_desc)
 	pnDesc := string(server.SortByPulse_pulse_number_desc_jet_id_asc)
+	var sortByPnAsc bool
+	if sortBy != nil {
+		s := string(*sortBy)
+		if s != pnAsc && s != pnDesc {
+			errResponse := []server.CodeValidationFailures{
+				{
+					Property:      NullableString("sort_by"),
+					FailureReason: NullableString(fmt.Sprintf("query parameter 'sort_by' should be '%s' or '%s'", pnAsc, pnDesc)),
+				},
+			}
+			return false, errResponse
+		}
+		if s == pnAsc {
+			sortByPnAsc = true
+		}
+	}
+	return sortByPnAsc, nil
+}
+
+func checkSortByPulseNumberParameter(sortBy *server.SortByPulseNumber) (bool, []server.CodeValidationFailures) {
+	pnAsc := string(server.SortByPulseNumber_pulse_number_asc)
+	pnDesc := string(server.SortByPulseNumber_pulse_number_desc)
 	var sortByPnAsc bool
 	if sortBy != nil {
 		s := string(*sortBy)

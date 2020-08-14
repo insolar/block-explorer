@@ -1103,7 +1103,7 @@ func TestStorage_GetPulses(t *testing.T) {
 	secondPulse.PrevPulseNumber = -1
 	secondPulse.NextPulseNumber = -1
 
-	pulses, total, err := s.GetPulses(nil, nil, nil, 100, 0)
+	pulses, total, err := s.GetPulses(nil, nil, nil, nil, nil, nil, nil, false, 100, 0)
 	require.NoError(t, err)
 	require.Len(t, pulses, 2)
 	require.Contains(t, pulses, firstPulse)
@@ -1142,7 +1142,7 @@ func TestStorage_GetPulses_Limit(t *testing.T) {
 	require.NoError(t, err)
 	thirdPulse.NextPulseNumber = -1
 
-	pulses, total, err := s.GetPulses(nil, nil, nil, 2, 0)
+	pulses, total, err := s.GetPulses(nil, nil, nil, nil, nil, nil, nil, false, 2, 0)
 	require.NoError(t, err)
 	require.Equal(t, []models.Pulse{thirdPulse, secondPulse}, pulses)
 	require.EqualValues(t, 3, total)
@@ -1179,7 +1179,7 @@ func TestStorage_GetPulses_Offset(t *testing.T) {
 	require.NoError(t, err)
 	thirdPulse.NextPulseNumber = -1
 
-	pulses, total, err := s.GetPulses(nil, nil, nil, 100, 1)
+	pulses, total, err := s.GetPulses(nil, nil, nil, nil, nil, nil, nil, false, 100, 1)
 	require.NoError(t, err)
 	require.Equal(t, []models.Pulse{secondPulse, firstPulse}, pulses)
 	require.EqualValues(t, 3, total)
@@ -1229,7 +1229,7 @@ func TestStorage_GetPulses_TimestampRange(t *testing.T) {
 	require.NoError(t, err)
 	fourthPulse.NextPulseNumber = -1
 
-	pulses, total, err := s.GetPulses(nil, &thirdPulse.PulseNumber, &secondPulse.PulseNumber, 100, 0)
+	pulses, total, err := s.GetPulses(nil, &thirdPulse.PulseNumber, &secondPulse.PulseNumber, nil, nil, nil, nil, false, 100, 0)
 	require.NoError(t, err)
 	require.Equal(t, []models.Pulse{thirdPulse, secondPulse}, pulses)
 	require.EqualValues(t, 2, total)
@@ -1270,7 +1270,7 @@ func TestStorage_GetPulses_FromPulse(t *testing.T) {
 	thirdPulse.NextPulseNumber = -1
 
 	fromPulse := int64(secondPulse.PulseNumber)
-	pulses, total, err := s.GetPulses(&fromPulse, nil, nil, 100, 0)
+	pulses, total, err := s.GetPulses(&fromPulse, nil, nil, nil, nil, nil, nil, false, 100, 0)
 	require.NoError(t, err)
 	require.Equal(t, []models.Pulse{secondPulse, firstPulse}, pulses)
 	require.EqualValues(t, 2, total)
@@ -1321,10 +1321,146 @@ func TestStorage_GetPulses_AllParams(t *testing.T) {
 	fourthPulse.NextPulseNumber = -1
 
 	fromPulse := int64(thirdPulse.PulseNumber)
-	pulses, total, err := s.GetPulses(&fromPulse, &fourthPulse.PulseNumber, &secondPulse.PulseNumber, 1, 1)
+	pulses, total, err := s.GetPulses(&fromPulse, &fourthPulse.PulseNumber, &secondPulse.PulseNumber, nil, nil, nil, nil, false, 1, 1)
 	require.NoError(t, err)
 	require.Equal(t, []models.Pulse{secondPulse}, pulses)
 	require.EqualValues(t, 2, total)
+}
+
+func TestStorage_GetPulses_PulseNumberFilters(t *testing.T) {
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+	s := NewStorage(testDB)
+	totalPulseCount := 10
+	pulses := make([]models.Pulse, totalPulseCount)
+	pulse, err := testutils.InitPulseDB()
+	pulses[0] = pulse
+
+	for i := 1; i < totalPulseCount; i++ {
+		pulse, err := testutils.InitNextPulseDB(pulses[i-1].PulseNumber)
+		require.NoError(t, err)
+		pulses[i] = pulse
+	}
+
+	err = testutils.CreatePulses(testDB, pulses)
+	require.NoError(t, err)
+
+	t.Run("pulseNumberLte", func(t *testing.T) {
+		var fromPulse, timestampLte, timestampGte, pulseNumberLte, pulseNumberLt, pulseNumberGte, pulseNumberGt *int64
+		var limit, offset int = -1, 0
+		pulseNumberLte = &pulses[totalPulseCount-2].PulseNumber // second-to-last
+
+		dbPulses, dbTotal, err := s.GetPulses(fromPulse,
+			timestampLte, timestampGte,
+			pulseNumberLte, pulseNumberLt, pulseNumberGte, pulseNumberGt,
+			false,
+			limit, offset)
+		require.NoError(t, err)
+		require.Equal(t, totalPulseCount-1, dbTotal)
+
+		for i := 0; i < totalPulseCount-1; i++ {
+			expected := pulses[i].PulseNumber
+			received := dbPulses[dbTotal-i-1].PulseNumber
+			require.Equal(t, expected, received)
+		}
+	})
+
+	t.Run("pulseNumberLt", func(t *testing.T) {
+		var fromPulse, timestampLte, timestampGte, pulseNumberLte, pulseNumberLt, pulseNumberGte, pulseNumberGt *int64
+		var limit, offset int = -1, 0
+		pulseNumberLt = &pulses[totalPulseCount-2].PulseNumber // second-to-last
+
+		dbPulses, dbTotal, err := s.GetPulses(fromPulse,
+			timestampLte, timestampGte,
+			pulseNumberLte, pulseNumberLt, pulseNumberGte, pulseNumberGt,
+			false,
+			limit, offset)
+		require.NoError(t, err)
+		require.Equal(t, totalPulseCount-2, dbTotal)
+
+		for i := 0; i < totalPulseCount-2; i++ {
+			expected := pulses[i].PulseNumber
+			received := dbPulses[dbTotal-i-1].PulseNumber
+			require.Equal(t, expected, received)
+		}
+	})
+
+	t.Run("pulseNumberGte", func(t *testing.T) {
+		var fromPulse, timestampLte, timestampGte, pulseNumberLte, pulseNumberLt, pulseNumberGte, pulseNumberGt *int64
+		var limit, offset = -1, 0
+		pulseNumberGte = &pulses[2].PulseNumber // second-to-last
+
+		dbPulses, dbTotal, err := s.GetPulses(fromPulse,
+			timestampLte, timestampGte,
+			pulseNumberLte, pulseNumberLt, pulseNumberGte, pulseNumberGt,
+			false,
+			limit, offset)
+		require.NoError(t, err)
+		require.Equal(t, totalPulseCount-2, dbTotal)
+
+		for i := 0; i < totalPulseCount-2; i++ {
+			expected := pulses[i+2].PulseNumber
+			received := dbPulses[dbTotal-i-1].PulseNumber
+			require.Equal(t, expected, received)
+		}
+	})
+
+	t.Run("pulseNumberGt", func(t *testing.T) {
+		var fromPulse, timestampLte, timestampGte, pulseNumberLte, pulseNumberLt, pulseNumberGte, pulseNumberGt *int64
+		var limit, offset int = -1, 0
+		pulseNumberGt = &pulses[2].PulseNumber // second-to-last
+
+		dbPulses, dbTotal, err := s.GetPulses(fromPulse,
+			timestampLte, timestampGte,
+			pulseNumberLte, pulseNumberLt, pulseNumberGte, pulseNumberGt,
+			false,
+			limit, offset)
+		require.NoError(t, err)
+		require.Equal(t, totalPulseCount-3, dbTotal)
+
+		for i := 0; i < totalPulseCount-3; i++ {
+			expected := pulses[i+3].PulseNumber
+			received := dbPulses[dbTotal-i-1].PulseNumber
+			require.Equal(t, expected, received)
+		}
+	})
+
+	t.Run("sort by asc", func(t *testing.T) {
+		var fromPulse, timestampLte, timestampGte, pulseNumberLte, pulseNumberLt, pulseNumberGte, pulseNumberGt *int64
+		var limit, offset = -1, 0
+
+		dbPulses, dbTotal, err := s.GetPulses(fromPulse,
+			timestampLte, timestampGte,
+			pulseNumberLte, pulseNumberLt, pulseNumberGte, pulseNumberGt,
+			true,
+			limit, offset)
+		require.NoError(t, err)
+		require.Equal(t, totalPulseCount, dbTotal)
+
+		for i := 0; i < totalPulseCount; i++ {
+			expected := pulses[i].PulseNumber
+			received := dbPulses[i].PulseNumber
+			require.Equal(t, expected, received)
+		}
+	})
+
+	t.Run("sort by desc", func(t *testing.T) {
+		var fromPulse, timestampLte, timestampGte, pulseNumberLte, pulseNumberLt, pulseNumberGte, pulseNumberGt *int64
+		var limit, offset = -1, 0
+
+		dbPulses, dbTotal, err := s.GetPulses(fromPulse,
+			timestampLte, timestampGte,
+			pulseNumberLte, pulseNumberLt, pulseNumberGte, pulseNumberGt,
+			false,
+			limit, offset)
+		require.NoError(t, err)
+		require.Equal(t, totalPulseCount, dbTotal)
+
+		for i := 0; i < totalPulseCount; i++ {
+			expected := pulses[i].PulseNumber
+			received := dbPulses[dbTotal-i-1].PulseNumber
+			require.Equal(t, expected, received)
+		}
+	})
 }
 
 func TestStorage_GetPulses_DifferentNextAtLastPulse(t *testing.T) {
@@ -1364,7 +1500,7 @@ func TestStorage_GetPulses_DifferentNextAtLastPulse(t *testing.T) {
 	require.NoError(t, err)
 	thirdPulse.NextPulseNumber = -1
 
-	pulses, total, err := s.GetPulses(nil, nil, nil, 100, 0)
+	pulses, total, err := s.GetPulses(nil, nil, nil, nil, nil, nil, nil, false, 100, 0)
 	require.NoError(t, err)
 	require.Len(t, pulses, 3)
 
@@ -1419,7 +1555,7 @@ func TestStorage_GetPulses_MissingData_DifferentNext(t *testing.T) {
 	require.NoError(t, err)
 	thirdPulse.NextPulseNumber = -1
 
-	pulses, total, err := s.GetPulses(nil, nil, nil, 100, 0)
+	pulses, total, err := s.GetPulses(nil, nil, nil, nil, nil, nil, nil, false, 100, 0)
 	require.NoError(t, err)
 	require.Len(t, pulses, 3)
 
@@ -1472,7 +1608,7 @@ func TestStorage_GetPulses_MissingData_DifferentNextInTop(t *testing.T) {
 	err = testutils.CreatePulse(testDB, thirdPulse)
 	require.NoError(t, err)
 
-	pulses, total, err := s.GetPulses(nil, nil, nil, 100, 1)
+	pulses, total, err := s.GetPulses(nil, nil, nil, nil, nil, nil, nil, false, 100, 1)
 	require.NoError(t, err)
 	require.Len(t, pulses, 2)
 

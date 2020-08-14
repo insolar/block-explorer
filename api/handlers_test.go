@@ -664,6 +664,161 @@ func TestPulses_TimestampRange(t *testing.T) {
 	require.EqualValues(t, 2, *received.Total)
 }
 
+func TestPulses_PulseNumberFilters(t *testing.T) {
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+
+	// insert pulses
+	firstPulse := models.Pulse{
+		PulseNumber: 66666666,
+		IsComplete:  false,
+		Timestamp:   66666666,
+	}
+	err := testutils.CreatePulse(testDB, firstPulse)
+	require.NoError(t, err)
+
+	secondPulse := models.Pulse{
+		PulseNumber: 66666667,
+		IsComplete:  false,
+		Timestamp:   66666667,
+	}
+	err = testutils.CreatePulse(testDB, secondPulse)
+	require.NoError(t, err)
+
+	thirdPulse := models.Pulse{
+		PulseNumber: 66666668,
+		IsComplete:  false,
+		Timestamp:   66666668,
+	}
+	err = testutils.CreatePulse(testDB, thirdPulse)
+	require.NoError(t, err)
+
+	fourthPulse := models.Pulse{
+		PulseNumber: 66666669,
+		IsComplete:  false,
+		Timestamp:   66666669,
+	}
+	err = testutils.CreatePulse(testDB, fourthPulse)
+	require.NoError(t, err)
+
+	t.Run("pulse_number_lte", func(t *testing.T) {
+		resp, err := http.Get("http://" + apihost +
+			fmt.Sprintf("/api/v1/pulses?pulse_number_lte=%d", thirdPulse.PulseNumber),
+		)
+
+		require.NoError(t, err)
+		require.Equal(t, http.StatusOK, resp.StatusCode)
+		bodyBytes, err := ioutil.ReadAll(resp.Body)
+		require.NoError(t, err)
+
+		var received server.PulsesResponse
+		err = json.Unmarshal(bodyBytes, &received)
+		require.NoError(t, err)
+		require.Len(t, *received.Result, 3)
+		require.EqualValues(t, 3, *received.Total)
+		require.EqualValues(t, thirdPulse.PulseNumber, *(*received.Result)[0].PulseNumber)
+		require.EqualValues(t, secondPulse.PulseNumber, *(*received.Result)[1].PulseNumber)
+		require.EqualValues(t, firstPulse.PulseNumber, *(*received.Result)[2].PulseNumber)
+	})
+
+	t.Run("pulse_number_lt", func(t *testing.T) {
+		resp, err := http.Get("http://" + apihost +
+			fmt.Sprintf("/api/v1/pulses?pulse_number_lt=%d", thirdPulse.PulseNumber),
+		)
+
+		require.NoError(t, err)
+		require.Equal(t, http.StatusOK, resp.StatusCode)
+		bodyBytes, err := ioutil.ReadAll(resp.Body)
+		require.NoError(t, err)
+
+		var received server.PulsesResponse
+		err = json.Unmarshal(bodyBytes, &received)
+		require.NoError(t, err)
+		require.Len(t, *received.Result, 2)
+		require.EqualValues(t, 2, *received.Total)
+		require.EqualValues(t, secondPulse.PulseNumber, *(*received.Result)[0].PulseNumber)
+		require.EqualValues(t, firstPulse.PulseNumber, *(*received.Result)[1].PulseNumber)
+	})
+
+	t.Run("pulse_number_gte", func(t *testing.T) {
+		resp, err := http.Get("http://" + apihost +
+			fmt.Sprintf("/api/v1/pulses?pulse_number_gte=%d", thirdPulse.PulseNumber),
+		)
+
+		require.NoError(t, err)
+		require.Equal(t, http.StatusOK, resp.StatusCode)
+		bodyBytes, err := ioutil.ReadAll(resp.Body)
+		require.NoError(t, err)
+
+		var received server.PulsesResponse
+		err = json.Unmarshal(bodyBytes, &received)
+		require.NoError(t, err)
+		require.Len(t, *received.Result, 2)
+		require.EqualValues(t, 2, *received.Total)
+		require.EqualValues(t, fourthPulse.PulseNumber, *(*received.Result)[0].PulseNumber)
+		require.EqualValues(t, thirdPulse.PulseNumber, *(*received.Result)[1].PulseNumber)
+	})
+
+	t.Run("pulse_number_gt", func(t *testing.T) {
+		resp, err := http.Get("http://" + apihost +
+			fmt.Sprintf("/api/v1/pulses?pulse_number_gt=%d", thirdPulse.PulseNumber),
+		)
+
+		require.NoError(t, err)
+		require.Equal(t, http.StatusOK, resp.StatusCode)
+		bodyBytes, err := ioutil.ReadAll(resp.Body)
+		require.NoError(t, err)
+
+		var received server.PulsesResponse
+		err = json.Unmarshal(bodyBytes, &received)
+		require.NoError(t, err)
+		require.Len(t, *received.Result, 1)
+		require.EqualValues(t, 1, *received.Total)
+		require.EqualValues(t, fourthPulse.PulseNumber, *(*received.Result)[0].PulseNumber)
+	})
+
+	t.Run("sort_by asc", func(t *testing.T) {
+		resp, err := http.Get("http://" + apihost +
+			fmt.Sprintf("/api/v1/pulses?sort_by=%s", server.SortByPulseNumber_pulse_number_asc),
+		)
+
+		require.NoError(t, err)
+		require.Equal(t, http.StatusOK, resp.StatusCode)
+		bodyBytes, err := ioutil.ReadAll(resp.Body)
+		require.NoError(t, err)
+
+		var received server.PulsesResponse
+		err = json.Unmarshal(bodyBytes, &received)
+		require.NoError(t, err)
+		require.Len(t, *received.Result, 4)
+		require.EqualValues(t, 4, *received.Total)
+		require.EqualValues(t, firstPulse.PulseNumber, *(*received.Result)[0].PulseNumber)
+		require.EqualValues(t, secondPulse.PulseNumber, *(*received.Result)[1].PulseNumber)
+		require.EqualValues(t, thirdPulse.PulseNumber, *(*received.Result)[2].PulseNumber)
+		require.EqualValues(t, fourthPulse.PulseNumber, *(*received.Result)[3].PulseNumber)
+	})
+
+	t.Run("sort_by desc", func(t *testing.T) {
+		resp, err := http.Get("http://" + apihost +
+			fmt.Sprintf("/api/v1/pulses?sort_by=%s", server.SortByPulseNumber_pulse_number_desc),
+		)
+
+		require.NoError(t, err)
+		require.Equal(t, http.StatusOK, resp.StatusCode)
+		bodyBytes, err := ioutil.ReadAll(resp.Body)
+		require.NoError(t, err)
+
+		var received server.PulsesResponse
+		err = json.Unmarshal(bodyBytes, &received)
+		require.NoError(t, err)
+		require.Len(t, *received.Result, 4)
+		require.EqualValues(t, 4, *received.Total)
+		require.EqualValues(t, firstPulse.PulseNumber, *(*received.Result)[3].PulseNumber)
+		require.EqualValues(t, secondPulse.PulseNumber, *(*received.Result)[2].PulseNumber)
+		require.EqualValues(t, thirdPulse.PulseNumber, *(*received.Result)[1].PulseNumber)
+		require.EqualValues(t, fourthPulse.PulseNumber, *(*received.Result)[0].PulseNumber)
+	})
+}
+
 func TestServer_JetDropsByPulseNumber(t *testing.T) {
 	t.Run("happy", func(t *testing.T) {
 		defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
