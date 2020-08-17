@@ -76,15 +76,13 @@ You can run several kinds of tests against the backend: unit, integration, load 
 
 ### Unit and integration tests
 
-**Note**: They both require Docker.
-
 To run unit tests, say:
 
 ```
 make unit
 ```
 
-To run integration tests, say:
+Integration tests require Docker. Make sure you run Docker and say the following to run the tests:
 
 ```
 make integration
