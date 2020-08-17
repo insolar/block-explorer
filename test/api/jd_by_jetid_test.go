@@ -353,7 +353,7 @@ func TestPrevNextJetDrops_JetDropsByJetID(t *testing.T) {
 	defer ts.Stop(t)
 
 	lowestPulse := gen.PulseNumber()
-	depth := 4
+	depth := 5
 	records, jetDropTree := testutils.GenerateRecordsWIthSplitJetDrops(lowestPulse, depth, 1)
 	require.NoError(t, heavymock.ImportRecords(ts.ConMngr.ImporterClient, records))
 
@@ -420,6 +420,8 @@ func TestPrevNextJetDrops_JetDropsByJetID(t *testing.T) {
 		require.Equal(t, fmt.Sprintf("%v:%v", next.JetId, next.PulseNumber), next.JetDropId)
 	}
 
+	var lowestPulseCount, maxPulseCount, otherPulsesCount int
+
 	for k := range jetDropTree[lowestPulse] {
 		response := c.JetDropsByJetID(t, converter.JetIDToString(k), nil)
 		require.NotNil(t, response)
@@ -430,15 +432,23 @@ func TestPrevNextJetDrops_JetDropsByJetID(t *testing.T) {
 				require.Empty(t, jd.Hash)
 				require.Empty(t, jd.NextJetDropId)
 				checkPrevJetDropIDListResponse(jd)
+				lowestPulseCount++
 			} else if maxPulse := lowestPulse.AsUint32() + uint32(10*depth); jdPulseNumber.AsUint32() == maxPulse {
 				require.NotEmpty(t, jd.Hash)
 				require.Empty(t, jd.PrevJetDropId)
 				checkNextJetDropIDResponse(jd)
+				maxPulseCount++
 			} else {
 				require.NotEmpty(t, jd.Hash)
 				checkPrevJetDropIDListResponse(jd)
 				checkNextJetDropIDResponse(jd)
+				otherPulsesCount++
 			}
 		}
 	}
+	require.Equal(t, 1, lowestPulseCount)
+	require.Equal(t, int(math.Pow(2, float64(depth))), maxPulseCount)
+	// total assertions = 2^(depth + 1) - 1)
+	total := int(math.Pow(2, float64(depth+1))) - 1 - maxPulseCount - lowestPulseCount
+	require.Equal(t, total, otherPulsesCount)
 }

@@ -338,14 +338,15 @@ var mutex = &sync.Mutex{}
 func GenerateUniqueJetID() insolar.JetID {
 	for {
 		jetID := gen.JetID()
-		if !isUniqueJetID(jetID) {
+		if !saveUniqueJetID(jetID) {
 			continue
 		}
 		return jetID
 	}
 }
 
-func isUniqueJetID(jetID insolar.JetID) bool {
+// saveUniqueJetID returns True if value is unique. Otherwise returns False.
+func saveUniqueJetID(jetID insolar.JetID) bool {
 	id := binary.BigEndian.Uint64(jetID.Prefix())
 	if id == 0 {
 		return false
@@ -400,7 +401,7 @@ func GenerateRecordsWIthSplitJetDrops(pn insolar.PulseNumber, depth int, records
 	return result, jdTree
 }
 
-// Generate tree of splitted JetDrops with specified depth
+// GenerateJetIDTree generates tree of splitted JetDrops with specified depth
 func GenerateJetIDTree(pn insolar.PulseNumber, depth int) map[insolar.PulseNumber]map[insolar.JetID][][]byte {
 	timeout := time.After(5 * time.Second)
 	result := make(map[insolar.PulseNumber]map[insolar.JetID][][]byte)
@@ -411,13 +412,13 @@ func GenerateJetIDTree(pn insolar.PulseNumber, depth int) map[insolar.PulseNumbe
 		default:
 		}
 		rootJetID := *insolar.NewJetID(20, gen.IDWithPulse(pn).Bytes())
-		if !isUniqueJetID(rootJetID) {
+		if !saveUniqueJetID(rootJetID) {
 			continue
 		}
 		result[pn] = map[insolar.JetID][][]byte{}
 		result[pn][rootJetID] = [][]byte{GenerateRandBytes(), GenerateRandBytes(), nil}
 
-		childs := siblings(rootJetID, pn, depth, result[pn][rootJetID])
+		childs := getSiblings(rootJetID, pn, depth, result[pn][rootJetID])
 		for p, c := range childs {
 			result[p] = c
 		}
@@ -426,7 +427,7 @@ func GenerateJetIDTree(pn insolar.PulseNumber, depth int) map[insolar.PulseNumbe
 	}
 }
 
-func siblings(parent insolar.JetID, parentPn insolar.PulseNumber, depth int, prevJetDropHashes [][]byte) map[insolar.PulseNumber]map[insolar.JetID][][]byte {
+func getSiblings(parent insolar.JetID, parentPn insolar.PulseNumber, depth int, prevJetDropHashes [][]byte) map[insolar.PulseNumber]map[insolar.JetID][][]byte {
 	if depth == 0 {
 		return nil
 	}
@@ -440,7 +441,7 @@ func siblings(parent insolar.JetID, parentPn insolar.PulseNumber, depth int, pre
 	result[pn][left] = [][]byte{GenerateRandBytes(), GenerateRandBytes(), prevJetDropHashes[0]}
 	result[pn][right] = [][]byte{GenerateRandBytes(), GenerateRandBytes(), prevJetDropHashes[1]}
 
-	l := siblings(left, pn, depth-1, result[pn][left])
+	l := getSiblings(left, pn, depth-1, result[pn][left])
 	for p, j := range l {
 		if jds := result[p]; jds == nil {
 			result[p] = j
@@ -451,7 +452,7 @@ func siblings(parent insolar.JetID, parentPn insolar.PulseNumber, depth int, pre
 			result[p] = jds
 		}
 	}
-	r := siblings(right, pn, depth-1, result[pn][right])
+	r := getSiblings(right, pn, depth-1, result[pn][right])
 	for p, j := range r {
 		if jds := result[p]; jds == nil {
 			result[p] = j
