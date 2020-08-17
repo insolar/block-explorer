@@ -1,22 +1,35 @@
 # Generic Block Explorer
-This is backend and API for block-explorer application  
-It was created to for easily visualise and inspect data from https://github.com/insolar/insolar  
-The main idea is to get records stored in insolar using it's API and save it in relational-style format  
-It doesn't know anything about smart contracts  
 
-## Requirements
- - go 1.14
- - PostgeSQL 11+
+This repository contains a backend and API implementation for the Generic Block Explorer application.
 
-## How to start
-#### Resolve dependencies and build
-```
-make all
-```
-#### Create tables in DB
-```
-make migrate
-```
+The explorer's backend pulls records from [Insolar](https://github.com/insolar/insolar)'s API and stores them in a relational format. Records are Insolar's smallest data unit that underpins all data produced by smart contracts. So, Generic Block Explorer does not recognize any entities at business level (users, transactions), only the ones at logic level (requests, execution results, object states).
+
+Block Explorer provides an API of its own, optimized for data visualization. The Block Explorer's frontend (developed separately) then puts up a web face that allows the user to inspect the data in a friendly way.
+
+## Install
+
+To manually deploy the Block Explorer backend, first install:
+ 
+- [Go 1.14](https://golang.org/dl/)
+- [PostgeSQL 12+](https://www.postgresql.org/download/)
+
+Or you can use Docker of the latest version, if you are fine with a containerized deployment.
+
+## Deploy
+
+To deploy the backend, complete the following steps:
+
+1. Resolve dependencies and build
+
+   ```
+   make all
+   ```
+
+2. Migrate the data:
+
+   ```
+   make migrate
+   ```
 Change connection params to platform and DB  
 All information about config params you can find in `.artifacts/*.yaml` files  
 
