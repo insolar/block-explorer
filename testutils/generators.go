@@ -15,6 +15,7 @@ import (
 
 	"github.com/insolar/insolar/insolar"
 	"github.com/insolar/insolar/insolar/gen"
+	"github.com/insolar/insolar/insolar/jet"
 	insrecord "github.com/insolar/insolar/insolar/record"
 	"github.com/insolar/insolar/ledger/heavy/exporter"
 	"github.com/insolar/insolar/pulse"
@@ -190,15 +191,12 @@ func GenerateObjectLifeline(pulseCount, recordsInPulse int) ObjectLifeline {
 		if len(amends) > 0 {
 			prevState = amends[len(amends)-1].Record.ID
 		}
-		// TODO uncomment after resolving https://insolar.atlassian.net/browse/PENV-368
-		// if i == pulseCount-1 {
-		// 	deactivate := GenerateVirtualDeactivateRecord(pn, objectID, prevState)
-		// 	deactivate.Record.JetID = jetID
-		// 	sideRecords[1] = RecordsByPulse{
-		// 		Pn:      pn,
-		// 		Records: []*exporter.Record{deactivate},
-		// 	}
-		// }
+		if i == pulseCount-1 && recordsInPulse > 1 {
+			prevState = amends[len(amends)-2].Record.ID
+			deactivate := GenerateVirtualDeactivateRecord(pn, objectID, prevState)
+			deactivate.Record.JetID = jetID
+			records[len(records)-1] = deactivate
+		}
 
 		stateRecords[i] = RecordsByPulse{
 			Pn:      pn,
@@ -340,19 +338,28 @@ var mutex = &sync.Mutex{}
 func GenerateUniqueJetID() insolar.JetID {
 	for {
 		jetID := gen.JetID()
-		id := binary.BigEndian.Uint64(jetID.Prefix())
-		if id == 0 {
+		if !saveUniqueJetID(jetID) {
 			continue
 		}
-		mutex.Lock()
-		_, hasKey := uniqueJetID[id]
-		if !hasKey {
-			uniqueJetID[id] = true
-			mutex.Unlock()
-			return jetID
-		}
-		mutex.Unlock()
+		return jetID
 	}
+}
+
+// saveUniqueJetID returns True if value is unique. Otherwise returns False.
+func saveUniqueJetID(jetID insolar.JetID) bool {
+	id := binary.BigEndian.Uint64(jetID.Prefix())
+	if id == 0 {
+		return false
+	}
+	mutex.Lock()
+	_, hasKey := uniqueJetID[id]
+	if !hasKey {
+		uniqueJetID[id] = true
+		mutex.Unlock()
+		return true
+	}
+	mutex.Unlock()
+	return false
 }
 
 // RandNumberOverRange generates random number over a range
@@ -373,6 +380,91 @@ func RandomString(n int) string {
 		b[i] = letterRunes[rand.Intn(len(letterRunes))]
 	}
 	return string(b)
+}
+
+// generate records with split JetDrops
+func GenerateRecordsWIthSplitJetDrops(pn insolar.PulseNumber, depth int, recordsInJetDrop int) (
+	records []*exporter.Record, jetDropTree map[insolar.PulseNumber]map[insolar.JetID][][]byte) {
+	result := make([]*exporter.Record, 0)
+	jdTree := GenerateJetIDTree(pn, depth)
+	for p, jds := range jdTree {
+		for jd := range jds {
+			records := GenerateRecordsSilence(recordsInJetDrop)
+			for _, r := range records {
+				r.Record.ID = gen.IDWithPulse(p)
+				r.Record.JetID = jd
+				r.ShouldIterateFrom = nil
+			}
+			result = append(result, records...)
+		}
+	}
+	return result, jdTree
+}
+
+// GenerateJetIDTree generates tree of splitted JetDrops with specified depth
+func GenerateJetIDTree(pn insolar.PulseNumber, depth int) map[insolar.PulseNumber]map[insolar.JetID][][]byte {
+	timeout := time.After(5 * time.Second)
+	result := make(map[insolar.PulseNumber]map[insolar.JetID][][]byte)
+	for {
+		select {
+		case <-timeout:
+			return map[insolar.PulseNumber]map[insolar.JetID][][]byte{}
+		default:
+		}
+		rootJetID := *insolar.NewJetID(20, gen.IDWithPulse(pn).Bytes())
+		if !saveUniqueJetID(rootJetID) {
+			continue
+		}
+		result[pn] = map[insolar.JetID][][]byte{}
+		result[pn][rootJetID] = [][]byte{GenerateRandBytes(), GenerateRandBytes(), nil}
+
+		childs := getSiblings(rootJetID, pn, depth, result[pn][rootJetID])
+		for p, c := range childs {
+			result[p] = c
+		}
+
+		return result
+	}
+}
+
+func getSiblings(parent insolar.JetID, parentPn insolar.PulseNumber, depth int, prevJetDropHashes [][]byte) map[insolar.PulseNumber]map[insolar.JetID][][]byte {
+	if depth == 0 {
+		return nil
+	}
+
+	pn := parentPn
+	result := make(map[insolar.PulseNumber]map[insolar.JetID][][]byte)
+	left, right := jet.Siblings(parent)
+	pn += 10
+
+	result[pn] = map[insolar.JetID][][]byte{}
+	result[pn][left] = [][]byte{GenerateRandBytes(), GenerateRandBytes(), prevJetDropHashes[0]}
+	result[pn][right] = [][]byte{GenerateRandBytes(), GenerateRandBytes(), prevJetDropHashes[1]}
+
+	l := getSiblings(left, pn, depth-1, result[pn][left])
+	for p, j := range l {
+		if jds := result[p]; jds == nil {
+			result[p] = j
+		} else {
+			for jd, b := range j {
+				jds[jd] = b
+			}
+			result[p] = jds
+		}
+	}
+	r := getSiblings(right, pn, depth-1, result[pn][right])
+	for p, j := range r {
+		if jds := result[p]; jds == nil {
+			result[p] = j
+		} else {
+			for jd, b := range j {
+				jds[jd] = b
+			}
+			result[p] = jds
+		}
+	}
+
+	return result
 }
 
 // GenerateJetDropsWithSplit returns a jetdrops with splited by depth in different pulse

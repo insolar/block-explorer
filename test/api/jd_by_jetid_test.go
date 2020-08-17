@@ -8,6 +8,8 @@
 package api
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"math"
 	"strconv"
@@ -20,6 +22,7 @@ import (
 	"github.com/insolar/block-explorer/test/heavymock"
 	"github.com/insolar/block-explorer/test/integration"
 	"github.com/insolar/block-explorer/testutils"
+	"github.com/insolar/block-explorer/testutils/clients"
 	"github.com/insolar/insolar/insolar"
 	"github.com/insolar/insolar/insolar/gen"
 	"github.com/insolar/insolar/insolar/jet"
@@ -27,6 +30,7 @@ import (
 	"github.com/insolar/insolar/pulse"
 	"github.com/insolar/spec-insolar-block-explorer-api/v1/client"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc"
 )
 
 func TestGetJetDropsByJetID(t *testing.T) {
@@ -348,4 +352,110 @@ func TestGetJetDropsByJetID_emptyJetID(t *testing.T) {
 	for p := range pulses {
 		require.True(t, pulses[p])
 	}
+}
+
+func TestPrevNextJetDrops_JetDropsByJetID(t *testing.T) {
+	t.Log("C5672 Get JetDrops by JetID, response contains Prev and Next JetDropIDs")
+	ts := integration.NewBlockExplorerTestSetup(t).WithHTTPServer(t)
+	defer ts.Stop(t)
+
+	lowestPulse := gen.PulseNumber()
+	depth := 5
+	records, jetDropTree := testutils.GenerateRecordsWIthSplitJetDrops(lowestPulse, depth, 1)
+	require.NoError(t, heavymock.ImportRecords(ts.ConMngr.ImporterClient, records))
+
+	// this func based on heavymock.GetLowestUnsentPulse() with one addition:
+	// it sets PrevDropHashes for the existing records.
+	// It is expected that BE will process Prev and Next JetDropIDs for JetDrops.
+	getLowestUnsentPulseOverride := func(importer *heavymock.ImporterServer) (insolar.PulseNumber, []exporter.JetDropContinue) {
+		pulse := insolar.PulseNumber(1<<32 - 1)
+		jets := map[insolar.PulseNumber]map[insolar.JetID]exporter.JetDropContinue{}
+		for _, r := range importer.GetUnsentRecords() {
+			if r.Record.ID.Pulse() > pulse {
+				continue
+			}
+			pulse = r.Record.ID.Pulse()
+			if jets[pulse] == nil {
+				jets[pulse] = map[insolar.JetID]exporter.JetDropContinue{}
+			}
+
+			jetID := r.Record.JetID
+			jetDropHashes, ok := jetDropTree[pulse][jetID]
+			if !ok {
+				t.Fatal("pulse of jetID not fount in JetDrops map")
+			}
+			prevDropHashes := [][]byte{jetDropHashes[0], jetDropHashes[1]}
+			hash := jetDropHashes[2]
+			jets[pulse][jetID] = exporter.JetDropContinue{JetID: jetID, Hash: hash, PrevDropHashes: prevDropHashes}
+		}
+		var res []exporter.JetDropContinue
+		for _, jetDrop := range jets[pulse] {
+			res = append(res, jetDrop)
+		}
+		return pulse, res
+	}
+
+	ts.BE.PulseClient.NextFinalizedPulseFunc = func(ctx context.Context, in *exporter.GetNextFinalizedPulse, opts ...grpc.CallOption) (*exporter.FullPulse, error) {
+		pn, jetDropContinue := getLowestUnsentPulseOverride(ts.ConMngr.Importer)
+		p := uint32(pn)
+		if p == 1<<32-1 {
+			return nil, errors.New("unready yet")
+		}
+		return clients.GetFullPulse(p, jetDropContinue)
+	}
+
+	ts.StartBE(t)
+	defer ts.StopBE(t)
+
+	ts.WaitRecordsCount(t, len(records), 5000)
+	c := GetHTTPClient()
+
+	checkPrevJetDropIDListResponse := func(jd client.JetDropByIdResponse200) {
+		require.Len(t, jd.PrevJetDropId, 2)
+		for _, prev := range jd.PrevJetDropId {
+			require.True(t, strings.HasPrefix(prev.JetId, jd.JetId))
+			require.Equal(t, jd.PulseNumber+10, prev.PulseNumber)
+			require.Equal(t, fmt.Sprintf("%v:%v", prev.JetId, prev.PulseNumber), prev.JetDropId)
+		}
+	}
+
+	checkNextJetDropIDResponse := func(jd client.JetDropByIdResponse200) {
+		require.Len(t, jd.NextJetDropId, 1)
+		next := jd.NextJetDropId[0]
+		require.True(t, strings.HasPrefix(jd.JetId, next.JetId))
+		require.Equal(t, jd.PulseNumber-10, next.PulseNumber)
+		require.Equal(t, fmt.Sprintf("%v:%v", next.JetId, next.PulseNumber), next.JetDropId)
+	}
+
+	var lowestPulseCount, maxPulseCount, otherPulsesCount int
+
+	for k := range jetDropTree[lowestPulse] {
+		response := c.JetDropsByJetID(t, converter.JetIDToString(k), nil)
+		require.NotNil(t, response)
+		for _, jd := range response.Result {
+			jdPulseNumber, err := insolar.NewPulseNumberFromStr(strconv.FormatInt(jd.PulseNumber, 10))
+			require.NoError(t, err)
+			if jdPulseNumber == lowestPulse {
+				require.Empty(t, jd.Hash)
+				require.Empty(t, jd.NextJetDropId)
+				checkPrevJetDropIDListResponse(jd)
+				lowestPulseCount++
+			} else if maxPulse := lowestPulse.AsUint32() + uint32(10*depth); jdPulseNumber.AsUint32() == maxPulse {
+				require.NotEmpty(t, jd.Hash)
+				require.Empty(t, jd.PrevJetDropId)
+				checkNextJetDropIDResponse(jd)
+				maxPulseCount++
+			} else {
+				require.NotEmpty(t, jd.Hash)
+				checkPrevJetDropIDListResponse(jd)
+				checkNextJetDropIDResponse(jd)
+				otherPulsesCount++
+			}
+		}
+	}
+	require.Equal(t, 1, lowestPulseCount)
+	require.Equal(t, int(math.Pow(2, float64(depth))), maxPulseCount)
+	// total assertions = 2^(depth + 1) - 1)
+	total := int(math.Pow(2, float64(depth+1))) - 1 - maxPulseCount - lowestPulseCount
+	require.Equal(t, total, otherPulsesCount)
 }
