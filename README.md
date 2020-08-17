@@ -46,7 +46,7 @@ Alternatively, deploy manually by completing the following steps:
    ./bin/api --config=.artifacts/api.yaml
    ```
 
-## Monitor the metrics
+## Monitor metrics
 
 Start the metrics server:
 
@@ -91,11 +91,11 @@ make integration
 make test-heavy-mock-integration
 ```
 
-#### Load tests
+### Load tests
 
 To run load tests, see their [README](load/README.md).
 
-#### Benchmarks
+### Benchmarks
 
 To run benchmarks, say:
 
