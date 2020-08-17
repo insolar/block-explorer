@@ -6,7 +6,7 @@ It doesn't know anything about smart contracts
 
 ## Requirements
  - go 1.14
- - PostgeSQL 11+
+ - PostgeSQL 12+
 
 ## How to start
 #### Resolve dependencies and build
@@ -15,7 +15,7 @@ make all
 ```
 #### Create tables in DB
 ```
-make migrate
+make config migrate
 ```
 Change connection params to platform and DB  
 All information about config params you can find in `.artifacts/*.yaml` files  
@@ -30,7 +30,7 @@ Frontend located here https://github.com/insolar/frontend-block-explorer
 #### with docker-compose
 You can set up everything with docker-compose
 ```
-docker-compose up -d
+make config && docker-compose up -d
 ```
 
 ## How to start metric server
