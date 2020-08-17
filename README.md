@@ -1,92 +1,122 @@
 # Generic Block Explorer
 
-This repository contains a backend and API implementation for the Generic Block Explorer application.
+This repository contains a backend and API implementation for the Generic Block Explorer (GBE) application.
 
-The explorer's backend pulls records from [Insolar](https://github.com/insolar/insolar)'s API and stores them in a relational format. Records are Insolar's smallest data unit that underpins all data produced by smart contracts. So, Generic Block Explorer does not recognize any entities at business level (users, transactions), only the ones at logic level (requests, execution results, object states).
+The GBE's backend pulls records from [Insolar](https://github.com/insolar/insolar)'s API and stores them in a relational format. Records are Insolar's smallest data unit that underpins all data produced by smart contracts. So, GBE does not recognize any entities at business level (users, transactions), only the ones at logic level (requests, execution results, object states).
 
-Block Explorer provides an API of its own, optimized for data visualization. The Block Explorer's frontend (developed separately) then puts up a web face that allows the user to inspect the data in a friendly way.
+GBE provides an API of its own, optimized for data visualization. The [GBE's frontend](https://github.com/insolar/frontend-block-explorer) (developed separately) then puts up a web face that allows the user to inspect the data in a friendly way.
 
 ## Install
 
-To manually deploy the Block Explorer backend, first install:
+To manually deploy the GBE's backend, first install:
  
 - [Go 1.14](https://golang.org/dl/)
 - [PostgeSQL 12+](https://www.postgresql.org/download/)
 
-Or you can use Docker of the latest version, if you are fine with a containerized deployment.
+Or you can use Docker of the latest version if you prefer a containerized deployment.
 
 ## Deploy
 
-To deploy the backend, complete the following steps:
+Deploy with docker-compose:
 
-1. Resolve dependencies and build
+```
+make config && docker-compose up -d
+```
+
+Alternatively, deploy manually by completing the following steps:
+
+1. Resolve dependencies and build binaries:
 
    ```
    make all
    ```
 
-2. Migrate the data:
+2. Migrate the data from Insolar and configure the deployment:
 
    ```
-   make migrate
+   make config migrate
    ```
-Change connection params to platform and DB  
-All information about config params you can find in `.artifacts/*.yaml` files  
 
-#### Start backend and API
-```
-./bin/block-explorer --config=.artifacts/block-explorer.yaml
-./bin/api --config=.artifacts/api.yaml
-```
-Frontend located here https://github.com/insolar/frontend-block-explorer
+   **Note**: You can change the default configuration in `.artifacts/*.yaml` files. For example, connection parameters between Insolar and the backend's database.
 
-#### with docker-compose
-You can set up everything with docker-compose
-```
-docker-compose up -d
-```
+3. Start the backend and API:
 
-## How to start metric server
+   ```
+   ./bin/block-explorer --config=.artifacts/block-explorer.yaml
+   ./bin/api --config=.artifacts/api.yaml
+   ```
+
+## Monitor the metrics
+
+Start the metrics server:
+
 ```
 cd ./scripts/monitor && docker-compose up -d
 ```
-Grafana: http://localhost:3000/ admin:pass  
-Prometheus http://localhost:9090/ 
 
-## Internal components
-#### Extractor
-Extractor made for fetching data from platform and send to transformer
-#### Transformer
-Transformer receives data from extractor, transform it into original GBE entities and send to processor
-#### Processor
-Processor maintains storing GBE entities to DB. It uses storage
-#### Controller
-Controller implements logic of searching missing data  
-It searches for missing pulses in db and missing records in existing pulse data. If found it asks extractor for re-request data
+Open Grafana at http://localhost:3000/ with `admin:pass` default credentials.
 
-## Tests
-#### Unit/Integration
-Integration tests needs docker
+Open Prometheus at http://localhost:9090/.
+
+## Learn what's under the hood
+
+GBE consists of the following components:
+
+**Extractor**. Fetches data from Insolar and sends the data to the transformer.
+
+**Transformer**. Receives data from the extractor, transforms the data into GBE entities (records, lifelines, pulses, jets, and jet drops), and sends them to the processor.
+
+**Processor**. Processes the entities pulse-by-pulse and stores them in the storage (an internal component).
+
+**Controller**. Searches for data missing in GBE's database—pulses and their records. If found, the controller asks the extractor to re-request the missing data.
+
+## Run tests
+
+You can run several kinds of tests against the backend: unit, integration, load tests, and benchmarks.
+
+### Unit and integration tests
+
+**Note**: They both require Docker.
+
+To run unit tests, say:
+
 ```
 make unit
+```
+
+To run integration tests, say:
+
+```
 make integration
 make test-heavy-mock-integration
 ```
 
-#### Loadtests
-See [readme](load/README.md)
+#### Load tests
+
+To run load tests, see their [README](load/README.md).
 
 #### Benchmarks
+
+To run benchmarks, say:
+
 ```
 make bench
 make bench-integration
 ```
-To run comparative benchmarks install [cob](https://github.com/knqyf263/cob):
-```
-curl -sfL https://raw.githubusercontent.com/knqyf263/cob/master/install.sh | sudo sh -s -- -b /usr/local/bin
-```
-To compare benchmarks between latest two commits one *MUST COMMIT* changes and then run
-```
-make bench-compare
-make bench-compare-integration
-```
+
+To compare benchmarks between the latest commit and your newest one, follow these steps:
+
+1. Install [cob](https://github.com/knqyf263/cob):
+
+   ```
+   curl -sfL https://raw.githubusercontent.com/knqyf263/cob/master/install.sh | sudo sh -s -- -b /usr/local/bin
+   ```
+
+2. (**Required**) Commit your changes.
+
+3. Compare benchmarks between the latest two commits by running:
+
+   ```
+   make bench-compare
+   make bench-compare-integration
+   ```
