@@ -411,7 +411,8 @@ func GenerateJetIDTree(pn insolar.PulseNumber, depth int) map[insolar.PulseNumbe
 			return map[insolar.PulseNumber]map[insolar.JetID][][]byte{}
 		default:
 		}
-		rootJetID := *insolar.NewJetID(20, gen.IDWithPulse(pn).Bytes())
+		length := RandNumberOverRange(15, 40)
+		rootJetID := *insolar.NewJetID(uint8(length), gen.IDWithPulse(pn).Bytes())
 		if !saveUniqueJetID(rootJetID) {
 			continue
 		}
