@@ -326,8 +326,6 @@ func (s *Storage) GetPulses(fromPulse *int64, timestampLte, timestampGte, pulseN
 		query = query.Where("pulse_number <= ?", &fromPulse)
 	}
 
-	query = query.Order("pulse_number desc")
-
 	pulses, total, err := getPulses(query, limit, offset)
 	if err != nil {
 		return nil, 0, errors.Wrap(err, "error while select pulses from db")
@@ -335,20 +333,35 @@ func (s *Storage) GetPulses(fromPulse *int64, timestampLte, timestampGte, pulseN
 
 	// set real NextPulseNumber and PrevPulseNumber to every pulse (if we don't know it, set -1)
 	pulsesLen := len(pulses)
-	for i := 0; i < pulsesLen-1; i++ {
-		if pulses[i].PrevPulseNumber == pulses[i+1].PulseNumber {
-			pulses[i+1].NextPulseNumber = pulses[i].PulseNumber
-		} else {
-			pulses[i+1].NextPulseNumber = -1
-			pulses[i].PrevPulseNumber = -1
+	if sortByAsc {
+		for i := pulsesLen - 1; i > 0; i-- {
+			if pulses[i].PrevPulseNumber == pulses[i-1].PulseNumber {
+				pulses[i-1].NextPulseNumber = pulses[i].PulseNumber
+			} else {
+				pulses[i].PrevPulseNumber = -1
+				pulses[i-1].NextPulseNumber = -1
+			}
+		}
+
+		if pulsesLen > 0 {
+			pulses[0] = s.updatePrevPulse(pulses[0])
+			pulses[pulsesLen-1] = s.updateNextPulse(pulses[pulsesLen-1])
+		}
+	} else {
+		for i := 0; i < pulsesLen-1; i++ {
+			if pulses[i].PrevPulseNumber == pulses[i+1].PulseNumber {
+				pulses[i+1].NextPulseNumber = pulses[i].PulseNumber
+			} else {
+				pulses[i+1].NextPulseNumber = -1
+				pulses[i].PrevPulseNumber = -1
+			}
+		}
+
+		if pulsesLen > 0 {
+			pulses[0] = s.updateNextPulse(pulses[0])
+			pulses[pulsesLen-1] = s.updatePrevPulse(pulses[pulsesLen-1])
 		}
 	}
-
-	if pulsesLen > 0 {
-		pulses[0] = s.updateNextPulse(pulses[0])
-		pulses[pulsesLen-1] = s.updatePrevPulse(pulses[pulsesLen-1])
-	}
-
 	return pulses, total, err
 }
 
