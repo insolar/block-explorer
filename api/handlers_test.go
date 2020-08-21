@@ -667,35 +667,47 @@ func TestPulses_TimestampRange(t *testing.T) {
 func TestPulses_PulseNumberFilters(t *testing.T) {
 	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
 
+	p1 := int64(66666666)
+	p2 := p1 + 1
+	p3 := p2 + 1
+	p4 := p3 + 1
+	p5 := p4 + 1
 	// insert pulses
 	firstPulse := models.Pulse{
-		PulseNumber: 66666666,
-		IsComplete:  false,
-		Timestamp:   66666666,
+		PulseNumber:     p1,
+		IsComplete:      false,
+		Timestamp:       66666666,
+		NextPulseNumber: p2,
 	}
 	err := testutils.CreatePulse(testDB, firstPulse)
 	require.NoError(t, err)
 
 	secondPulse := models.Pulse{
-		PulseNumber: 66666667,
-		IsComplete:  false,
-		Timestamp:   66666667,
+		PulseNumber:     p2,
+		IsComplete:      false,
+		Timestamp:       66666667,
+		PrevPulseNumber: p1,
+		NextPulseNumber: p3,
 	}
 	err = testutils.CreatePulse(testDB, secondPulse)
 	require.NoError(t, err)
 
 	thirdPulse := models.Pulse{
-		PulseNumber: 66666668,
-		IsComplete:  false,
-		Timestamp:   66666668,
+		PulseNumber:     p3,
+		IsComplete:      false,
+		Timestamp:       66666668,
+		PrevPulseNumber: p2,
+		NextPulseNumber: p4,
 	}
 	err = testutils.CreatePulse(testDB, thirdPulse)
 	require.NoError(t, err)
 
 	fourthPulse := models.Pulse{
-		PulseNumber: 66666669,
-		IsComplete:  false,
-		Timestamp:   66666669,
+		PulseNumber:     66666669,
+		IsComplete:      false,
+		Timestamp:       66666669,
+		PrevPulseNumber: p3,
+		NextPulseNumber: p5,
 	}
 	err = testutils.CreatePulse(testDB, fourthPulse)
 	require.NoError(t, err)
@@ -718,6 +730,13 @@ func TestPulses_PulseNumberFilters(t *testing.T) {
 		require.EqualValues(t, thirdPulse.PulseNumber, *(*received.Result)[0].PulseNumber)
 		require.EqualValues(t, secondPulse.PulseNumber, *(*received.Result)[1].PulseNumber)
 		require.EqualValues(t, firstPulse.PulseNumber, *(*received.Result)[2].PulseNumber)
+
+		require.Nil(t, (*received.Result)[2].PrevPulseNumber)
+		require.Equal(t, firstPulse.NextPulseNumber, *(*received.Result)[2].NextPulseNumber)
+		require.Equal(t, secondPulse.PrevPulseNumber, *(*received.Result)[1].PrevPulseNumber)
+		require.Equal(t, secondPulse.NextPulseNumber, *(*received.Result)[1].NextPulseNumber)
+		require.Equal(t, thirdPulse.PrevPulseNumber, *(*received.Result)[0].PrevPulseNumber)
+		require.Equal(t, thirdPulse.NextPulseNumber, *(*received.Result)[0].NextPulseNumber)
 	})
 
 	t.Run("pulse_number_lt", func(t *testing.T) {
@@ -737,6 +756,11 @@ func TestPulses_PulseNumberFilters(t *testing.T) {
 		require.EqualValues(t, 2, *received.Total)
 		require.EqualValues(t, secondPulse.PulseNumber, *(*received.Result)[0].PulseNumber)
 		require.EqualValues(t, firstPulse.PulseNumber, *(*received.Result)[1].PulseNumber)
+
+		require.Nil(t, (*received.Result)[1].PrevPulseNumber)
+		require.Equal(t, firstPulse.NextPulseNumber, *(*received.Result)[1].NextPulseNumber)
+		require.Equal(t, secondPulse.PrevPulseNumber, *(*received.Result)[0].PrevPulseNumber)
+		require.Equal(t, secondPulse.NextPulseNumber, *(*received.Result)[0].NextPulseNumber)
 	})
 
 	t.Run("pulse_number_gte", func(t *testing.T) {
@@ -756,6 +780,11 @@ func TestPulses_PulseNumberFilters(t *testing.T) {
 		require.EqualValues(t, 2, *received.Total)
 		require.EqualValues(t, fourthPulse.PulseNumber, *(*received.Result)[0].PulseNumber)
 		require.EqualValues(t, thirdPulse.PulseNumber, *(*received.Result)[1].PulseNumber)
+
+		require.Equal(t, thirdPulse.PrevPulseNumber, *(*received.Result)[1].PrevPulseNumber)
+		require.Equal(t, thirdPulse.NextPulseNumber, *(*received.Result)[1].NextPulseNumber)
+		require.Equal(t, fourthPulse.PrevPulseNumber, *(*received.Result)[0].PrevPulseNumber)
+		require.Nil(t, (*received.Result)[0].NextPulseNumber)
 	})
 
 	t.Run("pulse_number_gt", func(t *testing.T) {
@@ -774,6 +803,9 @@ func TestPulses_PulseNumberFilters(t *testing.T) {
 		require.Len(t, *received.Result, 1)
 		require.EqualValues(t, 1, *received.Total)
 		require.EqualValues(t, fourthPulse.PulseNumber, *(*received.Result)[0].PulseNumber)
+
+		require.Equal(t, fourthPulse.PrevPulseNumber, *(*received.Result)[0].PrevPulseNumber)
+		require.Nil(t, (*received.Result)[0].NextPulseNumber)
 	})
 
 	t.Run("sort_by asc", func(t *testing.T) {
@@ -795,6 +827,15 @@ func TestPulses_PulseNumberFilters(t *testing.T) {
 		require.EqualValues(t, secondPulse.PulseNumber, *(*received.Result)[1].PulseNumber)
 		require.EqualValues(t, thirdPulse.PulseNumber, *(*received.Result)[2].PulseNumber)
 		require.EqualValues(t, fourthPulse.PulseNumber, *(*received.Result)[3].PulseNumber)
+
+		require.Nil(t, (*received.Result)[0].PrevPulseNumber)
+		require.Equal(t, firstPulse.NextPulseNumber, *(*received.Result)[0].NextPulseNumber)
+		require.Equal(t, secondPulse.PrevPulseNumber, *(*received.Result)[1].PrevPulseNumber)
+		require.Equal(t, secondPulse.NextPulseNumber, *(*received.Result)[1].NextPulseNumber)
+		require.Equal(t, thirdPulse.PrevPulseNumber, *(*received.Result)[2].PrevPulseNumber)
+		require.Equal(t, thirdPulse.NextPulseNumber, *(*received.Result)[2].NextPulseNumber)
+		require.Equal(t, fourthPulse.PrevPulseNumber, *(*received.Result)[3].PrevPulseNumber)
+		require.Nil(t, (*received.Result)[3].NextPulseNumber)
 	})
 
 	t.Run("sort_by desc", func(t *testing.T) {
@@ -816,6 +857,15 @@ func TestPulses_PulseNumberFilters(t *testing.T) {
 		require.EqualValues(t, secondPulse.PulseNumber, *(*received.Result)[2].PulseNumber)
 		require.EqualValues(t, thirdPulse.PulseNumber, *(*received.Result)[1].PulseNumber)
 		require.EqualValues(t, fourthPulse.PulseNumber, *(*received.Result)[0].PulseNumber)
+
+		require.Nil(t, (*received.Result)[3].PrevPulseNumber)
+		require.Equal(t, firstPulse.NextPulseNumber, *(*received.Result)[3].NextPulseNumber)
+		require.Equal(t, secondPulse.PrevPulseNumber, *(*received.Result)[2].PrevPulseNumber)
+		require.Equal(t, secondPulse.NextPulseNumber, *(*received.Result)[2].NextPulseNumber)
+		require.Equal(t, thirdPulse.PrevPulseNumber, *(*received.Result)[1].PrevPulseNumber)
+		require.Equal(t, thirdPulse.NextPulseNumber, *(*received.Result)[1].NextPulseNumber)
+		require.Equal(t, fourthPulse.PrevPulseNumber, *(*received.Result)[0].PrevPulseNumber)
+		require.Nil(t, (*received.Result)[0].NextPulseNumber)
 	})
 }
 
