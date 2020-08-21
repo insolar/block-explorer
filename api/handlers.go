@@ -197,10 +197,10 @@ func (s *Server) JetDropsByJetID(ctx echo.Context, jetID server.JetIdPath, param
 	}
 
 	jetDrops, total, err := s.storage.GetJetDropsByJetID(id, pulseNumberLte, pulseNumberLt, pulseNumberGte, pulseNumberGt, limit, sortByAsc)
-	if gorm.IsRecordNotFoundError(err) {
+	if gorm.IsRecordNotFoundError(err) || len(jetDrops) == 0 {
 		s.logger.Error(err)
 		cnt := int64(0)
-		var drops []server.JetDrop
+		drops := []server.JetDrop{}
 		return ctx.JSON(http.StatusOK, server.JetDropsResponse{
 			Total:  &cnt,
 			Result: &drops,
@@ -255,15 +255,15 @@ func (s *Server) JetDropsByJetID(ctx echo.Context, jetID server.JetIdPath, param
 			if !ok {
 				jetDropsByPrevHash[key] = append(jetDropsByPrevHash[key], transformPrevNextResp(jetDrop)) // nolint
 				return
-			} else {
-				apiNextPrevDrop := transformPrevNextResp(jetDrop)
-				for _, d := range savedDrops {
-					if *d.JetDropId == *apiNextPrevDrop.JetDropId {
-						return
-					}
-				}
-				jetDropsByPrevHash[key] = append(jetDropsByPrevHash[key], apiNextPrevDrop) // nolint
 			}
+
+			apiNextPrevDrop := transformPrevNextResp(jetDrop) // nolint
+			for _, d := range savedDrops {
+				if *d.JetDropId == *apiNextPrevDrop.JetDropId {
+					return
+				}
+			}
+			jetDropsByPrevHash[key] = append(jetDropsByPrevHash[key], apiNextPrevDrop)
 		}
 		add(jetDrop.FirstPrevHash)
 		add(jetDrop.SecondPrevHash)
