@@ -265,7 +265,7 @@ func appendPlatformVersionToCtx(ctx context.Context) context.Context {
 
 func isVersionError(err error) bool {
 	return strings.Contains(err.Error(), exporter.ErrDeprecatedClientVersion.Error()) ||
-		strings.Contains(err.Error(), "block explorer should send client type 1") ||
+		strings.Contains(err.Error(), "unknown heavy_version") ||
 		strings.Contains(err.Error(), "unknown type client") ||
 		strings.Contains(err.Error(), "incorrect format of the heavy_version")
 

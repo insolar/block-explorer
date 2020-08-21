@@ -96,7 +96,7 @@ func TestGetJetDrops_WrongVersionOnPulseError(t *testing.T) {
 	}
 	pulseExtractor := mock.NewPulseExtractorMock(mc)
 	pulseExtractor.GetNextFinalizedPulseMock.Set(func(ctx context.Context, p int64) (fp1 *exporter.FullPulse, err error) {
-		return nil, errors.New("block explorer should send client type 1")
+		return nil, errors.New("unknown heavy_version")
 	})
 	extractor := NewPlatformExtractor(uint32(1), 0, 100, pulseExtractor, recordClient, shutdownBETestFunc)
 	err := extractor.Start(ctx)

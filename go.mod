@@ -16,7 +16,7 @@ require (
 	github.com/grpc-ecosystem/go-grpc-middleware v1.2.0
 	github.com/insolar/assured-ledger/ledger-core/v2 v2.0.0-20200512113104-4973d6ba44e9
 	github.com/insolar/insconfig v0.0.0-20200617131009-dd635d1fc9e9
-	github.com/insolar/insolar v1.7.1
+	github.com/insolar/insolar v1.7.2
 	github.com/insolar/spec-insolar-block-explorer-api v1.3.0
 	github.com/jackc/pgproto3/v2 v2.0.4 // indirect
 	github.com/jackc/pgx/v4 v4.8.1 // indirect
