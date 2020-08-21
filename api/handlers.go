@@ -210,16 +210,60 @@ func (s *Server) JetDropsByJetID(ctx echo.Context, jetID server.JetIdPath, param
 		s.logger.Error(err)
 		return ctx.JSON(http.StatusInternalServerError, struct{}{})
 	}
+
+	var prevJetDropsFirstElem []models.JetDrop
+	var nextJetDropsFirstElem []models.JetDrop
+	var nextJetDropsLastElem []models.JetDrop
+	var prevJetDropsLastElem []models.JetDrop
+
+	// find next/prev jetdrops for first and last element
+	if pulseNumberGt != nil || pulseNumberGte != nil || pulseNumberLt != nil || pulseNumberLte != nil {
+		_, prevJetDropsFirstElem, nextJetDropsFirstElem, err = s.storage.GetJetDropByID(
+			models.JetDropID{
+				JetID:       jetDrops[0].JetID,
+				PulseNumber: jetDrops[0].PulseNumber,
+			})
+		if err != nil {
+			return ctx.JSON(http.StatusInternalServerError, "imposible situation")
+		}
+		_, prevJetDropsLastElem, nextJetDropsLastElem, err = s.storage.GetJetDropByID(
+			models.JetDropID{
+				JetID:       jetDrops[len(jetDrops)-1].JetID,
+				PulseNumber: jetDrops[len(jetDrops)-1].PulseNumber,
+			})
+		if err != nil {
+			return ctx.JSON(http.StatusInternalServerError, "imposible situation")
+		}
+		s.logger.Debug(prevJetDropsFirstElem, prevJetDropsLastElem, nextJetDropsLastElem, nextJetDropsFirstElem)
+	}
+
+	enrichJetDrops := func(jd []models.JetDrop) []models.JetDrop {
+		t := append(append(jd, prevJetDropsFirstElem...), nextJetDropsLastElem...)
+		return append(append(t, prevJetDropsLastElem...), nextJetDropsFirstElem...)
+	}
+
 	jetDropsByHash := map[string]server.NextPrevJetDrop{}
-	for _, jetDrop := range jetDrops {
+	for _, jetDrop := range enrichJetDrops(jetDrops) {
 		key := base64.StdEncoding.EncodeToString(jetDrop.Hash)
 		jetDropsByHash[key] = transformPrevNextResp(jetDrop)
 	}
 	jetDropsByPrevHash := map[string][]server.NextPrevJetDrop{}
-	for _, jetDrop := range jetDrops {
+	for _, jetDrop := range enrichJetDrops(jetDrops) {
 		add := func(hash []byte) {
 			key := base64.StdEncoding.EncodeToString(hash)
-			jetDropsByPrevHash[key] = append(jetDropsByPrevHash[key], transformPrevNextResp(jetDrop)) // nolint
+			savedDrops, ok := jetDropsByPrevHash[key]
+			if !ok {
+				jetDropsByPrevHash[key] = append(jetDropsByPrevHash[key], transformPrevNextResp(jetDrop)) // nolint
+				return
+			} else {
+				apiNextPrevDrop := transformPrevNextResp(jetDrop)
+				for _, d := range savedDrops {
+					if *d.JetDropId == *apiNextPrevDrop.JetDropId {
+						return
+					}
+				}
+				jetDropsByPrevHash[key] = append(jetDropsByPrevHash[key], apiNextPrevDrop) // nolint
+			}
 		}
 		add(jetDrop.FirstPrevHash)
 		add(jetDrop.SecondPrevHash)
@@ -227,24 +271,24 @@ func (s *Server) JetDropsByJetID(ctx echo.Context, jetID server.JetIdPath, param
 	cnt := int64(total)
 	drops := make([]server.JetDrop, len(jetDrops))
 	for i, jetDrop := range jetDrops {
-		nextJetDropID := []server.NextPrevJetDrop{}
-		prevJetDropID := []server.NextPrevJetDrop{}
+		nextJetDrops := []server.NextPrevJetDrop{}
+		prevJetDrops := []server.NextPrevJetDrop{}
 
 		prev, ok := jetDropsByHash[base64.StdEncoding.EncodeToString(jetDrop.FirstPrevHash)]
 		if ok {
-			prevJetDropID = append(prevJetDropID, prev)
+			prevJetDrops = append(prevJetDrops, prev)
 		}
 		prev, ok = jetDropsByHash[base64.StdEncoding.EncodeToString(jetDrop.SecondPrevHash)]
 		if ok {
-			prevJetDropID = append(prevJetDropID, prev)
+			prevJetDrops = append(prevJetDrops, prev)
 		}
 
 		next, ok := jetDropsByPrevHash[base64.StdEncoding.EncodeToString(jetDrop.Hash)]
 		if ok {
-			nextJetDropID = append(nextJetDropID, next...)
+			nextJetDrops = append(nextJetDrops, next...)
 		}
 
-		drops[i] = JetDropToAPI(jetDrop, prevJetDropID, nextJetDropID)
+		drops[i] = JetDropToAPI(jetDrop, prevJetDrops, nextJetDrops)
 	}
 	return ctx.JSON(http.StatusOK, server.JetDropsResponse{
 		Total:  &cnt,
