@@ -79,7 +79,7 @@ func PulseToAPI(pulse models.Pulse) server.Pulse {
 	return response
 }
 
-func JetDropToAPI(jetDrop models.JetDrop, prevJetDropID, nextJetDropID []server.NextPrevJetDrop) server.JetDrop {
+func JetDropToAPI(jetDrop models.JetDrop, prevJetDrops, nextJetDrops []server.NextPrevJetDrop) server.JetDrop {
 	pulseNumber := jetDrop.PulseNumber
 	recordAmount := int64(jetDrop.RecordAmount)
 
@@ -89,8 +89,8 @@ func JetDropToAPI(jetDrop models.JetDrop, prevJetDropID, nextJetDropID []server.
 		JetDropId: NullableString(jetDropID.ToString()),
 		JetId:     NullableString(jetDropID.JetIDToString()),
 		// todo implement this if needed
-		NextJetDropId: &nextJetDropID,
-		PrevJetDropId: &prevJetDropID,
+		NextJetDropId: &nextJetDrops,
+		PrevJetDropId: &prevJetDrops,
 		PulseNumber:   &pulseNumber,
 		RecordAmount:  &recordAmount,
 		Timestamp:     &jetDrop.Timestamp,
