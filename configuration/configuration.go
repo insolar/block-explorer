@@ -61,7 +61,7 @@ type Replicator struct {
 
 // Metrics represents a configuration for expose metrics
 type Metrics struct {
-	HTTPServerPort  uint32        `insconfig:":8081| http server port"`
+	HTTPServerPort  uint32        `insconfig:"8081| http server port"`
 	RefreshInterval time.Duration `insconfig:"10s| Refresh metrics interval"`
 	StartServer     bool          `insconfig:"true| if true, create http server to expose metrics"`
 }

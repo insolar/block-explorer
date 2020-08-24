@@ -115,6 +115,8 @@ func main() {
 		}
 	}()
 
+	db.SetLogger(belogger.NewGORMLogAdapter(logger))
+
 	r := plugins.NewDefaultShutdownPlugin(stopChannel)
 	r.Apply(db)
 
