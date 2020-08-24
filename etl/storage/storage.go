@@ -49,7 +49,7 @@ func (s *Storage) SaveJetDropData(jetDrop models.JetDrop, records []models.Recor
 func (s *Storage) initJD(jetDrop models.JetDrop, records []models.Record, pulseNumber int64) error {
 	return s.db.Transaction(func(tx *gorm.DB) error {
 		jd := &jetDrop
-		transaction := *tx
+		transaction := tx.New()
 		if err := transaction.LogMode(false).Create(jd).Error; err != nil {
 			return errors.Wrap(err, "error while saving jetDrop")
 		}
