@@ -234,7 +234,23 @@ func (s *Server) JetDropsByJetID(ctx echo.Context, jetID server.JetIdPath, param
 		if err != nil {
 			return ctx.JSON(http.StatusInternalServerError, "imposible situation")
 		}
-		s.logger.Debug(prevJetDropsFirstElem, prevJetDropsLastElem, nextJetDropsLastElem, nextJetDropsFirstElem)
+
+		logCustomFields := func(logFormatFunction func(fmt string, args ...interface{}), jetDrops []models.JetDrop) {
+			custom := make([]models.JetDrop, len(jetDrops))
+			for i, jetDrop := range jetDrops {
+				custom[i] = models.JetDrop{
+					PulseNumber:  jetDrop.PulseNumber,
+					JetID:        jetDrop.JetID,
+					Timestamp:    jetDrop.Timestamp,
+					RecordAmount: jetDrop.RecordAmount,
+				}
+			}
+			logFormatFunction("%+v", custom)
+		}
+		logCustomFields(s.logger.Debugf, prevJetDropsFirstElem)
+		logCustomFields(s.logger.Debugf, prevJetDropsLastElem)
+		logCustomFields(s.logger.Debugf, nextJetDropsLastElem)
+		logCustomFields(s.logger.Debugf, nextJetDropsFirstElem)
 	}
 
 	enrichJetDrops := func(jd []models.JetDrop) []models.JetDrop {
