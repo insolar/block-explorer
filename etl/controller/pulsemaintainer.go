@@ -26,10 +26,9 @@ func (c *Controller) pulseMaintainer(ctx context.Context) {
 		select {
 		case <-ctx.Done():
 			return
-		default:
-			time.Sleep(time.Second * time.Duration(c.cfg.PulsePeriod))
+		case <-time.After(time.Second * time.Duration(c.cfg.PulsePeriod)):
+			eraseJetDropRegister(ctx, c, log)
 		}
-		eraseJetDropRegister(ctx, c, log)
 	}
 }
 
@@ -82,8 +81,7 @@ func (c *Controller) pulseSequence(ctx context.Context) {
 		select {
 		case <-ctx.Done():
 			return
-		default:
-			time.Sleep(time.Second * time.Duration(c.cfg.SequentialPeriod))
+		case <-time.After(time.Second * time.Duration(c.cfg.SequentialPeriod)):
 		}
 		var err error
 		var nextSequential models.Pulse
