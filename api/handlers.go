@@ -196,7 +196,65 @@ func (s *Server) JetDropsByJetID(ctx echo.Context, jetID server.JetIdPath, param
 		return ctx.JSON(http.StatusBadRequest, apiErr)
 	}
 
-	jetDrops, total, err := s.storage.GetJetDropsByJetID(id, pulseNumberLte, pulseNumberLt, pulseNumberGte, pulseNumberGt, limit, sortByAsc)
+	// Enrich search edges to add next and prev jet drop info
+	enrichPulseEdges := func(pulseNumberGt, pulseNumberGte, pulseNumberLt, pulseNumberLte *int64) (*int64, *int64, *int64, *int64) {
+		emptyPulse := models.Pulse{}
+		var gt, gte, lt, lte *int64
+		if pulseNumberGt != nil {
+			pulse, err := s.storage.GetPulse(*pulseNumberGt)
+			if err == nil && pulse.PrevPulseNumber > 0 {
+				gt = &pulse.PrevPulseNumber
+			} else {
+				gt = pulseNumberGt
+			}
+		}
+
+		if pulseNumberGte != nil {
+			pulse, err := s.storage.GetPulse(*pulseNumberGte)
+			if err == nil && pulse.PrevPulseNumber > 0 {
+				gte = &pulse.PrevPulseNumber
+			} else {
+				gte = pulseNumberGte
+			}
+		}
+
+		if pulseNumberLt != nil {
+			nextPulse, err := s.storage.GetNextSavedPulse(models.Pulse{
+				PulseNumber: *pulseNumberLt,
+			})
+			if err == nil && nextPulse != emptyPulse {
+				lt = &nextPulse.PulseNumber
+			} else {
+				lt = pulseNumberLt
+			}
+		}
+
+		if pulseNumberLte != nil {
+			nextPulse, err := s.storage.GetNextSavedPulse(models.Pulse{
+				PulseNumber: *pulseNumberLte,
+			})
+			if err == nil && nextPulse != emptyPulse {
+				lte = &nextPulse.PulseNumber
+			} else {
+				lte = pulseNumberLte
+			}
+		}
+		return gt, gte, lt, lte
+	}
+
+	// delete enriched jetdrops after setting next/prev data
+	enrichedJetDrop := func(jd models.JetDrop) bool {
+		if (pulseNumberGte != nil && jd.PulseNumber < *pulseNumberGte) ||
+			(pulseNumberGt != nil && jd.PulseNumber <= *pulseNumberGt) ||
+			(pulseNumberLte != nil && jd.PulseNumber > *pulseNumberLte) ||
+			(pulseNumberLt != nil && jd.PulseNumber >= *pulseNumberLt) {
+			return true
+		}
+		return false
+	}
+
+	pulseNumberGtEnriched, pulseNumberGteEnriched, pulseNumberLtEnriched, pulseNumberLteEnriched := enrichPulseEdges(pulseNumberGt, pulseNumberGte, pulseNumberLt, pulseNumberLte)
+	jetDrops, total, err := s.storage.GetJetDropsByJetID(id, pulseNumberLteEnriched, pulseNumberLtEnriched, pulseNumberGteEnriched, pulseNumberGtEnriched, limit, sortByAsc)
 	if gorm.IsRecordNotFoundError(err) || len(jetDrops) == 0 {
 		s.logger.Error(err)
 		cnt := int64(0)
@@ -211,60 +269,13 @@ func (s *Server) JetDropsByJetID(ctx echo.Context, jetID server.JetIdPath, param
 		return ctx.JSON(http.StatusInternalServerError, struct{}{})
 	}
 
-	var prevJetDropsFirstElem []models.JetDrop
-	var nextJetDropsFirstElem []models.JetDrop
-	var nextJetDropsLastElem []models.JetDrop
-	var prevJetDropsLastElem []models.JetDrop
-
-	// find next/prev jetdrops for first and last element
-	if pulseNumberGt != nil || pulseNumberGte != nil || pulseNumberLt != nil || pulseNumberLte != nil {
-		_, prevJetDropsFirstElem, nextJetDropsFirstElem, err = s.storage.GetJetDropByID(
-			models.JetDropID{
-				JetID:       jetDrops[0].JetID,
-				PulseNumber: jetDrops[0].PulseNumber,
-			})
-		if err != nil {
-			return ctx.JSON(http.StatusInternalServerError, "imposible situation")
-		}
-		_, prevJetDropsLastElem, nextJetDropsLastElem, err = s.storage.GetJetDropByID(
-			models.JetDropID{
-				JetID:       jetDrops[len(jetDrops)-1].JetID,
-				PulseNumber: jetDrops[len(jetDrops)-1].PulseNumber,
-			})
-		if err != nil {
-			return ctx.JSON(http.StatusInternalServerError, "imposible situation")
-		}
-
-		logCustomFields := func(logFormatFunction func(fmt string, args ...interface{}), jetDrops []models.JetDrop) {
-			custom := make([]models.JetDrop, len(jetDrops))
-			for i, jetDrop := range jetDrops {
-				custom[i] = models.JetDrop{
-					PulseNumber:  jetDrop.PulseNumber,
-					JetID:        jetDrop.JetID,
-					Timestamp:    jetDrop.Timestamp,
-					RecordAmount: jetDrop.RecordAmount,
-				}
-			}
-			logFormatFunction("%+v", custom)
-		}
-		logCustomFields(s.logger.Debugf, prevJetDropsFirstElem)
-		logCustomFields(s.logger.Debugf, prevJetDropsLastElem)
-		logCustomFields(s.logger.Debugf, nextJetDropsLastElem)
-		logCustomFields(s.logger.Debugf, nextJetDropsFirstElem)
-	}
-
-	enrichJetDrops := func(jd []models.JetDrop) []models.JetDrop {
-		t := append(append(jd, prevJetDropsFirstElem...), nextJetDropsLastElem...)
-		return append(append(t, prevJetDropsLastElem...), nextJetDropsFirstElem...)
-	}
-
 	jetDropsByHash := map[string]server.NextPrevJetDrop{}
-	for _, jetDrop := range enrichJetDrops(jetDrops) {
+	for _, jetDrop := range jetDrops {
 		key := base64.StdEncoding.EncodeToString(jetDrop.Hash)
 		jetDropsByHash[key] = transformPrevNextResp(jetDrop)
 	}
 	jetDropsByPrevHash := map[string][]server.NextPrevJetDrop{}
-	for _, jetDrop := range enrichJetDrops(jetDrops) {
+	for _, jetDrop := range jetDrops {
 		add := func(hash []byte) {
 			key := base64.StdEncoding.EncodeToString(hash)
 			savedDrops, ok := jetDropsByPrevHash[key]
@@ -285,8 +296,12 @@ func (s *Server) JetDropsByJetID(ctx echo.Context, jetID server.JetIdPath, param
 		add(jetDrop.SecondPrevHash)
 	}
 	cnt := int64(total)
-	drops := make([]server.JetDrop, len(jetDrops))
-	for i, jetDrop := range jetDrops {
+	var drops []server.JetDrop
+	for _, jetDrop := range jetDrops {
+		if enrichedJetDrop(jetDrop) {
+			cnt--
+			continue
+		}
 		nextJetDrops := []server.NextPrevJetDrop{}
 		prevJetDrops := []server.NextPrevJetDrop{}
 
@@ -304,7 +319,7 @@ func (s *Server) JetDropsByJetID(ctx echo.Context, jetID server.JetIdPath, param
 			nextJetDrops = append(nextJetDrops, next...)
 		}
 
-		drops[i] = JetDropToAPI(jetDrop, prevJetDrops, nextJetDrops)
+		drops = append(drops, JetDropToAPI(jetDrop, prevJetDrops, nextJetDrops))
 	}
 	return ctx.JSON(http.StatusOK, server.JetDropsResponse{
 		Total:  &cnt,

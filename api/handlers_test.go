@@ -1720,6 +1720,168 @@ func TestServer_JetDropsByJetID_NextPrevTests(t *testing.T) {
 	})
 }
 
+func TestServer_JetDropsByJetID_NextPrevTests_Siblings(t *testing.T) {
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+	totalCount := 7
+	// making different siblings in same pulses
+	_, preparedJetDrops1, preparedPulses := testutils.GenerateJetDropsWithSomeJetID(t, totalCount)
+	_, preparedJetDrops2, _ := testutils.GenerateJetDropsWithSomeJetID(t, totalCount)
+	_, preparedJetDrops3, _ := testutils.GenerateJetDropsWithSomeJetID(t, totalCount)
+	_, preparedJetDrops4, _ := testutils.GenerateJetDropsWithSomeJetID(t, totalCount)
+	for i := 0; i <= len(preparedJetDrops1)-1; i++ {
+		preparedJetDrops1[i].PulseNumber = preparedPulses[i].PulseNumber
+		preparedJetDrops2[i].PulseNumber = preparedPulses[i].PulseNumber
+		preparedJetDrops3[i].PulseNumber = preparedPulses[i].PulseNumber
+		preparedJetDrops4[i].PulseNumber = preparedPulses[i].PulseNumber
+
+		if i-1 >= 0 {
+			preparedJetDrops1[i].FirstPrevHash = preparedJetDrops1[i-1].Hash
+			preparedJetDrops2[i].FirstPrevHash = preparedJetDrops2[i-1].Hash
+			preparedJetDrops3[i].FirstPrevHash = preparedJetDrops3[i-1].Hash
+			preparedJetDrops4[i].FirstPrevHash = preparedJetDrops4[i-1].Hash
+		}
+	}
+	err := testutils.CreatePulses(testDB, preparedPulses)
+	require.NoError(t, err)
+	err = testutils.CreateJetDrops(testDB, preparedJetDrops1)
+	require.NoError(t, err)
+	err = testutils.CreateJetDrops(testDB, preparedJetDrops2)
+	require.NoError(t, err)
+	err = testutils.CreateJetDrops(testDB, preparedJetDrops3)
+	require.NoError(t, err)
+	err = testutils.CreateJetDrops(testDB, preparedJetDrops4)
+	require.NoError(t, err)
+
+	checkOkReturningResponse := func(t *testing.T, resp *http.Response, respErr error) server.JetDropsResponse {
+		require.NoError(t, err)
+		bodyBytes, err := ioutil.ReadAll(resp.Body)
+		require.NoError(t, err)
+		require.Equal(t, http.StatusOK, resp.StatusCode, string(bodyBytes))
+		var received server.JetDropsResponse
+		err = json.Unmarshal(bodyBytes, &received)
+		require.NoError(t, err)
+		return received
+	}
+
+	t.Run("pulseNumberLte, pulseNumberGte, siblings only", func(t *testing.T) {
+		expectedCount := (totalCount - 2) * 4
+		pulseNumberLte := preparedPulses[totalCount-2].PulseNumber
+		pulseNumberGte := preparedPulses[1].PulseNumber
+		query := fmt.Sprintf("pulse_number_lte=%d&pulse_number_gte=%d", pulseNumberLte, pulseNumberGte)
+		resp, err := http.Get("http://" + apihost + "/api/v1/jets/*/jet-drops?" + query)
+		response := checkOkReturningResponse(t, resp, err)
+
+		require.Equal(t, expectedCount, int(*response.Total))
+		require.Len(t, *response.Result, expectedCount)
+		for i := len(preparedJetDrops1) - 2; i > 0; i-- {
+			next1 := []server.NextPrevJetDrop{}
+			next2 := []server.NextPrevJetDrop{}
+			next3 := []server.NextPrevJetDrop{}
+			next4 := []server.NextPrevJetDrop{}
+			if i+1 < len(preparedJetDrops1) {
+				next1 = []server.NextPrevJetDrop{transformPrevNextResp(preparedJetDrops1[i+1])}
+				next2 = []server.NextPrevJetDrop{transformPrevNextResp(preparedJetDrops2[i+1])}
+				next3 = []server.NextPrevJetDrop{transformPrevNextResp(preparedJetDrops3[i+1])}
+				next4 = []server.NextPrevJetDrop{transformPrevNextResp(preparedJetDrops4[i+1])}
+			}
+			prev1 := []server.NextPrevJetDrop{}
+			prev2 := []server.NextPrevJetDrop{}
+			prev3 := []server.NextPrevJetDrop{}
+			prev4 := []server.NextPrevJetDrop{}
+			if i-1 >= 0 {
+				prev1 = []server.NextPrevJetDrop{transformPrevNextResp(preparedJetDrops1[i-1])}
+				prev2 = []server.NextPrevJetDrop{transformPrevNextResp(preparedJetDrops2[i-1])}
+				prev3 = []server.NextPrevJetDrop{transformPrevNextResp(preparedJetDrops3[i-1])}
+				prev4 = []server.NextPrevJetDrop{transformPrevNextResp(preparedJetDrops4[i-1])}
+			}
+
+			require.Contains(t, *response.Result, JetDropToAPI(preparedJetDrops1[i], prev1, next1), "preparedJetDrops1[%d] must be contained, jid %s", i, preparedJetDrops1[i].JetID)
+			require.Contains(t, *response.Result, JetDropToAPI(preparedJetDrops2[i], prev2, next2), "preparedJetDrops2[%d] must be contained, jid %s", i, preparedJetDrops2[i].JetID)
+			require.Contains(t, *response.Result, JetDropToAPI(preparedJetDrops3[i], prev3, next3), "preparedJetDrops3[%d] must be contained, jid %s", i, preparedJetDrops3[i].JetID)
+			require.Contains(t, *response.Result, JetDropToAPI(preparedJetDrops4[i], prev4, next4), "preparedJetDrops4[%d] must be contained, jid %s", i, preparedJetDrops4[i].JetID)
+		}
+	})
+
+	t.Run("pulseNumberLt, pulseNumberGt, siblings only, no prev/next pulse in db", func(t *testing.T) {
+		expectedCount := (totalCount - 2) * 4
+		pulseNumberLt := preparedPulses[totalCount-1].PulseNumber
+		pulseNumberGt := preparedPulses[0].PulseNumber
+		query := fmt.Sprintf("pulse_number_lt=%d&pulse_number_gt=%d", pulseNumberLt, pulseNumberGt)
+		resp, err := http.Get("http://" + apihost + "/api/v1/jets/*/jet-drops?" + query)
+		response := checkOkReturningResponse(t, resp, err)
+
+		require.Equal(t, expectedCount, int(*response.Total))
+		require.Len(t, *response.Result, expectedCount)
+		for i := len(preparedJetDrops1) - 2; i > 0; i-- {
+			next1 := []server.NextPrevJetDrop{}
+			next2 := []server.NextPrevJetDrop{}
+			next3 := []server.NextPrevJetDrop{}
+			next4 := []server.NextPrevJetDrop{}
+			if i+1 < len(preparedJetDrops1)-1 {
+				next1 = []server.NextPrevJetDrop{transformPrevNextResp(preparedJetDrops1[i+1])}
+				next2 = []server.NextPrevJetDrop{transformPrevNextResp(preparedJetDrops2[i+1])}
+				next3 = []server.NextPrevJetDrop{transformPrevNextResp(preparedJetDrops3[i+1])}
+				next4 = []server.NextPrevJetDrop{transformPrevNextResp(preparedJetDrops4[i+1])}
+			}
+			prev1 := []server.NextPrevJetDrop{}
+			prev2 := []server.NextPrevJetDrop{}
+			prev3 := []server.NextPrevJetDrop{}
+			prev4 := []server.NextPrevJetDrop{}
+			if i-1 >= 1 {
+				prev1 = []server.NextPrevJetDrop{transformPrevNextResp(preparedJetDrops1[i-1])}
+				prev2 = []server.NextPrevJetDrop{transformPrevNextResp(preparedJetDrops2[i-1])}
+				prev3 = []server.NextPrevJetDrop{transformPrevNextResp(preparedJetDrops3[i-1])}
+				prev4 = []server.NextPrevJetDrop{transformPrevNextResp(preparedJetDrops4[i-1])}
+			}
+
+			jd1 := JetDropToAPI(preparedJetDrops1[i], prev1, next1)
+			require.Contains(t, *response.Result, jd1, "preparedJetDrops1[%d] must be contained, jid %s", i, preparedJetDrops1[i].JetID)
+			require.Contains(t, *response.Result, JetDropToAPI(preparedJetDrops2[i], prev2, next2), "preparedJetDrops2[%d] must be contained, jid %s", i, preparedJetDrops2[i].JetID)
+			require.Contains(t, *response.Result, JetDropToAPI(preparedJetDrops3[i], prev3, next3), "preparedJetDrops3[%d] must be contained, jid %s", i, preparedJetDrops3[i].JetID)
+			require.Contains(t, *response.Result, JetDropToAPI(preparedJetDrops4[i], prev4, next4), "preparedJetDrops4[%d] must be contained, jid %s", i, preparedJetDrops4[i].JetID)
+		}
+	})
+
+	t.Run("pulseNumberLt, pulseNumberGt, siblings only, has prev/next pulse in db", func(t *testing.T) {
+		expectedCount := (totalCount - 4) * 4
+		pulseNumberLt := preparedPulses[totalCount-2].PulseNumber
+		pulseNumberGt := preparedPulses[1].PulseNumber
+		query := fmt.Sprintf("pulse_number_lt=%d&pulse_number_gt=%d", pulseNumberLt, pulseNumberGt)
+		resp, err := http.Get("http://" + apihost + "/api/v1/jets/*/jet-drops?" + query)
+		response := checkOkReturningResponse(t, resp, err)
+
+		require.Equal(t, expectedCount, int(*response.Total))
+		require.Len(t, *response.Result, expectedCount)
+		for i := len(preparedJetDrops1) - 3; i > 1; i-- {
+			next1 := []server.NextPrevJetDrop{}
+			next2 := []server.NextPrevJetDrop{}
+			next3 := []server.NextPrevJetDrop{}
+			next4 := []server.NextPrevJetDrop{}
+			if i+1 < len(preparedJetDrops1) {
+				next1 = []server.NextPrevJetDrop{transformPrevNextResp(preparedJetDrops1[i+1])}
+				next2 = []server.NextPrevJetDrop{transformPrevNextResp(preparedJetDrops2[i+1])}
+				next3 = []server.NextPrevJetDrop{transformPrevNextResp(preparedJetDrops3[i+1])}
+				next4 = []server.NextPrevJetDrop{transformPrevNextResp(preparedJetDrops4[i+1])}
+			}
+			prev1 := []server.NextPrevJetDrop{}
+			prev2 := []server.NextPrevJetDrop{}
+			prev3 := []server.NextPrevJetDrop{}
+			prev4 := []server.NextPrevJetDrop{}
+			if i-1 >= 0 {
+				prev1 = []server.NextPrevJetDrop{transformPrevNextResp(preparedJetDrops1[i-1])}
+				prev2 = []server.NextPrevJetDrop{transformPrevNextResp(preparedJetDrops2[i-1])}
+				prev3 = []server.NextPrevJetDrop{transformPrevNextResp(preparedJetDrops3[i-1])}
+				prev4 = []server.NextPrevJetDrop{transformPrevNextResp(preparedJetDrops4[i-1])}
+			}
+
+			require.Contains(t, *response.Result, JetDropToAPI(preparedJetDrops1[i], prev1, next1), "preparedJetDrops1[%d] must be contained, jid %s", i, preparedJetDrops1[i].JetID)
+			require.Contains(t, *response.Result, JetDropToAPI(preparedJetDrops2[i], prev2, next2), "preparedJetDrops2[%d] must be contained, jid %s", i, preparedJetDrops2[i].JetID)
+			require.Contains(t, *response.Result, JetDropToAPI(preparedJetDrops3[i], prev3, next3), "preparedJetDrops3[%d] must be contained, jid %s", i, preparedJetDrops3[i].JetID)
+			require.Contains(t, *response.Result, JetDropToAPI(preparedJetDrops4[i], prev4, next4), "preparedJetDrops4[%d] must be contained, jid %s", i, preparedJetDrops4[i].JetID)
+		}
+	})
+}
+
 func TestServer_JetDropsByJetID(t *testing.T) {
 	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
 	totalCount := 5
