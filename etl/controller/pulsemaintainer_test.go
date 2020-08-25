@@ -240,7 +240,7 @@ func TestController_pulseSequence_Start_NoMissedData(t *testing.T) {
 }
 
 func TestController_pulseMaintainer_Start_PulsesCompleteAndNot(t *testing.T) {
-	var cfg = configuration.Controller{PulsePeriod: 0, ReloadPeriod: 10, ReloadCleanPeriod: 1, SequentialPeriod: 0}
+	var cfg = configuration.Controller{PulsePeriod: 1, ReloadPeriod: 10, ReloadCleanPeriod: 1, SequentialPeriod: 10}
 
 	extractor := mock.NewJetDropsExtractorMock(t)
 
@@ -289,9 +289,9 @@ func TestController_pulseMaintainer_Start_PulsesCompleteAndNot(t *testing.T) {
 // sequential is 1000000, pulses in db: [1000000, 1000020], expect loading data from 1000000 to 1000010
 // sequential is 1000000, pulses in db: [1000000, 1000020], expect don't load already loaded data
 // wait ReloadPeriod seconds
-// sequential is 1000000, pulses in db: [1000000, 1000020], expect loading data from 1000000 to 1000020
+// sequential is 1000000, pulses in db: [1000000, 1000020], expect loading data from 1000000 to 1000010
 func TestController_pulseSequence_ReloadPeriodExpired(t *testing.T) {
-	var cfg = configuration.Controller{PulsePeriod: 0, ReloadPeriod: 2, ReloadCleanPeriod: 1, SequentialPeriod: 0}
+	var cfg = configuration.Controller{PulsePeriod: 0, ReloadPeriod: 2, ReloadCleanPeriod: 1, SequentialPeriod: 1}
 
 	extractor := mock.NewJetDropsExtractorMock(t)
 
@@ -310,7 +310,7 @@ func TestController_pulseSequence_ReloadPeriodExpired(t *testing.T) {
 		require.Equal(t, int64(1000000), fromPulseNumber)
 		require.Equal(t, int64(1000010), toPulseNumber)
 		if extractor.LoadJetDropsBeforeCounter() > 2 {
-			require.Fail(t, "LoadJetDrops was called more than once")
+			require.Fail(t, "LoadJetDrops was called more than twice")
 		}
 		wg.Done()
 		return nil
