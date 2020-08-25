@@ -196,54 +196,8 @@ func (s *Server) JetDropsByJetID(ctx echo.Context, jetID server.JetIdPath, param
 		return ctx.JSON(http.StatusBadRequest, apiErr)
 	}
 
-	// Enrich search edges to add next and prev jet drop info
-	enrichPulseEdges := func(pulseNumberGt, pulseNumberGte, pulseNumberLt, pulseNumberLte *int64) (*int64, *int64, *int64, *int64) {
-		emptyPulse := models.Pulse{}
-		var gt, gte, lt, lte *int64
-		if pulseNumberGt != nil {
-			pulse, err := s.storage.GetPulse(*pulseNumberGt)
-			if err == nil && pulse.PrevPulseNumber > 0 {
-				gt = &pulse.PrevPulseNumber
-			} else {
-				gt = pulseNumberGt
-			}
-		}
-
-		if pulseNumberGte != nil {
-			pulse, err := s.storage.GetPulse(*pulseNumberGte)
-			if err == nil && pulse.PrevPulseNumber > 0 {
-				gte = &pulse.PrevPulseNumber
-			} else {
-				gte = pulseNumberGte
-			}
-		}
-
-		if pulseNumberLt != nil {
-			nextPulse, err := s.storage.GetNextSavedPulse(models.Pulse{
-				PulseNumber: *pulseNumberLt,
-			})
-			if err == nil && nextPulse != emptyPulse {
-				lt = &nextPulse.PulseNumber
-			} else {
-				lt = pulseNumberLt
-			}
-		}
-
-		if pulseNumberLte != nil {
-			nextPulse, err := s.storage.GetNextSavedPulse(models.Pulse{
-				PulseNumber: *pulseNumberLte,
-			})
-			if err == nil && nextPulse != emptyPulse {
-				lte = &nextPulse.PulseNumber
-			} else {
-				lte = pulseNumberLte
-			}
-		}
-		return gt, gte, lt, lte
-	}
-
 	// delete enriched jetdrops after setting next/prev data
-	enrichedJetDrop := func(jd models.JetDrop) bool {
+	isEnrichedJetDrop := func(jd models.JetDrop) bool {
 		if (pulseNumberGte != nil && jd.PulseNumber < *pulseNumberGte) ||
 			(pulseNumberGt != nil && jd.PulseNumber <= *pulseNumberGt) ||
 			(pulseNumberLte != nil && jd.PulseNumber > *pulseNumberLte) ||
@@ -253,7 +207,7 @@ func (s *Server) JetDropsByJetID(ctx echo.Context, jetID server.JetIdPath, param
 		return false
 	}
 
-	pulseNumberGtEnriched, pulseNumberGteEnriched, pulseNumberLtEnriched, pulseNumberLteEnriched := enrichPulseEdges(pulseNumberGt, pulseNumberGte, pulseNumberLt, pulseNumberLte)
+	pulseNumberGtEnriched, pulseNumberGteEnriched, pulseNumberLtEnriched, pulseNumberLteEnriched := s.enrichPulsesEdges(pulseNumberGt, pulseNumberGte, pulseNumberLt, pulseNumberLte)
 	jetDrops, total, err := s.storage.GetJetDropsByJetID(id, pulseNumberLteEnriched, pulseNumberLtEnriched, pulseNumberGteEnriched, pulseNumberGtEnriched, limit, sortByAsc)
 	if gorm.IsRecordNotFoundError(err) || len(jetDrops) == 0 {
 		s.logger.Error(err)
@@ -296,9 +250,9 @@ func (s *Server) JetDropsByJetID(ctx echo.Context, jetID server.JetIdPath, param
 		add(jetDrop.SecondPrevHash)
 	}
 	cnt := int64(total)
-	var drops []server.JetDrop
+	drops := []server.JetDrop{}
 	for _, jetDrop := range jetDrops {
-		if enrichedJetDrop(jetDrop) {
+		if isEnrichedJetDrop(jetDrop) {
 			cnt--
 			continue
 		}
@@ -325,6 +279,51 @@ func (s *Server) JetDropsByJetID(ctx echo.Context, jetID server.JetIdPath, param
 		Total:  &cnt,
 		Result: &drops,
 	})
+}
+
+func (s *Server) enrichPulsesEdges(pulseNumberGt, pulseNumberGte, pulseNumberLt, pulseNumberLte *int64) (*int64, *int64, *int64, *int64) {
+	emptyPulse := models.Pulse{}
+	var gt, gte, lt, lte *int64
+	if pulseNumberGt != nil {
+		pulse, err := s.storage.GetPulse(*pulseNumberGt)
+		if err == nil && pulse.PrevPulseNumber > 0 {
+			gt = &pulse.PrevPulseNumber
+		} else {
+			gt = pulseNumberGt
+		}
+	}
+
+	if pulseNumberGte != nil {
+		pulse, err := s.storage.GetPulse(*pulseNumberGte)
+		if err == nil && pulse.PrevPulseNumber > 0 {
+			gte = &pulse.PrevPulseNumber
+		} else {
+			gte = pulseNumberGte
+		}
+	}
+
+	if pulseNumberLt != nil {
+		nextPulse, err := s.storage.GetNextSavedPulse(models.Pulse{
+			PulseNumber: *pulseNumberLt,
+		})
+		if err == nil && nextPulse != emptyPulse {
+			lt = &nextPulse.PulseNumber
+		} else {
+			lt = pulseNumberLt
+		}
+	}
+
+	if pulseNumberLte != nil {
+		nextPulse, err := s.storage.GetNextSavedPulse(models.Pulse{
+			PulseNumber: *pulseNumberLte,
+		})
+		if err == nil && nextPulse != emptyPulse {
+			lte = &nextPulse.PulseNumber
+		} else {
+			lte = pulseNumberLte
+		}
+	}
+	return gt, gte, lt, lte
 }
 
 func getPulseNumberValue(unptr int, propertyName string, failures []server.CodeValidationFailures) (*int64, []server.CodeValidationFailures) {
