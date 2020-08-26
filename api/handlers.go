@@ -198,7 +198,6 @@ func (s *Server) JetDropsByJetID(ctx echo.Context, jetID server.JetIdPath, param
 
 	jetDrops, total, err := s.storage.GetJetDropsByJetID(id, pulseNumberLte, pulseNumberLt, pulseNumberGte, pulseNumberGt, limit, sortByAsc)
 	if gorm.IsRecordNotFoundError(err) || len(jetDrops) == 0 {
-		s.logger.Error(err)
 		cnt := int64(0)
 		drops := []server.JetDrop{}
 		return ctx.JSON(http.StatusOK, server.JetDropsResponse{
