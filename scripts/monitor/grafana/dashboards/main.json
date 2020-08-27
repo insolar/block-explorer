@@ -11,7 +11,7 @@
         "type": "dashboard"
       },
       {
-        "datasource": "Prometheus",
+        "datasource": "prometheus",
         "enable": true,
         "hide": true,
         "iconColor": "rgba(0, 211, 255, 1)",
@@ -24,11 +24,13 @@
   "editable": true,
   "gnetId": 10913,
   "graphTooltip": 1,
-  "iteration": 1597316096552,
+  "id": 27,
+  "iteration": 1598532470142,
   "links": [],
   "panels": [
     {
       "collapsed": false,
+      "datasource": null,
       "gridPos": {
         "h": 1,
         "w": 24,
@@ -49,7 +51,7 @@
         "rgba(237, 129, 40, 0.89)",
         "#299c46"
       ],
-      "datasource": "Prometheus",
+      "datasource": "prometheus",
       "description": "Current pulse extracting from platform",
       "format": "none",
       "gauge": {
@@ -82,7 +84,6 @@
       "maxDataPoints": 100,
       "nullPointMode": "connected",
       "nullText": null,
-      "options": {},
       "pluginVersion": "7.1.1",
       "postfix": "",
       "postfixFontSize": "50%",
@@ -139,7 +140,7 @@
         "rgba(237, 129, 40, 0.89)",
         "#d44a3a"
       ],
-      "datasource": "Prometheus",
+      "datasource": "prometheus",
       "format": "none",
       "gauge": {
         "maxValue": 100,
@@ -171,7 +172,6 @@
       "maxDataPoints": 100,
       "nullPointMode": "connected",
       "nullText": null,
-      "options": {},
       "pluginVersion": "7.1.1",
       "postfix": "",
       "postfixFontSize": "50%",
@@ -228,7 +228,7 @@
         "rgba(237, 129, 40, 0.89)",
         "#d44a3a"
       ],
-      "datasource": "Prometheus",
+      "datasource": "prometheus",
       "format": "none",
       "gauge": {
         "maxValue": 100,
@@ -260,7 +260,6 @@
       "maxDataPoints": 100,
       "nullPointMode": "connected",
       "nullText": null,
-      "options": {},
       "pluginVersion": "7.1.1",
       "postfix": "",
       "postfixFontSize": "50%",
@@ -313,7 +312,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "Prometheus",
+      "datasource": "prometheus",
       "editable": true,
       "error": false,
       "fieldConfig": {
@@ -361,7 +360,8 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "rate(gbe_extractor_received_pulses{instance=~\"$instance\", job=~\"$job\"}[1m])",
+          "expr": "rate(gbe_extractor_received_pulses{instance=~\"$instance\", job=~\"$job\"}[2m])",
+          "interval": "",
           "intervalFactor": 1,
           "legendFormat": "$instance",
           "metric": "go_goroutines",
@@ -416,7 +416,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "Prometheus",
+      "datasource": "prometheus",
       "editable": true,
       "error": false,
       "fieldConfig": {
@@ -464,7 +464,8 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "rate(gbe_extractor_received_records{instance=~\"$instance\", job=~\"$job\"}[1m])",
+          "expr": "rate(gbe_extractor_received_records{instance=~\"$instance\", job=~\"$job\"}[2m])",
+          "interval": "",
           "intervalFactor": 1,
           "legendFormat": "$instance",
           "metric": "go_goroutines",
@@ -519,7 +520,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "Prometheus",
+      "datasource": "prometheus",
       "editable": true,
       "error": false,
       "fieldConfig": {
@@ -567,7 +568,8 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "rate(gbe_extractor_errors{instance=~\"$instance\", job=~\"$job\"}[1m])",
+          "expr": "rate(gbe_extractor_errors{instance=~\"$instance\", job=~\"$job\"}[2m])",
+          "interval": "",
           "intervalFactor": 1,
           "legendFormat": "{{type}}",
           "metric": "go_goroutines",
@@ -619,6 +621,7 @@
     },
     {
       "collapsed": false,
+      "datasource": null,
       "gridPos": {
         "h": 1,
         "w": 24,
@@ -635,7 +638,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "Prometheus",
+      "datasource": "prometheus",
       "editable": true,
       "error": false,
       "fieldConfig": {
@@ -683,7 +686,8 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "rate(gbe_transformer_pulses{instance=~\"$instance\", job=~\"$job\"}[1m])",
+          "expr": "rate(gbe_transformer_pulses{instance=~\"$instance\", job=~\"$job\"}[2m])",
+          "interval": "",
           "intervalFactor": 1,
           "legendFormat": "all",
           "metric": "go_goroutines",
@@ -738,7 +742,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "Prometheus",
+      "datasource": "prometheus",
       "editable": true,
       "error": false,
       "fieldConfig": {
@@ -786,7 +790,8 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "rate(gbe_transformer_records{instance=~\"$instance\", job=~\"$job\"}[1m])",
+          "expr": "rate(gbe_transformer_records{instance=~\"$instance\", job=~\"$job\"}[2m])",
+          "interval": "",
           "intervalFactor": 1,
           "legendFormat": "all",
           "metric": "go_goroutines",
@@ -841,7 +846,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "Prometheus",
+      "datasource": "prometheus",
       "editable": true,
       "error": false,
       "fieldConfig": {
@@ -889,7 +894,8 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "rate(gbe_transformer_errors{instance=~\"$instance\", job=~\"$job\"}[1m])",
+          "expr": "rate(gbe_transformer_errors{instance=~\"$instance\", job=~\"$job\"}[2m])",
+          "interval": "",
           "intervalFactor": 1,
           "legendFormat": "all",
           "metric": "go_goroutines",
@@ -948,7 +954,7 @@
         "rgba(237, 129, 40, 0.89)",
         "#d44a3a"
       ],
-      "datasource": "Prometheus",
+      "datasource": "prometheus",
       "description": "The number of jetdrops in transformer export data queue",
       "format": "none",
       "gauge": {
@@ -981,7 +987,6 @@
       "maxDataPoints": 100,
       "nullPointMode": "connected",
       "nullText": null,
-      "options": {},
       "pluginVersion": "7.1.1",
       "postfix": "",
       "postfixFontSize": "50%",
@@ -1031,6 +1036,7 @@
     },
     {
       "collapsed": false,
+      "datasource": null,
       "gridPos": {
         "h": 1,
         "w": 24,
@@ -1051,7 +1057,7 @@
         "rgba(237, 129, 40, 0.89)",
         "#299c46"
       ],
-      "datasource": "Prometheus",
+      "datasource": "prometheus",
       "description": "Current incomplete pulse that records are rerequested from platform",
       "format": "none",
       "gauge": {
@@ -1084,7 +1090,6 @@
       "maxDataPoints": 100,
       "nullPointMode": "connected",
       "nullText": null,
-      "options": {},
       "pluginVersion": "7.1.1",
       "postfix": "",
       "postfixFontSize": "50%",
@@ -1141,7 +1146,7 @@
         "rgba(237, 129, 40, 0.89)",
         "#299c46"
       ],
-      "datasource": "Prometheus",
+      "datasource": "prometheus",
       "description": "Current sequentual pulse rerequested from platform",
       "format": "none",
       "gauge": {
@@ -1174,7 +1179,6 @@
       "maxDataPoints": 100,
       "nullPointMode": "connected",
       "nullText": null,
-      "options": {},
       "pluginVersion": "7.1.1",
       "postfix": "",
       "postfixFontSize": "50%",
@@ -1231,7 +1235,7 @@
         "rgba(237, 129, 40, 0.89)",
         "#d44a3a"
       ],
-      "datasource": "Prometheus",
+      "datasource": "prometheus",
       "format": "none",
       "gauge": {
         "maxValue": 100,
@@ -1263,7 +1267,6 @@
       "maxDataPoints": 100,
       "nullPointMode": "connected",
       "nullText": null,
-      "options": {},
       "pluginVersion": "7.1.1",
       "postfix": "",
       "postfixFontSize": "50%",
@@ -1313,15 +1316,16 @@
     }
   ],
   "refresh": "5s",
-  "schemaVersion": 19,
+  "schemaVersion": 22,
   "style": "dark",
   "tags": [],
   "templating": {
     "list": [
       {
         "current": {
-          "text": "Prometheus",
-          "value": "Prometheus"
+          "selected": false,
+          "text": "prometheus",
+          "value": "prometheus"
         },
         "hide": 0,
         "includeAll": false,
@@ -1339,6 +1343,7 @@
       {
         "allValue": null,
         "current": {
+          "selected": false,
           "text": "All",
           "value": "$__all"
         },
@@ -1346,6 +1351,7 @@
         "definition": "label_values(gbe_extractor_received_pulses, job)",
         "hide": 0,
         "includeAll": true,
+        "index": -1,
         "label": "Job",
         "multi": false,
         "name": "job",
@@ -1364,6 +1370,7 @@
       {
         "allValue": null,
         "current": {
+          "selected": false,
           "text": "All",
           "value": "$__all"
         },
@@ -1371,6 +1378,7 @@
         "definition": "label_values(gbe_extractor_received_pulses, instance)",
         "hide": 0,
         "includeAll": true,
+        "index": -1,
         "label": "Instance",
         "multi": false,
         "name": "instance",
@@ -1420,5 +1428,8 @@
   "timezone": "browser",
   "title": "GBE Main",
   "uid": "84k2nf3",
+  "variables": {
+    "list": []
+  },
   "version": 1
 }

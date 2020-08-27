@@ -11,7 +11,7 @@
         "type": "dashboard"
       },
       {
-        "datasource": "Prometheus",
+        "datasource": "prometheus",
         "enable": true,
         "hide": true,
         "iconColor": "rgba(0, 211, 255, 1)",
@@ -45,7 +45,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "Prometheus",
+      "datasource": "prometheus",
       "editable": true,
       "error": false,
       "fieldConfig": {
@@ -2871,8 +2871,8 @@
     "list": [
       {
         "current": {
-          "text": "Prometheus",
-          "value": "Prometheus"
+          "text": "prometheus",
+          "value": "prometheus"
         },
         "hide": 0,
         "includeAll": false,
