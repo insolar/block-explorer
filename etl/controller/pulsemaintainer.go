@@ -68,7 +68,7 @@ func eraseJetDropRegister(ctx context.Context, c *Controller, log log.Logger) {
 				log.Infof("Pulse %d completed and saved", p.PulseNo)
 			}
 		} else {
-			go c.reloadData(ctx, p.PrevPulseNumber, p.PulseNo)
+			c.reloadData(ctx, p.PrevPulseNumber, p.PulseNo)
 			CurrentIncompletePulse.Set(float64(p.PrevPulseNumber))
 		}
 	}
@@ -77,17 +77,19 @@ func eraseJetDropRegister(ctx context.Context, c *Controller, log log.Logger) {
 // pulseSequence check if we have spaces between pulses and rerequests this pulses
 func (c *Controller) pulseSequence(ctx context.Context) {
 	emptyPulse := models.Pulse{}
+	waitTime := time.Duration(c.cfg.SequentialPeriod)
 	for {
 		select {
 		case <-ctx.Done():
 			return
-		case <-time.After(time.Second * time.Duration(c.cfg.SequentialPeriod)):
+		case <-time.After(time.Second * waitTime):
 		}
 		var err error
 		var nextSequential models.Pulse
 		func() {
 			c.sequentialPulseLock.Lock()
 			defer c.sequentialPulseLock.Unlock()
+			waitTime = time.Duration(c.cfg.SequentialPeriod)
 			log := belogger.FromContext(ctx)
 			log = log.WithField("sequential_pulse", c.sequentialPulse)
 			CurrentSeqPulse.Set(float64(c.sequentialPulse.PulseNumber))
@@ -119,6 +121,7 @@ func (c *Controller) pulseSequence(ctx context.Context) {
 				}
 				c.sequentialPulse = nextSequential
 				log.Infof("Pulse %d sequenced", nextSequential.PulseNumber)
+				waitTime = time.Duration(0)
 				return
 			}
 		}()

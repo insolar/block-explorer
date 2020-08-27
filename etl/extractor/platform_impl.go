@@ -73,7 +73,7 @@ func (e *PlatformExtractor) GetJetDrops(ctx context.Context) <-chan *types.Platf
 }
 
 func (e *PlatformExtractor) LoadJetDrops(ctx context.Context, fromPulseNumber int64, toPulseNumber int64) error {
-	e.retrievePulses(ctx, fromPulseNumber, toPulseNumber)
+	go e.retrievePulses(ctx, fromPulseNumber, toPulseNumber)
 	return nil
 }
 
