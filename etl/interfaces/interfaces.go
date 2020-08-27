@@ -123,6 +123,8 @@ type StorageAPIFetcher interface {
 	GetRecordsByJetDrop(jetDropID models.JetDropID, fromIndex, recordType *string, limit, offset int) ([]models.Record, int, error)
 	// GetNextSavedPulse returns first pulse with pulse number bigger then fromPulseNumber from db.
 	GetNextSavedPulse(fromPulseNumber models.Pulse) (models.Pulse, error)
+	// GetJetDrops returns jetDrops for provided pulse from db.
+	GetJetDrops(pulse models.Pulse) ([]models.JetDrop, error)
 }
 
 type StorageFetcher interface {

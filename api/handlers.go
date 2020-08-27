@@ -196,19 +196,7 @@ func (s *Server) JetDropsByJetID(ctx echo.Context, jetID server.JetIdPath, param
 		return ctx.JSON(http.StatusBadRequest, apiErr)
 	}
 
-	// delete enriched jetdrops after setting next/prev data
-	isEnrichedJetDrop := func(jd models.JetDrop) bool {
-		if (pulseNumberGte != nil && jd.PulseNumber < *pulseNumberGte) ||
-			(pulseNumberGt != nil && jd.PulseNumber <= *pulseNumberGt) ||
-			(pulseNumberLte != nil && jd.PulseNumber > *pulseNumberLte) ||
-			(pulseNumberLt != nil && jd.PulseNumber >= *pulseNumberLt) {
-			return true
-		}
-		return false
-	}
-
-	pulseNumberGtEnriched, pulseNumberGteEnriched, pulseNumberLtEnriched, pulseNumberLteEnriched := s.enrichPulsesEdges(pulseNumberGt, pulseNumberGte, pulseNumberLt, pulseNumberLte)
-	jetDrops, total, err := s.storage.GetJetDropsByJetID(id, pulseNumberLteEnriched, pulseNumberLtEnriched, pulseNumberGteEnriched, pulseNumberGtEnriched, limit, sortByAsc)
+	jetDrops, total, err := s.storage.GetJetDropsByJetID(id, pulseNumberLte, pulseNumberLt, pulseNumberGte, pulseNumberGt, limit, sortByAsc)
 	if gorm.IsRecordNotFoundError(err) || len(jetDrops) == 0 {
 		s.logger.Error(err)
 		cnt := int64(0)
@@ -223,6 +211,71 @@ func (s *Server) JetDropsByJetID(ctx echo.Context, jetID server.JetIdPath, param
 		return ctx.JSON(http.StatusInternalServerError, struct{}{})
 	}
 
+	firstPN, lastPN := s.findEdgePNInJetDrops(jetDrops, sortByAsc)
+	enrichedJetDrops, err := s.getEnrichingJetDrops(firstPN, lastPN)
+	if err != nil {
+		s.logger.Error(err)
+		return ctx.JSON(http.StatusInternalServerError, struct{}{})
+	}
+	enrichedJetDrops = append(enrichedJetDrops, jetDrops...)
+	jetDropsByHash, jetDropsByPrevHash := s.createNextPrevMaps(enrichedJetDrops)
+
+	cnt := int64(total)
+	drops := make([]server.JetDrop, len(jetDrops))
+	for i, jetDrop := range jetDrops {
+		nextJetDrops := []server.NextPrevJetDrop{}
+		prevJetDrops := []server.NextPrevJetDrop{}
+
+		prev, ok := jetDropsByHash[base64.StdEncoding.EncodeToString(jetDrop.FirstPrevHash)]
+		if ok {
+			prevJetDrops = append(prevJetDrops, prev)
+		}
+		prev, ok = jetDropsByHash[base64.StdEncoding.EncodeToString(jetDrop.SecondPrevHash)]
+		if ok {
+			prevJetDrops = append(prevJetDrops, prev)
+		}
+
+		next, ok := jetDropsByPrevHash[base64.StdEncoding.EncodeToString(jetDrop.Hash)]
+		if ok {
+			nextJetDrops = append(nextJetDrops, next...)
+		}
+
+		drops[i] = JetDropToAPI(jetDrop, prevJetDrops, nextJetDrops)
+	}
+	return ctx.JSON(http.StatusOK, server.JetDropsResponse{
+		Total:  &cnt,
+		Result: &drops,
+	})
+}
+
+func (s *Server) getEnrichingJetDrops(oldestPulse, newestPulse int64) ([]models.JetDrop, error) {
+	var enrichedDrops []models.JetDrop
+	emptyPulse := models.Pulse{}
+
+	pulse, err := s.storage.GetPulse(oldestPulse)
+	if err == nil && pulse.PrevPulseNumber > 0 {
+		ejd, err := s.storage.GetJetDrops(models.Pulse{PulseNumber: pulse.PrevPulseNumber})
+		if err != nil {
+			return []models.JetDrop{}, errors.Wrapf(err, "can't enrich jetDrops for pulse %d from storage, from gte", pulse.PrevPulseNumber)
+		}
+		enrichedDrops = append(enrichedDrops, ejd...)
+	}
+
+	nextPulse, err := s.storage.GetNextSavedPulse(models.Pulse{
+		PulseNumber: newestPulse,
+	})
+	if err == nil && nextPulse != emptyPulse {
+		ejd, err := s.storage.GetJetDrops(models.Pulse{PulseNumber: nextPulse.PulseNumber})
+		if err != nil {
+			return []models.JetDrop{}, errors.Wrapf(err, "can't enrich jetDrops for pulse %d from storage, from lte", nextPulse.PulseNumber)
+		}
+		enrichedDrops = append(enrichedDrops, ejd...)
+	}
+
+	return enrichedDrops, nil
+}
+
+func (s *Server) createNextPrevMaps(jetDrops []models.JetDrop) (map[string]server.NextPrevJetDrop, map[string][]server.NextPrevJetDrop) {
 	jetDropsByHash := map[string]server.NextPrevJetDrop{}
 	for _, jetDrop := range jetDrops {
 		key := base64.StdEncoding.EncodeToString(jetDrop.Hash)
@@ -247,83 +300,9 @@ func (s *Server) JetDropsByJetID(ctx echo.Context, jetID server.JetIdPath, param
 			jetDropsByPrevHash[key] = append(jetDropsByPrevHash[key], apiNextPrevDrop)
 		}
 		add(jetDrop.FirstPrevHash)
-		add(jetDrop.SecondPrevHash)
+		// add(jetDrop.SecondPrevHash)
 	}
-	cnt := int64(total)
-	drops := []server.JetDrop{}
-	for _, jetDrop := range jetDrops {
-		if isEnrichedJetDrop(jetDrop) {
-			cnt--
-			continue
-		}
-		nextJetDrops := []server.NextPrevJetDrop{}
-		prevJetDrops := []server.NextPrevJetDrop{}
-
-		prev, ok := jetDropsByHash[base64.StdEncoding.EncodeToString(jetDrop.FirstPrevHash)]
-		if ok {
-			prevJetDrops = append(prevJetDrops, prev)
-		}
-		prev, ok = jetDropsByHash[base64.StdEncoding.EncodeToString(jetDrop.SecondPrevHash)]
-		if ok {
-			prevJetDrops = append(prevJetDrops, prev)
-		}
-
-		next, ok := jetDropsByPrevHash[base64.StdEncoding.EncodeToString(jetDrop.Hash)]
-		if ok {
-			nextJetDrops = append(nextJetDrops, next...)
-		}
-
-		drops = append(drops, JetDropToAPI(jetDrop, prevJetDrops, nextJetDrops))
-	}
-	return ctx.JSON(http.StatusOK, server.JetDropsResponse{
-		Total:  &cnt,
-		Result: &drops,
-	})
-}
-
-func (s *Server) enrichPulsesEdges(pulseNumberGt, pulseNumberGte, pulseNumberLt, pulseNumberLte *int64) (*int64, *int64, *int64, *int64) {
-	emptyPulse := models.Pulse{}
-	var gt, gte, lt, lte *int64
-	if pulseNumberGt != nil {
-		pulse, err := s.storage.GetPulse(*pulseNumberGt)
-		if err == nil && pulse.PrevPulseNumber > 0 {
-			gt = &pulse.PrevPulseNumber
-		} else {
-			gt = pulseNumberGt
-		}
-	}
-
-	if pulseNumberGte != nil {
-		pulse, err := s.storage.GetPulse(*pulseNumberGte)
-		if err == nil && pulse.PrevPulseNumber > 0 {
-			gte = &pulse.PrevPulseNumber
-		} else {
-			gte = pulseNumberGte
-		}
-	}
-
-	if pulseNumberLt != nil {
-		nextPulse, err := s.storage.GetNextSavedPulse(models.Pulse{
-			PulseNumber: *pulseNumberLt,
-		})
-		if err == nil && nextPulse != emptyPulse {
-			lt = &nextPulse.PulseNumber
-		} else {
-			lt = pulseNumberLt
-		}
-	}
-
-	if pulseNumberLte != nil {
-		nextPulse, err := s.storage.GetNextSavedPulse(models.Pulse{
-			PulseNumber: *pulseNumberLte,
-		})
-		if err == nil && nextPulse != emptyPulse {
-			lte = &nextPulse.PulseNumber
-		} else {
-			lte = pulseNumberLte
-		}
-	}
-	return gt, gte, lt, lte
+	return jetDropsByHash, jetDropsByPrevHash
 }
 
 func getPulseNumberValue(unptr int, propertyName string, failures []server.CodeValidationFailures) (*int64, []server.CodeValidationFailures) {
@@ -674,6 +653,13 @@ func (s *Server) ObjectLifeline(ctx echo.Context, objectReference server.ObjectR
 		Total:  &cnt,
 		Result: &result,
 	})
+}
+
+func (s *Server) findEdgePNInJetDrops(jetDrops []models.JetDrop, sortByAsc bool) (int64, int64) {
+	if sortByAsc {
+		return jetDrops[0].PulseNumber, jetDrops[len(jetDrops)-1].PulseNumber
+	}
+	return jetDrops[len(jetDrops)-1].PulseNumber, jetDrops[0].PulseNumber
 }
 
 func checkReference(referenceRow string) (*insolar.Reference, error) {
