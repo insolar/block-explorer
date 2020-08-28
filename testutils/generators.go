@@ -417,7 +417,8 @@ func GenerateJetIDTree(pn insolar.PulseNumber, depth int) map[insolar.PulseNumbe
 			continue
 		}
 		result[pn] = map[insolar.JetID][][]byte{}
-		result[pn][rootJetID] = [][]byte{GenerateRandBytes(), GenerateRandBytes(), nil}
+		rootHash := GenerateRandBytes()
+		result[pn][rootJetID] = [][]byte{nil, rootHash}
 
 		childs := getSiblings(rootJetID, pn, depth, result[pn][rootJetID])
 		for p, c := range childs {
@@ -428,7 +429,7 @@ func GenerateJetIDTree(pn insolar.PulseNumber, depth int) map[insolar.PulseNumbe
 	}
 }
 
-func getSiblings(parent insolar.JetID, parentPn insolar.PulseNumber, depth int, prevJetDropHashes [][]byte) map[insolar.PulseNumber]map[insolar.JetID][][]byte {
+func getSiblings(parent insolar.JetID, parentPn insolar.PulseNumber, depth int, hashes [][]byte) map[insolar.PulseNumber]map[insolar.JetID][][]byte {
 	if depth == 0 {
 		return nil
 	}
@@ -439,8 +440,9 @@ func getSiblings(parent insolar.JetID, parentPn insolar.PulseNumber, depth int, 
 	pn += 10
 
 	result[pn] = map[insolar.JetID][][]byte{}
-	result[pn][left] = [][]byte{GenerateRandBytes(), GenerateRandBytes(), prevJetDropHashes[0]}
-	result[pn][right] = [][]byte{GenerateRandBytes(), GenerateRandBytes(), prevJetDropHashes[1]}
+	prevHash := hashes[1]
+	result[pn][left] = [][]byte{prevHash, GenerateRandBytes()}
+	result[pn][right] = [][]byte{prevHash, GenerateRandBytes()}
 
 	l := getSiblings(left, pn, depth-1, result[pn][left])
 	for p, j := range l {
