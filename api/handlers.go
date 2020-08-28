@@ -256,7 +256,7 @@ func (s *Server) getEnrichingJetDrops(oldestPulse, newestPulse int64) ([]models.
 	if err == nil && pulse.PrevPulseNumber > 0 {
 		ejd, err := s.storage.GetJetDrops(models.Pulse{PulseNumber: pulse.PrevPulseNumber})
 		if err != nil {
-			return []models.JetDrop{}, errors.Wrapf(err, "can't enrich jetDrops for pulse %d from storage, from gte", pulse.PrevPulseNumber)
+			return []models.JetDrop{}, errors.Wrapf(err, "can't enrich jetDrops for pulse %d, from oldestPulse %d", pulse.PrevPulseNumber, oldestPulse)
 		}
 		enrichedDrops = append(enrichedDrops, ejd...)
 	}
@@ -267,7 +267,7 @@ func (s *Server) getEnrichingJetDrops(oldestPulse, newestPulse int64) ([]models.
 	if err == nil && nextPulse != emptyPulse {
 		ejd, err := s.storage.GetJetDrops(models.Pulse{PulseNumber: nextPulse.PulseNumber})
 		if err != nil {
-			return []models.JetDrop{}, errors.Wrapf(err, "can't enrich jetDrops for pulse %d from storage, from lte", nextPulse.PulseNumber)
+			return []models.JetDrop{}, errors.Wrapf(err, "can't enrich jetDrops for pulse %d, from newestPulse %d", nextPulse.PulseNumber, newestPulse)
 		}
 		enrichedDrops = append(enrichedDrops, ejd...)
 	}
@@ -656,6 +656,9 @@ func (s *Server) ObjectLifeline(ctx echo.Context, objectReference server.ObjectR
 }
 
 func (s *Server) findEdgePNInJetDrops(jetDrops []models.JetDrop, sortByAsc bool) (int64, int64) {
+	if len(jetDrops) == 0 {
+		return 0, 0
+	}
 	if sortByAsc {
 		return jetDrops[0].PulseNumber, jetDrops[len(jetDrops)-1].PulseNumber
 	}
