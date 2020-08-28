@@ -232,6 +232,7 @@ func TestGenerateJetIDTree(t *testing.T) {
 		"depth=2, total=7":  {2, 7},
 		"depth=3, total=15": {3, 15},
 		"depth=4, total=31": {4, 31},
+		"depth=5, total=63": {5, 63},
 	}
 
 	for name, tc := range tests {

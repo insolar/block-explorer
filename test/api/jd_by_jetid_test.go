@@ -384,8 +384,8 @@ func TestPrevNextJetDrops_JetDropsByJetID(t *testing.T) {
 			if !ok {
 				t.Fatal("pulse of jetID not fount in JetDrops map")
 			}
-			prevDropHashes := [][]byte{jetDropHashes[0], jetDropHashes[1]}
-			hash := jetDropHashes[2]
+			prevDropHashes := [][]byte{jetDropHashes[0]}
+			hash := jetDropHashes[1]
 			jets[pulse][jetID] = exporter.JetDropContinue{JetID: jetID, Hash: hash, PrevDropHashes: prevDropHashes}
 		}
 		var res []exporter.JetDropContinue
@@ -411,19 +411,19 @@ func TestPrevNextJetDrops_JetDropsByJetID(t *testing.T) {
 	c := GetHTTPClient()
 
 	checkPrevJetDropIDListResponse := func(jd client.JetDropByIdResponse200) {
-		require.Len(t, jd.PrevJetDropId, 2)
+		require.Len(t, jd.PrevJetDropId, 1)
 		for _, prev := range jd.PrevJetDropId {
-			require.True(t, strings.HasPrefix(prev.JetId, jd.JetId))
-			require.Equal(t, jd.PulseNumber+10, prev.PulseNumber)
+			require.True(t, strings.HasPrefix(jd.JetId, prev.JetId))
+			require.Equal(t, jd.PulseNumber-10, prev.PulseNumber)
 			require.Equal(t, fmt.Sprintf("%v:%v", prev.JetId, prev.PulseNumber), prev.JetDropId)
 		}
 	}
 
 	checkNextJetDropIDResponse := func(jd client.JetDropByIdResponse200) {
-		require.Len(t, jd.NextJetDropId, 1)
+		require.Len(t, jd.NextJetDropId, 2)
 		next := jd.NextJetDropId[0]
-		require.True(t, strings.HasPrefix(jd.JetId, next.JetId))
-		require.Equal(t, jd.PulseNumber-10, next.PulseNumber)
+		require.True(t, strings.HasPrefix(next.JetId, jd.JetId))
+		require.Equal(t, jd.PulseNumber+10, next.PulseNumber)
 		require.Equal(t, fmt.Sprintf("%v:%v", next.JetId, next.PulseNumber), next.JetDropId)
 	}
 
@@ -436,14 +436,14 @@ func TestPrevNextJetDrops_JetDropsByJetID(t *testing.T) {
 			jdPulseNumber, err := insolar.NewPulseNumberFromStr(strconv.FormatInt(jd.PulseNumber, 10))
 			require.NoError(t, err)
 			if jdPulseNumber == lowestPulse {
-				require.Empty(t, jd.Hash)
-				require.Empty(t, jd.NextJetDropId)
-				checkPrevJetDropIDListResponse(jd)
-				lowestPulseCount++
-			} else if maxPulse := lowestPulse.AsUint32() + uint32(10*depth); jdPulseNumber.AsUint32() == maxPulse {
 				require.NotEmpty(t, jd.Hash)
 				require.Empty(t, jd.PrevJetDropId)
 				checkNextJetDropIDResponse(jd)
+				lowestPulseCount++
+			} else if maxPulse := lowestPulse.AsUint32() + uint32(10*depth); jdPulseNumber.AsUint32() == maxPulse {
+				require.NotEmpty(t, jd.Hash)
+				checkPrevJetDropIDListResponse(jd)
+				require.Empty(t, jd.NextJetDropId)
 				maxPulseCount++
 			} else {
 				require.NotEmpty(t, jd.Hash)

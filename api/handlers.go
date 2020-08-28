@@ -210,79 +210,15 @@ func (s *Server) JetDropsByJetID(ctx echo.Context, jetID server.JetIdPath, param
 		return ctx.JSON(http.StatusInternalServerError, struct{}{})
 	}
 
-	var prevJetDropsFirstElem []models.JetDrop
-	var nextJetDropsFirstElem []models.JetDrop
-	var nextJetDropsLastElem []models.JetDrop
-	var prevJetDropsLastElem []models.JetDrop
-
-	// find next/prev jetdrops for first and last element
-	if pulseNumberGt != nil || pulseNumberGte != nil || pulseNumberLt != nil || pulseNumberLte != nil {
-		_, prevJetDropsFirstElem, nextJetDropsFirstElem, err = s.storage.GetJetDropByID(
-			models.JetDropID{
-				JetID:       jetDrops[0].JetID,
-				PulseNumber: jetDrops[0].PulseNumber,
-			})
-		if err != nil {
-			return ctx.JSON(http.StatusInternalServerError, "imposible situation")
-		}
-		_, prevJetDropsLastElem, nextJetDropsLastElem, err = s.storage.GetJetDropByID(
-			models.JetDropID{
-				JetID:       jetDrops[len(jetDrops)-1].JetID,
-				PulseNumber: jetDrops[len(jetDrops)-1].PulseNumber,
-			})
-		if err != nil {
-			return ctx.JSON(http.StatusInternalServerError, "imposible situation")
-		}
-
-		logCustomFields := func(logFormatFunction func(fmt string, args ...interface{}), jetDrops []models.JetDrop) {
-			custom := make([]models.JetDrop, len(jetDrops))
-			for i, jetDrop := range jetDrops {
-				custom[i] = models.JetDrop{
-					PulseNumber:  jetDrop.PulseNumber,
-					JetID:        jetDrop.JetID,
-					Timestamp:    jetDrop.Timestamp,
-					RecordAmount: jetDrop.RecordAmount,
-				}
-			}
-			logFormatFunction("%+v", custom)
-		}
-		logCustomFields(s.logger.Debugf, prevJetDropsFirstElem)
-		logCustomFields(s.logger.Debugf, prevJetDropsLastElem)
-		logCustomFields(s.logger.Debugf, nextJetDropsLastElem)
-		logCustomFields(s.logger.Debugf, nextJetDropsFirstElem)
+	firstPN, lastPN := s.findEdgePNInJetDrops(jetDrops, sortByAsc)
+	enrichedJetDrops, err := s.getEnrichingJetDrops(firstPN, lastPN)
+	if err != nil {
+		s.logger.Error(err)
+		return ctx.JSON(http.StatusInternalServerError, struct{}{})
 	}
+	enrichedJetDrops = append(enrichedJetDrops, jetDrops...)
+	jetDropsByHash, jetDropsByPrevHash := s.createNextPrevMaps(enrichedJetDrops)
 
-	enrichJetDrops := func(jd []models.JetDrop) []models.JetDrop {
-		t := append(append(jd, prevJetDropsFirstElem...), nextJetDropsLastElem...)
-		return append(append(t, prevJetDropsLastElem...), nextJetDropsFirstElem...)
-	}
-
-	jetDropsByHash := map[string]server.NextPrevJetDrop{}
-	for _, jetDrop := range enrichJetDrops(jetDrops) {
-		key := base64.StdEncoding.EncodeToString(jetDrop.Hash)
-		jetDropsByHash[key] = transformPrevNextResp(jetDrop)
-	}
-	jetDropsByPrevHash := map[string][]server.NextPrevJetDrop{}
-	for _, jetDrop := range enrichJetDrops(jetDrops) {
-		add := func(hash []byte) {
-			key := base64.StdEncoding.EncodeToString(hash)
-			savedDrops, ok := jetDropsByPrevHash[key]
-			if !ok {
-				jetDropsByPrevHash[key] = append(jetDropsByPrevHash[key], transformPrevNextResp(jetDrop)) // nolint
-				return
-			}
-
-			apiNextPrevDrop := transformPrevNextResp(jetDrop) // nolint
-			for _, d := range savedDrops {
-				if *d.JetDropId == *apiNextPrevDrop.JetDropId {
-					return
-				}
-			}
-			jetDropsByPrevHash[key] = append(jetDropsByPrevHash[key], apiNextPrevDrop)
-		}
-		add(jetDrop.FirstPrevHash)
-		add(jetDrop.SecondPrevHash)
-	}
 	cnt := int64(total)
 	drops := make([]server.JetDrop, len(jetDrops))
 	for i, jetDrop := range jetDrops {
@@ -309,6 +245,63 @@ func (s *Server) JetDropsByJetID(ctx echo.Context, jetID server.JetIdPath, param
 		Total:  &cnt,
 		Result: &drops,
 	})
+}
+
+func (s *Server) getEnrichingJetDrops(oldestPulse, newestPulse int64) ([]models.JetDrop, error) {
+	var enrichedDrops []models.JetDrop
+	emptyPulse := models.Pulse{}
+
+	pulse, err := s.storage.GetPulse(oldestPulse)
+	if err == nil && pulse.PrevPulseNumber > 0 {
+		ejd, err := s.storage.GetJetDrops(models.Pulse{PulseNumber: pulse.PrevPulseNumber})
+		if err != nil {
+			return []models.JetDrop{}, errors.Wrapf(err, "can't enrich jetDrops for pulse %d, from oldestPulse %d", pulse.PrevPulseNumber, oldestPulse)
+		}
+		enrichedDrops = append(enrichedDrops, ejd...)
+	}
+
+	nextPulse, err := s.storage.GetNextSavedPulse(models.Pulse{
+		PulseNumber: newestPulse,
+	})
+	if err == nil && nextPulse != emptyPulse {
+		ejd, err := s.storage.GetJetDrops(models.Pulse{PulseNumber: nextPulse.PulseNumber})
+		if err != nil {
+			return []models.JetDrop{}, errors.Wrapf(err, "can't enrich jetDrops for pulse %d, from newestPulse %d", nextPulse.PulseNumber, newestPulse)
+		}
+		enrichedDrops = append(enrichedDrops, ejd...)
+	}
+
+	return enrichedDrops, nil
+}
+
+func (s *Server) createNextPrevMaps(jetDrops []models.JetDrop) (map[string]server.NextPrevJetDrop, map[string][]server.NextPrevJetDrop) {
+	jetDropsByHash := map[string]server.NextPrevJetDrop{}
+	for _, jetDrop := range jetDrops {
+		key := base64.StdEncoding.EncodeToString(jetDrop.Hash)
+		jetDropsByHash[key] = transformPrevNextResp(jetDrop)
+	}
+	jetDropsByPrevHash := map[string][]server.NextPrevJetDrop{}
+	for _, jetDrop := range jetDrops {
+		add := func(hash []byte) {
+			key := base64.StdEncoding.EncodeToString(hash)
+			savedDrops, ok := jetDropsByPrevHash[key]
+			if !ok {
+				jetDropsByPrevHash[key] = append(jetDropsByPrevHash[key], transformPrevNextResp(jetDrop)) // nolint
+				return
+			}
+
+			apiNextPrevDrop := transformPrevNextResp(jetDrop) // nolint
+			for _, d := range savedDrops {
+				if *d.JetDropId == *apiNextPrevDrop.JetDropId {
+					return
+				}
+			}
+			jetDropsByPrevHash[key] = append(jetDropsByPrevHash[key], apiNextPrevDrop)
+		}
+		add(jetDrop.FirstPrevHash)
+		// add(jetDrop.SecondPrevHash)
+	}
+	return jetDropsByHash, jetDropsByPrevHash
 }
 
 func getPulseNumberValue(unptr int, propertyName string, failures []server.CodeValidationFailures) (*int64, []server.CodeValidationFailures) {
@@ -659,6 +652,16 @@ func (s *Server) ObjectLifeline(ctx echo.Context, objectReference server.ObjectR
 		Total:  &cnt,
 		Result: &result,
 	})
+}
+
+func (s *Server) findEdgePNInJetDrops(jetDrops []models.JetDrop, sortByAsc bool) (int64, int64) {
+	if len(jetDrops) == 0 {
+		return 0, 0
+	}
+	if sortByAsc {
+		return jetDrops[0].PulseNumber, jetDrops[len(jetDrops)-1].PulseNumber
+	}
+	return jetDrops[len(jetDrops)-1].PulseNumber, jetDrops[0].PulseNumber
 }
 
 func checkReference(referenceRow string) (*insolar.Reference, error) {
