@@ -25,6 +25,7 @@ const (
 
 // Collector represents the methods for collecting metrics
 type Collector interface {
+	Refresher
 	Metrics(*Prometheus) []prometheus.Collector
 }
 
@@ -47,7 +48,6 @@ type Config struct {
 	StartServer       bool          // if true, create http server to expose metrics
 	HTTPServerPort    uint32        // http server port
 	MetricsCollectors []Collector   // collector
-	MetricsRefreshers []Refresher
 }
 
 func New(config Config) *Prometheus {
@@ -82,7 +82,7 @@ func (p *Prometheus) Initialize() error { // can be called repeatedly
 
 		go func() {
 			for range time.Tick(p.Config.RefreshInterval) {
-				for _, v := range p.MetricsRefreshers {
+				for _, v := range p.MetricsCollectors {
 					go v.Refresh()
 				}
 			}
