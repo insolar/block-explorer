@@ -110,3 +110,7 @@ func (pg *PostgresCollector) setStats(variableName string, variableValue int) {
 
 	gauge.Set(float64(variableValue))
 }
+
+func (pg *PostgresCollector) Refresh() {
+	// do nothing
+}

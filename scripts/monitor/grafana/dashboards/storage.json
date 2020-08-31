@@ -24,7 +24,7 @@
   "editable": true,
   "gnetId": 10913,
   "graphTooltip": 1,
-  "iteration": 1597230875123,
+  "iteration": 1598870274449,
   "links": [],
   "panels": [
     {
@@ -34,6 +34,875 @@
         "w": 24,
         "x": 0,
         "y": 0
+      },
+      "id": 75,
+      "panels": [],
+      "title": "DB stats",
+      "type": "row"
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "prometheus",
+      "description": "Maximum number of open connections to the database",
+      "editable": true,
+      "error": false,
+      "fieldConfig": {
+        "defaults": {
+          "custom": {}
+        },
+        "overrides": []
+      },
+      "fill": 1,
+      "fillGradient": 0,
+      "grid": {},
+      "gridPos": {
+        "h": 6,
+        "w": 6,
+        "x": 0,
+        "y": 1
+      },
+      "hiddenSeries": false,
+      "id": 76,
+      "isNew": true,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 2,
+      "links": [],
+      "nullPointMode": "connected",
+      "options": {
+        "dataLinks": []
+      },
+      "percentage": false,
+      "pluginVersion": "7.1.1",
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "gorm_dbstats_max_open_connections",
+          "intervalFactor": 2,
+          "legendFormat": "{{ job }} - {{ instance }} ",
+          "metric": "go_goroutines",
+          "refId": "A",
+          "step": 4
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "max open connections",
+      "tooltip": {
+        "msResolution": false,
+        "shared": true,
+        "sort": 0,
+        "value_type": "cumulative"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "prometheus",
+      "description": "The number of established connections both in use and idle",
+      "editable": true,
+      "error": false,
+      "fieldConfig": {
+        "defaults": {
+          "custom": {}
+        },
+        "overrides": []
+      },
+      "fill": 1,
+      "fillGradient": 0,
+      "grid": {},
+      "gridPos": {
+        "h": 6,
+        "w": 6,
+        "x": 6,
+        "y": 1
+      },
+      "hiddenSeries": false,
+      "id": 77,
+      "isNew": true,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 2,
+      "links": [],
+      "nullPointMode": "connected",
+      "options": {
+        "dataLinks": []
+      },
+      "percentage": false,
+      "pluginVersion": "7.1.1",
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "gorm_dbstats_open_connections",
+          "intervalFactor": 2,
+          "legendFormat": "{{ job }} - {{ instance }} ",
+          "metric": "go_goroutines",
+          "refId": "A",
+          "step": 4
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "open connections",
+      "tooltip": {
+        "msResolution": false,
+        "shared": true,
+        "sort": 0,
+        "value_type": "cumulative"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "prometheus",
+      "description": "The number of connections currently in use",
+      "editable": true,
+      "error": false,
+      "fieldConfig": {
+        "defaults": {
+          "custom": {}
+        },
+        "overrides": []
+      },
+      "fill": 1,
+      "fillGradient": 0,
+      "grid": {},
+      "gridPos": {
+        "h": 6,
+        "w": 6,
+        "x": 12,
+        "y": 1
+      },
+      "hiddenSeries": false,
+      "id": 78,
+      "isNew": true,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 2,
+      "links": [],
+      "nullPointMode": "connected",
+      "options": {
+        "dataLinks": []
+      },
+      "percentage": false,
+      "pluginVersion": "7.1.1",
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "gorm_dbstats_in_use",
+          "intervalFactor": 2,
+          "legendFormat": "{{ job }} - {{ instance }} ",
+          "metric": "go_goroutines",
+          "refId": "A",
+          "step": 4
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "currently in use",
+      "tooltip": {
+        "msResolution": false,
+        "shared": true,
+        "sort": 0,
+        "value_type": "cumulative"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "prometheus",
+      "description": "The number of idle connections",
+      "editable": true,
+      "error": false,
+      "fieldConfig": {
+        "defaults": {
+          "custom": {}
+        },
+        "overrides": []
+      },
+      "fill": 1,
+      "fillGradient": 0,
+      "grid": {},
+      "gridPos": {
+        "h": 6,
+        "w": 6,
+        "x": 18,
+        "y": 1
+      },
+      "hiddenSeries": false,
+      "id": 79,
+      "isNew": true,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 2,
+      "links": [],
+      "nullPointMode": "connected",
+      "options": {
+        "dataLinks": []
+      },
+      "percentage": false,
+      "pluginVersion": "7.1.1",
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "gorm_dbstats_idle",
+          "intervalFactor": 2,
+          "legendFormat": "{{ job }} - {{ instance }} ",
+          "metric": "go_goroutines",
+          "refId": "A",
+          "step": 4
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "idle connections",
+      "tooltip": {
+        "msResolution": false,
+        "shared": true,
+        "sort": 0,
+        "value_type": "cumulative"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "prometheus",
+      "description": "The total number of connections waited for",
+      "editable": true,
+      "error": false,
+      "fieldConfig": {
+        "defaults": {
+          "custom": {}
+        },
+        "overrides": []
+      },
+      "fill": 1,
+      "fillGradient": 0,
+      "grid": {},
+      "gridPos": {
+        "h": 6,
+        "w": 6,
+        "x": 0,
+        "y": 7
+      },
+      "hiddenSeries": false,
+      "id": 80,
+      "isNew": true,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 2,
+      "links": [],
+      "nullPointMode": "connected",
+      "options": {
+        "dataLinks": []
+      },
+      "percentage": false,
+      "pluginVersion": "7.1.1",
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "gorm_dbstats_wait_count",
+          "intervalFactor": 2,
+          "legendFormat": "{{ job }} - {{ instance }} ",
+          "metric": "go_goroutines",
+          "refId": "A",
+          "step": 4
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "wait count",
+      "tooltip": {
+        "msResolution": false,
+        "shared": true,
+        "sort": 0,
+        "value_type": "cumulative"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "$datasource",
+      "description": "The total time blocked waiting for a new connection",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {}
+        },
+        "overrides": []
+      },
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 6,
+        "w": 6,
+        "x": 6,
+        "y": 7
+      },
+      "hiddenSeries": false,
+      "id": 81,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "options": {
+        "dataLinks": []
+      },
+      "percentage": false,
+      "pluginVersion": "7.1.1",
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "application": {
+            "filter": ""
+          },
+          "expr": "gorm_dbstats_wait_duration",
+          "format": "time_series",
+          "functions": [],
+          "group": {
+            "filter": ""
+          },
+          "hide": false,
+          "host": {
+            "filter": ""
+          },
+          "instant": false,
+          "interval": "",
+          "intervalFactor": 1,
+          "item": {
+            "filter": ""
+          },
+          "legendFormat": "{{ job }} - {{ instance }} - {{ quantile }}",
+          "mode": 0,
+          "options": {
+            "showDisabledItems": false,
+            "skipEmptyValues": false
+          },
+          "refId": "A",
+          "resultFormat": "time_series",
+          "table": {
+            "skipEmptyValues": false
+          },
+          "triggers": {
+            "acknowledged": 2,
+            "count": true,
+            "minSeverity": 3
+          }
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "wait duration",
+      "tooltip": {
+        "shared": true,
+        "sort": 2,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "ms",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "prometheus",
+      "description": "The total number of connections closed due to SetMaxIdleConns",
+      "editable": true,
+      "error": false,
+      "fieldConfig": {
+        "defaults": {
+          "custom": {}
+        },
+        "overrides": []
+      },
+      "fill": 1,
+      "fillGradient": 0,
+      "grid": {},
+      "gridPos": {
+        "h": 6,
+        "w": 6,
+        "x": 12,
+        "y": 7
+      },
+      "hiddenSeries": false,
+      "id": 82,
+      "isNew": true,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 2,
+      "links": [],
+      "nullPointMode": "connected",
+      "options": {
+        "dataLinks": []
+      },
+      "percentage": false,
+      "pluginVersion": "7.1.1",
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "gorm_dbstats_max_idle_closed",
+          "intervalFactor": 2,
+          "legendFormat": "{{ job }} - {{ instance }} ",
+          "metric": "go_goroutines",
+          "refId": "A",
+          "step": 4
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "max idle closed",
+      "tooltip": {
+        "msResolution": false,
+        "shared": true,
+        "sort": 0,
+        "value_type": "cumulative"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "prometheus",
+      "description": "The total number of connections closed due to SetConnMaxLifetime",
+      "editable": true,
+      "error": false,
+      "fieldConfig": {
+        "defaults": {
+          "custom": {}
+        },
+        "overrides": []
+      },
+      "fill": 1,
+      "fillGradient": 0,
+      "grid": {},
+      "gridPos": {
+        "h": 6,
+        "w": 6,
+        "x": 18,
+        "y": 7
+      },
+      "hiddenSeries": false,
+      "id": 83,
+      "isNew": true,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 2,
+      "links": [],
+      "nullPointMode": "connected",
+      "options": {
+        "dataLinks": []
+      },
+      "percentage": false,
+      "pluginVersion": "7.1.1",
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "gorm_dbstats_max_lifetime_closed",
+          "intervalFactor": 2,
+          "legendFormat": "{{ job }} - {{ instance }} ",
+          "metric": "go_goroutines",
+          "refId": "A",
+          "step": 4
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "max lifetime closed",
+      "tooltip": {
+        "msResolution": false,
+        "shared": true,
+        "sort": 0,
+        "value_type": "cumulative"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 13
       },
       "id": 66,
       "panels": [],
@@ -61,7 +930,7 @@
         "h": 7,
         "w": 12,
         "x": 0,
-        "y": 1
+        "y": 14
       },
       "hiddenSeries": false,
       "id": 47,
@@ -161,7 +1030,7 @@
         "h": 7,
         "w": 12,
         "x": 12,
-        "y": 1
+        "y": 14
       },
       "hiddenSeries": false,
       "id": 70,
@@ -288,7 +1157,7 @@
         "h": 7,
         "w": 12,
         "x": 0,
-        "y": 8
+        "y": 21
       },
       "hiddenSeries": false,
       "id": 72,
@@ -415,7 +1284,7 @@
         "h": 7,
         "w": 12,
         "x": 12,
-        "y": 8
+        "y": 21
       },
       "hiddenSeries": false,
       "id": 71,
@@ -530,7 +1399,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 15
+        "y": 28
       },
       "id": 41,
       "panels": [],
@@ -543,7 +1412,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 16
+        "y": 29
       },
       "id": 43,
       "panels": [],
@@ -556,7 +1425,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 17
+        "y": 30
       },
       "id": 68,
       "panels": [],
@@ -581,10 +1450,10 @@
         "h": 9,
         "w": 12,
         "x": 0,
-        "y": 18
+        "y": 31
       },
       "hiddenSeries": false,
-      "id": 62,
+      "id": 39,
       "legend": {
         "avg": false,
         "current": false,
@@ -615,7 +1484,7 @@
           "application": {
             "filter": ""
           },
-          "expr": "gbe_storage_stats_SaveJetDropDataDuration",
+          "expr": "gbe_storage_stats_SavePulseExecutionDuration",
           "format": "time_series",
           "functions": [],
           "group": {
@@ -653,7 +1522,7 @@
       "timeFrom": null,
       "timeRegions": [],
       "timeShift": null,
-      "title": "The duration of the SaveJetDropData",
+      "title": "The duration of the SavePulseExecution without mutex",
       "tooltip": {
         "shared": true,
         "sort": 2,
@@ -708,7 +1577,7 @@
         "h": 9,
         "w": 12,
         "x": 12,
-        "y": 18
+        "y": 31
       },
       "hiddenSeries": false,
       "id": 61,
@@ -835,10 +1704,10 @@
         "h": 9,
         "w": 12,
         "x": 0,
-        "y": 27
+        "y": 40
       },
       "hiddenSeries": false,
-      "id": 39,
+      "id": 62,
       "legend": {
         "avg": false,
         "current": false,
@@ -869,7 +1738,7 @@
           "application": {
             "filter": ""
           },
-          "expr": "gbe_storage_stats_SavePulseDuration",
+          "expr": "gbe_storage_stats_SaveJetDropDataDuration",
           "format": "time_series",
           "functions": [],
           "group": {
@@ -907,7 +1776,7 @@
       "timeFrom": null,
       "timeRegions": [],
       "timeShift": null,
-      "title": "The duration of the SavePulse",
+      "title": "The duration of the SaveJetDropData",
       "tooltip": {
         "shared": true,
         "sort": 2,
@@ -962,7 +1831,7 @@
         "h": 9,
         "w": 12,
         "x": 12,
-        "y": 27
+        "y": 40
       },
       "hiddenSeries": false,
       "id": 49,
@@ -1089,7 +1958,7 @@
         "h": 9,
         "w": 12,
         "x": 12,
-        "y": 36
+        "y": 49
       },
       "hiddenSeries": false,
       "id": 60,
@@ -1204,7 +2073,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 45
+        "y": 58
       },
       "id": 45,
       "panels": [],
@@ -1229,7 +2098,7 @@
         "h": 9,
         "w": 12,
         "x": 0,
-        "y": 46
+        "y": 59
       },
       "hiddenSeries": false,
       "id": 48,
@@ -1356,7 +2225,7 @@
         "h": 9,
         "w": 12,
         "x": 12,
-        "y": 46
+        "y": 59
       },
       "hiddenSeries": false,
       "id": 57,
@@ -1483,7 +2352,7 @@
         "h": 9,
         "w": 12,
         "x": 0,
-        "y": 55
+        "y": 68
       },
       "hiddenSeries": false,
       "id": 55,
@@ -1610,7 +2479,7 @@
         "h": 9,
         "w": 12,
         "x": 12,
-        "y": 55
+        "y": 68
       },
       "hiddenSeries": false,
       "id": 73,
@@ -1737,7 +2606,7 @@
         "h": 9,
         "w": 12,
         "x": 0,
-        "y": 64
+        "y": 77
       },
       "hiddenSeries": false,
       "id": 53,
@@ -1864,7 +2733,7 @@
         "h": 9,
         "w": 12,
         "x": 12,
-        "y": 64
+        "y": 77
       },
       "hiddenSeries": false,
       "id": 58,
@@ -1991,7 +2860,7 @@
         "h": 9,
         "w": 12,
         "x": 0,
-        "y": 73
+        "y": 86
       },
       "hiddenSeries": false,
       "id": 51,
@@ -2118,7 +2987,7 @@
         "h": 9,
         "w": 12,
         "x": 12,
-        "y": 73
+        "y": 86
       },
       "hiddenSeries": false,
       "id": 56,
@@ -2245,7 +3114,7 @@
         "h": 9,
         "w": 12,
         "x": 0,
-        "y": 82
+        "y": 95
       },
       "hiddenSeries": false,
       "id": 64,
@@ -2372,7 +3241,7 @@
         "h": 9,
         "w": 12,
         "x": 12,
-        "y": 82
+        "y": 95
       },
       "hiddenSeries": false,
       "id": 54,
@@ -2499,7 +3368,7 @@
         "h": 9,
         "w": 12,
         "x": 0,
-        "y": 91
+        "y": 104
       },
       "hiddenSeries": false,
       "id": 63,
@@ -2626,7 +3495,7 @@
         "h": 9,
         "w": 12,
         "x": 12,
-        "y": 91
+        "y": 104
       },
       "hiddenSeries": false,
       "id": 52,
@@ -2753,7 +3622,7 @@
         "h": 9,
         "w": 12,
         "x": 12,
-        "y": 100
+        "y": 113
       },
       "hiddenSeries": false,
       "id": 50,
@@ -2863,7 +3732,7 @@
       }
     }
   ],
-  "refresh": "5s",
+  "refresh": "",
   "schemaVersion": 19,
   "style": "dark",
   "tags": [],
@@ -2940,7 +3809,7 @@
     ]
   },
   "time": {
-    "from": "now-30m",
+    "from": "now-5m",
     "to": "now"
   },
   "timepicker": {
@@ -2971,5 +3840,5 @@
   "timezone": "browser",
   "title": "GBE Storage",
   "uid": "GBE_STORAGE_ID",
-  "version": 4
+  "version": 1
 }

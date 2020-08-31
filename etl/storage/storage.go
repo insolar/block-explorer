@@ -95,10 +95,12 @@ func (s *Storage) SavePulse(pulse models.Pulse) error {
 
 	s.savePulseLock.Lock()
 	defer s.savePulseLock.Unlock()
+	timerInside := prometheus.NewTimer(SavePulseExecutionDuration)
 	err := s.db.Set("gorm:insert_option", ""+
 		"ON CONFLICT (pulse_number) DO UPDATE SET prev_pulse_number=EXCLUDED.prev_pulse_number, "+
 		"next_pulse_number=EXCLUDED.next_pulse_number, timestamp=EXCLUDED.timestamp",
 	).Create(&pulse).Error
+	timerInside.ObserveDuration()
 	return errors.Wrap(err, "error while saving pulse")
 }
 

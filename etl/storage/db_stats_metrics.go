@@ -84,7 +84,7 @@ func (stats *DBStats) Set(dbStats sql.DBStats) {
 	stats.InUse.Set(float64(dbStats.InUse))
 	stats.Idle.Set(float64(dbStats.Idle))
 	stats.WaitCount.Set(float64(dbStats.WaitCount))
-	stats.WaitDuration.Set(float64(dbStats.WaitDuration))
+	stats.WaitDuration.Set(float64(dbStats.WaitDuration.Milliseconds()))
 	stats.MaxIdleClosed.Set(float64(dbStats.MaxIdleClosed))
 	stats.MaxLifetimeClosed.Set(float64(dbStats.MaxLifetimeClosed))
 }
