@@ -1,6 +1,6 @@
 BIN_DIR = bin
 LDFLAGS ?=
-
+BUILD_TAGS ?= "unit integration heavy_mock_integration"
 
 ##@ Building
 .PHONY: build
@@ -25,3 +25,7 @@ generate-protobuf: ## generate protobuf structs
 .PHONY: install-dev
 install-dev:
 	go get github.com/gogo/protobuf
+
+.PHONY: compile-tests
+compile-tests: ## compile all tests
+	go list -tags=${TAGS} ./... | xargs -n 1 go test -tags=$(BUILD_TAGS) -c
