@@ -53,7 +53,6 @@ func (s *Server) JetDropByID(ctx echo.Context, jetDropID server.JetDropIdPath) e
 		response := server.CodeValidationError{
 			Code:        NullableString(strconv.Itoa(http.StatusBadRequest)),
 			Description: nil,
-			Link:        nil,
 			Message:     NullableString(InvalidParamsMessage),
 			ValidationFailures: &[]server.CodeValidationFailures{{
 				FailureReason: NullableString(errors.Wrapf(err, "invalid").Error()),
@@ -434,7 +433,6 @@ func (s *Server) JetDropsByPulseNumber(ctx echo.Context, pulseNumber server.Puls
 		response := server.CodeValidationError{
 			Code:               NullableString(strconv.Itoa(http.StatusBadRequest)),
 			Description:        nil,
-			Link:               nil,
 			Message:            NullableString(InvalidParamsMessage),
 			ValidationFailures: &failures,
 		}
