@@ -35,14 +35,14 @@ func (c *BEApiClient) ObjectLifeline(t *testing.T, objectRef string, localVarOpt
 	return response
 }
 
-func (c *BEApiClient) Pulses(t *testing.T, localVarOptionals *client.PulsesOpts) (response client.GetPulsesResponse200) {
+func (c *BEApiClient) Pulses(t *testing.T, localVarOptionals *client.PulsesOpts) (response client.PulsesResponse200) {
 	response, rawResponse, err := c.Client.PulseApi.Pulses(context.Background(), localVarOptionals)
 	require.NoError(t, err)
 	LogHTTP(t, rawResponse, nil, response)
 	return response
 }
 
-func (c *BEApiClient) PulsesWithError(t *testing.T, localVarOptionals *client.PulsesOpts, expError string) (response client.GetPulsesResponse200) {
+func (c *BEApiClient) PulsesWithError(t *testing.T, localVarOptionals *client.PulsesOpts, expError string) (response client.PulsesResponse200) {
 	response, rawResponse, err := c.Client.PulseApi.Pulses(context.Background(), localVarOptionals)
 	require.Error(t, err)
 	require.Equal(t, expError, err.Error())

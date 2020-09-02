@@ -93,7 +93,6 @@ func TestGetRecordsByJetDropID(t *testing.T) {
 			require.Empty(t, response.Code)
 			require.Empty(t, response.Message)
 			require.Empty(t, response.Description)
-			require.Empty(t, response.Link)
 			require.Empty(t, response.ValidationFailures)
 		}
 	})
@@ -340,7 +339,6 @@ func TestGetRecordsByJetDropID_oneJdCheckFields(t *testing.T) {
 	require.Empty(t, response.Code)
 	require.Empty(t, response.Message)
 	require.Empty(t, response.Description)
-	require.Empty(t, response.Link)
 	require.Empty(t, response.ValidationFailures)
 }
 
