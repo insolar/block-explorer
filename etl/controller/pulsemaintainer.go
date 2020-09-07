@@ -48,6 +48,7 @@ func eraseJetDropRegister(ctx context.Context, c *Controller, log log.Logger) {
 
 	for p, d := range jetDropRegisterCopy {
 		if pulseIsComplete(p, d) {
+			PulseCompleteCounter.Inc()
 			log.Infof("Pulse %d completed, update it in db", p.PulseNo)
 			if func() bool {
 
@@ -68,6 +69,7 @@ func eraseJetDropRegister(ctx context.Context, c *Controller, log log.Logger) {
 				log.Infof("Pulse %d completed and saved", p.PulseNo)
 			}
 		} else {
+			PulseNotCompleteCounter.Inc()
 			c.reloadData(ctx, p.PrevPulseNumber, p.PulseNo)
 			CurrentIncompletePulse.Set(float64(p.PrevPulseNumber))
 		}

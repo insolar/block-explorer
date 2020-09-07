@@ -112,6 +112,9 @@ func closeStream(ctx context.Context, stream exporter.RecordExporter_ExportClien
 // retrievePulses - initiates full pulse retrieving between not including from and until
 // zero from is latest pulse, zero until - never stop
 func (e *PlatformExtractor) retrievePulses(ctx context.Context, from, until int64) {
+	RetrievePulsesCount.Inc()
+	defer RetrievePulsesCount.Dec()
+
 	pu := &exporter.FullPulse{PulseNumber: insolar.PulseNumber(from)}
 	var err error
 	logger := belogger.FromContext(ctx)

@@ -106,5 +106,5 @@ func (c *Controller) SetJetDropData(pulse types.Pulse, jetID string) {
 		c.jetDropRegister[pulse] = map[string]struct{}{}
 	}
 	c.jetDropRegister[pulse][jetID] = struct{}{}
-	IncompletePulsesQueue.Set(float64(len(c.jetDropRegister)))
+	IncompletePulsesQueue.Inc()
 }
