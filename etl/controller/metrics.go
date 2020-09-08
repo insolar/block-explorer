@@ -24,6 +24,14 @@ var (
 		Name: "gbe_controller_current_incomplete_pulse",
 		Help: "Current incomplete pulse that records are rerequested from platform",
 	})
+	PulseCompleteCounter = prometheus.NewCounter(prometheus.CounterOpts{
+		Name: "gbe_controller_pulse_complete_counter",
+		Help: "How many pulses is completed by 'pulseIsComplete' check",
+	})
+	PulseNotCompleteCounter = prometheus.NewCounter(prometheus.CounterOpts{
+		Name: "gbe_controller_pulse_not_complete_counter",
+		Help: "How many pulses is not completed by 'pulseIsComplete' check",
+	})
 )
 
 type Metrics struct{}

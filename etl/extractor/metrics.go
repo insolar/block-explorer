@@ -43,6 +43,11 @@ var (
 		Name: "gbe_extractor_received_records",
 		Help: "The number of records received",
 	})
+
+	RetrievePulsesCount = prometheus.NewGauge(prometheus.GaugeOpts{
+		Name: "gbe_extractor_retrieve_pulses_count",
+		Help: "The number of retrievePulses goroutines",
+	})
 )
 
 type Metrics struct{}
