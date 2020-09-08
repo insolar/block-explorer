@@ -127,6 +127,7 @@ func (e *PlatformExtractor) retrievePulses(ctx context.Context, from, until int6
 	for until > 0 && atomic.AddInt32(&e.workers, 1) > e.maxWorkers {
 		atomic.AddInt32(&e.workers, -1)
 		sleepMs := rand.Intn(1500) + 500
+		logger.Debugf("retrievePulses(): sleeping %d ms. frm %d, untl %d", sleepMs, from, until)
 		time.Sleep(time.Millisecond * time.Duration(sleepMs))
 	}
 	ExtractProcessCount.Inc()
@@ -187,6 +188,8 @@ func (e *PlatformExtractor) retrievePulses(ctx context.Context, from, until int6
 
 // retrieveRecords - retrieves all records for specified pulse and puts this to channel
 func (e *PlatformExtractor) retrieveRecords(ctx context.Context, pu *exporter.FullPulse) {
+	RetrieveRecordsCount.Inc()
+	defer RetrieveRecordsCount.Dec()
 	cancelCtx, cancelFunc := context.WithCancel(ctx)
 	defer cancelFunc()
 
@@ -195,6 +198,7 @@ func (e *PlatformExtractor) retrieveRecords(ctx context.Context, pu *exporter.Fu
 	log.Debug("retrieveRecords(): Start")
 	pulseData := &types.PlatformPulseData{Pulse: pu} // save pulse info
 
+Main:
 	for { // each portion
 		select {
 		case <-cancelCtx.Done():
@@ -233,10 +237,9 @@ func (e *PlatformExtractor) retrieveRecords(ctx context.Context, pu *exporter.Fu
 					strings.Contains(err.Error(), "pulse not found") {
 					Errors.With(ErrorTypeNotFound).Inc()
 					time.Sleep(time.Duration(e.continuousPulseRetrievingHalfPulseSeconds) * time.Second)
-					go e.retrievePulses(ctx, int64(pu.PrevPulseNumber), int64(pu.PulseNumber)) // goroutine to split the stack
 					log.Infof("Rerequest pulse=%d err=%s", pu.PulseNumber, err)
 					closeStream(cancelCtx, stream)
-					return
+					continue Main
 				}
 				log.Errorf("retrieveRecords(): empty response: err=%s", err)
 				closeStream(cancelCtx, stream)
