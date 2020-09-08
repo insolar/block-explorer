@@ -45,5 +45,7 @@ func (s Metrics) Metrics(p *metrics.Prometheus) []prometheus.Collector {
 		IncompletePulsesQueue,
 		CurrentSeqPulse,
 		CurrentIncompletePulse,
+		PulseNotCompleteCounter,
+		PulseCompleteCounter,
 	}
 }
