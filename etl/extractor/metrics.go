@@ -64,5 +64,6 @@ func (s Metrics) Metrics(p *metrics.Prometheus) []prometheus.Collector {
 		Errors,
 		ReceivedRecords,
 		ReceivedPulses,
+		RetrievePulsesCount,
 	}
 }
