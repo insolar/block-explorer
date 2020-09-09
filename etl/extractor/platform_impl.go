@@ -146,6 +146,12 @@ func (e *PlatformExtractor) retrievePulses(ctx context.Context, from, until int6
 				e.shutdownBE()
 				break
 			}
+			if isRateLimitError(err) {
+				log.Error("retrievePulses() on rpc call: ", err.Error())
+				Errors.With(ErrorTypeRateLimitExceeded).Inc()
+				time.Sleep(halfPulse)
+				continue
+			}
 			if strings.Contains(err.Error(), pulse.ErrNotFound.Error()) { // seems this pulse already last
 				Errors.With(ErrorTypeNotFound).Inc()
 				time.Sleep(halfPulse)
@@ -191,6 +197,7 @@ func (e *PlatformExtractor) retrieveRecords(ctx context.Context, pu *exporter.Fu
 	log.Debug("retrieveRecords(): Start")
 	pulseData := &types.PlatformPulseData{Pulse: pu} // save pulse info
 
+	halfPulse := time.Duration(e.continuousPulseRetrievingHalfPulseSeconds) * time.Second
 	for { // each portion
 		select {
 		case <-cancelCtx.Done():
@@ -206,6 +213,11 @@ func (e *PlatformExtractor) retrieveRecords(ctx context.Context, pu *exporter.Fu
 			if isVersionError(err) {
 				e.shutdownBE()
 				return
+			}
+			if isRateLimitError(err) {
+				Errors.With(ErrorTypeRateLimitExceeded).Inc()
+				time.Sleep(halfPulse)
+				continue
 			}
 			Errors.With(ErrorTypeOnRecordExport).Inc()
 			time.Sleep(time.Second)
@@ -224,11 +236,18 @@ func (e *PlatformExtractor) retrieveRecords(ctx context.Context, pu *exporter.Fu
 			if err == io.EOF { // stream ended, we have our portion
 				break
 			}
+			if err != nil && isRateLimitError(err) {
+				log.Error("retrieveRecords() on rpc call: ", err.Error())
+				Errors.With(ErrorTypeRateLimitExceeded).Inc()
+				closeStream(cancelCtx, stream)
+				time.Sleep(halfPulse)
+				break
+			}
 			if resp == nil { // error, assume the data is broken
 				if strings.Contains(err.Error(), "trying to get a non-finalized pulse data") ||
 					strings.Contains(err.Error(), "pulse not found") {
 					Errors.With(ErrorTypeNotFound).Inc()
-					time.Sleep(time.Duration(e.continuousPulseRetrievingHalfPulseSeconds) * time.Second)
+					time.Sleep(halfPulse)
 					go e.retrievePulses(ctx, int64(pu.PrevPulseNumber), int64(pu.PulseNumber)) // goroutine to split the stack
 					log.Infof("Rerequest pulse=%d err=%s", pu.PulseNumber, err)
 					closeStream(cancelCtx, stream)
@@ -268,8 +287,12 @@ func appendPlatformVersionToCtx(ctx context.Context) context.Context {
 
 func isVersionError(err error) bool {
 	return strings.Contains(err.Error(), exporter.ErrDeprecatedClientVersion.Error()) ||
-		strings.Contains(err.Error(), "unknown heavy_version") ||
+		strings.Contains(err.Error(), "unknown heavy-version") ||
 		strings.Contains(err.Error(), "unknown type client") ||
-		strings.Contains(err.Error(), "incorrect format of the heavy_version")
+		strings.Contains(err.Error(), "incorrect format of the heavy-version")
 
+}
+
+func isRateLimitError(err error) bool {
+	return strings.Contains(err.Error(), exporter.RateLimitExceededMsg)
 }
