@@ -12,11 +12,6 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/insolar/insconfig"
-	"github.com/insolar/insolar/ledger/heavy/exporter"
-	"github.com/pkg/errors"
-	"github.com/stackimpact/stackimpact-go"
-
 	"github.com/insolar/block-explorer/api"
 	"github.com/insolar/block-explorer/etl/connection"
 	"github.com/insolar/block-explorer/etl/controller"
@@ -28,6 +23,10 @@ import (
 	"github.com/insolar/block-explorer/etl/transformer"
 	"github.com/insolar/block-explorer/instrumentation/belogger"
 	"github.com/insolar/block-explorer/instrumentation/metrics"
+	"github.com/insolar/block-explorer/instrumentation/profefe"
+	"github.com/insolar/insconfig"
+	"github.com/insolar/insolar/ledger/heavy/exporter"
+	"github.com/pkg/errors"
 
 	"github.com/insolar/block-explorer/configuration"
 )
@@ -51,10 +50,17 @@ func main() {
 	ctx, logger := belogger.InitLogger(context.Background(), cfg.Log, "block_explorer")
 	logger.Info("Config and logger were initialized")
 
-	_ = stackimpact.Start(stackimpact.Options{
-		AgentKey: "5256279e53f4aa857af6ee782a4c53e72034b0da",
-		AppName:  "gbe",
-	})
+	pfefe := profefe.New(cfg.Profefe, "block-explorer")
+	err := pfefe.Start(ctx)
+	if err != nil {
+		logger.Fatal(err)
+	}
+	defer func() {
+		err := pfefe.Stop(ctx)
+		if err != nil {
+			logger.Error(err)
+		}
+	}()
 
 	router := api.NewRouter()
 	_ = router.Start(ctx)
