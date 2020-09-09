@@ -247,6 +247,7 @@ func (e *PlatformExtractor) retrieveRecords(ctx context.Context, pu *exporter.Fu
 				Errors.With(ErrorTypeRateLimitExceeded).Inc()
 				closeStream(cancelCtx, stream)
 				time.Sleep(halfPulse)
+				// we should break inner for loop and reopen a stream because the clientStream finished and can't retry
 				break
 			}
 			if resp == nil { // error, assume the data is broken
