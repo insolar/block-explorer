@@ -11,18 +11,17 @@ import (
 	"net/http"
 
 	echoPrometheus "github.com/globocom/echo-prometheus"
-	"github.com/insolar/block-explorer/instrumentation/metrics"
-	"github.com/insolar/insconfig"
-	"github.com/insolar/spec-insolar-block-explorer-api/v1/server"
-	"github.com/labstack/echo/v4"
-	"github.com/labstack/echo/v4/middleware"
-	"github.com/stackimpact/stackimpact-go"
-
 	"github.com/insolar/block-explorer/api"
 	"github.com/insolar/block-explorer/configuration"
 	"github.com/insolar/block-explorer/etl/dbconn"
 	"github.com/insolar/block-explorer/etl/storage"
 	"github.com/insolar/block-explorer/instrumentation/belogger"
+	"github.com/insolar/block-explorer/instrumentation/metrics"
+	"github.com/insolar/block-explorer/instrumentation/profefe"
+	"github.com/insolar/insconfig"
+	"github.com/insolar/spec-insolar-block-explorer-api/v1/server"
+	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 )
 
 func main() {
@@ -40,13 +39,20 @@ func main() {
 	ctx, logger := belogger.InitLogger(ctx, cfg.Log, "block_explorer_api")
 	logger.Info("Config and logger were initialized")
 
-	_ = stackimpact.Start(stackimpact.Options{
-		AgentKey: "5256279e53f4aa857af6ee782a4c53e72034b0da",
-		AppName:  "api",
-	})
+	pfefe := profefe.New(cfg.Profefe, "block_explorer_api")
+	err := pfefe.Start(ctx)
+	if err != nil {
+		logger.Fatal(err)
+	}
+	defer func() {
+		err := pfefe.Stop(ctx)
+		if err != nil {
+			logger.Error(err)
+		}
+	}()
 
 	router := api.NewRouter()
-	err := router.Start(ctx)
+	err = router.Start(ctx)
 	if err != nil {
 		logger.Fatal("cannot start pprof: ", err)
 	}

@@ -23,6 +23,7 @@ type BlockExplorer struct {
 	Controller Controller
 	Processor  Processor
 	Metrics    Metrics
+	Profefe    Profefe
 }
 
 type API struct {
@@ -32,6 +33,7 @@ type API struct {
 	DB           DB
 	Log          Log
 	Metrics      Metrics
+	Profefe      Profefe
 }
 
 type DB struct {
@@ -111,6 +113,12 @@ type Controller struct {
 // Processor represents for processing layer
 type Processor struct {
 	Workers int `insconfig:"200| The count of workers for processing transformed data"`
+}
+
+type Profefe struct {
+	StartAgent bool   `insconfig:"true| if true, start the profefe agent"`
+	Address    string `insconfig:"http://127.0.0.1:10100| Profefe collector public address to send profiling data"`
+	Labels     string `insconfig:"host,localhost| Application labels. For example, region,europe-west3,dc,fra"`
 }
 
 // NewLog creates new default configuration for logging
