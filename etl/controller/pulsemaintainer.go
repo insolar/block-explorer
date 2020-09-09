@@ -70,6 +70,7 @@ func eraseJetDropRegister(ctx context.Context, c *Controller, log log.Logger) {
 			}
 		} else {
 			PulseNotCompleteCounter.Inc()
+			log.Debugf("Pulse %d not completed, reloading", p.PulseNo)
 			c.reloadData(ctx, p.PrevPulseNumber, p.PulseNo)
 			CurrentIncompletePulse.Set(float64(p.PrevPulseNumber))
 		}
@@ -112,6 +113,7 @@ func (c *Controller) pulseSequence(ctx context.Context) {
 					log.Info("no next saved pulse. skipping")
 					return
 				}
+				log.Debugf("Reloading not seq pulses %d - %d", c.sequentialPulse.PulseNumber, toPulse.PrevPulseNumber)
 				c.reloadData(ctx, c.sequentialPulse.PulseNumber, toPulse.PrevPulseNumber)
 				return
 			}
