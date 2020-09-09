@@ -122,20 +122,7 @@ func (e *PlatformExtractor) retrievePulses(ctx context.Context, from, until int6
 	ctx = appendPlatformVersionToCtx(ctx)
 
 	halfPulse := time.Duration(e.continuousPulseRetrievingHalfPulseSeconds) * time.Second
-
-	// check free workers if not main tread
-	for until > 0 && atomic.AddInt32(&e.workers, 1) > e.maxWorkers {
-		atomic.AddInt32(&e.workers, -1)
-		sleepMs := rand.Intn(1500) + 500
-		logger.Debugf("retrievePulses(): sleeping %d ms. frm %d, untl %d", sleepMs, from, until)
-		time.Sleep(time.Millisecond * time.Duration(sleepMs))
-	}
-	ExtractProcessCount.Inc()
-	defer func() {
-		atomic.AddInt32(&e.workers, -1)
-		ExtractProcessCount.Dec()
-	}()
-
+	mainThread := until <= 0
 	for {
 		log := logger.WithField("pulse_number", pu.PulseNumber)
 		log.Debug("retrievePulses(): Start")
@@ -147,9 +134,16 @@ func (e *PlatformExtractor) retrievePulses(ctx context.Context, from, until int6
 		default:
 		}
 
-		before := *pu
+		// check free workers if not main thread
+		for !mainThread && atomic.AddInt32(&e.workers, 1) > e.maxWorkers {
+			atomic.AddInt32(&e.workers, -1)
+			sleepMs := rand.Intn(1500) + 500
+			time.Sleep(time.Millisecond * time.Duration(sleepMs))
+		}
+		ExtractProcessCount.Set(float64(atomic.LoadInt32(&e.workers)))
 
-		pu, err = e.pulseExtractor.GetNextFinalizedPulse(ctx, int64(int32(before.PulseNumber)))
+		before := *pu
+		pu, err = e.pulseExtractor.GetNextFinalizedPulse(ctx, int64(before.PulseNumber))
 		if err != nil { // network error ?
 			pu = &before
 			if isVersionError(err) {
@@ -175,7 +169,7 @@ func (e *PlatformExtractor) retrievePulses(ctx context.Context, from, until int6
 
 		ReceivedPulses.Inc()
 		LastPulseFetched.Set(float64(pu.PulseNumber))
-		e.retrieveRecords(ctx, pu)
+		go e.retrieveRecords(ctx, pu, mainThread)
 
 		if until <= 0 { // we are going on the edge of history
 			time.Sleep(halfPulse)
@@ -187,18 +181,22 @@ func (e *PlatformExtractor) retrievePulses(ctx context.Context, from, until int6
 }
 
 // retrieveRecords - retrieves all records for specified pulse and puts this to channel
-func (e *PlatformExtractor) retrieveRecords(ctx context.Context, pu *exporter.FullPulse) {
+func (e *PlatformExtractor) retrieveRecords(ctx context.Context, pu *exporter.FullPulse, mainThread bool) {
 	RetrieveRecordsCount.Inc()
-	defer RetrieveRecordsCount.Dec()
 	cancelCtx, cancelFunc := context.WithCancel(ctx)
-	defer cancelFunc()
+	defer func() {
+		if !mainThread {
+			atomic.AddInt32(&e.workers, -1)
+		}
+		RetrieveRecordsCount.Dec()
+		cancelFunc()
+	}()
 
 	logger := belogger.FromContext(cancelCtx)
 	log := logger.WithField("pulse_number", pu.PulseNumber)
 	log.Debug("retrieveRecords(): Start")
 	pulseData := &types.PlatformPulseData{Pulse: pu} // save pulse info
 
-Main:
 	for { // each portion
 		select {
 		case <-cancelCtx.Done():
@@ -239,7 +237,7 @@ Main:
 					time.Sleep(time.Duration(e.continuousPulseRetrievingHalfPulseSeconds) * time.Second)
 					log.Infof("Rerequest pulse=%d err=%s", pu.PulseNumber, err)
 					closeStream(cancelCtx, stream)
-					continue Main
+					break
 				}
 				log.Errorf("retrieveRecords(): empty response: err=%s", err)
 				closeStream(cancelCtx, stream)
