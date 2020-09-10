@@ -31,6 +31,7 @@ require (
 	github.com/ory/dockertest/v3 v3.6.0
 	github.com/pelletier/go-toml v1.8.0 // indirect
 	github.com/pkg/errors v0.9.1
+	github.com/profefe/profefe v0.0.0-20200908185235-7b5c3a7e8970
 	github.com/prometheus/client_golang v1.7.1
 	github.com/prometheus/common v0.11.1 // indirect
 	github.com/rcrowley/go-metrics v0.0.0-20200313005456-10cdbea86bc0 // indirect
@@ -39,7 +40,6 @@ require (
 	github.com/skudasov/loadgen v0.0.26
 	github.com/spf13/afero v1.3.4 // indirect
 	github.com/spf13/cast v1.3.1 // indirect
-	github.com/stackimpact/stackimpact-go v2.3.10+incompatible
 	github.com/stretchr/testify v1.6.1
 	github.com/ugorji/go v1.1.7 // indirect
 	github.com/valyala/fasttemplate v1.2.0 // indirect
