@@ -112,7 +112,7 @@ func TestClient_GetGRPCConn_Version_Error(t *testing.T) {
 
 	_, err = stream.Recv()
 	require.Error(t, err, "No err listening stream")
-	require.Contains(t, err.Error(), "unknown heavy_version")
+	require.Contains(t, err.Error(), "unknown heavy-version")
 
 	ctx = metadata.AppendToOutgoingContext(ctx, pb.KeyClientVersionHeavy, extractor.PlatformAPIVersion)
 

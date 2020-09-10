@@ -14,8 +14,9 @@ import (
 const LabelType = "type"
 
 var (
-	ErrorTypeNotFound       = prometheus.Labels{LabelType: "not_found"}
-	ErrorTypeOnRecordExport = prometheus.Labels{LabelType: "record_export"}
+	ErrorTypeNotFound          = prometheus.Labels{LabelType: "not_found"}
+	ErrorTypeOnRecordExport    = prometheus.Labels{LabelType: "record_export"}
+	ErrorTypeRateLimitExceeded = prometheus.Labels{LabelType: "rate_limit_exceeded"}
 
 	ExtractProcessCount = prometheus.NewGauge(prometheus.GaugeOpts{
 		Name: "gbe_extractor_process_count",

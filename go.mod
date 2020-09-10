@@ -7,7 +7,6 @@ require (
 	github.com/blend/go-sdk v1.1.1 // indirect
 	github.com/emirpasic/gods v1.12.0
 	github.com/fortytw2/leaktest v1.3.0
-	github.com/fsnotify/fsnotify v1.4.9 // indirect
 	github.com/globocom/echo-prometheus v0.1.2
 	github.com/gogo/protobuf v1.3.1
 	github.com/gojuno/minimock/v3 v3.0.8
@@ -16,7 +15,7 @@ require (
 	github.com/grpc-ecosystem/go-grpc-middleware v1.2.0
 	github.com/insolar/assured-ledger/ledger-core/v2 v2.0.0-20200512113104-4973d6ba44e9
 	github.com/insolar/insconfig v0.0.0-20200617131009-dd635d1fc9e9
-	github.com/insolar/insolar v1.7.2
+	github.com/insolar/insolar v1.8.1
 	github.com/insolar/spec-insolar-block-explorer-api v1.3.1-0.20200828125644-dc1d48a4964d
 	github.com/jackc/pgproto3/v2 v2.0.4 // indirect
 	github.com/jackc/pgx/v4 v4.8.1 // indirect
