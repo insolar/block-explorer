@@ -107,7 +107,7 @@ func TestGetJetDropsByJetID(t *testing.T) {
 			}
 		}
 	})
-	t.Run("check jetDrops amount", func(t *testing.T) {
+	t.Run("get siblings by parent JetID", func(t *testing.T) {
 		t.Log("C5421 Get JetDrops by JetID, if value is a starting numbers of existing JetID (get childs by parent)")
 		var values []string
 		for jetID := range jetIDs {
@@ -123,10 +123,26 @@ func TestGetJetDropsByJetID(t *testing.T) {
 			}
 		}
 	})
-	t.Run("check jetDrops amount", func(t *testing.T) {
+	t.Run("empty if nonexistent JetID", func(t *testing.T) {
 		t.Log("C5422 Get JetDrops by nonexistent JetID")
-		jetID := converter.JetIDToString(testutils.GenerateUniqueJetID())
-		response := c.JetDropsByJetID(t, jetID, nil)
+		generateUniqueNotParentJetId := func(jetIDs map[string][]string) string {
+			var newJetID string
+			for {
+				newJetID = converter.JetIDToString(testutils.GenerateUniqueJetID())
+				for existingJetIDs := range jetIDs {
+					if strings.HasPrefix(existingJetIDs, newJetID) {
+						newJetID = ""
+						break
+					}
+				}
+				if newJetID != "" {
+					break
+				}
+			}
+			return newJetID
+		}
+
+		response := c.JetDropsByJetID(t, generateUniqueNotParentJetId(jetIDs), nil)
 		require.Empty(t, response.Result)
 		require.Equal(t, int64(0), response.Total)
 		require.Empty(t, int64(0), response.ValidationFailures)
