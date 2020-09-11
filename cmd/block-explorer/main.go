@@ -177,12 +177,11 @@ func main() {
 func graceful(ctx context.Context) {
 	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)
 	logger := belogger.FromContext(ctx)
-	logger.Infof("gracefully stopping...")
 	select {
 	case <-stopChannel:
-		logger.Info("stopping by channel")
+		logger.Info("gracefully stopping by channel")
 	case <-stop:
-		logger.Info("stopping by signal")
+		logger.Info("gracefully stopping by signal")
 	}
 }
 
