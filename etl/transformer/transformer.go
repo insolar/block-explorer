@@ -21,8 +21,6 @@ import (
 
 	"github.com/insolar/block-explorer/etl/types"
 	"github.com/insolar/block-explorer/instrumentation/belogger"
-
-	"github.com/kelindar/binary"
 )
 
 // Transform transforms thr row JetDrops to canonical JetDrops
@@ -90,17 +88,7 @@ func getJetDrop(ctx context.Context, jetID insolar.JetID, records []types.Record
 		Hash:        hash,
 	}
 
-	rawData, err := serialize(localJetDrop.MainSection)
-	if err != nil {
-		return nil, errors.Wrapf(err, "cannot calculate JetDrop hash")
-	}
-	localJetDrop.RawData = rawData
-
 	return &localJetDrop, nil
-}
-
-func serialize(o interface{}) ([]byte, error) {
-	return binary.Marshal(o)
 }
 
 // sortRecords sorts state records for every object in order of change
