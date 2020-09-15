@@ -21,8 +21,6 @@ import (
 
 	"github.com/insolar/block-explorer/etl/types"
 	"github.com/insolar/block-explorer/instrumentation/belogger"
-
-	"github.com/kelindar/binary"
 )
 
 // Transform transforms thr row JetDrops to canonical JetDrops
@@ -46,10 +44,7 @@ func Transform(ctx context.Context, jd *types.PlatformPulseData) ([]*types.JetDr
 	for _, jet := range jd.Pulse.Jets {
 		jetid := jet.JetID
 		records := m[jetid]
-		localJetDrop, err := getJetDrop(ctx, jetid, records, pulseData, jet.Hash, jet.PrevDropHashes)
-		if err != nil {
-			return nil, errors.Wrapf(err, "cannot create jet drop for jetID %s", jetid.DebugString())
-		}
+		localJetDrop := getJetDrop(ctx, jetid, records, pulseData, jet.Hash, jet.PrevDropHashes)
 		if localJetDrop == nil {
 			continue
 		}
@@ -59,7 +54,7 @@ func Transform(ctx context.Context, jd *types.PlatformPulseData) ([]*types.JetDr
 	return result, nil
 }
 
-func getJetDrop(ctx context.Context, jetID insolar.JetID, records []types.Record, pulseData types.Pulse, hash []byte, prevDropHash [][]byte) (*types.JetDrop, error) {
+func getJetDrop(ctx context.Context, jetID insolar.JetID, records []types.Record, pulseData types.Pulse, hash []byte, prevDropHash [][]byte) *types.JetDrop {
 	sections := make([]types.Section, 0)
 	var prefix string
 	if jetID.IsValid() {
@@ -69,7 +64,7 @@ func getJetDrop(ctx context.Context, jetID insolar.JetID, records []types.Record
 	records, err := sortRecords(records)
 	if err != nil {
 		belogger.FromContext(ctx).Errorf("cannot sort records in JetDrop %s, error: %s", jetID.DebugString(), err.Error())
-		return nil, nil
+		return nil
 	}
 
 	mainSection := &types.MainSection{
@@ -90,17 +85,7 @@ func getJetDrop(ctx context.Context, jetID insolar.JetID, records []types.Record
 		Hash:        hash,
 	}
 
-	rawData, err := serialize(localJetDrop.MainSection)
-	if err != nil {
-		return nil, errors.Wrapf(err, "cannot calculate JetDrop hash")
-	}
-	localJetDrop.RawData = rawData
-
-	return &localJetDrop, nil
-}
-
-func serialize(o interface{}) ([]byte, error) {
-	return binary.Marshal(o)
+	return &localJetDrop
 }
 
 // sortRecords sorts state records for every object in order of change
