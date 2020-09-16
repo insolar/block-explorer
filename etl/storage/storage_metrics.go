@@ -23,11 +23,6 @@ var (
 		Help:       "The duration of the SavePulse function execution",
 		Objectives: quntitile,
 	})
-	SavePulseExecutionDuration = prometheus.NewSummary(prometheus.SummaryOpts{
-		Name:       "gbe_storage_stats_SavePulseExecutionDuration",
-		Help:       "The duration of the SavePulse function execution without mutexes",
-		Objectives: quntitile,
-	})
 	CompletePulseDuration = prometheus.NewSummary(prometheus.SummaryOpts{
 		Name:       "gbe_storage_stats_CompletePulseDuration",
 		Help:       "The duration of the CompletePulse function execution",
@@ -116,7 +111,6 @@ func (s Metrics) Metrics(p *metrics.Prometheus) []prometheus.Collector {
 	return []prometheus.Collector{
 		SaveJetDropDataDuration,
 		SavePulseDuration,
-		SavePulseExecutionDuration,
 		CompletePulseDuration,
 		SequencePulseDuration,
 		GetRecordDuration,

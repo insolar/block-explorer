@@ -24,11 +24,12 @@
   "editable": true,
   "gnetId": 10913,
   "graphTooltip": 1,
-  "iteration": 1598870274449,
+  "iteration": 1600237576157,
   "links": [],
   "panels": [
     {
       "collapsed": false,
+      "datasource": null,
       "gridPos": {
         "h": 1,
         "w": 24,
@@ -51,7 +52,8 @@
       "error": false,
       "fieldConfig": {
         "defaults": {
-          "custom": {}
+          "custom": {},
+          "links": []
         },
         "overrides": []
       },
@@ -80,11 +82,8 @@
       "linewidth": 2,
       "links": [],
       "nullPointMode": "connected",
-      "options": {
-        "dataLinks": []
-      },
       "percentage": false,
-      "pluginVersion": "7.1.1",
+      "pluginVersion": "7.1.5",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -155,7 +154,8 @@
       "error": false,
       "fieldConfig": {
         "defaults": {
-          "custom": {}
+          "custom": {},
+          "links": []
         },
         "overrides": []
       },
@@ -184,11 +184,8 @@
       "linewidth": 2,
       "links": [],
       "nullPointMode": "connected",
-      "options": {
-        "dataLinks": []
-      },
       "percentage": false,
-      "pluginVersion": "7.1.1",
+      "pluginVersion": "7.1.5",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -259,7 +256,8 @@
       "error": false,
       "fieldConfig": {
         "defaults": {
-          "custom": {}
+          "custom": {},
+          "links": []
         },
         "overrides": []
       },
@@ -288,11 +286,8 @@
       "linewidth": 2,
       "links": [],
       "nullPointMode": "connected",
-      "options": {
-        "dataLinks": []
-      },
       "percentage": false,
-      "pluginVersion": "7.1.1",
+      "pluginVersion": "7.1.5",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -363,7 +358,8 @@
       "error": false,
       "fieldConfig": {
         "defaults": {
-          "custom": {}
+          "custom": {},
+          "links": []
         },
         "overrides": []
       },
@@ -392,11 +388,8 @@
       "linewidth": 2,
       "links": [],
       "nullPointMode": "connected",
-      "options": {
-        "dataLinks": []
-      },
       "percentage": false,
-      "pluginVersion": "7.1.1",
+      "pluginVersion": "7.1.5",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -467,7 +460,8 @@
       "error": false,
       "fieldConfig": {
         "defaults": {
-          "custom": {}
+          "custom": {},
+          "links": []
         },
         "overrides": []
       },
@@ -496,11 +490,8 @@
       "linewidth": 2,
       "links": [],
       "nullPointMode": "connected",
-      "options": {
-        "dataLinks": []
-      },
       "percentage": false,
-      "pluginVersion": "7.1.1",
+      "pluginVersion": "7.1.5",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -569,7 +560,8 @@
       "description": "The total time blocked waiting for a new connection",
       "fieldConfig": {
         "defaults": {
-          "custom": {}
+          "custom": {},
+          "links": []
         },
         "overrides": []
       },
@@ -596,11 +588,8 @@
       "linewidth": 1,
       "links": [],
       "nullPointMode": "null",
-      "options": {
-        "dataLinks": []
-      },
       "percentage": false,
-      "pluginVersion": "7.1.1",
+      "pluginVersion": "7.1.5",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -699,7 +688,8 @@
       "error": false,
       "fieldConfig": {
         "defaults": {
-          "custom": {}
+          "custom": {},
+          "links": []
         },
         "overrides": []
       },
@@ -728,11 +718,8 @@
       "linewidth": 2,
       "links": [],
       "nullPointMode": "connected",
-      "options": {
-        "dataLinks": []
-      },
       "percentage": false,
-      "pluginVersion": "7.1.1",
+      "pluginVersion": "7.1.5",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -803,7 +790,8 @@
       "error": false,
       "fieldConfig": {
         "defaults": {
-          "custom": {}
+          "custom": {},
+          "links": []
         },
         "overrides": []
       },
@@ -832,11 +820,8 @@
       "linewidth": 2,
       "links": [],
       "nullPointMode": "connected",
-      "options": {
-        "dataLinks": []
-      },
       "percentage": false,
-      "pluginVersion": "7.1.1",
+      "pluginVersion": "7.1.5",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -898,6 +883,7 @@
     },
     {
       "collapsed": false,
+      "datasource": null,
       "gridPos": {
         "h": 1,
         "w": 24,
@@ -919,7 +905,8 @@
       "error": false,
       "fieldConfig": {
         "defaults": {
-          "custom": {}
+          "custom": {},
+          "links": []
         },
         "overrides": []
       },
@@ -948,11 +935,8 @@
       "linewidth": 2,
       "links": [],
       "nullPointMode": "connected",
-      "options": {
-        "dataLinks": []
-      },
       "percentage": false,
-      "pluginVersion": "7.1.1",
+      "pluginVersion": "7.1.5",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -1020,7 +1004,8 @@
       "datasource": "$datasource",
       "fieldConfig": {
         "defaults": {
-          "custom": {}
+          "custom": {},
+          "links": []
         },
         "overrides": []
       },
@@ -1047,11 +1032,8 @@
       "linewidth": 1,
       "links": [],
       "nullPointMode": "null",
-      "options": {
-        "dataLinks": []
-      },
       "percentage": false,
-      "pluginVersion": "7.1.1",
+      "pluginVersion": "7.1.5",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -1147,7 +1129,8 @@
       "datasource": "$datasource",
       "fieldConfig": {
         "defaults": {
-          "custom": {}
+          "custom": {},
+          "links": []
         },
         "overrides": []
       },
@@ -1174,11 +1157,8 @@
       "linewidth": 1,
       "links": [],
       "nullPointMode": "null",
-      "options": {
-        "dataLinks": []
-      },
       "percentage": false,
-      "pluginVersion": "7.1.1",
+      "pluginVersion": "7.1.5",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -1274,7 +1254,8 @@
       "datasource": "$datasource",
       "fieldConfig": {
         "defaults": {
-          "custom": {}
+          "custom": {},
+          "links": []
         },
         "overrides": []
       },
@@ -1301,11 +1282,8 @@
       "linewidth": 1,
       "links": [],
       "nullPointMode": "null",
-      "options": {
-        "dataLinks": []
-      },
       "percentage": false,
-      "pluginVersion": "7.1.1",
+      "pluginVersion": "7.1.5",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -1395,6 +1373,7 @@
     },
     {
       "collapsed": false,
+      "datasource": null,
       "gridPos": {
         "h": 1,
         "w": 24,
@@ -1408,6 +1387,7 @@
     },
     {
       "collapsed": false,
+      "datasource": null,
       "gridPos": {
         "h": 1,
         "w": 24,
@@ -1421,6 +1401,7 @@
     },
     {
       "collapsed": false,
+      "datasource": null,
       "gridPos": {
         "h": 1,
         "w": 24,
@@ -1440,7 +1421,8 @@
       "datasource": "$datasource",
       "fieldConfig": {
         "defaults": {
-          "custom": {}
+          "custom": {},
+          "links": []
         },
         "overrides": []
       },
@@ -1451,260 +1433,6 @@
         "w": 12,
         "x": 0,
         "y": 31
-      },
-      "hiddenSeries": false,
-      "id": 39,
-      "legend": {
-        "avg": false,
-        "current": false,
-        "max": false,
-        "min": false,
-        "show": true,
-        "total": false,
-        "values": false
-      },
-      "lines": true,
-      "linewidth": 1,
-      "links": [],
-      "nullPointMode": "null",
-      "options": {
-        "dataLinks": []
-      },
-      "percentage": false,
-      "pluginVersion": "7.1.1",
-      "pointradius": 5,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
-      "targets": [
-        {
-          "application": {
-            "filter": ""
-          },
-          "expr": "gbe_storage_stats_SavePulseExecutionDuration",
-          "format": "time_series",
-          "functions": [],
-          "group": {
-            "filter": ""
-          },
-          "hide": false,
-          "host": {
-            "filter": ""
-          },
-          "instant": false,
-          "interval": "",
-          "intervalFactor": 1,
-          "item": {
-            "filter": ""
-          },
-          "legendFormat": "{{ job }} - {{ instance }} - {{ quantile }}",
-          "mode": 0,
-          "options": {
-            "showDisabledItems": false,
-            "skipEmptyValues": false
-          },
-          "refId": "A",
-          "resultFormat": "time_series",
-          "table": {
-            "skipEmptyValues": false
-          },
-          "triggers": {
-            "acknowledged": 2,
-            "count": true,
-            "minSeverity": 3
-          }
-        }
-      ],
-      "thresholds": [],
-      "timeFrom": null,
-      "timeRegions": [],
-      "timeShift": null,
-      "title": "The duration of the SavePulseExecution without mutex",
-      "tooltip": {
-        "shared": true,
-        "sort": 2,
-        "value_type": "individual"
-      },
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "format": "s",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        },
-        {
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
-    },
-    {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
-      "datasource": "$datasource",
-      "fieldConfig": {
-        "defaults": {
-          "custom": {}
-        },
-        "overrides": []
-      },
-      "fill": 1,
-      "fillGradient": 0,
-      "gridPos": {
-        "h": 9,
-        "w": 12,
-        "x": 12,
-        "y": 31
-      },
-      "hiddenSeries": false,
-      "id": 61,
-      "legend": {
-        "avg": false,
-        "current": false,
-        "max": false,
-        "min": false,
-        "show": true,
-        "total": false,
-        "values": false
-      },
-      "lines": true,
-      "linewidth": 1,
-      "links": [],
-      "nullPointMode": "null",
-      "options": {
-        "dataLinks": []
-      },
-      "percentage": false,
-      "pluginVersion": "7.1.1",
-      "pointradius": 5,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
-      "targets": [
-        {
-          "application": {
-            "filter": ""
-          },
-          "expr": "gbe_storage_stats_SavePulseDuration",
-          "format": "time_series",
-          "functions": [],
-          "group": {
-            "filter": ""
-          },
-          "hide": false,
-          "host": {
-            "filter": ""
-          },
-          "instant": false,
-          "interval": "",
-          "intervalFactor": 1,
-          "item": {
-            "filter": ""
-          },
-          "legendFormat": "{{ job }} - {{ instance }} - {{ quantile }}",
-          "mode": 0,
-          "options": {
-            "showDisabledItems": false,
-            "skipEmptyValues": false
-          },
-          "refId": "A",
-          "resultFormat": "time_series",
-          "table": {
-            "skipEmptyValues": false
-          },
-          "triggers": {
-            "acknowledged": 2,
-            "count": true,
-            "minSeverity": 3
-          }
-        }
-      ],
-      "thresholds": [],
-      "timeFrom": null,
-      "timeRegions": [],
-      "timeShift": null,
-      "title": "The duration of the SavePulse",
-      "tooltip": {
-        "shared": true,
-        "sort": 2,
-        "value_type": "individual"
-      },
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "format": "s",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        },
-        {
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
-    },
-    {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
-      "datasource": "$datasource",
-      "fieldConfig": {
-        "defaults": {
-          "custom": {}
-        },
-        "overrides": []
-      },
-      "fill": 1,
-      "fillGradient": 0,
-      "gridPos": {
-        "h": 9,
-        "w": 12,
-        "x": 0,
-        "y": 40
       },
       "hiddenSeries": false,
       "id": 62,
@@ -1721,11 +1449,8 @@
       "linewidth": 1,
       "links": [],
       "nullPointMode": "null",
-      "options": {
-        "dataLinks": []
-      },
       "percentage": false,
-      "pluginVersion": "7.1.1",
+      "pluginVersion": "7.1.5",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -1821,7 +1546,8 @@
       "datasource": "$datasource",
       "fieldConfig": {
         "defaults": {
-          "custom": {}
+          "custom": {},
+          "links": []
         },
         "overrides": []
       },
@@ -1831,6 +1557,131 @@
         "h": 9,
         "w": 12,
         "x": 12,
+        "y": 31
+      },
+      "hiddenSeries": false,
+      "id": 61,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "percentage": false,
+      "pluginVersion": "7.1.5",
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "application": {
+            "filter": ""
+          },
+          "expr": "gbe_storage_stats_SavePulseDuration",
+          "format": "time_series",
+          "functions": [],
+          "group": {
+            "filter": ""
+          },
+          "hide": false,
+          "host": {
+            "filter": ""
+          },
+          "instant": false,
+          "interval": "",
+          "intervalFactor": 1,
+          "item": {
+            "filter": ""
+          },
+          "legendFormat": "{{ job }} - {{ instance }} - {{ quantile }}",
+          "mode": 0,
+          "options": {
+            "showDisabledItems": false,
+            "skipEmptyValues": false
+          },
+          "refId": "A",
+          "resultFormat": "time_series",
+          "table": {
+            "skipEmptyValues": false
+          },
+          "triggers": {
+            "acknowledged": 2,
+            "count": true,
+            "minSeverity": 3
+          }
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "The duration of the SavePulse",
+      "tooltip": {
+        "shared": true,
+        "sort": 2,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "s",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "$datasource",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {},
+          "links": []
+        },
+        "overrides": []
+      },
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 0,
         "y": 40
       },
       "hiddenSeries": false,
@@ -1848,11 +1699,8 @@
       "linewidth": 1,
       "links": [],
       "nullPointMode": "null",
-      "options": {
-        "dataLinks": []
-      },
       "percentage": false,
-      "pluginVersion": "7.1.1",
+      "pluginVersion": "7.1.5",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -1948,7 +1796,8 @@
       "datasource": "$datasource",
       "fieldConfig": {
         "defaults": {
-          "custom": {}
+          "custom": {},
+          "links": []
         },
         "overrides": []
       },
@@ -1958,7 +1807,7 @@
         "h": 9,
         "w": 12,
         "x": 12,
-        "y": 49
+        "y": 40
       },
       "hiddenSeries": false,
       "id": 60,
@@ -1975,11 +1824,8 @@
       "linewidth": 1,
       "links": [],
       "nullPointMode": "null",
-      "options": {
-        "dataLinks": []
-      },
       "percentage": false,
-      "pluginVersion": "7.1.1",
+      "pluginVersion": "7.1.5",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -2069,11 +1915,12 @@
     },
     {
       "collapsed": false,
+      "datasource": null,
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 58
+        "y": 49
       },
       "id": 45,
       "panels": [],
@@ -2088,7 +1935,8 @@
       "datasource": "$datasource",
       "fieldConfig": {
         "defaults": {
-          "custom": {}
+          "custom": {},
+          "links": []
         },
         "overrides": []
       },
@@ -2098,7 +1946,7 @@
         "h": 9,
         "w": 12,
         "x": 0,
-        "y": 59
+        "y": 50
       },
       "hiddenSeries": false,
       "id": 48,
@@ -2115,11 +1963,8 @@
       "linewidth": 1,
       "links": [],
       "nullPointMode": "null",
-      "options": {
-        "dataLinks": []
-      },
       "percentage": false,
-      "pluginVersion": "7.1.1",
+      "pluginVersion": "7.1.5",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -2215,7 +2060,8 @@
       "datasource": "$datasource",
       "fieldConfig": {
         "defaults": {
-          "custom": {}
+          "custom": {},
+          "links": []
         },
         "overrides": []
       },
@@ -2225,7 +2071,7 @@
         "h": 9,
         "w": 12,
         "x": 12,
-        "y": 59
+        "y": 50
       },
       "hiddenSeries": false,
       "id": 57,
@@ -2242,11 +2088,8 @@
       "linewidth": 1,
       "links": [],
       "nullPointMode": "null",
-      "options": {
-        "dataLinks": []
-      },
       "percentage": false,
-      "pluginVersion": "7.1.1",
+      "pluginVersion": "7.1.5",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -2342,7 +2185,8 @@
       "datasource": "$datasource",
       "fieldConfig": {
         "defaults": {
-          "custom": {}
+          "custom": {},
+          "links": []
         },
         "overrides": []
       },
@@ -2352,7 +2196,7 @@
         "h": 9,
         "w": 12,
         "x": 0,
-        "y": 68
+        "y": 59
       },
       "hiddenSeries": false,
       "id": 55,
@@ -2369,11 +2213,8 @@
       "linewidth": 1,
       "links": [],
       "nullPointMode": "null",
-      "options": {
-        "dataLinks": []
-      },
       "percentage": false,
-      "pluginVersion": "7.1.1",
+      "pluginVersion": "7.1.5",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -2469,7 +2310,8 @@
       "datasource": "$datasource",
       "fieldConfig": {
         "defaults": {
-          "custom": {}
+          "custom": {},
+          "links": []
         },
         "overrides": []
       },
@@ -2479,7 +2321,7 @@
         "h": 9,
         "w": 12,
         "x": 12,
-        "y": 68
+        "y": 59
       },
       "hiddenSeries": false,
       "id": 73,
@@ -2496,11 +2338,8 @@
       "linewidth": 1,
       "links": [],
       "nullPointMode": "null",
-      "options": {
-        "dataLinks": []
-      },
       "percentage": false,
-      "pluginVersion": "7.1.1",
+      "pluginVersion": "7.1.5",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -2596,7 +2435,8 @@
       "datasource": "$datasource",
       "fieldConfig": {
         "defaults": {
-          "custom": {}
+          "custom": {},
+          "links": []
         },
         "overrides": []
       },
@@ -2606,7 +2446,7 @@
         "h": 9,
         "w": 12,
         "x": 0,
-        "y": 77
+        "y": 68
       },
       "hiddenSeries": false,
       "id": 53,
@@ -2623,11 +2463,8 @@
       "linewidth": 1,
       "links": [],
       "nullPointMode": "null",
-      "options": {
-        "dataLinks": []
-      },
       "percentage": false,
-      "pluginVersion": "7.1.1",
+      "pluginVersion": "7.1.5",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -2723,7 +2560,8 @@
       "datasource": "$datasource",
       "fieldConfig": {
         "defaults": {
-          "custom": {}
+          "custom": {},
+          "links": []
         },
         "overrides": []
       },
@@ -2733,7 +2571,7 @@
         "h": 9,
         "w": 12,
         "x": 12,
-        "y": 77
+        "y": 68
       },
       "hiddenSeries": false,
       "id": 58,
@@ -2750,11 +2588,8 @@
       "linewidth": 1,
       "links": [],
       "nullPointMode": "null",
-      "options": {
-        "dataLinks": []
-      },
       "percentage": false,
-      "pluginVersion": "7.1.1",
+      "pluginVersion": "7.1.5",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -2850,7 +2685,8 @@
       "datasource": "$datasource",
       "fieldConfig": {
         "defaults": {
-          "custom": {}
+          "custom": {},
+          "links": []
         },
         "overrides": []
       },
@@ -2860,7 +2696,7 @@
         "h": 9,
         "w": 12,
         "x": 0,
-        "y": 86
+        "y": 77
       },
       "hiddenSeries": false,
       "id": 51,
@@ -2877,11 +2713,8 @@
       "linewidth": 1,
       "links": [],
       "nullPointMode": "null",
-      "options": {
-        "dataLinks": []
-      },
       "percentage": false,
-      "pluginVersion": "7.1.1",
+      "pluginVersion": "7.1.5",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -2977,7 +2810,8 @@
       "datasource": "$datasource",
       "fieldConfig": {
         "defaults": {
-          "custom": {}
+          "custom": {},
+          "links": []
         },
         "overrides": []
       },
@@ -2987,7 +2821,7 @@
         "h": 9,
         "w": 12,
         "x": 12,
-        "y": 86
+        "y": 77
       },
       "hiddenSeries": false,
       "id": 56,
@@ -3004,11 +2838,8 @@
       "linewidth": 1,
       "links": [],
       "nullPointMode": "null",
-      "options": {
-        "dataLinks": []
-      },
       "percentage": false,
-      "pluginVersion": "7.1.1",
+      "pluginVersion": "7.1.5",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -3104,7 +2935,8 @@
       "datasource": "$datasource",
       "fieldConfig": {
         "defaults": {
-          "custom": {}
+          "custom": {},
+          "links": []
         },
         "overrides": []
       },
@@ -3114,7 +2946,7 @@
         "h": 9,
         "w": 12,
         "x": 0,
-        "y": 95
+        "y": 86
       },
       "hiddenSeries": false,
       "id": 64,
@@ -3131,11 +2963,8 @@
       "linewidth": 1,
       "links": [],
       "nullPointMode": "null",
-      "options": {
-        "dataLinks": []
-      },
       "percentage": false,
-      "pluginVersion": "7.1.1",
+      "pluginVersion": "7.1.5",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -3231,7 +3060,8 @@
       "datasource": "$datasource",
       "fieldConfig": {
         "defaults": {
-          "custom": {}
+          "custom": {},
+          "links": []
         },
         "overrides": []
       },
@@ -3241,7 +3071,7 @@
         "h": 9,
         "w": 12,
         "x": 12,
-        "y": 95
+        "y": 86
       },
       "hiddenSeries": false,
       "id": 54,
@@ -3258,11 +3088,8 @@
       "linewidth": 1,
       "links": [],
       "nullPointMode": "null",
-      "options": {
-        "dataLinks": []
-      },
       "percentage": false,
-      "pluginVersion": "7.1.1",
+      "pluginVersion": "7.1.5",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -3358,7 +3185,8 @@
       "datasource": "$datasource",
       "fieldConfig": {
         "defaults": {
-          "custom": {}
+          "custom": {},
+          "links": []
         },
         "overrides": []
       },
@@ -3368,7 +3196,7 @@
         "h": 9,
         "w": 12,
         "x": 0,
-        "y": 104
+        "y": 95
       },
       "hiddenSeries": false,
       "id": 63,
@@ -3385,11 +3213,8 @@
       "linewidth": 1,
       "links": [],
       "nullPointMode": "null",
-      "options": {
-        "dataLinks": []
-      },
       "percentage": false,
-      "pluginVersion": "7.1.1",
+      "pluginVersion": "7.1.5",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -3485,7 +3310,8 @@
       "datasource": "$datasource",
       "fieldConfig": {
         "defaults": {
-          "custom": {}
+          "custom": {},
+          "links": []
         },
         "overrides": []
       },
@@ -3495,7 +3321,7 @@
         "h": 9,
         "w": 12,
         "x": 12,
-        "y": 104
+        "y": 95
       },
       "hiddenSeries": false,
       "id": 52,
@@ -3512,11 +3338,8 @@
       "linewidth": 1,
       "links": [],
       "nullPointMode": "null",
-      "options": {
-        "dataLinks": []
-      },
       "percentage": false,
-      "pluginVersion": "7.1.1",
+      "pluginVersion": "7.1.5",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -3612,7 +3435,8 @@
       "datasource": "$datasource",
       "fieldConfig": {
         "defaults": {
-          "custom": {}
+          "custom": {},
+          "links": []
         },
         "overrides": []
       },
@@ -3622,7 +3446,7 @@
         "h": 9,
         "w": 12,
         "x": 12,
-        "y": 113
+        "y": 104
       },
       "hiddenSeries": false,
       "id": 50,
@@ -3639,11 +3463,8 @@
       "linewidth": 1,
       "links": [],
       "nullPointMode": "null",
-      "options": {
-        "dataLinks": []
-      },
       "percentage": false,
-      "pluginVersion": "7.1.1",
+      "pluginVersion": "7.1.5",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -3733,13 +3554,14 @@
     }
   ],
   "refresh": "",
-  "schemaVersion": 19,
+  "schemaVersion": 26,
   "style": "dark",
   "tags": [],
   "templating": {
     "list": [
       {
         "current": {
+          "selected": false,
           "text": "prometheus",
           "value": "prometheus"
         },
@@ -3759,6 +3581,7 @@
       {
         "allValue": null,
         "current": {
+          "selected": false,
           "text": "All",
           "value": "$__all"
         },
@@ -3784,6 +3607,7 @@
       {
         "allValue": null,
         "current": {
+          "selected": true,
           "text": "All",
           "value": "$__all"
         },
@@ -3809,7 +3633,7 @@
     ]
   },
   "time": {
-    "from": "now-5m",
+    "from": "now-24h",
     "to": "now"
   },
   "timepicker": {
@@ -3840,5 +3664,5 @@
   "timezone": "browser",
   "title": "GBE Storage",
   "uid": "GBE_STORAGE_ID",
-  "version": 1
+  "version": 2
 }
