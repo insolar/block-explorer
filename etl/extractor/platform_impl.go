@@ -123,6 +123,9 @@ func (e *PlatformExtractor) retrievePulses(ctx context.Context, from, until int6
 
 	halfPulse := time.Duration(e.continuousPulseRetrievingHalfPulseSeconds) * time.Second
 	mainThread := until <= 0
+
+	var nextNotEmptyPulseNumber *insolar.PulseNumber
+
 	for {
 		log := logger.WithField("pulse_number", pu.PulseNumber)
 		log.Debug("retrievePulses(): Start")
@@ -176,7 +179,22 @@ func (e *PlatformExtractor) retrievePulses(ctx context.Context, from, until int6
 
 		ReceivedPulses.Inc()
 		LastPulseFetched.Set(float64(pu.PulseNumber))
-		go e.retrieveRecords(ctx, *pu, mainThread)
+		if !mainThread && e.maxWorkers == 1 {
+			// go to single worker scheme
+			if nextNotEmptyPulseNumber == nil || pu.PulseNumber >= *nextNotEmptyPulseNumber {
+				sif := "nil"
+				if nextNotEmptyPulseNumber != nil {
+					sif = nextNotEmptyPulseNumber.String()
+				}
+				log.Debugf("SIF is %s, get records", sif)
+				nextNotEmptyPulseNumber = e.retrieveRecords(ctx, *pu, mainThread, false)
+			} else {
+				log.Debugf("SIF is %d, skipping records", *nextNotEmptyPulseNumber)
+				e.retrieveRecords(ctx, *pu, mainThread, true)
+			}
+		} else {
+			go e.retrieveRecords(ctx, *pu, mainThread, false)
+		}
 
 		if mainThread { // we are going on the edge of history
 			time.Sleep(halfPulse * 2)
@@ -188,7 +206,8 @@ func (e *PlatformExtractor) retrievePulses(ctx context.Context, from, until int6
 }
 
 // retrieveRecords - retrieves all records for specified pulse and puts this to channel
-func (e *PlatformExtractor) retrieveRecords(ctx context.Context, pu exporter.FullPulse, mainThread bool) {
+func (e *PlatformExtractor) retrieveRecords(ctx context.Context, pu exporter.FullPulse, mainThread, skipRequest bool) *insolar.PulseNumber {
+	startedAt := time.Now()
 	RetrieveRecordsCount.Inc()
 	cancelCtx, cancelFunc := context.WithCancel(ctx)
 	defer func() {
@@ -199,6 +218,12 @@ func (e *PlatformExtractor) retrieveRecords(ctx context.Context, pu exporter.Ful
 		cancelFunc()
 	}()
 
+	// fast return when we don't need to get records
+	if skipRequest {
+		e.mainPulseDataChan <- &types.PlatformPulseData{Pulse: &pu}
+		return nil
+	}
+
 	logger := belogger.FromContext(cancelCtx)
 	log := logger.WithField("pulse_number", pu.PulseNumber)
 	log.Debug("retrieveRecords(): Start")
@@ -208,7 +233,7 @@ func (e *PlatformExtractor) retrieveRecords(ctx context.Context, pu exporter.Ful
 	for { // each portion
 		select {
 		case <-cancelCtx.Done():
-			return
+			return nil
 		default:
 		}
 		stream, err := e.client.Export(cancelCtx, &exporter.GetRecords{PulseNumber: pu.PulseNumber,
@@ -219,7 +244,7 @@ func (e *PlatformExtractor) retrieveRecords(ctx context.Context, pu exporter.Ful
 			log.Error("retrieveRecords() on rpc call: ", err.Error())
 			if isVersionError(err) {
 				e.shutdownBE()
-				return
+				return nil
 			}
 			if isRateLimitError(err) {
 				Errors.With(ErrorTypeRateLimitExceeded).Inc()
@@ -235,7 +260,7 @@ func (e *PlatformExtractor) retrieveRecords(ctx context.Context, pu exporter.Ful
 			select {
 			case <-cancelCtx.Done():
 				closeStream(cancelCtx, stream)
-				return
+				return nil
 			default:
 			}
 
@@ -262,14 +287,19 @@ func (e *PlatformExtractor) retrieveRecords(ctx context.Context, pu exporter.Ful
 				}
 				log.Errorf("retrieveRecords(): empty response: err=%s", err)
 				closeStream(cancelCtx, stream)
-				return
+				return nil
 			}
 			if resp.ShouldIterateFrom != nil || resp.Record.ID.Pulse() != pu.PulseNumber { // next pulse packet
 				closeStream(cancelCtx, stream)
 				e.mainPulseDataChan <- pulseData
 				FromExtractorDataQueue.Set(float64(len(e.mainPulseDataChan)))
-				log.Debug("retrieveRecords(): Done")
-				return // we have whole pulse
+				log.Debug("retrieveRecords(): Done in %s", time.Since(startedAt))
+				iterateFrom := resp.ShouldIterateFrom
+				if iterateFrom == nil {
+					itf := resp.Record.ID.Pulse()
+					iterateFrom = &itf
+				}
+				return iterateFrom // we have whole pulse
 			}
 
 			pulseData.Records = append(pulseData.Records, resp)

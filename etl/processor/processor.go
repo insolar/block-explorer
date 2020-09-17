@@ -105,7 +105,7 @@ func (p *Processor) process(ctx context.Context, jd *types.JetDrop) {
 	pd := ms.Start.PulseData
 
 	logger := belogger.FromContext(ctx)
-	logger.Infof("pulse = %d, jetDrop = %v, record amount = %d", pd.PulseNo, ms.Start.JetDropPrefix, len(jd.MainSection.Records))
+	logger.Infof("Process start, pulse = %d, jetDrop = %v, record amount = %d", pd.PulseNo, ms.Start.JetDropPrefix, len(jd.MainSection.Records))
 
 	mp := models.Pulse{
 		PulseNumber:     pd.PulseNo,
