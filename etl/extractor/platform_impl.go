@@ -93,7 +93,7 @@ func (e *PlatformExtractor) Start(ctx context.Context) error {
 	e.startStopMutex.Lock()
 	defer e.startStopMutex.Unlock()
 	if !e.hasStarted {
-		belogger.FromContext(ctx).Info("Starting platform extractor...")
+		belogger.FromContext(ctx).Info("Starting platform extractor mainthread...")
 		e.hasStarted = true
 		ctx, e.cancel = context.WithCancel(ctx)
 		go e.retrievePulses(ctx, 0, 0)
@@ -116,14 +116,18 @@ func (e *PlatformExtractor) retrievePulses(ctx context.Context, from, until int6
 	RetrievePulsesCount.Inc()
 	defer RetrievePulsesCount.Dec()
 
+	mainThread := until <= 0
 	pu := &exporter.FullPulse{PulseNumber: insolar.PulseNumber(from)}
 	var err error
 	logger := belogger.FromContext(ctx)
+	if mainThread {
+		logger = logger.WithField("main", mainThread)
+	} else {
+		logger = logger.WithField("from", from).WithField("until", until)
+	}
+
 	ctx = appendPlatformVersionToCtx(ctx)
-
 	halfPulse := time.Duration(e.continuousPulseRetrievingHalfPulseSeconds) * time.Second
-	mainThread := until <= 0
-
 	var nextNotEmptyPulseNumber *insolar.PulseNumber
 
 	for {
@@ -138,10 +142,11 @@ func (e *PlatformExtractor) retrievePulses(ctx context.Context, from, until int6
 		}
 
 		// check free workers if not main thread
-		for !mainThread && atomic.AddInt32(&e.workers, 1) > e.maxWorkers {
-			atomic.AddInt32(&e.workers, -1)
-			sleepMs := rand.Intn(1500) + 500
-			time.Sleep(time.Millisecond * time.Duration(sleepMs))
+		if !mainThread {
+			for !e.takeWorker() {
+				sleepMs := rand.Intn(1500) + 500
+				time.Sleep(time.Millisecond * time.Duration(sleepMs))
+			}
 		}
 		ExtractProcessCount.Set(float64(atomic.LoadInt32(&e.workers)))
 
@@ -157,21 +162,33 @@ func (e *PlatformExtractor) retrievePulses(ctx context.Context, from, until int6
 			if isRateLimitError(err) {
 				log.Error("retrievePulses(): on rpc call: ", err.Error())
 				Errors.With(ErrorTypeRateLimitExceeded).Inc()
+				if !mainThread {
+					e.freeWorker()
+				}
 				time.Sleep(halfPulse)
 				continue
 			}
 			if strings.Contains(err.Error(), pulse.ErrNotFound.Error()) { // seems this pulse already last
 				log.Debugf("retrievePulses(): sleep on not found pulse, before=%d err=%s", before.PulseNumber, err)
 				Errors.With(ErrorTypeNotFound).Inc()
+				if !mainThread {
+					e.freeWorker()
+				}
 				time.Sleep(halfPulse * 3)
 				continue
 			}
 			log.Errorf("retrievePulses(): before=%d err=%s", before.PulseNumber, err)
+			if !mainThread {
+				e.freeWorker()
+			}
 			time.Sleep(time.Second)
 			continue
 		}
 		if pu.PulseNumber == before.PulseNumber { // no new pulse happens
 			time.Sleep(halfPulse)
+			if !mainThread {
+				e.freeWorker()
+			}
 			continue
 		}
 
@@ -179,7 +196,7 @@ func (e *PlatformExtractor) retrievePulses(ctx context.Context, from, until int6
 
 		ReceivedPulses.Inc()
 		LastPulseFetched.Set(float64(pu.PulseNumber))
-		if !mainThread && e.maxWorkers == 1 {
+		if !mainThread && e.maxWorkers <= 3 {
 			// go to single worker scheme
 			if nextNotEmptyPulseNumber == nil || pu.PulseNumber >= *nextNotEmptyPulseNumber {
 				sif := "nil"
@@ -212,7 +229,7 @@ func (e *PlatformExtractor) retrieveRecords(ctx context.Context, pu exporter.Ful
 	cancelCtx, cancelFunc := context.WithCancel(ctx)
 	defer func() {
 		if !mainThread {
-			atomic.AddInt32(&e.workers, -1)
+			e.freeWorker()
 		}
 		RetrieveRecordsCount.Dec()
 		cancelFunc()
@@ -225,7 +242,7 @@ func (e *PlatformExtractor) retrieveRecords(ctx context.Context, pu exporter.Ful
 	}
 
 	logger := belogger.FromContext(cancelCtx)
-	log := logger.WithField("pulse_number", pu.PulseNumber)
+	log := logger.WithField("pulse_number", pu.PulseNumber).WithField("main", mainThread)
 	log.Debug("retrieveRecords(): Start")
 	pulseData := &types.PlatformPulseData{Pulse: &pu} // save pulse info
 
@@ -307,6 +324,18 @@ func (e *PlatformExtractor) retrieveRecords(ctx context.Context, pu exporter.Ful
 		}
 	}
 
+}
+
+func (e *PlatformExtractor) takeWorker() bool {
+	if atomic.AddInt32(&e.workers, 1) > e.maxWorkers {
+		atomic.AddInt32(&e.workers, -1)
+		return false
+	}
+	return true
+}
+
+func (e *PlatformExtractor) freeWorker() {
+	atomic.AddInt32(&e.workers, -1)
 }
 
 func debugVersionError(ctx context.Context) string {
