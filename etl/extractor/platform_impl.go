@@ -73,8 +73,8 @@ func (e *PlatformExtractor) GetJetDrops(ctx context.Context) <-chan *types.Platf
 	return e.mainPulseDataChan
 }
 
-func (e *PlatformExtractor) LoadJetDrops(ctx context.Context, fromPulseNumber int64, toPulseNumber int64) error {
-	go e.retrievePulses(ctx, fromPulseNumber, toPulseNumber)
+func (e *PlatformExtractor) LoadJetDrops(ctx context.Context, fromPulseNumber int64, toPulseNumber int64, priority bool) error {
+	go e.retrievePulses(ctx, fromPulseNumber, toPulseNumber, priority)
 	return nil
 }
 
@@ -96,7 +96,7 @@ func (e *PlatformExtractor) Start(ctx context.Context) error {
 		belogger.FromContext(ctx).Info("Starting platform extractor mainthread...")
 		e.hasStarted = true
 		ctx, e.cancel = context.WithCancel(ctx)
-		go e.retrievePulses(ctx, 0, 0)
+		go e.retrievePulses(ctx, 0, 0, false)
 	}
 	return nil
 }
@@ -112,14 +112,14 @@ func closeStream(ctx context.Context, stream exporter.RecordExporter_ExportClien
 
 // retrievePulses - initiates full pulse retrieving between not including from and until
 // zero from is latest pulse, zero until - never stop
-func (e *PlatformExtractor) retrievePulses(ctx context.Context, from, until int64) {
+func (e *PlatformExtractor) retrievePulses(ctx context.Context, from, until int64, priority bool) {
 	RetrievePulsesCount.Inc()
 	defer RetrievePulsesCount.Dec()
 
 	mainThread := until <= 0
 	pu := &exporter.FullPulse{PulseNumber: insolar.PulseNumber(from)}
 	var err error
-	logger := belogger.FromContext(ctx)
+	logger := belogger.FromContext(ctx).WithField("prior", priority)
 	if mainThread {
 		logger = logger.WithField("main", mainThread)
 	} else {
@@ -143,7 +143,7 @@ func (e *PlatformExtractor) retrievePulses(ctx context.Context, from, until int6
 
 		// check free workers if not main thread
 		if !mainThread {
-			for !e.takeWorker() {
+			for !e.takeWorker(priority) {
 				sleepMs := rand.Intn(1500) + 500
 				time.Sleep(time.Millisecond * time.Duration(sleepMs))
 			}
@@ -310,7 +310,7 @@ func (e *PlatformExtractor) retrieveRecords(ctx context.Context, pu exporter.Ful
 				closeStream(cancelCtx, stream)
 				e.mainPulseDataChan <- pulseData
 				FromExtractorDataQueue.Set(float64(len(e.mainPulseDataChan)))
-				log.Debug("retrieveRecords(): Done in %s", time.Since(startedAt))
+				log.Debugf("retrieveRecords(): Done in %s, recs: %d", time.Since(startedAt), len(pulseData.Records))
 				iterateFrom := resp.ShouldIterateFrom
 				if iterateFrom == nil {
 					itf := resp.Record.ID.Pulse()
@@ -326,8 +326,13 @@ func (e *PlatformExtractor) retrieveRecords(ctx context.Context, pu exporter.Ful
 
 }
 
-func (e *PlatformExtractor) takeWorker() bool {
-	if atomic.AddInt32(&e.workers, 1) > e.maxWorkers {
+func (e *PlatformExtractor) takeWorker(priority bool) bool {
+	max := e.maxWorkers
+	if priority {
+		// if prior then we have x2 workers, other worker stops
+		max = max * 2
+	}
+	if atomic.AddInt32(&e.workers, 1) > max {
 		atomic.AddInt32(&e.workers, -1)
 		return false
 	}

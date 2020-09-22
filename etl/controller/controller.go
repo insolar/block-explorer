@@ -12,6 +12,7 @@ import (
 
 	"github.com/insolar/block-explorer/configuration"
 	"github.com/insolar/block-explorer/etl/models"
+	"github.com/insolar/block-explorer/instrumentation/belogger"
 
 	"github.com/pkg/errors"
 
@@ -48,10 +49,16 @@ func NewController(cfg configuration.Controller, extractor interfaces.JetDropsEx
 		jetDropRegister:   make(map[types.Pulse]map[string]struct{}),
 		missedDataManager: NewMissedDataManager(time.Second*time.Duration(cfg.ReloadPeriod), time.Second*time.Duration(cfg.ReloadCleanPeriod)),
 	}
+	return c, nil
+}
+
+func (c *Controller) setIncompletePulses(ctx context.Context) error {
 	pulses, err := c.storage.GetIncompletePulses()
 	if err != nil {
-		return nil, errors.Wrap(err, "can't get not complete pulses from storage")
+		return errors.Wrap(err, "can't get not complete pulses from storage")
 	}
+	log := belogger.FromContext(ctx)
+	log.Debugf("Found %d incomplete pulses in db", len(pulses))
 	for _, p := range pulses {
 		key := types.Pulse{PulseNo: p.PulseNumber, PrevPulseNumber: p.PrevPulseNumber, NextPulseNumber: p.NextPulseNumber}
 		func() {
@@ -61,17 +68,23 @@ func NewController(cfg configuration.Controller, extractor interfaces.JetDropsEx
 		}()
 		jetDrops, err := c.storage.GetJetDrops(p)
 		if err != nil {
-			return nil, errors.Wrapf(err, "can't get jetDrops for pulse %d from storage", p.PulseNumber)
+			return errors.Wrapf(err, "can't get jetDrops for pulse %d from storage", p.PulseNumber)
 		}
 		for _, jd := range jetDrops {
 			c.SetJetDropData(key, jd.JetID)
 		}
 	}
+	return nil
+}
+
+func (c *Controller) setSeqPulse(ctx context.Context) error {
+	log := belogger.FromContext(ctx)
 	c.sequentialPulseLock.Lock()
 	defer c.sequentialPulseLock.Unlock()
+	var err error
 	c.sequentialPulse, err = c.storage.GetSequentialPulse()
 	if err != nil {
-		return nil, errors.Wrap(err, "can't get sequential pulse from storage")
+		return errors.Wrap(err, "can't get sequential pulse from storage")
 	}
 	emptyPulse := models.Pulse{}
 	if c.sequentialPulse == emptyPulse {
@@ -79,11 +92,20 @@ func NewController(cfg configuration.Controller, extractor interfaces.JetDropsEx
 			PulseNumber: 0,
 		}
 	}
-	return c, nil
+	log.Debugf("Found last sequential pulse %d in db", c.sequentialPulse.PulseNumber)
+	return nil
 }
 
 // Start implements interfaces.Starter
 func (c *Controller) Start(ctx context.Context) error {
+	err := c.setIncompletePulses(ctx)
+	if err != nil {
+		return err
+	}
+	err = c.setSeqPulse(ctx)
+	if err != nil {
+		return err
+	}
 	ctx, c.cancelFunc = context.WithCancel(ctx)
 	c.missedDataManager.Start()
 	go c.pulseMaintainer(ctx)

@@ -37,7 +37,7 @@ type JetDropsExtractor interface {
 	// GetJetDrops stores JetDrop data in the main JetDrop channel
 	GetJetDrops(ctx context.Context) <-chan *types.PlatformPulseData
 	// LoadJetDrops loads JetDrop data between pulse numbers: (fromPulseNumber, toPulseNumber]
-	LoadJetDrops(ctx context.Context, fromPulseNumber int64, toPulseNumber int64) error
+	LoadJetDrops(ctx context.Context, fromPulseNumber int64, toPulseNumber int64, priority bool) error
 }
 
 //go:generate minimock -i github.com/insolar/block-explorer/etl/interfaces.PulseExtractor -o ./mock -s _mock.go -g
