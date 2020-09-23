@@ -33,6 +33,7 @@ func (c *Controller) pulseMaintainer(ctx context.Context) {
 }
 
 func eraseJetDropRegister(ctx context.Context, c *Controller, log log.Logger) {
+	log.Debugf("pulseMaintainer(): eraseJetDropRegister start")
 	jetDropRegisterCopy := map[types.Pulse]map[string]struct{}{}
 	func() {
 		c.jetDropRegisterLock.Lock()
@@ -70,9 +71,9 @@ func eraseJetDropRegister(ctx context.Context, c *Controller, log log.Logger) {
 			}
 		} else {
 			PulseNotCompleteCounter.Inc()
-			log.Debugf("Pulse %d not completed, reloading", p.PulseNo)
-			c.reloadData(ctx, p.PrevPulseNumber, p.PulseNo, false)
-			CurrentIncompletePulse.Set(float64(p.PrevPulseNumber))
+			// commented for worker priority proof
+			// log.Debugf("Pulse %d not completed, reloading", p.PulseNo)
+			// c.reloadData(ctx, p.PrevPulseNumber, p.PulseNo, false)
 		}
 	}
 }
@@ -103,20 +104,6 @@ func (c *Controller) pulseSequence(ctx context.Context) {
 				return
 			}
 
-			if nextSequential == emptyPulse {
-				toPulse, err := c.storage.GetNextSavedPulse(c.sequentialPulse)
-				if err != nil && !gorm.IsRecordNotFoundError(err) {
-					log.Errorf("During loading next existing pulse: %s", err.Error())
-					return
-				}
-				if toPulse == emptyPulse {
-					log.Info("no next saved pulse. skipping")
-					return
-				}
-				// log.Debugf("Reloading not seq pulses %d - %d", c.sequentialPulse.PulseNumber, toPulse.PrevPulseNumber)
-				c.reloadData(ctx, c.sequentialPulse.PulseNumber, toPulse.PrevPulseNumber, true)
-				return
-			}
 			if nextSequential.IsComplete {
 				err = c.storage.SequencePulse(nextSequential.PulseNumber)
 				if err != nil {
@@ -126,6 +113,21 @@ func (c *Controller) pulseSequence(ctx context.Context) {
 				c.sequentialPulse = nextSequential
 				log.Infof("Pulse %d sequenced", nextSequential.PulseNumber)
 				waitTime = time.Duration(0)
+				return
+			}
+
+			if !nextSequential.IsComplete || nextSequential == emptyPulse {
+				toPulse, err := c.storage.GetNextSavedPulse(c.sequentialPulse)
+				if err != nil && !gorm.IsRecordNotFoundError(err) {
+					log.Errorf("During loading next existing pulse: %s", err.Error())
+					return
+				}
+				if toPulse == emptyPulse {
+					log.Info("no next saved pulse. skipping")
+					return
+				}
+				log.Debugf("Reloading not seq pulses %d - %d", c.sequentialPulse.PulseNumber, toPulse.PrevPulseNumber)
+				c.reloadData(ctx, c.sequentialPulse.PulseNumber, toPulse.PrevPulseNumber, true)
 				return
 			}
 		}()
@@ -207,7 +209,7 @@ func (c *Controller) reloadData(ctx context.Context, fromPulseNumber int64, toPu
 		fromPulseNumber = pulse.MinTimePulse - 1
 	}
 	if c.missedDataManager.Add(ctx, fromPulseNumber, toPulseNumber) {
-		log.Infof("Reload data from %d to %d", fromPulseNumber, toPulseNumber)
+		log.Infof("Reload data from %d to %d, prior=%v", fromPulseNumber, toPulseNumber, priority)
 		err := c.extractor.LoadJetDrops(ctx, fromPulseNumber, toPulseNumber, priority)
 		if err != nil {
 			log.Errorf("During loading missing data from extractor: %s", err.Error())

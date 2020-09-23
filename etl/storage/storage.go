@@ -453,7 +453,7 @@ func (s *Storage) GetNextSavedPulse(fromPulseNumber models.Pulse) (models.Pulse,
 	defer timer.ObserveDuration()
 
 	var pulses []models.Pulse
-	err := s.db.Where("pulse_number > ?", fromPulseNumber.PulseNumber).Order("pulse_number asc").Limit(1).Find(&pulses).Error
+	err := s.db.Where("pulse_number > ? AND is_complete=?", fromPulseNumber.PulseNumber, true).Order("pulse_number asc").Limit(1).Find(&pulses).Error
 	if err != nil {
 		return models.Pulse{}, err
 	}

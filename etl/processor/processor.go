@@ -164,5 +164,5 @@ func (p *Processor) process(ctx context.Context, jd *types.JetDrop) {
 		return
 	}
 	p.controller.SetJetDropData(pd, mjd.JetID)
-	logger.Infof("Processed: pulseNumber = %d, jetID = %v\n", pd.PulseNo, mjd.JetID)
+	logger.Infof("Processed: pulseNumber = %d, jetID = %v", pd.PulseNo, mjd.JetID)
 }

@@ -9,6 +9,8 @@ import (
 	"context"
 	"sync"
 	"time"
+
+	"github.com/insolar/block-explorer/instrumentation/belogger"
 )
 
 type missedData struct {
@@ -66,7 +68,7 @@ func (mdm *MissedDataManager) Add(ctx context.Context, fromPulse, toPulse int64)
 
 	for _, missed := range mdm.missedDataPool {
 		if missed.fromPulse <= fromPulse && missed.toPulse >= toPulse {
-			// belogger.FromContext(ctx).Infof("Data from pulse %d to %d was already reload", fromPulse, toPulse)
+			belogger.FromContext(ctx).Infof("Data from pulse %d to %d was already reload", fromPulse, toPulse)
 			return false
 		}
 	}

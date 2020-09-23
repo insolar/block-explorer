@@ -192,7 +192,7 @@ func (e *PlatformExtractor) retrievePulses(ctx context.Context, from, until int6
 			continue
 		}
 
-		log.Debugf("retrievePulses(): Done, jets %d", len(pu.Jets))
+		log.Debugf("retrievePulses(): Done, jets %d, new pulse: %d", len(pu.Jets), pu.PulseNumber)
 
 		ReceivedPulses.Inc()
 		LastPulseFetched.Set(float64(pu.PulseNumber))
