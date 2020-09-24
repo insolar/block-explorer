@@ -70,18 +70,16 @@ func (m *MainNetTransformer) run(ctx context.Context) {
 			Errors.Inc()
 			return
 		}
-		go func() {
-			if len(transform) == 0 {
-				belogger.FromContext(ctx).Warn("no transformed data to logging")
-			} else {
-				belogger.FromContext(ctx).
-					Infof("transformed jet drop to canonical for pulse: %d", transform[0].MainSection.Start.PulseData.PulseNo)
-				for _, jetDrop := range transform {
-					m.transformerChan <- jetDrop
-					FromTransformerDataQueue.Set(float64(len(m.transformerChan)))
-				}
+		if len(transform) == 0 {
+			belogger.FromContext(ctx).Warn("no transformed data to logging")
+		} else {
+			belogger.FromContext(ctx).
+				Infof("transformed jet drop to canonical for pulse: %d", transform[0].MainSection.Start.PulseData.PulseNo)
+			for _, jetDrop := range transform {
+				m.transformerChan <- jetDrop
+				FromTransformerDataQueue.Set(float64(len(m.transformerChan)))
 			}
-		}()
+		}
 	case <-m.stopSignal:
 		m.stopSignal <- true
 		return
