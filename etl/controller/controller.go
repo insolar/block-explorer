@@ -38,6 +38,9 @@ type Controller struct {
 	// sequentialPulse is greatest complete pulse after which all pulses complete too
 	sequentialPulse     models.Pulse
 	sequentialPulseLock sync.RWMutex
+
+	// incompletePulseCounter temp for penv-615
+	incompletePulseCounter int
 }
 
 // NewController returns implementation of interfaces.Controller

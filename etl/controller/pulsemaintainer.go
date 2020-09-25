@@ -76,6 +76,12 @@ func eraseJetDropRegister(ctx context.Context, c *Controller, log log.Logger) {
 			// c.reloadData(ctx, p.PrevPulseNumber, p.PulseNo, false)
 		}
 	}
+
+	if c.incompletePulseCounter == 1000 {
+		c.cleanJetDropRegister(ctx)
+		c.incompletePulseCounter = 0
+	}
+	c.incompletePulseCounter++
 }
 
 // pulseSequence check if we have spaces between pulses and rerequests this pulses
@@ -214,6 +220,34 @@ func (c *Controller) reloadData(ctx context.Context, fromPulseNumber int64, toPu
 		if err != nil {
 			log.Errorf("During loading missing data from extractor: %s", err.Error())
 			return
+		}
+	}
+}
+
+func (c *Controller) cleanJetDropRegister(ctx context.Context) {
+	log := belogger.FromContext(ctx)
+	jetDropRegisterCopy := map[types.Pulse]map[string]struct{}{}
+	func() {
+		c.jetDropRegisterLock.Lock()
+		defer c.jetDropRegisterLock.Unlock()
+		for k, v := range c.jetDropRegister {
+			jetDropsCopy := map[string]struct{}{}
+			for jetID := range v {
+				jetDropsCopy[jetID] = struct{}{}
+			}
+			jetDropRegisterCopy[k] = jetDropsCopy
+		}
+	}()
+
+	for p := range jetDropRegisterCopy {
+		if c.sequentialPulse.PulseNumber > p.PulseNo {
+			log.Infof("Pulse %d less then seq pulse, dropping it", p.PulseNo)
+			func() {
+				c.jetDropRegisterLock.Lock()
+				defer c.jetDropRegisterLock.Unlock()
+				delete(c.jetDropRegister, p)
+			}()
+
 		}
 	}
 }
