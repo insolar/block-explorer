@@ -83,6 +83,7 @@ func main() {
 		100,
 		cfg.Replicator.ContinuousPulseRetrievingHalfPulseSeconds,
 		int32(cfg.Replicator.ParallelConnections),
+		cfg.Replicator.QueueLen,
 		pulseExtractor,
 		exporter.NewRecordExporterClient(client.GetGRPCConn()),
 		shutdownBE,
@@ -98,7 +99,10 @@ func main() {
 		}
 	}()
 
-	mainNetTransformer := transformer.NewMainNetTransformer(platformExtractor.GetJetDrops(ctx))
+	mainNetTransformer := transformer.NewMainNetTransformer(
+		platformExtractor.GetJetDrops(ctx),
+		cfg.Transformer.QueueLen,
+	)
 	err = mainNetTransformer.Start(ctx)
 	if err != nil {
 		logger.Fatal("cannot start transformer: ", err)

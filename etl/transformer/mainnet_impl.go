@@ -18,11 +18,11 @@ type MainNetTransformer struct {
 	transformerChan chan *types.JetDrop
 }
 
-func NewMainNetTransformer(ch <-chan *types.PlatformPulseData) *MainNetTransformer {
+func NewMainNetTransformer(ch <-chan *types.PlatformPulseData, queueLen uint32) *MainNetTransformer {
 	return &MainNetTransformer{
 		stopSignal:      make(chan bool, 1),
 		extractorChan:   ch,
-		transformerChan: make(chan *types.JetDrop, 1000),
+		transformerChan: make(chan *types.JetDrop, queueLen),
 	}
 }
 

@@ -17,13 +17,14 @@ func init() {
 }
 
 type BlockExplorer struct {
-	Log        Log
-	DB         DB
-	Replicator Replicator
-	Controller Controller
-	Processor  Processor
-	Metrics    Metrics
-	Profefe    Profefe
+	Log         Log
+	DB          DB
+	Replicator  Replicator
+	Controller  Controller
+	Processor   Processor
+	Transformer Transformer
+	Metrics     Metrics
+	Profefe     Profefe
 }
 
 type API struct {
@@ -58,6 +59,7 @@ type Replicator struct {
 	WaitForConnectionRecoveryTimeout          time.Duration `insconfig:"30s| Connection recovery timeout"`
 	ContinuousPulseRetrievingHalfPulseSeconds uint32        `insconfig:"5| Half pulse in seconds"`
 	ParallelConnections                       uint32        `insconfig:"100| Maximum parallel pulse retrievers"`
+	QueueLen                                  uint32        `insconfig:"500| Max elements in extractor queue"`
 	Auth                                      Auth
 }
 
@@ -113,6 +115,11 @@ type Controller struct {
 // Processor represents for processing layer
 type Processor struct {
 	Workers int `insconfig:"200| The count of workers for processing transformed data"`
+}
+
+// Transformer transforms raw platform data to canonical GBE data types
+type Transformer struct {
+	QueueLen uint32 `insconfig:"500| Max elements in transformer queue"`
 }
 
 type Profefe struct {

@@ -55,7 +55,7 @@ func TestGetJetDrops(t *testing.T) {
 
 	pulseClient := clients.GetTestPulseClient(65537, nil)
 	pulseExtractor := NewPlatformPulseExtractor(pulseClient)
-	extractor := NewPlatformExtractor(uint32(pulseCount), 0, 100, pulseExtractor, recordClient, func() {})
+	extractor := NewPlatformExtractor(uint32(pulseCount), 0, 100, 100, pulseExtractor, recordClient, func() {})
 	err = extractor.Start(ctx)
 	require.NoError(t, err)
 	defer extractor.Stop(ctx)
@@ -98,7 +98,7 @@ func TestGetJetDrops_WrongVersionOnPulseError(t *testing.T) {
 	pulseExtractor.GetNextFinalizedPulseMock.Set(func(ctx context.Context, p int64) (fp1 *exporter.FullPulse, err error) {
 		return nil, errors.New("unknown heavy-version")
 	})
-	extractor := NewPlatformExtractor(uint32(1), 0, 100, pulseExtractor, recordClient, shutdownBETestFunc)
+	extractor := NewPlatformExtractor(uint32(1), 0, 100, 100, pulseExtractor, recordClient, shutdownBETestFunc)
 	err := extractor.Start(ctx)
 	defer extractor.Stop(ctx)
 	require.NoError(mc, err)
@@ -135,7 +135,7 @@ func TestGetJetDrops_WrongVersionOnRecordError(t *testing.T) {
 	}
 	pulseClient := clients.GetTestPulseClient(65537, nil)
 	pulseExtractor := NewPlatformPulseExtractor(pulseClient)
-	extractor := NewPlatformExtractor(uint32(1), 0, 100, pulseExtractor, recordClient, shutdownBETestFunc)
+	extractor := NewPlatformExtractor(uint32(1), 0, 100, 100, pulseExtractor, recordClient, shutdownBETestFunc)
 	err := extractor.Start(ctx)
 	defer extractor.Stop(ctx)
 	require.NoError(mc, err)
@@ -229,7 +229,7 @@ func TestLoadJetDrops_returnsRecordByPulses(t *testing.T) {
 					return pp, err
 				})
 
-			extractor := NewPlatformExtractor(77, 0, 100, pulseExtractor, recordClient, func() {})
+			extractor := NewPlatformExtractor(77, 0, 100, 100, pulseExtractor, recordClient, func() {})
 			err := extractor.LoadJetDrops(ctx, int64(startPulseNumber-10), int64(startPulseNumber+10*(test.differentPulseCount-1)))
 			require.NoError(t, err)
 			for i := 0; i < test.differentPulseCount; i++ {

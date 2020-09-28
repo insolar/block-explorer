@@ -55,13 +55,13 @@ func (b *BlockExplorerTestSetUp) Start() error {
 	b.ctx = context.Background()
 
 	pulseExtractor := extractor.NewPlatformPulseExtractor(b.PulseClient)
-	b.extr = extractor.NewPlatformExtractor(100, 0, 100, pulseExtractor, b.ExporterClient, func() {})
+	b.extr = extractor.NewPlatformExtractor(100, 0, 100, 100, pulseExtractor, b.ExporterClient, func() {})
 	err := b.extr.Start(b.ctx)
 	if err != nil {
 		return err
 	}
 
-	b.trsf = transformer.NewMainNetTransformer(b.extr.GetJetDrops(b.ctx))
+	b.trsf = transformer.NewMainNetTransformer(b.extr.GetJetDrops(b.ctx), 100)
 	err = b.trsf.Start(b.ctx)
 	if err != nil {
 		return err

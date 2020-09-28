@@ -50,6 +50,7 @@ func NewPlatformExtractor(
 	batchSize uint32,
 	continuousPulseRetrievingHalfPulseSeconds uint32,
 	maxWorkers int32,
+	queueLen uint32,
 	pulseExtractor interfaces.PulseExtractor,
 	exporterClient exporter.RecordExporterClient,
 	shutdownBE func(),
@@ -59,7 +60,7 @@ func NewPlatformExtractor(
 		startStopMutex:    &sync.Mutex{},
 		client:            exporterClient,
 		request:           request,
-		mainPulseDataChan: make(chan *types.PlatformPulseData, 1000),
+		mainPulseDataChan: make(chan *types.PlatformPulseData, queueLen),
 
 		pulseExtractor: pulseExtractor,
 		batchSize:      batchSize,
@@ -310,7 +311,7 @@ func (e *PlatformExtractor) retrieveRecords(ctx context.Context, pu exporter.Ful
 				closeStream(cancelCtx, stream)
 				e.mainPulseDataChan <- pulseData
 				FromExtractorDataQueue.Set(float64(len(e.mainPulseDataChan)))
-				log.Debugf("retrieveRecords(): Done in %s, recs: %d", time.Since(startedAt), len(pulseData.Records))
+				log.Debugf("retrieveRecords(): Done in %s, recs: %d", time.Since(startedAt).String(), len(pulseData.Records))
 				iterateFrom := resp.ShouldIterateFrom
 				if iterateFrom == nil {
 					itf := resp.Record.ID.Pulse()
