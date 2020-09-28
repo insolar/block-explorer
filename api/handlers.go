@@ -621,7 +621,7 @@ func (s *Server) ObjectLifeline(ctx echo.Context, objectReference server.ObjectR
 
 	if params.TimestampLte != nil {
 		unptr := int64(*params.TimestampLte)
-		pulseNumberGt = &unptr
+		timestampLte = &unptr
 	}
 	if params.TimestampGte != nil {
 		unptr := int64(*params.TimestampGte)
