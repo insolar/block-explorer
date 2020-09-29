@@ -118,6 +118,83 @@ func TestObjectLifeline_HappyPath(t *testing.T) {
 	require.Equal(t, insolar.NewIDFromBytes(genRecords[2].Reference).String(), *(*received.Result)[0].Reference)
 }
 
+func TestObjectLifeline_TimestampRange(t *testing.T) {
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+
+	// insert records
+	firstPulse, err := testutils.InitPulseDB()
+	require.NoError(t, err)
+	err = testutils.CreatePulse(testDB, firstPulse)
+	require.NoError(t, err)
+	firstJetDrop := testutils.InitJetDropDB(firstPulse)
+	err = testutils.CreateJetDrop(testDB, firstJetDrop)
+	require.NoError(t, err)
+
+	secondPulse := models.Pulse{
+		PulseNumber: firstPulse.PulseNumber + 10,
+		Timestamp:   firstPulse.Timestamp + 10,
+	}
+	err = testutils.CreatePulse(testDB, secondPulse)
+	require.NoError(t, err)
+	secondJetDrop := testutils.InitJetDropDB(secondPulse)
+	secondJetDrop.JetID = firstJetDrop.JetID
+	err = testutils.CreateJetDrop(testDB, secondJetDrop)
+	require.NoError(t, err)
+
+	thirdPulse := models.Pulse{
+		PulseNumber: secondPulse.PulseNumber + 10,
+		Timestamp:   secondPulse.Timestamp + 10,
+	}
+	err = testutils.CreatePulse(testDB, thirdPulse)
+	require.NoError(t, err)
+	thirdJetDrop := testutils.InitJetDropDB(thirdPulse)
+	thirdJetDrop.JetID = firstJetDrop.JetID
+	err = testutils.CreateJetDrop(testDB, thirdJetDrop)
+	require.NoError(t, err)
+
+	fourthPulse := models.Pulse{
+		PulseNumber: thirdPulse.PulseNumber + 10,
+		Timestamp:   thirdPulse.Timestamp + 10,
+	}
+	err = testutils.CreatePulse(testDB, fourthPulse)
+	require.NoError(t, err)
+	fourthJetDrop := testutils.InitJetDropDB(fourthPulse)
+	fourthJetDrop.JetID = firstJetDrop.JetID
+	err = testutils.CreateJetDrop(testDB, fourthJetDrop)
+	require.NoError(t, err)
+
+	objRef := gen.Reference()
+
+	// pulse is later
+	testutils.OrderedRecords(t, testDB, firstJetDrop, *objRef.GetLocal(), 2)
+	genRecordsSecond := testutils.OrderedRecords(t, testDB, secondJetDrop, *objRef.GetLocal(), 2)
+	genRecordsThird := testutils.OrderedRecords(t, testDB, thirdJetDrop, *objRef.GetLocal(), 2)
+	// pulse is greater
+	testutils.OrderedRecords(t, testDB, fourthJetDrop, *objRef.GetLocal(), 2)
+	// incorrect object, correct pulse
+	testutils.OrderedRecords(t, testDB, secondJetDrop, gen.ID(), 2)
+
+	// request records for objRef
+	resp, err := http.Get("http://" + apihost + "/api/v1/lifeline/" + objRef.String() + "/records?limit=20" +
+		fmt.Sprintf("&timestamp_lte=%d&timestamp_gte=%d", thirdPulse.Timestamp, secondPulse.Timestamp))
+
+	require.NoError(t, err)
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+	bodyBytes, err := ioutil.ReadAll(resp.Body)
+	require.NoError(t, err)
+
+	var received server.RecordsResponse
+	err = json.Unmarshal(bodyBytes, &received)
+	require.NoError(t, err)
+	require.EqualValues(t, 4, int(*received.Total))
+	require.Len(t, *received.Result, 4)
+	// check desc order by default
+	require.Equal(t, insolar.NewIDFromBytes(genRecordsSecond[0].Reference).String(), *(*received.Result)[3].Reference)
+	require.Equal(t, insolar.NewIDFromBytes(genRecordsSecond[1].Reference).String(), *(*received.Result)[2].Reference)
+	require.Equal(t, insolar.NewIDFromBytes(genRecordsThird[0].Reference).String(), *(*received.Result)[1].Reference)
+	require.Equal(t, insolar.NewIDFromBytes(genRecordsThird[1].Reference).String(), *(*received.Result)[0].Reference)
+}
+
 func TestObjectLifeline_SortAsc(t *testing.T) {
 	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
 
