@@ -132,7 +132,7 @@ func main() {
 
 	repository := storage.NewStorage(db)
 
-	gbeController, err := controller.NewController(cfg.Controller, platformExtractor, repository)
+	gbeController, err := controller.NewController(cfg.Controller, platformExtractor, repository, cfg.Replicator.PlatformVersion)
 	if err != nil {
 		logger.Fatal("cannot initialize gbeController: ", err)
 	}

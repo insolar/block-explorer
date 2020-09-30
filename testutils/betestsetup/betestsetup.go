@@ -68,7 +68,7 @@ func (b *BlockExplorerTestSetUp) Start() error {
 	}
 
 	b.strg = storage.NewStorage(b.DB)
-	b.cont, err = controller.NewController(cfg, b.extr, b.strg)
+	b.cont, err = controller.NewController(cfg, b.extr, b.strg, 2)
 	if err != nil {
 		return err
 	}

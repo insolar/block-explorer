@@ -33,8 +33,8 @@ type StorageMock struct {
 	beforeGetJetDropsCounter uint64
 	GetJetDropsMock          mStorageMockGetJetDrops
 
-	funcGetNextSavedPulse          func(fromPulseNumber models.Pulse) (p1 models.Pulse, err error)
-	inspectFuncGetNextSavedPulse   func(fromPulseNumber models.Pulse)
+	funcGetNextSavedPulse          func(fromPulseNumber models.Pulse, completedOnly bool) (p1 models.Pulse, err error)
+	inspectFuncGetNextSavedPulse   func(fromPulseNumber models.Pulse, completedOnly bool)
 	afterGetNextSavedPulseCounter  uint64
 	beforeGetNextSavedPulseCounter uint64
 	GetNextSavedPulseMock          mStorageMockGetNextSavedPulse
@@ -700,6 +700,7 @@ type StorageMockGetNextSavedPulseExpectation struct {
 // StorageMockGetNextSavedPulseParams contains parameters of the Storage.GetNextSavedPulse
 type StorageMockGetNextSavedPulseParams struct {
 	fromPulseNumber models.Pulse
+	completedOnly   bool
 }
 
 // StorageMockGetNextSavedPulseResults contains results of the Storage.GetNextSavedPulse
@@ -709,7 +710,7 @@ type StorageMockGetNextSavedPulseResults struct {
 }
 
 // Expect sets up expected params for Storage.GetNextSavedPulse
-func (mmGetNextSavedPulse *mStorageMockGetNextSavedPulse) Expect(fromPulseNumber models.Pulse) *mStorageMockGetNextSavedPulse {
+func (mmGetNextSavedPulse *mStorageMockGetNextSavedPulse) Expect(fromPulseNumber models.Pulse, completedOnly bool) *mStorageMockGetNextSavedPulse {
 	if mmGetNextSavedPulse.mock.funcGetNextSavedPulse != nil {
 		mmGetNextSavedPulse.mock.t.Fatalf("StorageMock.GetNextSavedPulse mock is already set by Set")
 	}
@@ -718,7 +719,7 @@ func (mmGetNextSavedPulse *mStorageMockGetNextSavedPulse) Expect(fromPulseNumber
 		mmGetNextSavedPulse.defaultExpectation = &StorageMockGetNextSavedPulseExpectation{}
 	}
 
-	mmGetNextSavedPulse.defaultExpectation.params = &StorageMockGetNextSavedPulseParams{fromPulseNumber}
+	mmGetNextSavedPulse.defaultExpectation.params = &StorageMockGetNextSavedPulseParams{fromPulseNumber, completedOnly}
 	for _, e := range mmGetNextSavedPulse.expectations {
 		if minimock.Equal(e.params, mmGetNextSavedPulse.defaultExpectation.params) {
 			mmGetNextSavedPulse.mock.t.Fatalf("Expectation set by When has same params: %#v", *mmGetNextSavedPulse.defaultExpectation.params)
@@ -729,7 +730,7 @@ func (mmGetNextSavedPulse *mStorageMockGetNextSavedPulse) Expect(fromPulseNumber
 }
 
 // Inspect accepts an inspector function that has same arguments as the Storage.GetNextSavedPulse
-func (mmGetNextSavedPulse *mStorageMockGetNextSavedPulse) Inspect(f func(fromPulseNumber models.Pulse)) *mStorageMockGetNextSavedPulse {
+func (mmGetNextSavedPulse *mStorageMockGetNextSavedPulse) Inspect(f func(fromPulseNumber models.Pulse, completedOnly bool)) *mStorageMockGetNextSavedPulse {
 	if mmGetNextSavedPulse.mock.inspectFuncGetNextSavedPulse != nil {
 		mmGetNextSavedPulse.mock.t.Fatalf("Inspect function is already set for StorageMock.GetNextSavedPulse")
 	}
@@ -753,7 +754,7 @@ func (mmGetNextSavedPulse *mStorageMockGetNextSavedPulse) Return(p1 models.Pulse
 }
 
 //Set uses given function f to mock the Storage.GetNextSavedPulse method
-func (mmGetNextSavedPulse *mStorageMockGetNextSavedPulse) Set(f func(fromPulseNumber models.Pulse) (p1 models.Pulse, err error)) *StorageMock {
+func (mmGetNextSavedPulse *mStorageMockGetNextSavedPulse) Set(f func(fromPulseNumber models.Pulse, completedOnly bool) (p1 models.Pulse, err error)) *StorageMock {
 	if mmGetNextSavedPulse.defaultExpectation != nil {
 		mmGetNextSavedPulse.mock.t.Fatalf("Default expectation is already set for the Storage.GetNextSavedPulse method")
 	}
@@ -768,14 +769,14 @@ func (mmGetNextSavedPulse *mStorageMockGetNextSavedPulse) Set(f func(fromPulseNu
 
 // When sets expectation for the Storage.GetNextSavedPulse which will trigger the result defined by the following
 // Then helper
-func (mmGetNextSavedPulse *mStorageMockGetNextSavedPulse) When(fromPulseNumber models.Pulse) *StorageMockGetNextSavedPulseExpectation {
+func (mmGetNextSavedPulse *mStorageMockGetNextSavedPulse) When(fromPulseNumber models.Pulse, completedOnly bool) *StorageMockGetNextSavedPulseExpectation {
 	if mmGetNextSavedPulse.mock.funcGetNextSavedPulse != nil {
 		mmGetNextSavedPulse.mock.t.Fatalf("StorageMock.GetNextSavedPulse mock is already set by Set")
 	}
 
 	expectation := &StorageMockGetNextSavedPulseExpectation{
 		mock:   mmGetNextSavedPulse.mock,
-		params: &StorageMockGetNextSavedPulseParams{fromPulseNumber},
+		params: &StorageMockGetNextSavedPulseParams{fromPulseNumber, completedOnly},
 	}
 	mmGetNextSavedPulse.expectations = append(mmGetNextSavedPulse.expectations, expectation)
 	return expectation
@@ -788,15 +789,15 @@ func (e *StorageMockGetNextSavedPulseExpectation) Then(p1 models.Pulse, err erro
 }
 
 // GetNextSavedPulse implements interfaces.Storage
-func (mmGetNextSavedPulse *StorageMock) GetNextSavedPulse(fromPulseNumber models.Pulse) (p1 models.Pulse, err error) {
+func (mmGetNextSavedPulse *StorageMock) GetNextSavedPulse(fromPulseNumber models.Pulse, completedOnly bool) (p1 models.Pulse, err error) {
 	mm_atomic.AddUint64(&mmGetNextSavedPulse.beforeGetNextSavedPulseCounter, 1)
 	defer mm_atomic.AddUint64(&mmGetNextSavedPulse.afterGetNextSavedPulseCounter, 1)
 
 	if mmGetNextSavedPulse.inspectFuncGetNextSavedPulse != nil {
-		mmGetNextSavedPulse.inspectFuncGetNextSavedPulse(fromPulseNumber)
+		mmGetNextSavedPulse.inspectFuncGetNextSavedPulse(fromPulseNumber, completedOnly)
 	}
 
-	mm_params := &StorageMockGetNextSavedPulseParams{fromPulseNumber}
+	mm_params := &StorageMockGetNextSavedPulseParams{fromPulseNumber, completedOnly}
 
 	// Record call args
 	mmGetNextSavedPulse.GetNextSavedPulseMock.mutex.Lock()
@@ -813,7 +814,7 @@ func (mmGetNextSavedPulse *StorageMock) GetNextSavedPulse(fromPulseNumber models
 	if mmGetNextSavedPulse.GetNextSavedPulseMock.defaultExpectation != nil {
 		mm_atomic.AddUint64(&mmGetNextSavedPulse.GetNextSavedPulseMock.defaultExpectation.Counter, 1)
 		mm_want := mmGetNextSavedPulse.GetNextSavedPulseMock.defaultExpectation.params
-		mm_got := StorageMockGetNextSavedPulseParams{fromPulseNumber}
+		mm_got := StorageMockGetNextSavedPulseParams{fromPulseNumber, completedOnly}
 		if mm_want != nil && !minimock.Equal(*mm_want, mm_got) {
 			mmGetNextSavedPulse.t.Errorf("StorageMock.GetNextSavedPulse got unexpected parameters, want: %#v, got: %#v%s\n", *mm_want, mm_got, minimock.Diff(*mm_want, mm_got))
 		}
@@ -825,9 +826,9 @@ func (mmGetNextSavedPulse *StorageMock) GetNextSavedPulse(fromPulseNumber models
 		return (*mm_results).p1, (*mm_results).err
 	}
 	if mmGetNextSavedPulse.funcGetNextSavedPulse != nil {
-		return mmGetNextSavedPulse.funcGetNextSavedPulse(fromPulseNumber)
+		return mmGetNextSavedPulse.funcGetNextSavedPulse(fromPulseNumber, completedOnly)
 	}
-	mmGetNextSavedPulse.t.Fatalf("Unexpected call to StorageMock.GetNextSavedPulse. %v", fromPulseNumber)
+	mmGetNextSavedPulse.t.Fatalf("Unexpected call to StorageMock.GetNextSavedPulse. %v %v", fromPulseNumber, completedOnly)
 	return
 }
 

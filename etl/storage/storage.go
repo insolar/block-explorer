@@ -453,7 +453,7 @@ func (s *Storage) GetNextSavedPulse(fromPulseNumber models.Pulse, completedOnly 
 	defer timer.ObserveDuration()
 
 	var pulses []models.Pulse
-	db := s.db.Debug().Where("pulse_number > ?", fromPulseNumber.PulseNumber)
+	db := s.db.Where("pulse_number > ?", fromPulseNumber.PulseNumber)
 	if completedOnly {
 		db = db.Where("is_complete = ?", true)
 	}
