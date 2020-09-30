@@ -69,8 +69,8 @@ jobs:
           done
       - name: run autotests
         run: |
-          kubectl -n insolar exec go-autotests-gbe -- /bin/sh -c 'git config --global url."https://${INS_SERVICE_PAT}@github.com".insteadOf "https://github.com"'
-          kubectl -n insolar exec go-autotests-gbe -- /bin/sh -c 'TEST_COUNT=1 make ${{matrix.target}}' > logs.log
+          kubectl -n insolar exec go-autotests -- /bin/sh -c 'git config --global url."https://${INS_SERVICE_PAT}@github.com".insteadOf "https://github.com"'
+          kubectl -n insolar exec go-autotests -- /bin/sh -c 'TEST_COUNT=1 make ${{matrix.target}}' > logs.log
       - name: display logs
         if: always()
         run: cat logs.log
