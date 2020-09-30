@@ -120,18 +120,16 @@ func TestLog_Timestamp(t *testing.T) {
 	for _, adapter := range adapters {
 		adapter := adapter
 		t.Run(adapter, func(t *testing.T) {
-			logger, err := newTestLogger(configuration.Log{Level: "info", Adapter: adapter, Formatter: "text"})
+			logger, err := newTestLogger(configuration.Log{Level: "info", Adapter: adapter, Formatter: "json"})
 			require.NoError(t, err)
 			require.NotNil(t, logger)
 
-			logger, _ = logger.Copy().WithLevel(logcommon.InfoLevel).WithCaller(logcommon.CallerFieldWithFuncName).Build()
 			var buf bytes.Buffer
-			logger.Error("test")
 			logger, err = logger.Copy().WithOutput(&buf).Build()
 			require.NoError(t, err)
 
 			logger.Error("test")
-			println(buf.String())
+
 			assert.Regexp(t, regexp.MustCompile("[0-9][0-9]:[0-9][0-9]:[0-9][0-9]"), buf.String())
 		})
 	}
@@ -204,7 +202,6 @@ func TestMain(m *testing.M) {
 	}
 	global.SetLogger(l)
 	_ = global.SetFilter(log.DebugLevel)
-	l.Error("ttest")
 	exitCode := m.Run()
 	os.Exit(exitCode)
 }

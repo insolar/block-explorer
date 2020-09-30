@@ -39,18 +39,20 @@ type Controller struct {
 	sequentialPulse     models.Pulse
 	sequentialPulseLock sync.RWMutex
 
-	// incompletePulseCounter temp for penv-615
+	// incompletePulseCounter for penv-615
 	incompletePulseCounter int
+	platformVersion        int
 }
 
 // NewController returns implementation of interfaces.Controller
-func NewController(cfg configuration.Controller, extractor interfaces.JetDropsExtractor, storage interfaces.Storage) (*Controller, error) {
+func NewController(cfg configuration.Controller, extractor interfaces.JetDropsExtractor, storage interfaces.Storage, pv int) (*Controller, error) {
 	c := &Controller{
 		cfg:               cfg,
 		extractor:         extractor,
 		storage:           storage,
 		jetDropRegister:   make(map[types.Pulse]map[string]struct{}),
 		missedDataManager: NewMissedDataManager(time.Second*time.Duration(cfg.ReloadPeriod), time.Second*time.Duration(cfg.ReloadCleanPeriod)),
+		platformVersion:   pv,
 	}
 	return c, nil
 }

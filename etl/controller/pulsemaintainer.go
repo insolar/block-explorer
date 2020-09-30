@@ -71,17 +71,20 @@ func eraseJetDropRegister(ctx context.Context, c *Controller, log log.Logger) {
 			}
 		} else {
 			PulseNotCompleteCounter.Inc()
-			// commented for worker priority proof
-			// log.Debugf("Pulse %d not completed, reloading", p.PulseNo)
-			// c.reloadData(ctx, p.PrevPulseNumber, p.PulseNo, false)
+			if c.platformVersion != 1 {
+				log.Debugf("Pulse %d not completed, reloading", p.PulseNo)
+				c.reloadData(ctx, p.PrevPulseNumber, p.PulseNo)
+			}
 		}
 	}
 
-	if c.incompletePulseCounter == 1000 {
-		c.cleanJetDropRegister(ctx)
-		c.incompletePulseCounter = 0
+	if c.platformVersion == 1 {
+		if c.incompletePulseCounter == 1000 {
+			c.cleanJetDropRegister(ctx)
+			c.incompletePulseCounter = 0
+		}
+		c.incompletePulseCounter++
 	}
-	c.incompletePulseCounter++
 }
 
 // pulseSequence check if we have spaces between pulses and rerequests this pulses
@@ -123,7 +126,11 @@ func (c *Controller) pulseSequence(ctx context.Context) {
 			}
 
 			if !nextSequential.IsComplete || nextSequential == emptyPulse {
-				toPulse, err := c.storage.GetNextSavedPulse(c.sequentialPulse)
+				completed := false
+				if c.platformVersion == 1 {
+					completed = true
+				}
+				toPulse, err := c.storage.GetNextSavedPulse(c.sequentialPulse, completed)
 				if err != nil && !gorm.IsRecordNotFoundError(err) {
 					log.Errorf("During loading next existing pulse: %s", err.Error())
 					return
@@ -133,7 +140,7 @@ func (c *Controller) pulseSequence(ctx context.Context) {
 					return
 				}
 				log.Debugf("Reloading not seq pulses %d - %d", c.sequentialPulse.PulseNumber, toPulse.PrevPulseNumber)
-				c.reloadData(ctx, c.sequentialPulse.PulseNumber, toPulse.PrevPulseNumber, true)
+				c.reloadData(ctx, c.sequentialPulse.PulseNumber, toPulse.PrevPulseNumber)
 				return
 			}
 		}()
@@ -209,14 +216,14 @@ Main:
 	return true
 }
 
-func (c *Controller) reloadData(ctx context.Context, fromPulseNumber int64, toPulseNumber int64, priority bool) {
+func (c *Controller) reloadData(ctx context.Context, fromPulseNumber int64, toPulseNumber int64) {
 	log := belogger.FromContext(ctx)
 	if fromPulseNumber == 0 {
 		fromPulseNumber = pulse.MinTimePulse - 1
 	}
 	if c.missedDataManager.Add(ctx, fromPulseNumber, toPulseNumber) {
-		log.Infof("Reload data from %d to %d, prior=%v", fromPulseNumber, toPulseNumber, priority)
-		err := c.extractor.LoadJetDrops(ctx, fromPulseNumber, toPulseNumber, priority)
+		log.Infof("Reload data from %d to %d", fromPulseNumber, toPulseNumber)
+		err := c.extractor.LoadJetDrops(ctx, fromPulseNumber, toPulseNumber)
 		if err != nil {
 			log.Errorf("During loading missing data from extractor: %s", err.Error())
 			return

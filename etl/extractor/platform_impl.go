@@ -74,8 +74,8 @@ func (e *PlatformExtractor) GetJetDrops(ctx context.Context) <-chan *types.Platf
 	return e.mainPulseDataChan
 }
 
-func (e *PlatformExtractor) LoadJetDrops(ctx context.Context, fromPulseNumber int64, toPulseNumber int64, priority bool) error {
-	go e.retrievePulses(ctx, fromPulseNumber, toPulseNumber, priority)
+func (e *PlatformExtractor) LoadJetDrops(ctx context.Context, fromPulseNumber int64, toPulseNumber int64) error {
+	go e.retrievePulses(ctx, fromPulseNumber, toPulseNumber)
 	return nil
 }
 
@@ -94,10 +94,10 @@ func (e *PlatformExtractor) Start(ctx context.Context) error {
 	e.startStopMutex.Lock()
 	defer e.startStopMutex.Unlock()
 	if !e.hasStarted {
-		belogger.FromContext(ctx).Info("Starting platform extractor mainthread...")
+		belogger.FromContext(ctx).Info("Starting platform extractor main thread...")
 		e.hasStarted = true
 		ctx, e.cancel = context.WithCancel(ctx)
-		go e.retrievePulses(ctx, 0, 0, false)
+		go e.retrievePulses(ctx, 0, 0)
 	}
 	return nil
 }
@@ -113,14 +113,14 @@ func closeStream(ctx context.Context, stream exporter.RecordExporter_ExportClien
 
 // retrievePulses - initiates full pulse retrieving between not including from and until
 // zero from is latest pulse, zero until - never stop
-func (e *PlatformExtractor) retrievePulses(ctx context.Context, from, until int64, priority bool) {
+func (e *PlatformExtractor) retrievePulses(ctx context.Context, from, until int64) {
 	RetrievePulsesCount.Inc()
 	defer RetrievePulsesCount.Dec()
 
 	mainThread := until <= 0
 	pu := &exporter.FullPulse{PulseNumber: insolar.PulseNumber(from)}
 	var err error
-	logger := belogger.FromContext(ctx).WithField("prior", priority)
+	logger := belogger.FromContext(ctx)
 	if mainThread {
 		logger = logger.WithField("main", mainThread)
 	} else {
@@ -144,7 +144,7 @@ func (e *PlatformExtractor) retrievePulses(ctx context.Context, from, until int6
 
 		// check free workers if not main thread
 		if !mainThread {
-			for !e.takeWorker(priority) {
+			for !e.takeWorker() {
 				sleepMs := rand.Intn(1500) + 500
 				time.Sleep(time.Millisecond * time.Duration(sleepMs))
 			}
@@ -198,7 +198,10 @@ func (e *PlatformExtractor) retrievePulses(ctx context.Context, from, until int6
 		ReceivedPulses.Inc()
 		LastPulseFetched.Set(float64(pu.PulseNumber))
 		if !mainThread && e.maxWorkers <= 3 {
-			// go to single worker scheme
+			// This hack made for 1 platform only
+			// If you set maxWorkers in config <=3, then we start receive data in serial 1 by 1.
+			// 3 threads made for we can get 3 potential skipped spaces between pulses at the same time.
+			// If some day heavy node will be able to process many parallel getRecords requests - delete this hack
 			if nextNotEmptyPulseNumber == nil || pu.PulseNumber >= *nextNotEmptyPulseNumber {
 				sif := "nil"
 				if nextNotEmptyPulseNumber != nil {
@@ -327,12 +330,8 @@ func (e *PlatformExtractor) retrieveRecords(ctx context.Context, pu exporter.Ful
 
 }
 
-func (e *PlatformExtractor) takeWorker(priority bool) bool {
+func (e *PlatformExtractor) takeWorker() bool {
 	max := e.maxWorkers
-	if priority {
-		// if prior then we have x2 workers, other worker stops
-		max = max * 2
-	}
 	if atomic.AddInt32(&e.workers, 1) > max {
 		atomic.AddInt32(&e.workers, -1)
 		return false
