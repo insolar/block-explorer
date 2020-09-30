@@ -1,0 +1,95 @@
+name: e2e
+on:
+  pull_request:
+  schedule:
+    - cron: 0 2 * * *
+env:
+  KUBECONFIG: k3s.yaml
+  GITOPS_BRANCH: ?ref=REL-57
+jobs:
+  test:
+    name: test
+    runs-on: ubuntu-latest
+    strategy:
+      max-parallel: 2
+      matrix:
+        target: [gbe-system-tests]
+    steps:
+      - name: checkout code
+        uses: actions/checkout@master
+      - name: build block-explorer image
+        run: docker build -t localhost/block-explorer:local .
+      - name: spin up k3s
+        uses: insolar/k3s-gha@v0.1
+        with:
+          kubectl_version: "v1.18.2"
+          k3s_tag: "v1.17.4-k3s1"
+          custom_registry: true
+          registries_yaml_path: "deploy/registries.yaml"
+      - name: set PAT for github http auth
+        run: |
+          git config --global url."https://${{secrets.INS_SERVICE_PAT}}@github.com/".insteadOf "https://github.com/"
+          kubectl create ns insolar && kubectl -n insolar create secret generic ins-service-pat --from-literal=INS_SERVICE_PAT=${{secrets.INS_SERVICE_PAT}}
+      - name: set up local registry
+        run: kubectl apply -k https://github.com/insolar/gitops/k3s-registry
+      - name: wait for registry to be up and running
+        run: kubectl -n registry rollout status deploy/registry --timeout=80s
+      - name: push block-explorer image to local registry
+        run: docker push localhost/block-explorer:local
+      - name: deploy insolar-mainnet
+        run:  kubectl apply -k "https://github.com/insolar/gitops/mainnet/overlays/autotests/${{env.GITOPS_BRANCH}}"
+      - name: wait for bootstrap completion
+        run: |
+          echo "waiting for bootstrap completion…"
+          for attempt in {1..120}; do
+            STATUS=$(kubectl -n insolar get po bootstrap -o jsonpath='{.status.phase}')
+            [[ "${STATUS}" == "Succeeded" ]] && exit 0 || sleep 1
+          done
+          exit 1
+      - name: wait for insolar network initialization
+        run: |
+          echo "waiting for insolar network initialization…"
+          for try in {0..180}; do
+            if kubectl -n insolar exec -i deploy/pulsewatcher -- bash -c 'pulsewatcher -c /etc/pulsewatcher/pulsewatcher.yaml -s' | grep 'READY' | grep -v 'NOT'; then
+              exit 0
+            else
+              sleep 1
+            fi
+          done
+          exit 1
+      - name: deploy block-explorer
+        run: kubectl -n insolar apply -k deploy/block-explorer
+      - name: spawn autotests pod
+        run: kubectl -n insolar apply -k deploy/autotests
+      - name: wait for pod initialization
+        run: |
+          for attempt in {1..10}; do
+            STATUS=$(kubectl -n insolar get po go-autotests -o jsonpath='{.status.phase}')
+            [[ "${STATUS}" == "Running" ]] && exit 0 || sleep $attempt
+          done
+      - name: run autotests
+        run: |
+          kubectl -n insolar exec go-autotests-gbe -- /bin/sh -c 'git config --global url."https://${INS_SERVICE_PAT}@github.com".insteadOf "https://github.com"'
+          kubectl -n insolar exec go-autotests-gbe -- /bin/sh -c 'TEST_COUNT=1 make ${{matrix.target}}' > logs.log
+      - name: display logs
+        if: always()
+        run: cat logs.log
+      - name: create tests report
+        if: failure()
+        run: |
+          go get github.com/tsovak/go-test-parser/...
+          go-test-parser logs.log -o report
+      - name: Upload report to artifacts
+        if: failure()
+        uses: actions/upload-artifact@v2
+        with:
+          name: report
+          path: "report"
+      - name: Send failure notification to Slack
+        if: failure() && github.event_name == 'schedule'
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          fields: repo,message,commit,author,action,eventName,ref,workflow
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.ACTIONS_NOTIFICATIONS_SLACK_HOOK_URL }}
