@@ -33,6 +33,7 @@ func TestNewController_NoPulses(t *testing.T) {
 	sm.GetSequentialPulseMock.Return(models.Pulse{}, nil)
 	sm.GetPulseByPrevMock.Return(models.Pulse{}, nil)
 	sm.GetNextSavedPulseMock.Return(models.Pulse{}, nil)
+	extractor.LoadJetDropsMock.Return(nil)
 
 	c, err := NewController(cfg, extractor, sm, platformVersion)
 	require.NoError(t, err)
@@ -59,6 +60,7 @@ func TestNewController_OneNotCompletePulse(t *testing.T) {
 	sm.GetSequentialPulseMock.Return(models.Pulse{}, nil)
 	sm.GetPulseByPrevMock.Return(models.Pulse{}, nil)
 	sm.GetNextSavedPulseMock.Return(models.Pulse{}, nil)
+	extractor.LoadJetDropsMock.Return(nil)
 
 	c, err := NewController(cfg, extractor, sm, platformVersion)
 	require.NoError(t, err)
@@ -85,6 +87,7 @@ func TestNewController_OneNotCompletePulse_NoJets(t *testing.T) {
 	sm.GetSequentialPulseMock.Return(models.Pulse{}, nil)
 	sm.GetPulseByPrevMock.Return(models.Pulse{}, nil)
 	sm.GetNextSavedPulseMock.Return(models.Pulse{}, nil)
+	extractor.LoadJetDropsMock.Return(nil)
 
 	c, err := NewController(cfg, extractor, sm, platformVersion)
 	require.NoError(t, err)
@@ -126,6 +129,7 @@ func TestNewController_SeveralNotCompletePulses(t *testing.T) {
 	sm.GetSequentialPulseMock.Return(models.Pulse{}, nil)
 	sm.GetPulseByPrevMock.Return(models.Pulse{}, nil)
 	sm.GetNextSavedPulseMock.Return(models.Pulse{}, nil)
+	extractor.LoadJetDropsMock.Return(nil)
 
 	c, err := NewController(cfg, extractor, sm, platformVersion)
 	require.NoError(t, err)
@@ -148,6 +152,7 @@ func TestNewController_ErrorGetPulses(t *testing.T) {
 	sm.GetSequentialPulseMock.Return(models.Pulse{}, nil)
 	sm.GetPulseByPrevMock.Return(models.Pulse{}, nil)
 	sm.GetNextSavedPulseMock.Return(models.Pulse{}, nil)
+	extractor.LoadJetDropsMock.Return(nil)
 
 	c, err := NewController(cfg, extractor, sm, platformVersion)
 	require.NoError(t, err)
@@ -169,6 +174,7 @@ func TestNewController_ErrorGetJetDrops(t *testing.T) {
 	sm.GetSequentialPulseMock.Return(models.Pulse{}, nil)
 	sm.GetPulseByPrevMock.Return(models.Pulse{}, nil)
 	sm.GetNextSavedPulseMock.Return(models.Pulse{}, nil)
+	extractor.LoadJetDropsMock.Return(nil)
 
 	c, err := NewController(cfg, extractor, sm, platformVersion)
 	require.NoError(t, err)
