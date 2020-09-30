@@ -60,7 +60,15 @@ jobs:
       - name: deploy block-explorer
         run: kubectl -n insolar apply -k deploy/block-explorer
       - name: spawn autotests pod
-        run: kubectl -n insolar apply -k deploy/autotests
+        run: |
+          # create secret
+          kubectl -n insolar create secret docker-registry ins-registry \
+            --docker-server=${{ secrets.REGISTRY_URL }} \
+            --docker-username=${{ secrets.REGISTRY_USERNAME }} \
+            --docker-password=${{ secrets.REGISTRY_PASSWORD }}
+          # patch sa
+          kubectl -n insolar patch sa default -p '{"imagePullSecrets":[{"name":"ins-registry"}]}'
+          kubectl -n insolar apply -k deploy/autotests
       - name: wait for pod initialization
         run: |
           for attempt in {1..10}; do
