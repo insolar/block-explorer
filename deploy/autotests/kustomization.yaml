@@ -1,7 +1,7 @@
 ---
 namespace: insolar
 bases:
-  - https://github.com/insolar/go-autotests/deploy/autotests
+  - https://github.com/insolar/go-autotests/deploy/autotests-pod
 images:
   - name: localhost/go-autotests
     newName: registry.insolar.io/insolar/go-autotests

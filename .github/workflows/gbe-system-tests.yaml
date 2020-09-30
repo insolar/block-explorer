@@ -1,4 +1,4 @@
-name: e2e
+name: system-tests
 on:
   pull_request:
   schedule:
