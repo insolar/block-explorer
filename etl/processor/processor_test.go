@@ -124,7 +124,8 @@ func TestProcessor_process_EmptyPrev(t *testing.T) {
 	p := NewProcessor(trm, sm, contr, 3)
 	require.NotNil(t, p)
 
-	p.process(ctx, &jd)
+	err := p.process(ctx, &jd)
+	require.Nil(t, err)
 
 	require.Equal(t, uint64(1), sm.SaveJetDropDataAfterCounter())
 	require.Equal(t, uint64(1), contr.SetJetDropDataAfterCounter())
@@ -166,7 +167,8 @@ func TestProcessor_process_SeveralPrev(t *testing.T) {
 	p := NewProcessor(trm, sm, contr, 3)
 	require.NotNil(t, p)
 
-	p.process(ctx, &jd)
+	err := p.process(ctx, &jd)
+	require.Nil(t, err)
 
 	require.Equal(t, uint64(1), sm.SaveJetDropDataAfterCounter())
 	require.Equal(t, uint64(1), contr.SetJetDropDataAfterCounter())
@@ -197,7 +199,8 @@ func TestProcessor_process_StorageSaveJetDropErr(t *testing.T) {
 	p := NewProcessor(trm, sm, contr, 3)
 	require.NotNil(t, p)
 
-	p.process(ctx, &jd)
+	err := p.process(ctx, &jd)
+	require.NotNil(t, err)
 
 	require.Equal(t, uint64(1), sm.SaveJetDropDataAfterCounter())
 }
@@ -224,7 +227,8 @@ func TestProcessor_process_StorageSavePulseErr(t *testing.T) {
 	p := NewProcessor(trm, sm, contr, 3)
 	require.NotNil(t, p)
 
-	p.process(ctx, &jd)
+	err := p.process(ctx, &jd)
+	require.NotNil(t, err)
 
 	require.Equal(t, uint64(1), sm.SavePulseAfterCounter())
 }
