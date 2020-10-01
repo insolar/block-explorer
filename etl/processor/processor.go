@@ -8,6 +8,7 @@ package processor
 import (
 	"context"
 	"errors"
+	"fmt"
 	"sync"
 	"sync/atomic"
 
@@ -44,6 +45,7 @@ func NewProcessor(jb interfaces.Transformer, storage interfaces.StorageSetter, c
 var ErrorAlreadyStarted = errors.New("Already started")
 
 func (p *Processor) Start(ctx context.Context) error {
+	log := belogger.FromContext(ctx)
 	startOnce := func() error {
 		p.taskCCloseMu.Lock()
 		defer p.taskCCloseMu.Unlock()
@@ -66,7 +68,11 @@ func (p *Processor) Start(ctx context.Context) error {
 				if !ok {
 					return
 				}
-				p.process(ctx, t.JD)
+				err := p.process(ctx, t.JD)
+				if err != nil {
+					log.Error(err)
+					p.taskC <- t
+				}
 			}
 		}()
 	}
@@ -107,7 +113,7 @@ type Task struct {
 	JD *types.JetDrop
 }
 
-func (p *Processor) process(ctx context.Context, jd *types.JetDrop) {
+func (p *Processor) process(ctx context.Context, jd *types.JetDrop) error {
 	ms := jd.MainSection
 	pd := ms.Start.PulseData
 
@@ -123,8 +129,7 @@ func (p *Processor) process(ctx context.Context, jd *types.JetDrop) {
 	}
 	err := p.storage.SavePulse(mp)
 	if err != nil {
-		logger.Errorf("cannot save pulse data: %s. pulse = %+v", err.Error(), mp)
-		return
+		return fmt.Errorf("cannot save pulse data: %s. pulse = %+v", err.Error(), mp)
 	}
 
 	var firstPrevHash []byte
@@ -166,10 +171,10 @@ func (p *Processor) process(ctx context.Context, jd *types.JetDrop) {
 	}
 	err = p.storage.SaveJetDropData(mjd, mrs, mp.PulseNumber)
 	if err != nil {
-		logger.Errorf("cannot save jetDrop data: %s. jetDrop:{jetID: %s, pulseNumber: %d}, record amount = %d\n",
+		return fmt.Errorf("cannot save jetDrop data: %s. jetDrop:{jetID: %s, pulseNumber: %d}, record amount = %d\n",
 			err.Error(), mjd.JetID, mjd.PulseNumber, len(mrs))
-		return
 	}
 	p.controller.SetJetDropData(pd, mjd.JetID)
 	logger.Infof("Processed: pulseNumber = %d, jetID = %v", pd.PulseNo, mjd.JetID)
+	return nil
 }
