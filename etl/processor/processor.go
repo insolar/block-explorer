@@ -69,6 +69,7 @@ func (p *Processor) Start(ctx context.Context) error {
 					return
 				}
 				err := p.process(ctx, t.JD)
+				// todo remove this in penv-667
 				if err != nil {
 					log.Error(err)
 					p.taskC <- t
