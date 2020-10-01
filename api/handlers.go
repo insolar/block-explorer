@@ -259,9 +259,7 @@ func (s *Server) getEnrichingJetDrops(oldestPulse, newestPulse int64) ([]models.
 		enrichedDrops = append(enrichedDrops, ejd...)
 	}
 
-	nextPulse, err := s.storage.GetNextSavedPulse(models.Pulse{
-		PulseNumber: newestPulse,
-	})
+	nextPulse, err := s.storage.GetNextSavedPulse(models.Pulse{PulseNumber: newestPulse}, false)
 	if err == nil && nextPulse != emptyPulse {
 		ejd, err := s.storage.GetJetDrops(models.Pulse{PulseNumber: nextPulse.PulseNumber})
 		if err != nil {

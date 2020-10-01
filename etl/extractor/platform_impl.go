@@ -50,6 +50,7 @@ func NewPlatformExtractor(
 	batchSize uint32,
 	continuousPulseRetrievingHalfPulseSeconds uint32,
 	maxWorkers int32,
+	queueLen uint32,
 	pulseExtractor interfaces.PulseExtractor,
 	exporterClient exporter.RecordExporterClient,
 	shutdownBE func(),
@@ -59,7 +60,7 @@ func NewPlatformExtractor(
 		startStopMutex:    &sync.Mutex{},
 		client:            exporterClient,
 		request:           request,
-		mainPulseDataChan: make(chan *types.PlatformPulseData, 1000),
+		mainPulseDataChan: make(chan *types.PlatformPulseData, queueLen),
 
 		pulseExtractor: pulseExtractor,
 		batchSize:      batchSize,
@@ -93,7 +94,7 @@ func (e *PlatformExtractor) Start(ctx context.Context) error {
 	e.startStopMutex.Lock()
 	defer e.startStopMutex.Unlock()
 	if !e.hasStarted {
-		belogger.FromContext(ctx).Info("Starting platform extractor mainthread...")
+		belogger.FromContext(ctx).Info("Starting platform extractor main thread...")
 		e.hasStarted = true
 		ctx, e.cancel = context.WithCancel(ctx)
 		go e.retrievePulses(ctx, 0, 0)
@@ -192,12 +193,15 @@ func (e *PlatformExtractor) retrievePulses(ctx context.Context, from, until int6
 			continue
 		}
 
-		log.Debugf("retrievePulses(): Done, jets %d", len(pu.Jets))
+		log.Debugf("retrievePulses(): Done, jets %d, new pulse: %d", len(pu.Jets), pu.PulseNumber)
 
 		ReceivedPulses.Inc()
 		LastPulseFetched.Set(float64(pu.PulseNumber))
 		if !mainThread && e.maxWorkers <= 3 {
-			// go to single worker scheme
+			// This hack made for 1 platform only
+			// If you set maxWorkers in config <=3, then we start receive data in serial 1 by 1.
+			// 3 threads made for we can get 3 potential skipped spaces between pulses at the same time.
+			// If some day heavy node will be able to process many parallel getRecords requests - delete this hack
 			if nextNotEmptyPulseNumber == nil || pu.PulseNumber >= *nextNotEmptyPulseNumber {
 				sif := "nil"
 				if nextNotEmptyPulseNumber != nil {
@@ -310,7 +314,7 @@ func (e *PlatformExtractor) retrieveRecords(ctx context.Context, pu exporter.Ful
 				closeStream(cancelCtx, stream)
 				e.mainPulseDataChan <- pulseData
 				FromExtractorDataQueue.Set(float64(len(e.mainPulseDataChan)))
-				log.Debug("retrieveRecords(): Done in %s", time.Since(startedAt))
+				log.Debugf("retrieveRecords(): Done in %s, recs: %d", time.Since(startedAt).String(), len(pulseData.Records))
 				iterateFrom := resp.ShouldIterateFrom
 				if iterateFrom == nil {
 					itf := resp.Record.ID.Pulse()
@@ -327,7 +331,8 @@ func (e *PlatformExtractor) retrieveRecords(ctx context.Context, pu exporter.Ful
 }
 
 func (e *PlatformExtractor) takeWorker() bool {
-	if atomic.AddInt32(&e.workers, 1) > e.maxWorkers {
+	max := e.maxWorkers
+	if atomic.AddInt32(&e.workers, 1) > max {
 		atomic.AddInt32(&e.workers, -1)
 		return false
 	}

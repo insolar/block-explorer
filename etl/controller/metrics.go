@@ -20,10 +20,6 @@ var (
 		Name: "gbe_controller_current_seq_pulse",
 		Help: "Current sequentual pulse rerequested from platform",
 	})
-	CurrentIncompletePulse = prometheus.NewGauge(prometheus.GaugeOpts{
-		Name: "gbe_controller_current_incomplete_pulse",
-		Help: "Current incomplete pulse that records are rerequested from platform",
-	})
 	PulseCompleteCounter = prometheus.NewCounter(prometheus.CounterOpts{
 		Name: "gbe_controller_pulse_complete_counter",
 		Help: "How many pulses is completed by 'pulseIsComplete' check",
@@ -44,7 +40,6 @@ func (s Metrics) Metrics(p *metrics.Prometheus) []prometheus.Collector {
 	return []prometheus.Collector{
 		IncompletePulsesQueue,
 		CurrentSeqPulse,
-		CurrentIncompletePulse,
 		PulseNotCompleteCounter,
 		PulseCompleteCounter,
 	}

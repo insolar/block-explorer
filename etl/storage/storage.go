@@ -448,12 +448,16 @@ func (s *Storage) GetSequentialPulse() (models.Pulse, error) {
 }
 
 // GetNextSavedPulse returns first pulse with pulse number bigger then fromPulseNumber from db.
-func (s *Storage) GetNextSavedPulse(fromPulseNumber models.Pulse) (models.Pulse, error) {
+func (s *Storage) GetNextSavedPulse(fromPulseNumber models.Pulse, completedOnly bool) (models.Pulse, error) {
 	timer := prometheus.NewTimer(GetNextSavedPulseDuration)
 	defer timer.ObserveDuration()
 
 	var pulses []models.Pulse
-	err := s.db.Where("pulse_number > ?", fromPulseNumber.PulseNumber).Order("pulse_number asc").Limit(1).Find(&pulses).Error
+	db := s.db.Where("pulse_number > ?", fromPulseNumber.PulseNumber)
+	if completedOnly {
+		db = db.Where("is_complete = ?", true)
+	}
+	err := db.Order("pulse_number asc").Limit(1).Find(&pulses).Error
 	if err != nil {
 		return models.Pulse{}, err
 	}
