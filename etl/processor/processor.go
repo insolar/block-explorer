@@ -171,7 +171,7 @@ func (p *Processor) process(ctx context.Context, jd *types.JetDrop) error {
 	}
 	err = p.storage.SaveJetDropData(mjd, mrs, mp.PulseNumber)
 	if err != nil {
-		return fmt.Errorf("cannot save jetDrop data: %s. jetDrop:{jetID: %s, pulseNumber: %d}, record amount = %d\n",
+		return fmt.Errorf("cannot save jetDrop data: %s. jetDrop:{jetID: %s, pulseNumber: %d}, record amount = %d",
 			err.Error(), mjd.JetID, mjd.PulseNumber, len(mrs))
 	}
 	p.controller.SetJetDropData(pd, mjd.JetID)
