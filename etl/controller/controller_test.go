@@ -42,7 +42,7 @@ func TestNewController_NoPulses(t *testing.T) {
 	require.NotNil(t, c.missedDataManager)
 	err = c.Start(context.Background())
 	require.NoError(t, err)
-
+	defer c.Stop(context.Background())
 	require.Equal(t, uint64(1), sm.GetIncompletePulsesAfterCounter())
 }
 
@@ -68,6 +68,7 @@ func TestNewController_OneNotCompletePulse(t *testing.T) {
 	require.NotNil(t, c.missedDataManager)
 	err = c.Start(context.Background())
 	require.NoError(t, err)
+	defer c.Stop(context.Background())
 
 	require.Equal(t, expectedData, c.jetDropRegister)
 
@@ -95,6 +96,8 @@ func TestNewController_OneNotCompletePulse_NoJets(t *testing.T) {
 	require.NotNil(t, c.missedDataManager)
 	err = c.Start(context.Background())
 	require.NoError(t, err)
+
+	defer c.Stop(context.Background())
 
 	require.Equal(t, expectedData, c.jetDropRegister)
 
@@ -137,7 +140,7 @@ func TestNewController_SeveralNotCompletePulses(t *testing.T) {
 	require.NotNil(t, c.missedDataManager)
 	err = c.Start(context.Background())
 	require.NoError(t, err)
-
+	defer c.Stop(context.Background())
 	require.Equal(t, expectedData, c.jetDropRegister)
 
 	require.Equal(t, uint64(1), sm.GetIncompletePulsesAfterCounter())
