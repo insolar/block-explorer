@@ -198,6 +198,7 @@ jobs:
         run: |
           ls -al
           go-test-parser ./autotest.log -o report
+        working-directory: ${{env.GOPATH}}/src/github.com/insolar/block-explorer
       - name: Upload report to artifacts
         if: failure()
         uses: actions/upload-artifact@v2
