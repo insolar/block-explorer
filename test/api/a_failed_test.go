@@ -11,6 +11,11 @@ import (
 	"testing"
 )
 
+func TestSuccess(t *testing.T) {
+	t.Log("hello success")
+}
+
 func TestFail(t *testing.T) {
+	t.Log("hello fail")
 	t.Fatalf("oops!")
 }
