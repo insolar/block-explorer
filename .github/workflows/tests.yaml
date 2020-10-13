@@ -196,7 +196,7 @@ jobs:
       - name: create tests report
         if: failure()
         run: |
-          go-test-parser logs.log -o report
+          go-test-parser autotest.log -o report
       - name: Upload report to artifacts
         if: failure()
         uses: actions/upload-artifact@v2
