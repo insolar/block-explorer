@@ -196,7 +196,6 @@ jobs:
       - name: create tests report
         if: failure()
         run: |
-          ls -al
           go-test-parser ./autotest.log -o report
         working-directory: ${{env.GOPATH}}/src/github.com/insolar/block-explorer
       - name: Upload report to artifacts
@@ -205,6 +204,7 @@ jobs:
         with:
           name: report
           path: "report"
+        working-directory: ${{env.GOPATH}}/src/github.com/insolar/block-explorer
   test-with-coverage:
     name: tests with coverage
     runs-on: ubuntu-latest
