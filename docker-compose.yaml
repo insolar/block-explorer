@@ -66,8 +66,8 @@ services:
   frontend:
     image: insolar/frontend-block-explorer
     depends_on:
-      - api
+      - postgres
     ports:
       - 8888:80
     environment:
-      API_URL: 'http://api:8080'
+      API_URL: 'http://docker.for.mac.localhost:8080'

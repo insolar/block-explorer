@@ -2399,7 +2399,7 @@ func TestJetDropRecords(t *testing.T) {
 	err = testutils.CreateJetDrop(testDB, jetDrop1)
 	require.NoError(t, err)
 	recordResult := testutils.InitRecordDB(jetDrop1)
-	recordResult.Type = models.Result
+	recordResult.Type = models.ResultType
 	recordResult.Order = 1
 	err = testutils.CreateRecord(testDB, recordResult)
 	require.NoError(t, err)
