@@ -185,6 +185,24 @@ jobs:
           fields: repo,message,commit,author,action,eventName,ref,workflow
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.ACTIONS_NOTIFICATIONS_SLACK_HOOK_URL }}
+      - name: Download go-test-parser
+        if: failure()
+        run: |
+          mkdir -p $GITHUB_WORKSPACE/bin
+          curl -L -s "https://github.com/Tsovak/go-test-parser/releases/download/v1.1.0/go-test-parser_v1.1.0_Linux_x86_64.tar.gz" -o go-test-parser.tar.gz
+          tar -xf go-test-parser.tar.gz -C $GITHUB_WORKSPACE/bin/
+          chmod +x bin/go-test-parser
+          echo "::add-path::$GITHUB_WORKSPACE/bin"
+      - name: create tests report
+        if: failure()
+        run: |
+          go-test-parser logs.log -o report
+      - name: Upload report to artifacts
+        if: failure()
+        uses: actions/upload-artifact@v2
+        with:
+          name: report
+          path: "report"
   test-with-coverage:
     name: tests with coverage
     runs-on: ubuntu-latest
