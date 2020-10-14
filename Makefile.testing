@@ -26,7 +26,7 @@ test-with-coverage: ## run tests with coverage mode
 
 .PHONY: test-heavy-mock-integration
 test-heavy-mock-integration:
-	bash -c "set -o pipefail && go test -v ./... -tags heavy_mock_integration -failfast -json -count $(TEST_COUNT) -race $(TEST_ARGS) | tee $(TEST_LOG_FILENAME)"
+	bash -c "set -o pipefail && go test -v ./... -tags heavy_mock_integration -failfast -count $(TEST_COUNT) -race $(TEST_ARGS) | tee $(TEST_LOG_FILENAME)"
 
 ##@ Benchmarks
 
