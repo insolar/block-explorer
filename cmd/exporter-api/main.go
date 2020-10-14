@@ -17,6 +17,7 @@ import (
 	"github.com/insolar/block-explorer/etl/connection"
 	"github.com/insolar/block-explorer/etl/exporter"
 	"github.com/insolar/block-explorer/instrumentation/belogger"
+	"github.com/insolar/block-explorer/instrumentation/metrics"
 	"github.com/insolar/block-explorer/instrumentation/profefe"
 	"github.com/insolar/insconfig"
 )
@@ -49,6 +50,15 @@ func main() {
 			logger.Error(err)
 		}
 	}()
+
+	metricConfig := metrics.Config{
+		RefreshInterval:   cfg.Metrics.RefreshInterval,
+		StartServer:       cfg.Metrics.StartServer,
+		HTTPServerPort:    cfg.Metrics.HTTPServerPort,
+		MetricsCollectors: []metrics.Collector{},
+	}
+
+	_ = metrics.New(metricConfig).Initialize()
 
 	var (
 		recordExporter *exporter.RecordServer

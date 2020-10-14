@@ -21,7 +21,7 @@ func init() {
 // Exporter is grpc-base service
 type Exporter struct {
 	// Address specifies address where exporter server starts
-	Address string `insconfig:":5678| exporter-api gRPC server starts on this address"`
+	Address string `insconfig:":0| exporter-api gRPC server starts on this address"`
 	DB      DB
 	Log     Log
 	Metrics Metrics
