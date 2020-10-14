@@ -100,13 +100,13 @@ func sortRecords(records []types.IRecord) ([]types.IRecord, error) {
 			}
 			continue
 		}
-		var headRecord types.IRecord
+		var headRecord *types.State
 		// finding first record (head), it doesn't refer to any other record
 		recordsByPrevRef := recordsByObjAndPrevRef[objRef]
 		for _, r := range recordsByPrevRef {
-			_, ok := recordsByRef[restoreInsolarID(r.(types.Record).PrevRecordReference)]
+			_, ok := recordsByRef[restoreInsolarID(r.PrevState)]
 			if !ok {
-				headRecord = r // nolint
+				headRecord = &r // nolint
 				break
 			}
 		}
@@ -114,7 +114,7 @@ func sortRecords(records []types.IRecord) ([]types.IRecord, error) {
 			return nil, errors.Errorf("cannot find head record for object %s", objRef)
 		}
 		// add records to result array in correct order
-		key := restoreInsolarID(headRecord.(types.Record).Ref)
+		key := restoreInsolarID(headRecord.Reference())
 		sortedRecords = append(sortedRecords, headRecord)
 		for i := 1; len(recordsByPrevRef) != i; i++ {
 			r, ok := recordsByPrevRef[key]
@@ -122,7 +122,7 @@ func sortRecords(records []types.IRecord) ([]types.IRecord, error) {
 				return nil, errors.Errorf("cannot find record with prev record %s, object %s", key, objRef)
 			}
 			sortedRecords = append(sortedRecords, r)
-			key = restoreInsolarID(r.(types.Record).Ref)
+			key = restoreInsolarID(r.Reference())
 		}
 	}
 	lenAfter := len(sortedRecords)
@@ -134,24 +134,24 @@ func sortRecords(records []types.IRecord) ([]types.IRecord, error) {
 }
 
 func initRecordsMapsByObj(records []types.IRecord) (
-	byPrevRef map[string]map[string]types.IRecord,
-	byRef map[string]map[string]types.IRecord,
+	byPrevRef map[string]map[string]types.State,
+	byRef map[string]map[string]types.State,
 	notState []types.IRecord,
 ) {
 	var notStateRecords []types.IRecord
-	recordsByObjAndPrevRef := map[string]map[string]types.IRecord{}
-	recordsByObjAndRef := map[string]map[string]types.IRecord{}
+	recordsByObjAndPrevRef := map[string]map[string]types.State{}
+	recordsByObjAndRef := map[string]map[string]types.State{}
 	for _, r := range records {
 		if r.TypeOf() != types.STATE {
 			notStateRecords = append(notStateRecords, r)
 			continue
 		}
 		if recordsByObjAndRef[restoreInsolarID(r.(types.State).ObjectReference)] == nil {
-			recordsByObjAndRef[restoreInsolarID(r.(types.State).ObjectReference)] = map[string]types.IRecord{}
-			recordsByObjAndPrevRef[restoreInsolarID(r.(types.State).ObjectReference)] = map[string]types.IRecord{}
+			recordsByObjAndRef[restoreInsolarID(r.(types.State).ObjectReference)] = map[string]types.State{}
+			recordsByObjAndPrevRef[restoreInsolarID(r.(types.State).ObjectReference)] = map[string]types.State{}
 		}
-		recordsByObjAndRef[restoreInsolarID(r.(types.State).ObjectReference)][restoreInsolarID(r.(types.State).Record)] = r
-		recordsByObjAndPrevRef[restoreInsolarID(r.(types.State).ObjectReference)][restoreInsolarID(r.(types.State).PrevState)] = r
+		recordsByObjAndRef[restoreInsolarID(r.(types.State).ObjectReference)][restoreInsolarID(r.(types.State).Record)] = r.(types.State)
+		recordsByObjAndPrevRef[restoreInsolarID(r.(types.State).ObjectReference)][restoreInsolarID(r.(types.State).PrevState)] = r.(types.State)
 	}
 	return recordsByObjAndPrevRef, recordsByObjAndRef, notStateRecords
 }

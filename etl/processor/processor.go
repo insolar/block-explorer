@@ -157,7 +157,7 @@ func (p *Processor) process(ctx context.Context, jd *types.JetDrop) error {
 	for i, r := range ms.Records {
 		switch r.TypeOf() {
 		case types.STATE:
-			// TODO: update storage interface
+			// TODO: https://insolar.atlassian.net/browse/PENV-786
 			mrs = append(mrs, models.Record{
 				Reference:           models.ReferenceFromTypes(r.Reference()),
 				Type:                models.RecordTypeFromTypes(r.TypeOf()),
