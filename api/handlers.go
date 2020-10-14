@@ -48,26 +48,32 @@ func NewServer(ctx context.Context, storage interfaces.StorageAPIFetcher, config
 }
 
 func (s *Server) OriginalRequestByObject(ctx echo.Context, objectReference server.ObjectReferencePath, params server.OriginalRequestByObjectParams) error {
+	// TODO implement me
 	return nil
 }
 
 func (s *Server) Request(ctx echo.Context, requestReference server.RequestReferencePath) error {
+	// TODO implement me
 	return nil
 }
 
 func (s *Server) RequestTree(ctx echo.Context, requestReference server.RequestReferencePath) error {
+	// TODO implement me
 	return nil
 }
 
 func (s *Server) Originalrequest(ctx echo.Context, requestReference server.RequestReferencePath) error {
+	// TODO implement me
 	return nil
 }
 
 func (s *Server) Result(ctx echo.Context, requestReference server.RequestReferencePath) error {
+	// TODO implement me
 	return nil
 }
 
 func (s *Server) State(ctx echo.Context, stateReference server.StateReferencePath) error {
+	// TODO implement me
 	return nil
 }
 
