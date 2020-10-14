@@ -20,8 +20,8 @@ func init() {
 // Exporter will be used for exporting data for observer-framework
 // Exporter is grpc-base service
 type Exporter struct {
-	// Address specifies address where exporter server starts
-	Address string `insconfig:":0| exporter-api gRPC server starts on this address"`
+	// Listen specifies address where exporter server starts
+	Listen  string `insconfig:":0| exporter-api gRPC server starts on this address"`
 	DB      DB
 	Log     Log
 	Metrics Metrics

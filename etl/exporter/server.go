@@ -17,7 +17,7 @@ import (
 
 // Server implements introspection gRPC server.
 type Server struct {
-	address string
+	listen string
 
 	grpcServer *grpc.Server
 
@@ -26,9 +26,9 @@ type Server struct {
 	startStopMutex *sync.Mutex
 }
 
-func NewServer(address string, grpcServer *grpc.Server) *Server {
+func NewServer(listen string, grpcServer *grpc.Server) *Server {
 	return &Server{
-		address:        address,
+		listen:         listen,
 		grpcServer:     grpcServer,
 		hasStarted:     false,
 		startStopMutex: &sync.Mutex{},
@@ -46,9 +46,9 @@ func (s *Server) Start(ctx context.Context) error {
 		return nil
 	}
 
-	l, err := net.Listen("tcp", s.address)
+	l, err := net.Listen("tcp", s.listen)
 	if err != nil {
-		return errors.Wrapf(err, "failed to start gPRC server on %s", s.address)
+		return errors.Wrapf(err, "failed to start gPRC server on %s", s.listen)
 	}
 
 	ctx, cancel := context.WithCancel(ctx)

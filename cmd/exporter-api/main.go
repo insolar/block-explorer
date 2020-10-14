@@ -80,7 +80,7 @@ func main() {
 
 	grpcMetrics.InitializeMetrics(grpcServer)
 
-	exporterServer := exporter.NewServer(cfg.Address, grpcServer)
+	exporterServer := exporter.NewServer(cfg.Listen, grpcServer)
 	err = exporterServer.Start(ctx)
 	if err != nil {
 		logger.Fatal(err)

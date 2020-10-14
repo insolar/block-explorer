@@ -74,7 +74,7 @@ services:
       - 56789:56789
     environment:
       BLOCK_EXPLORER_EXPORTER_API_DB_URL: 'postgres://postgres:secret@postgres:5432/postgres?sslmode=disable'
-      BLOCK_EXPLORER_EXPORTER_API_ADDRESS: ':56789'
+      BLOCK_EXPLORER_EXPORTER_API_LISTEN: ':56789'
     volumes:
       - .artifacts/exporter-api.yaml:/opt/app/config/exporter.yaml
     command:
