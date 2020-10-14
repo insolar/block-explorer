@@ -73,33 +73,10 @@ const (
 // Reference based on Insolar.Reference
 type Reference []byte
 
+// TODO: https://insolar.atlassian.net/browse/PENV-802
 type IRecord interface {
 	TypeOf() RecordType
 	Reference() Reference
-}
-
-func (r Request) TypeOf() RecordType {
-	return REQUEST
-}
-
-func (r Result) TypeOf() RecordType {
-	return RESULT
-}
-
-func (s State) TypeOf() RecordType {
-	return STATE
-}
-
-func (r Record) TypeOf() RecordType {
-	return r.Type
-}
-
-func (s State) Reference() Reference {
-	return s.Record
-}
-
-func (r Record) Reference() Reference {
-	return r.Ref
 }
 
 type Record struct {
@@ -112,6 +89,14 @@ type Record struct {
 	Hash                []byte
 	RawData             []byte
 	Order               uint32
+}
+
+func (r Record) TypeOf() RecordType {
+	return r.Type
+}
+
+func (r Record) Reference() Reference {
+	return r.Ref
 }
 
 type StateType int
@@ -137,8 +122,24 @@ type State struct {
 	Order           uint32 // record number
 }
 
+func (s State) TypeOf() RecordType {
+	return STATE
+}
+
+func (s State) Reference() Reference {
+	return s.Record
+}
+
 type Request struct {
 }
 
+func (r Request) TypeOf() RecordType {
+	return REQUEST
+}
+
 type Result struct {
+}
+
+func (r Result) TypeOf() RecordType {
+	return RESULT
 }
