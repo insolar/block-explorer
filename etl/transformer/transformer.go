@@ -233,9 +233,7 @@ func transferToCanonicalRecord(r *exporter.Record) (types.IRecord, error) {
 	virtual := r.GetRecord().Virtual
 	switch virtual.Union.(type) {
 	case *ins_record.Virtual_Activate:
-		recordType = types.STATE
 		activate := virtual.GetActivate()
-		prototypeReference = activate.Image.Bytes()
 		recordPayload = activate.Memory
 		if r.Record.ID.Pulse() == pulse.MinTimePulse {
 			objectReference = activate.Request.GetLocal().Bytes()
@@ -255,9 +253,7 @@ func transferToCanonicalRecord(r *exporter.Record) (types.IRecord, error) {
 		}, nil
 
 	case *ins_record.Virtual_Amend:
-		recordType = types.STATE
 		amend := virtual.GetAmend()
-		prototypeReference = amend.Image.Bytes()
 		recordPayload = amend.Memory
 		prevRecordReference = amend.PrevStateID().Bytes()
 		if r.Record.ID.Pulse() == pulse.MinTimePulse {
@@ -278,7 +274,6 @@ func transferToCanonicalRecord(r *exporter.Record) (types.IRecord, error) {
 		}, nil
 
 	case *ins_record.Virtual_Deactivate:
-		recordType = types.STATE
 		deactivate := virtual.GetDeactivate()
 		prevRecordReference = deactivate.PrevStateID().Bytes()
 		return types.State{
