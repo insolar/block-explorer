@@ -1799,7 +1799,7 @@ func TestStorage_GetNextSavedPulse(t *testing.T) {
 	err = testutils.CreatePulse(testDB, expectedPulse)
 	require.NoError(t, err)
 
-	res, err := s.GetNextSavedPulse(pulse)
+	res, err := s.GetNextSavedPulse(pulse, false)
 	require.NoError(t, err)
 	require.Equal(t, expectedPulse, res)
 }
@@ -1810,7 +1810,7 @@ func TestStorage_GetNextSavedPulse_Empty(t *testing.T) {
 	pulse, err := testutils.InitPulseDB()
 	require.NoError(t, err)
 
-	sequentialPulse, err := s.GetNextSavedPulse(pulse)
+	sequentialPulse, err := s.GetNextSavedPulse(pulse, false)
 	require.NoError(t, err)
 	require.Equal(t, models.Pulse{}, sequentialPulse)
 }

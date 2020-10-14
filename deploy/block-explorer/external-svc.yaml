@@ -1,0 +1,13 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: block-explorer-api-external
+spec:
+  type: NodePort
+  ports:
+    - name: http
+      port: 8080
+      nodePort: 32199
+  selector:
+    app: block-explorer-api

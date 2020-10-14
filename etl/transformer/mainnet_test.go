@@ -46,7 +46,7 @@ func TestTransformer_withDifferentJetId(t *testing.T) {
 	}
 
 	dropsCh := make(chan *types.PlatformPulseData)
-	var transformer interfaces.Transformer = NewMainNetTransformer(dropsCh)
+	var transformer interfaces.Transformer = NewMainNetTransformer(dropsCh, 100)
 	err := transformer.Start(ctx)
 	require.NoError(t, err)
 	defer transformer.Stop(ctx)

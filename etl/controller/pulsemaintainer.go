@@ -33,6 +33,7 @@ func (c *Controller) pulseMaintainer(ctx context.Context) {
 }
 
 func eraseJetDropRegister(ctx context.Context, c *Controller, log log.Logger) {
+	log.Debugf("pulseMaintainer(): eraseJetDropRegister start")
 	jetDropRegisterCopy := map[types.Pulse]map[string]struct{}{}
 	func() {
 		c.jetDropRegisterLock.Lock()
@@ -70,10 +71,19 @@ func eraseJetDropRegister(ctx context.Context, c *Controller, log log.Logger) {
 			}
 		} else {
 			PulseNotCompleteCounter.Inc()
-			log.Debugf("Pulse %d not completed, reloading", p.PulseNo)
-			c.reloadData(ctx, p.PrevPulseNumber, p.PulseNo)
-			CurrentIncompletePulse.Set(float64(p.PrevPulseNumber))
+			if c.platformVersion != 1 {
+				log.Debugf("Pulse %d not completed, reloading", p.PulseNo)
+				c.reloadData(ctx, p.PrevPulseNumber, p.PulseNo)
+			}
 		}
+	}
+
+	if c.platformVersion == 1 {
+		if c.incompletePulseCounter == 1000 {
+			c.cleanJetDropRegister(ctx)
+			c.incompletePulseCounter = 0
+		}
+		c.incompletePulseCounter++
 	}
 }
 
@@ -103,8 +113,24 @@ func (c *Controller) pulseSequence(ctx context.Context) {
 				return
 			}
 
-			if nextSequential == emptyPulse {
-				toPulse, err := c.storage.GetNextSavedPulse(c.sequentialPulse)
+			if nextSequential.IsComplete {
+				err = c.storage.SequencePulse(nextSequential.PulseNumber)
+				if err != nil {
+					log.Errorf("During sequence next sequential pulse: %s", err.Error())
+					return
+				}
+				c.sequentialPulse = nextSequential
+				log.Infof("Pulse %d sequenced", nextSequential.PulseNumber)
+				waitTime = time.Duration(0)
+				return
+			}
+
+			if !nextSequential.IsComplete || nextSequential == emptyPulse {
+				completed := false
+				if c.platformVersion == 1 {
+					completed = true
+				}
+				toPulse, err := c.storage.GetNextSavedPulse(c.sequentialPulse, completed)
 				if err != nil && !gorm.IsRecordNotFoundError(err) {
 					log.Errorf("During loading next existing pulse: %s", err.Error())
 					return
@@ -115,17 +141,6 @@ func (c *Controller) pulseSequence(ctx context.Context) {
 				}
 				log.Debugf("Reloading not seq pulses %d - %d", c.sequentialPulse.PulseNumber, toPulse.PrevPulseNumber)
 				c.reloadData(ctx, c.sequentialPulse.PulseNumber, toPulse.PrevPulseNumber)
-				return
-			}
-			if nextSequential.IsComplete {
-				err = c.storage.SequencePulse(nextSequential.PulseNumber)
-				if err != nil {
-					log.Errorf("During sequence next sequential pulse: %s", err.Error())
-					return
-				}
-				c.sequentialPulse = nextSequential
-				log.Infof("Pulse %d sequenced", nextSequential.PulseNumber)
-				waitTime = time.Duration(0)
 				return
 			}
 		}()
@@ -212,6 +227,34 @@ func (c *Controller) reloadData(ctx context.Context, fromPulseNumber int64, toPu
 		if err != nil {
 			log.Errorf("During loading missing data from extractor: %s", err.Error())
 			return
+		}
+	}
+}
+
+func (c *Controller) cleanJetDropRegister(ctx context.Context) {
+	log := belogger.FromContext(ctx)
+	jetDropRegisterCopy := map[types.Pulse]map[string]struct{}{}
+	func() {
+		c.jetDropRegisterLock.Lock()
+		defer c.jetDropRegisterLock.Unlock()
+		for k, v := range c.jetDropRegister {
+			jetDropsCopy := map[string]struct{}{}
+			for jetID := range v {
+				jetDropsCopy[jetID] = struct{}{}
+			}
+			jetDropRegisterCopy[k] = jetDropsCopy
+		}
+	}()
+
+	for p := range jetDropRegisterCopy {
+		if c.sequentialPulse.PulseNumber > p.PulseNo {
+			log.Infof("Pulse %d less then seq pulse, dropping it", p.PulseNo)
+			func() {
+				c.jetDropRegisterLock.Lock()
+				defer c.jetDropRegisterLock.Unlock()
+				delete(c.jetDropRegister, p)
+			}()
+
 		}
 	}
 }
