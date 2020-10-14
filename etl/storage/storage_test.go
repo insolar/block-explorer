@@ -1635,7 +1635,7 @@ func TestStorage_GetRecordsByJetDrop(t *testing.T) {
 	err = testutils.CreateJetDrop(testDB, jetDrop1)
 	require.NoError(t, err)
 	recordResult := testutils.InitRecordDB(jetDrop1)
-	recordResult.Type = models.ResultType
+	recordResult.Type = models.ResultRecord
 	recordResult.Order = 1
 	err = testutils.CreateRecord(testDB, recordResult)
 	require.NoError(t, err)
@@ -1666,7 +1666,7 @@ func TestStorage_GetRecordsByJetDrop(t *testing.T) {
 	})
 
 	t.Run("type", func(t *testing.T) {
-		recType := string(models.ResultType)
+		recType := string(models.ResultRecord)
 		records, total, err := s.GetRecordsByJetDrop(jetDropID, nil, &recType, 1000, 0)
 		require.NoError(t, err)
 		require.Equal(t, 1, total)

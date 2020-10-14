@@ -16,28 +16,28 @@ import (
 )
 
 type RecordType string
-type StatesType string
-type RequestsType string
+type StateType string
+type RequestType string
 
 func RecordTypeFromTypes(rt types.RecordType) RecordType {
 	return []RecordType{"state", "request", "result"}[rt]
 }
 
 const (
-	StateType   RecordType = "state"
-	RequestType RecordType = "request"
-	ResultType  RecordType = "result"
+	StateRecord   RecordType = "state"
+	RequestRecord RecordType = "request"
+	ResultRecord  RecordType = "result"
 )
 
 const (
-	Activate   StatesType = "activate"
-	Amend      StatesType = "amend"
-	Deactivate StatesType = "deactivate"
+	Activate   StateType = "activate"
+	Amend      StateType = "amend"
+	Deactivate StateType = "deactivate"
 )
 
 const (
-	Incoming RecordType = "incoming"
-	Outgoing RecordType = "outgoing"
+	Incoming RequestType = "incoming"
+	Outgoing RequestType = "outgoing"
 )
 
 type Reference []byte
@@ -74,7 +74,7 @@ type JetDrop struct {
 
 type State struct {
 	RecordRef    []byte `gorm:"primary_key;auto_increment:false"` // State reference.
-	Type         StatesType
+	Type         StateType
 	RequestRef   []byte // Reference to the corresponding request.
 	ParentRef    []byte // Reference to the parent object that caused creation of the given object.
 	ObjectRef    []byte
@@ -91,7 +91,7 @@ type State struct {
 
 type Request struct {
 	RecordRef          []byte // Request reference.
-	Type               RequestsType
+	Type               RequestType
 	CallType           string
 	ObjectRef          []byte // Reference to the corresponding object.
 	CallerObjectRef    []byte // Reference to the object that called this request.
