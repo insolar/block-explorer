@@ -90,7 +90,7 @@ type State struct {
 }
 
 type Request struct {
-	RecordRef          []byte // Request reference.
+	RecordRef          []byte `gorm:"primary_key;auto_increment:false"` // Request reference.
 	Type               RequestType
 	CallType           string
 	ObjectRef          []byte // Reference to the corresponding object.
