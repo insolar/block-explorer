@@ -24,7 +24,7 @@ var pulseDelta = uint16(10)
 func InitRecordDB(jetDrop models.JetDrop) models.Record {
 	return models.Record{
 		Reference:           gen.ID().Bytes(),
-		Type:                models.State,
+		Type:                models.StateRecord,
 		ObjectReference:     gen.ID().Bytes(),
 		PrototypeReference:  gen.ID().Bytes(),
 		Payload:             GenerateRandBytes(),
