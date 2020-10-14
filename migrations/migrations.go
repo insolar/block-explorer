@@ -145,7 +145,7 @@ func Migrations() []*gormigrate.Migration {
 					return err
 				}
 				if err := tx.Model(&Request{}).AddIndex(
-					"idx_request_apirequestid", "jet_id", "pulse_number", "order").Error; err != nil {
+					"idx_request_apirequestid", "api_request_id").Error; err != nil {
 					return err
 				}
 				return nil
