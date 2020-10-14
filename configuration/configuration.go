@@ -16,6 +16,18 @@ func init() {
 	view.Unregister(&view.View{Name: "log_write_delays"})
 }
 
+// Exporter holds exporter configuration.
+// Exporter will be used for exporting data for observer-framework
+// Exporter is grpc-base service
+type Exporter struct {
+	// Address specifies address where exporter server starts
+	Address string `insconfig:":5678| exporter-api gRPC server starts on this address"`
+	DB      DB
+	Log     Log
+	Metrics Metrics
+	Profefe Profefe
+}
+
 type BlockExplorer struct {
 	Log         Log
 	DB          DB

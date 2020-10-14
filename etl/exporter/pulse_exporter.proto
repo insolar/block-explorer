@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package exporter;
+
+service PulseExporter {
+    rpc GetNextPulse (GetNextPulseRequest) returns (stream GetNextPulseResponse) {
+    }
+}
+
+
+message GetNextPulseResponse {
+    uint32 PulseNumber = 1;
+    uint32 PrevPulseNumber = 2;
+    uint32 RecordAmount = 3;
+}
+
+message GetNextPulseRequest {
+    uint32 PulseNumberFrom = 1;
+    repeated bytes Prototypes = 2;
+}
