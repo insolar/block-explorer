@@ -63,6 +63,29 @@ services:
         ./wait.sh "postgres:5432"
         ./api --config=/opt/app/config/api.yaml
 
+  exporter:
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    image: generic-block-explorer:local
+    depends_on:
+      - postgres
+    ports:
+      - 56789:56789
+    environment:
+      BLOCK_EXPLORER_EXPORTER_API_DB_URL: 'postgres://postgres:secret@postgres:5432/postgres?sslmode=disable'
+      BLOCK_EXPLORER_EXPORTER_API_ADDRESS: ':56789'
+    volumes:
+      - .artifacts/exporter-api.yaml:/opt/app/config/exporter.yaml
+    command:
+      - /bin/bash
+      - -c
+      - |
+        curl https://raw.githubusercontent.com/vishnubob/wait-for-it/master/wait-for-it.sh > wait.sh
+        chmod +x wait.sh
+        ./wait.sh "postgres:5432"
+        ./exporter-api --config=/opt/app/config/exporter.yaml
+
   frontend:
     image: insolar/frontend-block-explorer
     depends_on:
