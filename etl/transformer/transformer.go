@@ -7,7 +7,6 @@ package transformer
 
 import (
 	"context"
-
 	"github.com/insolar/insolar/pulse"
 
 	"github.com/insolar/block-explorer/instrumentation"
@@ -115,7 +114,7 @@ func sortRecords(records []types.IRecord) ([]types.IRecord, error) {
 		}
 		// add records to result array in correct order
 		key := restoreInsolarID(headRecord.Reference())
-		sortedRecords = append(sortedRecords, headRecord)
+		sortedRecords = append(sortedRecords, *headRecord)
 		for i := 1; len(recordsByPrevRef) != i; i++ {
 			r, ok := recordsByPrevRef[key]
 			if !ok {
@@ -150,7 +149,7 @@ func initRecordsMapsByObj(records []types.IRecord) (
 			recordsByObjAndRef[restoreInsolarID(r.(types.State).ObjectReference)] = map[string]types.State{}
 			recordsByObjAndPrevRef[restoreInsolarID(r.(types.State).ObjectReference)] = map[string]types.State{}
 		}
-		recordsByObjAndRef[restoreInsolarID(r.(types.State).ObjectReference)][restoreInsolarID(r.(types.State).Record)] = r.(types.State)
+		recordsByObjAndRef[restoreInsolarID(r.(types.State).ObjectReference)][restoreInsolarID(r.(types.State).RecordReference)] = r.(types.State)
 		recordsByObjAndPrevRef[restoreInsolarID(r.(types.State).ObjectReference)][restoreInsolarID(r.(types.State).PrevState)] = r.(types.State)
 	}
 	return recordsByObjAndPrevRef, recordsByObjAndRef, notStateRecords
@@ -243,7 +242,7 @@ func transferToCanonicalRecord(r *exporter.Record) (types.IRecord, error) {
 		}
 		return types.State{
 			Type:            types.ACTIVATE,
-			Record:          ref,
+			RecordReference: ref,
 			ObjectReference: objectReference,
 			Request:         activate.Request.Bytes(),
 			Parent:          activate.Parent.Bytes(),
@@ -266,7 +265,7 @@ func transferToCanonicalRecord(r *exporter.Record) (types.IRecord, error) {
 		}
 		return types.State{
 			Type:            types.AMEND,
-			Record:          ref,
+			RecordReference: ref,
 			ObjectReference: objectReference,
 			Request:         amend.Request.Bytes(),
 			IsPrototype:     amend.IsPrototype,
@@ -284,7 +283,7 @@ func transferToCanonicalRecord(r *exporter.Record) (types.IRecord, error) {
 		prevRecordReference = deactivate.PrevStateID().Bytes()
 		return types.State{
 			Type:            types.DEACTIVATE,
-			Record:          ref,
+			RecordReference: ref,
 			ObjectReference: objectReference,
 			Request:         deactivate.Request.Bytes(),
 			PrevState:       prevRecordReference,

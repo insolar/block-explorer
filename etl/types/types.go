@@ -62,14 +62,6 @@ type Pulse struct {
 	PrevPulseNumber int64
 }
 
-type RecordType int
-
-const (
-	STATE RecordType = iota
-	REQUEST
-	RESULT
-)
-
 // Reference based on Insolar.Reference
 type Reference []byte
 
@@ -91,6 +83,14 @@ type Record struct {
 	Order               uint32
 }
 
+type RecordType int
+
+const (
+	REQUEST RecordType = iota
+	STATE
+	RESULT
+)
+
 func (r Record) TypeOf() RecordType {
 	return r.Type
 }
@@ -108,7 +108,7 @@ const (
 )
 
 type State struct {
-	Record          Reference // ref = r.Record.ID.Bytes()
+	RecordReference Reference // ref = r.RecordReference.ID.Bytes()
 	Type            StateType
 	ObjectReference Reference
 	Request         Reference // reference to request
@@ -127,7 +127,7 @@ func (s State) TypeOf() RecordType {
 }
 
 func (s State) Reference() Reference {
-	return s.Record
+	return s.RecordReference
 }
 
 type Request struct {
