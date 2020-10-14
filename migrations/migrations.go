@@ -55,7 +55,7 @@ func Migrations() []*gormigrate.Migration {
 				}
 				type State struct {
 					RecordRef    []byte `gorm:"primary_key;auto_increment:false"`
-					Type         models.StateType
+					Type         string
 					RequestRef   []byte
 					ParentRef    []byte
 					ObjectRef    []byte
@@ -71,7 +71,7 @@ func Migrations() []*gormigrate.Migration {
 				}
 				type Request struct {
 					RecordRef          []byte `gorm:"primary_key;auto_increment:false"`
-					Type               models.RequestType
+					Type               string
 					CallType           string
 					ObjectRef          []byte
 					CallerObjectRef    []byte
