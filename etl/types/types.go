@@ -37,7 +37,7 @@ func (m MainSection) IsSection() bool { return true }
 type MainSection struct {
 	Start        DropStart
 	DropContinue DropContinue
-	Records      []Record
+	Records      []IRecord
 }
 
 type AdditionalSection struct {
@@ -65,7 +65,6 @@ type Pulse struct {
 type RecordType int
 
 const (
-	// state type means activate, amend, deactivate records
 	STATE RecordType = iota
 	REQUEST
 	RESULT
@@ -73,6 +72,36 @@ const (
 
 // Reference based on Insolar.Reference
 type Reference []byte
+
+type IRecord interface {
+	TypeOf() RecordType
+	Reference() Reference
+}
+
+func (r Request) TypeOf() RecordType {
+	return REQUEST
+}
+
+func (r Result) TypeOf() RecordType {
+	return RESULT
+}
+
+func (s State) TypeOf() RecordType {
+	return STATE
+}
+
+func (r Record) TypeOf() RecordType {
+	return r.Type
+}
+
+func (s State) Reference() Reference {
+	return s.Record
+}
+
+func (r Record) Reference() Reference {
+	return r.Ref
+}
+
 type Record struct {
 	Type                RecordType
 	Ref                 Reference
@@ -83,4 +112,33 @@ type Record struct {
 	Hash                []byte
 	RawData             []byte
 	Order               uint32
+}
+
+type StateType int
+
+const (
+	ACTIVATE StateType = iota
+	AMEND
+	DEACTIVATE
+)
+
+type State struct {
+	Record          Reference // ref = r.Record.ID.Bytes()
+	Type            StateType
+	ObjectReference Reference
+	Request         Reference // reference to request
+	Parent          Reference // has activate link to parent object
+	IsPrototype     bool      // has activate, amend
+	Image           Reference // has activate, amend
+	PrevState       Reference // has amend, deactivate
+	Payload         []byte
+	RawData         []byte
+	Hash            []byte // hash of record
+	Order           uint32 // record number
+}
+
+type Request struct {
+}
+
+type Result struct {
 }
