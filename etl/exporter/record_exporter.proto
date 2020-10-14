@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package exporter;
+
+
+service RecordExporter {
+    rpc GetRecords (GetRecordsRequest) returns (stream GetRecordsResponse) {
+    }
+}
+
+
+message GetRecordsRequest {
+    uint32 Polymorph = 16;
+
+}
+
+message GetRecordsResponse {
+    uint32 Polymorph = 16;
+}
+
