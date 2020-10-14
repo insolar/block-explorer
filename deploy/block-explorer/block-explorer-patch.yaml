@@ -1,0 +1,25 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: block-explorer
+spec:
+  template:
+    spec:
+      initContainers:
+        - name: check-platform-status
+          env:
+            - { name: SLEEP_TIME_BEFORE_START,  value: '30' }
+          image: ellerbrock/alpine-bash-curl-ssl:0.3.0
+          command: [ 'bash', '-c' ]
+          args:
+            - "for i in {1..60}; do res=$(curl -s 'http://virtual-0.platform-network.insolar.svc.cluster.local:8001/metrics' | grep insolar_network_state | grep -v '#' | awk '{print $2}'); echo $res; if [[ $res = '6' ]];then sleep $SLEEP_TIME_BEFORE_START; exit 0; fi ; sleep 1; done; exit 1"
+      containers:
+        - name: block-explorer
+          env:
+            - { name: BLOCK_EXPLORER_REPLICATOR_AUTH_INSECURETLS, value: 'true' }
+            - { name: BLOCK_EXPLORER_REPLICATOR_AUTH_REQUIRED, value: 'true' }
+            - { name: BLOCK_EXPLORER_REPLICATOR_AUTH_URL, value: 'http://auth-service:8080/auth/token' }
+            - { name: BLOCK_EXPLORER_REPLICATOR_AUTH_LOGIN, value: 'replicator' }
+            - { name: BLOCK_EXPLORER_REPLICATOR_AUTH_PASSWORD, value: 'replicator' }
+            - { name: BLOCK_EXPLORER_REPLICATOR_ADDR, value: heavy-0.platform-network.insolar.svc.cluster.local:5678 }

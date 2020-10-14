@@ -122,7 +122,7 @@ type StorageAPIFetcher interface {
 	// GetRecordsByJetDrop returns records for provided jet drop, ordered by order field.
 	GetRecordsByJetDrop(jetDropID models.JetDropID, fromIndex, recordType *string, limit, offset int) ([]models.Record, int, error)
 	// GetNextSavedPulse returns first pulse with pulse number bigger then fromPulseNumber from db.
-	GetNextSavedPulse(fromPulseNumber models.Pulse) (models.Pulse, error)
+	GetNextSavedPulse(fromPulseNumber models.Pulse, completedOnly bool) (models.Pulse, error)
 	// GetJetDrops returns jetDrops for provided pulse from db.
 	GetJetDrops(pulse models.Pulse) ([]models.JetDrop, error)
 }
@@ -135,7 +135,7 @@ type StorageFetcher interface {
 	// GetPulseByPrev returns pulse with provided prev pulse number from db.
 	GetPulseByPrev(prevPulse models.Pulse) (models.Pulse, error)
 	// GetNextSavedPulse returns first pulse with pulse number bigger then fromPulseNumber from db.
-	GetNextSavedPulse(fromPulseNumber models.Pulse) (models.Pulse, error)
+	GetNextSavedPulse(fromPulseNumber models.Pulse, completedOnly bool) (models.Pulse, error)
 	// GetJetDrops returns jetDrops for provided pulse from db.
 	GetJetDrops(pulse models.Pulse) ([]models.JetDrop, error)
 }

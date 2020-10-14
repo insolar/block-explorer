@@ -1,0 +1,14 @@
+---
+namespace: insolar
+bases:
+  - https://github.com:insolar/adm/kustomize/generic-block-explorer/overlays/docker-for-desktop
+patches:
+  - block-explorer-patch.yaml
+resources:
+  - external-svc.yaml
+images:
+  - name: block-explorer
+    newName: localhost/block-explorer
+    newTag: local
+generatorOptions:
+  disableNameSuffixHash: true

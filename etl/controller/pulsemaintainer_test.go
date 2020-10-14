@@ -37,7 +37,7 @@ func TestController_pulseMaintainer(t *testing.T) {
 	sm.GetPulseByPrevMock.Return(models.Pulse{}, errors.New("test error"))
 
 	defer leaktest.Check(t)()
-	c, err := NewController(cfg, extractor, sm)
+	c, err := NewController(cfg, extractor, sm, 2)
 	require.NoError(t, err)
 	ctx := context.Background()
 	require.NoError(t, c.Start(ctx))
@@ -79,13 +79,13 @@ func TestController_pulseSequence_StartFromNothing(t *testing.T) {
 		require.Equal(t, int64(pulse.MinTimePulse), prevPulse.PulseNumber)
 		return models.Pulse{}, nil
 	})
-	sm.GetNextSavedPulseMock.Set(func(fromPulseNumber models.Pulse) (p1 models.Pulse, err error) {
+	sm.GetNextSavedPulseMock.Set(func(fromPulseNumber models.Pulse, completedOnly bool) (p1 models.Pulse, err error) {
 		if sm.GetNextSavedPulseBeforeCounter() == 1 || sm.GetPulseByPrevBeforeCounter() == 2 {
 			require.Equal(t, int64(0), fromPulseNumber.PulseNumber)
 			return models.Pulse{PrevPulseNumber: 1000100, PulseNumber: 1000110, NextPulseNumber: 1000120}, nil
 		}
 		if sm.GetNextSavedPulseBeforeCounter() == 3 {
-			require.Equal(t, int64(pulse.MinTimePulse), fromPulseNumber.PulseNumber)
+			require.Equal(t, int64(0), fromPulseNumber.PulseNumber)
 			return models.Pulse{PrevPulseNumber: 1000100, PulseNumber: 1000110, NextPulseNumber: 1000120}, nil
 		}
 		require.Equal(t, int64(pulse.MinTimePulse), fromPulseNumber.PulseNumber)
@@ -108,7 +108,7 @@ func TestController_pulseSequence_StartFromNothing(t *testing.T) {
 	})
 
 	defer leaktest.Check(t)()
-	c, err := NewController(cfg, extractor, sm)
+	c, err := NewController(cfg, extractor, sm, 2)
 	require.NoError(t, err)
 	ctx := context.Background()
 	err = c.Start(ctx)
@@ -152,7 +152,7 @@ func TestController_pulseSequence_StartFromSomething(t *testing.T) {
 		require.Equal(t, int64(1000020), prevPulse.PulseNumber)
 		return models.Pulse{PrevPulseNumber: 1000020, PulseNumber: 1000030, NextPulseNumber: 1000040, IsComplete: false}, nil
 	})
-	sm.GetNextSavedPulseMock.Set(func(fromPulseNumber models.Pulse) (p1 models.Pulse, err error) {
+	sm.GetNextSavedPulseMock.Set(func(fromPulseNumber models.Pulse, completedOnly bool) (p1 models.Pulse, err error) {
 		if sm.GetNextSavedPulseBeforeCounter() == 1 || sm.GetPulseByPrevBeforeCounter() == 2 {
 			require.Equal(t, int64(1000000), fromPulseNumber.PulseNumber)
 			return models.Pulse{PrevPulseNumber: 1000010, PulseNumber: 1000020, NextPulseNumber: 1000030}, nil
@@ -180,7 +180,7 @@ func TestController_pulseSequence_StartFromSomething(t *testing.T) {
 	})
 
 	defer leaktest.Check(t)()
-	c, err := NewController(cfg, extractor, sm)
+	c, err := NewController(cfg, extractor, sm, 2)
 	require.NoError(t, err)
 	ctx := context.Background()
 	err = c.Start(ctx)
@@ -216,7 +216,7 @@ func TestController_pulseSequence_Start_NoMissedData(t *testing.T) {
 			return models.Pulse{PrevPulseNumber: 1000010, PulseNumber: 1000020, NextPulseNumber: 1000030, IsComplete: true}, nil
 		}
 		require.Equal(t, int64(1000020), prevPulse.PulseNumber)
-		return models.Pulse{PrevPulseNumber: 1000020, PulseNumber: 1000030, NextPulseNumber: 1000040, IsComplete: false}, nil
+		return models.Pulse{}, nil
 	})
 	sm.SequencePulseMock.Set(func(pulseNumber int64) (err error) {
 		if sm.SequencePulseBeforeCounter() == 1 {
@@ -227,9 +227,12 @@ func TestController_pulseSequence_Start_NoMissedData(t *testing.T) {
 		}
 		return nil
 	})
+	sm.GetNextSavedPulseMock.Set(func(fromPulseNumber models.Pulse, completedOnly bool) (p1 models.Pulse, err error) {
+		return models.Pulse{}, nil
+	})
 
 	defer leaktest.Check(t)()
-	c, err := NewController(cfg, extractor, sm)
+	c, err := NewController(cfg, extractor, sm, 2)
 	require.NoError(t, err)
 	ctx := context.Background()
 	err = c.Start(ctx)
@@ -274,9 +277,12 @@ func TestController_pulseMaintainer_Start_PulsesCompleteAndNot(t *testing.T) {
 		wg.Done()
 		return nil
 	})
+	sm.GetNextSavedPulseMock.Set(func(fromPulseNumber models.Pulse, completedOnly bool) (p1 models.Pulse, err error) {
+		return models.Pulse{}, nil
+	})
 
 	defer leaktest.Check(t)()
-	c, err := NewController(cfg, extractor, sm)
+	c, err := NewController(cfg, extractor, sm, 2)
 	require.NoError(t, err)
 	ctx := context.Background()
 	err = c.Start(ctx)
@@ -303,7 +309,7 @@ func TestController_pulseSequence_ReloadPeriodExpired(t *testing.T) {
 	sm.GetPulseByPrevMock.Set(func(prevPulse models.Pulse) (p1 models.Pulse, err error) {
 		return models.Pulse{}, nil
 	})
-	sm.GetNextSavedPulseMock.Set(func(fromPulseNumber models.Pulse) (p1 models.Pulse, err error) {
+	sm.GetNextSavedPulseMock.Set(func(fromPulseNumber models.Pulse, completedOnly bool) (p1 models.Pulse, err error) {
 		return models.Pulse{PrevPulseNumber: 1000010, PulseNumber: 1000020, NextPulseNumber: 1000030}, nil
 	})
 	extractor.LoadJetDropsMock.Set(func(ctx context.Context, fromPulseNumber int64, toPulseNumber int64) (err error) {
@@ -317,7 +323,7 @@ func TestController_pulseSequence_ReloadPeriodExpired(t *testing.T) {
 	})
 
 	defer leaktest.Check(t)()
-	c, err := NewController(cfg, extractor, sm)
+	c, err := NewController(cfg, extractor, sm, 2)
 	require.NoError(t, err)
 	ctx := context.Background()
 	err = c.Start(ctx)

@@ -18,11 +18,11 @@ type MainNetTransformer struct {
 	transformerChan chan *types.JetDrop
 }
 
-func NewMainNetTransformer(ch <-chan *types.PlatformPulseData) *MainNetTransformer {
+func NewMainNetTransformer(ch <-chan *types.PlatformPulseData, queueLen uint32) *MainNetTransformer {
 	return &MainNetTransformer{
 		stopSignal:      make(chan bool, 1),
 		extractorChan:   ch,
-		transformerChan: make(chan *types.JetDrop, 1000),
+		transformerChan: make(chan *types.JetDrop, queueLen),
 	}
 }
 
@@ -70,18 +70,16 @@ func (m *MainNetTransformer) run(ctx context.Context) {
 			Errors.Inc()
 			return
 		}
-		go func() {
-			if len(transform) == 0 {
-				belogger.FromContext(ctx).Warn("no transformed data to logging")
-			} else {
-				belogger.FromContext(ctx).
-					Infof("transformed jet drop to canonical for pulse: %d", transform[0].MainSection.Start.PulseData.PulseNo)
-				for _, jetDrop := range transform {
-					m.transformerChan <- jetDrop
-					FromTransformerDataQueue.Set(float64(len(m.transformerChan)))
-				}
+		if len(transform) == 0 {
+			belogger.FromContext(ctx).Warn("no transformed data to logging")
+		} else {
+			belogger.FromContext(ctx).
+				Infof("transformed jet drop to canonical for pulse: %d", transform[0].MainSection.Start.PulseData.PulseNo)
+			for _, jetDrop := range transform {
+				m.transformerChan <- jetDrop
+				FromTransformerDataQueue.Set(float64(len(m.transformerChan)))
 			}
-		}()
+		}
 	case <-m.stopSignal:
 		m.stopSignal <- true
 		return
