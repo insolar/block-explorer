@@ -53,6 +53,43 @@ func Migrations() []*gormigrate.Migration {
 					Order               int
 					Timestamp           int64
 				}
+				type State struct {
+					RecordRef    []byte `gorm:"primary_key;auto_increment:false"`
+					Type         models.StateType
+					RequestRef   []byte
+					ParentRef    []byte
+					ObjectRef    []byte
+					PrevStateRef []byte
+					IsPrototype  bool
+					Payload      []byte
+					ImageRef     []byte
+					Hash         []byte
+					Order        int
+					JetID        string
+					PulseNumber  int64
+					Timestamp    int64
+				}
+				type Request struct {
+					RecordRef          []byte `gorm:"primary_key;auto_increment:false"`
+					Type               models.RequestType
+					CallType           string
+					ObjectRef          []byte
+					CallerObjectRef    []byte
+					CalleeObjectRef    []byte
+					APIRequestID       string
+					ReasonRequestRef   []byte
+					OriginalRequestRef []byte
+					Method             string
+					Arguments          []byte
+					Immutable          bool
+					IsOriginalRequest  bool
+					PrototypeRef       []byte
+					Hash               []byte
+					JetID              string
+					PulseNumber        int64
+					Order              int
+					Timestamp          int64
+				}
 				if err := tx.CreateTable(&Pulse{}).Error; err != nil {
 					return err
 				}
@@ -84,13 +121,31 @@ func Migrations() []*gormigrate.Migration {
 				if err := tx.Model(&Record{}).AddForeignKey("jet_id, pulse_number", "jet_drops(jet_id, pulse_number)", "CASCADE", "CASCADE").Error; err != nil {
 					return err
 				}
-
-				err := createTableState(tx)
-				if err != nil {
+				if err := tx.CreateTable(&State{}).Error; err != nil {
 					return err
 				}
-				err = createTableRequest(tx)
-				if err != nil {
+				if err := tx.Model(&State{}).AddIndex(
+					"idx_state_jetid_pulsenumber_order", "jet_id", "pulse_number", "order").Error; err != nil {
+					return err
+				}
+				if err := tx.Model(&State{}).AddIndex(
+					"idx_state_requestref", "request_ref").Error; err != nil {
+					return err
+				}
+
+				if err := tx.Model(&State{}).AddIndex(
+					"idx_state_objectref", "object_ref").Error; err != nil {
+					return err
+				}
+				if err := tx.CreateTable(&Request{}).Error; err != nil {
+					return err
+				}
+				if err := tx.Model(&Request{}).AddIndex(
+					"idx_request_jetid_pulsenumber_order", "jet_id", "pulse_number", "order").Error; err != nil {
+					return err
+				}
+				if err := tx.Model(&Request{}).AddIndex(
+					"idx_request_apirequestid", "jet_id", "pulse_number", "order").Error; err != nil {
 					return err
 				}
 				return nil
@@ -122,39 +177,4 @@ func MigrationOptions() *gormigrate.Options {
 	options.UseTransaction = true
 	options.ValidateUnknownMigrations = true
 	return options
-}
-
-func createTableState(tx *gorm.DB) error {
-	if err := tx.CreateTable(&models.State{}).Error; err != nil {
-		return err
-	}
-	if err := tx.Model(&models.State{}).AddIndex(
-		"idx_state_jetid_pulsenumber_order", "jet_id", "pulse_number", "order").Error; err != nil {
-		return err
-	}
-	if err := tx.Model(&models.State{}).AddIndex(
-		"idx_state_requestref", "request_ref").Error; err != nil {
-		return err
-	}
-
-	if err := tx.Model(&models.State{}).AddIndex(
-		"idx_state_objectref", "object_ref").Error; err != nil {
-		return err
-	}
-	return nil
-}
-
-func createTableRequest(tx *gorm.DB) error {
-	if err := tx.CreateTable(&models.Request{}).Error; err != nil {
-		return err
-	}
-	if err := tx.Model(&models.Request{}).AddIndex(
-		"idx_request_jetid_pulsenumber_order", "jet_id", "pulse_number", "order").Error; err != nil {
-		return err
-	}
-	if err := tx.Model(&models.Request{}).AddIndex(
-		"idx_request_apirequestid", "jet_id", "pulse_number", "order").Error; err != nil {
-		return err
-	}
-	return nil
 }
