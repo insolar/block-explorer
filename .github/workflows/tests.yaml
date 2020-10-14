@@ -203,8 +203,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: report
-          path: "report"
-        working-directory: ${{env.GOPATH}}/src/github.com/insolar/block-explorer
+          path: "${{env.GOPATH}}/src/github.com/insolar/block-explorer/report"
   test-with-coverage:
     name: tests with coverage
     runs-on: ubuntu-latest
