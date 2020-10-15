@@ -31,6 +31,6 @@ jobs:
     - name: Push image
       run: |
         [ "$VERSION" == "master" ] && VERSION=latest
-        [ "$VERSION" == "release/1.2" ] && VERSION=release1.2
+        [ "$VERSION" == "NOISSUE-build-images-in-release-branch" ] && VERSION=release1.2
         docker tag ${IMAGE_NAME} insolar/${IMAGE_NAME}:${VERSION}
         docker push insolar/${IMAGE_NAME}:${VERSION}
