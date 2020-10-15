@@ -17,6 +17,9 @@ jobs:
         REPO=$(echo "${{ github.repository }}" | cut -d/ -f2)
         IMAGE_NAME=${REPO}
         VERSION=$(echo "${{ github.ref }}" | sed -e 's,.*/\(.*\),\1,')
+        if [[ "${{ github.ref }}" == *"release"* ]]; then
+          VERSION="${{ github.ref }}"
+        fi
         echo "::set-env name=REPO::${REPO}"
         echo "::set-env name=IMAGE_NAME::${IMAGE_NAME}"
         echo "::set-env name=VERSION::${VERSION}"
