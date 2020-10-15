@@ -11,8 +11,9 @@ import (
 
 	"github.com/insolar/insolar/ledger/heavy/exporter"
 
-	"github.com/insolar/block-explorer/etl/types"
 	"google.golang.org/grpc"
+
+	"github.com/insolar/block-explorer/etl/types"
 
 	"github.com/insolar/block-explorer/etl/models"
 )
@@ -107,6 +108,8 @@ type StorageSetter interface {
 type StorageAPIFetcher interface {
 	// GetRecord returns record with provided reference from db.
 	GetRecord(ref models.Reference) (models.Record, error)
+	// GetState returns state with provided reference from db.
+	GetState(ref models.Reference) (models.State, error)
 	// GetPulse returns pulse with provided pulse number from db.
 	GetPulse(pulseNumber int64) (models.Pulse, error)
 	// GetPulse returns pulses from db.
