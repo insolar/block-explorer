@@ -567,7 +567,7 @@ func (s *Storage) GetJetDropsByJetID(jetID string, pulseNumberLte, pulseNumberLt
 
 func (s *Storage) GetNextCompletePulseFilterByPrototypeReference(prevPulse int64, prototypes [][]byte) (models.Pulse, error) {
 	var pulse models.Pulse
-	db := s.db.LogMode(true).Model(&pulse).Joins("JOIN records ON records.pulse_number = pulses.pulse_number").
+	db := s.db.Model(&pulse).Joins("JOIN records ON records.pulse_number = pulses.pulse_number").
 		Where("pulses.prev_pulse_number = ?", prevPulse).
 		Where("pulses.is_complete = ?", true).
 		Where("records.prototype_reference IN (?)", prototypes)
