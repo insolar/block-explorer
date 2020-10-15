@@ -30,6 +30,6 @@ jobs:
     - name: Push image
       run: |
         [ "$VERSION" == "master" ] && VERSION=latest
-        [ "${{ github.ref }}" == "heads/release/1.2" ] && VERSION=release1.2
+        [ "${{ github.ref }}" == "refs/heads/release/1.2" ] && VERSION=release1.2
         docker tag ${IMAGE_NAME} insolar/${IMAGE_NAME}:${VERSION}
         docker push insolar/${IMAGE_NAME}:${VERSION}
