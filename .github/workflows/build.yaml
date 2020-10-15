@@ -2,7 +2,7 @@ name: build
 on:
   pull_request:
     branches:
-    - release/1.2
+    - NOISSUE-build-images-in-release-branch
   push:
     tags:
     - v[0-9]+.[0-9]+.[0-9]+
