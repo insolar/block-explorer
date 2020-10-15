@@ -88,7 +88,7 @@ func TestIntegrationWithDb_GetRecords(t *testing.T) {
 		for _, tr := range transform {
 			r := tr.MainSection.Records
 			require.NotEmpty(t, r)
-			ref := r[0].Ref
+			ref := r[0].Reference()
 			require.NotEmpty(t, ref)
 			refs = append(refs, ref)
 		}
@@ -188,7 +188,7 @@ func TestIntegrationWithDb_GetRecords_ErrorSameRecords(t *testing.T) {
 			records := tr.MainSection.Records
 			require.NotEmpty(t, records)
 			for _, r := range records {
-				ref := r.Ref
+				ref := r.Reference()
 				require.NotEmpty(t, ref)
 				refs = append(refs, ref)
 			}
