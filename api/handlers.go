@@ -246,6 +246,42 @@ func (s *Server) JetDropsByJetID(ctx echo.Context, jetID server.JetIdPath, param
 	})
 }
 
+// Original request by object
+// (GET /api/v1/lifeline/{object_reference}/original-requests)
+func (s *Server) OriginalRequestByObject(ctx echo.Context, objectReference server.ObjectReferencePath, params server.OriginalRequestByObjectParams) error {
+	return ctx.JSON(http.StatusInternalServerError, struct{}{})
+}
+
+// Request
+// (GET /api/v1/requests/{request_reference})
+func (s *Server) Request(ctx echo.Context, requestReference server.RequestReferencePath) error {
+	return ctx.JSON(http.StatusInternalServerError, struct{}{})
+}
+
+// Request tree
+// (GET /api/v1/requests/{request_reference}/call-tree)
+func (s *Server) RequestTree(ctx echo.Context, requestReference server.RequestReferencePath) error {
+	return ctx.JSON(http.StatusInternalServerError, struct{}{})
+}
+
+// Original request
+// (GET /api/v1/requests/{request_reference}/original-request)
+func (s *Server) Originalrequest(ctx echo.Context, requestReference server.RequestReferencePath) error {
+	return ctx.JSON(http.StatusInternalServerError, struct{}{})
+}
+
+// Result
+// (GET /api/v1/requests/{request_reference}/result)
+func (s *Server) Result(ctx echo.Context, requestReference server.RequestReferencePath) error {
+	return ctx.JSON(http.StatusInternalServerError, struct{}{})
+}
+
+// State
+// (GET /api/v1/states/{state_reference})
+func (s *Server) State(ctx echo.Context, stateReference server.StateReferencePath) error {
+	return ctx.JSON(http.StatusInternalServerError, struct{}{})
+}
+
 func (s *Server) getEnrichingJetDrops(oldestPulse, newestPulse int64) ([]models.JetDrop, error) {
 	var enrichedDrops []models.JetDrop
 	emptyPulse := models.Pulse{}
@@ -545,7 +581,7 @@ func (s *Server) searchReferencePulse(ctx echo.Context, ref *insolar.Reference) 
 		s.logger.Error(err)
 		return ctx.JSON(http.StatusInternalServerError, struct{}{})
 	}
-	return ctx.JSON(http.StatusOK, server.SearchRecord{
+	return ctx.JSON(http.StatusOK, server.SearchState{
 		Meta: &struct {
 			Index           *string `json:"index,omitempty"`
 			ObjectReference *string `json:"object_reference,omitempty"`
