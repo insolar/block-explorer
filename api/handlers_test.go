@@ -1340,7 +1340,7 @@ func TestSearch_State(t *testing.T) {
 	bodyBytes, err := ioutil.ReadAll(resp.Body)
 	require.NoError(t, err)
 
-	var received server.SearchRecord
+	var received server.SearchState
 	err = json.Unmarshal(bodyBytes, &received)
 	require.NoError(t, err)
 	require.EqualValues(t, "state", *received.Type)
