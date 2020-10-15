@@ -273,7 +273,7 @@ func (s *Storage) GetLifeline(objRef []byte, fromIndex *string, pulseNumberLt, p
 	timer := prometheus.NewTimer(GetLifelineDuration)
 	defer timer.ObserveDuration()
 
-	query := s.db.Model(&models.Record{}).Where("object_reference = ?", objRef).Where("type = ?", models.Activate)
+	query := s.db.Model(&models.Record{}).Where("object_reference = ?", objRef).Where("type = ?", models.StateRecord)
 
 	query = filterByPulse(query, pulseNumberLt, pulseNumberGt)
 
