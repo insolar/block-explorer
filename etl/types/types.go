@@ -86,8 +86,8 @@ type Record struct {
 type RecordType int
 
 const (
-	REQUEST RecordType = iota
-	STATE
+	STATE RecordType = iota
+	REQUEST
 	RESULT
 )
 
