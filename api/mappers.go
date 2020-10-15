@@ -25,14 +25,16 @@ func RecordToAPI(record models.Record) server.Record {
 	pulseNumber := record.PulseNumber
 	jetDropID := models.NewJetDropID(record.JetID, pulseNumber)
 	response := server.Record{
-		Hash:        NullableString(base64.StdEncoding.EncodeToString(record.Hash)),
-		JetDropId:   NullableString(jetDropID.ToString()),
-		JetId:       NullableString(jetDropID.JetIDToString()),
-		Index:       NullableString(fmt.Sprintf("%d:%d", record.PulseNumber, record.Order)),
-		Payload:     NullableString(base64.StdEncoding.EncodeToString(record.Payload)),
-		PulseNumber: &pulseNumber,
-		Timestamp:   &record.Timestamp,
-		Type:        NullableString(string(record.Type)),
+		RecordAbstract: server.RecordAbstract{
+			Hash:        NullableString(base64.StdEncoding.EncodeToString(record.Hash)),
+			JetId:       NullableString(jetDropID.JetIDToString()),
+			PulseNumber: &pulseNumber,
+			Timestamp:   &record.Timestamp,
+		},
+		JetDropId: NullableString(jetDropID.ToString()),
+		Index:     NullableString(fmt.Sprintf("%d:%d", record.PulseNumber, record.Order)),
+		Payload:   NullableString(base64.StdEncoding.EncodeToString(record.Payload)),
+		Type:      NullableString(string(record.Type)),
 	}
 	if !instrumentation.IsEmpty(record.ObjectReference) {
 		objectID := insolar.NewIDFromBytes(record.ObjectReference)
