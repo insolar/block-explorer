@@ -23,7 +23,6 @@ func NewPulseServer(repo interfaces.Storage, pulsePeriod time.Duration) *PulseSe
 
 func (s *PulseServer) GetNextPulse(req *GetNextPulseRequest, stream PulseExporter_GetNextPulseServer) error {
 	ctx := stream.Context()
-
 	logger := belogger.FromContext(ctx)
 
 	currentPN := req.GetPulseNumberFrom()
