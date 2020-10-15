@@ -1,6 +1,5 @@
 name: build
 on:
-  pull_request:
   push:
     tags:
     - v[0-9]+.[0-9]+.[0-9]+
@@ -18,7 +17,6 @@ jobs:
         REPO=$(echo "${{ github.repository }}" | cut -d/ -f2)
         IMAGE_NAME=${REPO}
         VERSION=$(echo "${{ github.ref }}" | sed -e 's,.*/\(.*\),\1,')
-        echo VERSION=$VERSION
         echo "::set-env name=REPO::${REPO}"
         echo "::set-env name=IMAGE_NAME::${IMAGE_NAME}"
         echo "::set-env name=VERSION::${VERSION}"
@@ -32,6 +30,6 @@ jobs:
     - name: Push image
       run: |
         [ "$VERSION" == "master" ] && VERSION=latest
-        [ "$VERSION" == "NOISSUE-build-images-in-release-branch" ] && VERSION=release1.2
+        [ "$VERSION" == "release/1.2" ] && VERSION=release1.2
         docker tag ${IMAGE_NAME} insolar/${IMAGE_NAME}:${VERSION}
         docker push insolar/${IMAGE_NAME}:${VERSION}
