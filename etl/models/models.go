@@ -81,7 +81,7 @@ type State struct {
 	PrevStateReference []byte // Reference to a previous state.
 	IsPrototype        bool
 	Payload            []byte
-	ImageRef           []byte
+	ImageReference     []byte
 	Hash               []byte
 	Order              int
 	JetID              string
@@ -93,7 +93,7 @@ type Request struct {
 	RecordReference          []byte `gorm:"primary_key;auto_increment:false"` // Request reference.
 	Type                     RequestType
 	CallType                 string
-	ObjectRef                []byte // Reference to the corresponding object.
+	ObjectReference          []byte // Reference to the corresponding object.
 	CallerObjectReference    []byte // Reference to the object that called this request.
 	CalleeObjectReference    []byte
 	APIRequestID             string // Internal debugging information,filled in case of working with v1 platform
@@ -103,7 +103,7 @@ type Request struct {
 	Arguments                []byte // Arguments of a smart contract method.
 	Immutable                bool   // True if request didn't change the object state. False otherwise.
 	IsOriginalRequest        bool
-	PrototypeRef             []byte
+	PrototypeReference       []byte
 	Hash                     []byte
 	JetID                    string
 	PulseNumber              int64

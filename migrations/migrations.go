@@ -62,7 +62,7 @@ func Migrations() []*gormigrate.Migration {
 					PrevStateReference []byte
 					IsPrototype        bool
 					Payload            []byte
-					ImageRef           []byte
+					ImageReference     []byte
 					Hash               []byte
 					Order              int
 					JetID              string
@@ -83,7 +83,7 @@ func Migrations() []*gormigrate.Migration {
 					Arguments                []byte
 					Immutable                bool
 					IsOriginalRequest        bool
-					PrototypeRef             []byte
+					PrototypeReference       []byte
 					Hash                     []byte
 					JetID                    string
 					PulseNumber              int64

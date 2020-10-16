@@ -21,6 +21,7 @@ require (
 	github.com/jackc/pgx/v4 v4.8.1 // indirect
 	github.com/jinzhu/gorm v1.9.15
 	github.com/jinzhu/now v1.1.1 // indirect
+	github.com/kelindar/binary v1.0.9 // indirect
 	github.com/labstack/echo/v4 v4.1.17
 	github.com/lib/pq v1.8.0 // indirect
 	github.com/mattn/go-sqlite3 v2.0.1+incompatible // indirect

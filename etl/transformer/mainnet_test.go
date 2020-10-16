@@ -27,7 +27,7 @@ func TestTransformer_withDifferentJetId(t *testing.T) {
 	recordGenFunc := testutils.GenerateRecords(differentJetIdCount)
 
 	jetDrops := new(types.PlatformPulseData)
-	jets := []exporter.JetDropContinue{}
+	var jets []exporter.JetDropContinue
 	for i := 0; i < differentJetIdCount; i++ {
 		record, err := recordGenFunc()
 		require.NoError(t, err)
@@ -51,7 +51,7 @@ func TestTransformer_withDifferentJetId(t *testing.T) {
 	require.NoError(t, err)
 	defer transformer.Stop(ctx)
 	dropsCh <- jetDrops
-	jetids := make(map[string][]types.Record)
+	jetIDs := make(map[string][]types.IRecord)
 
 	for i := 0; i < differentJetIdCount; i++ {
 		jd := <-transformer.GetJetDropsChannel()
@@ -62,18 +62,18 @@ func TestTransformer_withDifferentJetId(t *testing.T) {
 		require.Len(t, mainSection.Records, 1)
 		// it's easy to compare integers for testing
 		id := mainSection.Start.JetDropPrefix
-		jetids[id] = mainSection.Records
+		jetIDs[id] = mainSection.Records
 	}
 
 	// check that we have received enough records
-	require.Len(t, jetids, differentJetIdCount, "received not enough jetdrops from transformer")
+	require.Len(t, jetIDs, differentJetIdCount, "received not enough jetdrops from transformer")
 
 	// iterate the map and check with expected value
 	for i := 0; i < differentJetIdCount; i++ {
 		record := jetDrops.Records[i]
 		expectedID := converter.JetIDToString(record.Record.JetID)
-		value, hasKey := jetids[expectedID]
+		value, hasKey := jetIDs[expectedID]
 		require.True(t, hasKey, "received data from transformer has not expected value")
-		require.Equal(t, record.Record.ID.Bytes(), []byte(value[0].Ref))
+		require.Equal(t, record.Record.ID.Bytes(), []byte(value[0].Reference()))
 	}
 }

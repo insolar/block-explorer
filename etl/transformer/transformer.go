@@ -7,7 +7,6 @@ package transformer
 
 import (
 	"context"
-
 	"github.com/insolar/insolar/pulse"
 
 	"github.com/insolar/block-explorer/instrumentation"
@@ -54,7 +53,7 @@ func Transform(ctx context.Context, jd *types.PlatformPulseData) ([]*types.JetDr
 	return result, nil
 }
 
-func getJetDrop(ctx context.Context, jetID insolar.JetID, records []types.Record, pulseData types.Pulse, hash []byte, prevDropHash [][]byte) *types.JetDrop {
+func getJetDrop(ctx context.Context, jetID insolar.JetID, records []types.IRecord, pulseData types.Pulse, hash []byte, prevDropHash [][]byte) *types.JetDrop {
 	sections := make([]types.Section, 0)
 	var prefix string
 	if jetID.IsValid() {
@@ -89,7 +88,7 @@ func getJetDrop(ctx context.Context, jetID insolar.JetID, records []types.Record
 }
 
 // sortRecords sorts state records for every object in order of change
-func sortRecords(records []types.Record) ([]types.Record, error) {
+func sortRecords(records []types.IRecord) ([]types.IRecord, error) {
 	lenBefore := len(records)
 	recordsByObjAndPrevRef, recordsByObjAndRef, sortedRecords := initRecordsMapsByObj(records)
 	for objRef, recordsByRef := range recordsByObjAndRef {
@@ -100,11 +99,11 @@ func sortRecords(records []types.Record) ([]types.Record, error) {
 			}
 			continue
 		}
-		var headRecord *types.Record
+		var headRecord *types.State
 		// finding first record (head), it doesn't refer to any other record
 		recordsByPrevRef := recordsByObjAndPrevRef[objRef]
 		for _, r := range recordsByPrevRef {
-			_, ok := recordsByRef[restoreInsolarID(r.PrevRecordReference)]
+			_, ok := recordsByRef[restoreInsolarID(r.PrevState)]
 			if !ok {
 				headRecord = &r // nolint
 				break
@@ -114,7 +113,7 @@ func sortRecords(records []types.Record) ([]types.Record, error) {
 			return nil, errors.Errorf("cannot find head record for object %s", objRef)
 		}
 		// add records to result array in correct order
-		key := restoreInsolarID(headRecord.Ref)
+		key := restoreInsolarID(headRecord.Reference())
 		sortedRecords = append(sortedRecords, *headRecord)
 		for i := 1; len(recordsByPrevRef) != i; i++ {
 			r, ok := recordsByPrevRef[key]
@@ -122,7 +121,7 @@ func sortRecords(records []types.Record) ([]types.Record, error) {
 				return nil, errors.Errorf("cannot find record with prev record %s, object %s", key, objRef)
 			}
 			sortedRecords = append(sortedRecords, r)
-			key = restoreInsolarID(r.Ref)
+			key = restoreInsolarID(r.Reference())
 		}
 	}
 	lenAfter := len(sortedRecords)
@@ -133,25 +132,25 @@ func sortRecords(records []types.Record) ([]types.Record, error) {
 	return sortedRecords, nil
 }
 
-func initRecordsMapsByObj(records []types.Record) (
-	byPrevRef map[string]map[string]types.Record,
-	byRef map[string]map[string]types.Record,
-	notState []types.Record,
+func initRecordsMapsByObj(records []types.IRecord) (
+	byPrevRef map[string]map[string]types.State,
+	byRef map[string]map[string]types.State,
+	notState []types.IRecord,
 ) {
-	var notStateRecords []types.Record
-	recordsByObjAndPrevRef := map[string]map[string]types.Record{}
-	recordsByObjAndRef := map[string]map[string]types.Record{}
+	var notStateRecords []types.IRecord
+	recordsByObjAndPrevRef := map[string]map[string]types.State{}
+	recordsByObjAndRef := map[string]map[string]types.State{}
 	for _, r := range records {
-		if r.Type != types.STATE {
+		if r.TypeOf() != types.STATE {
 			notStateRecords = append(notStateRecords, r)
 			continue
 		}
-		if recordsByObjAndRef[restoreInsolarID(r.ObjectReference)] == nil {
-			recordsByObjAndRef[restoreInsolarID(r.ObjectReference)] = map[string]types.Record{}
-			recordsByObjAndPrevRef[restoreInsolarID(r.ObjectReference)] = map[string]types.Record{}
+		if recordsByObjAndRef[restoreInsolarID(r.(types.State).ObjectReference)] == nil {
+			recordsByObjAndRef[restoreInsolarID(r.(types.State).ObjectReference)] = map[string]types.State{}
+			recordsByObjAndPrevRef[restoreInsolarID(r.(types.State).ObjectReference)] = map[string]types.State{}
 		}
-		recordsByObjAndRef[restoreInsolarID(r.ObjectReference)][restoreInsolarID(r.Ref)] = r
-		recordsByObjAndPrevRef[restoreInsolarID(r.ObjectReference)][restoreInsolarID(r.PrevRecordReference)] = r
+		recordsByObjAndRef[restoreInsolarID(r.(types.State).ObjectReference)][restoreInsolarID(r.(types.State).RecordReference)] = r.(types.State)
+		recordsByObjAndPrevRef[restoreInsolarID(r.(types.State).ObjectReference)][restoreInsolarID(r.(types.State).PrevState)] = r.(types.State)
 	}
 	return recordsByObjAndPrevRef, recordsByObjAndRef, notStateRecords
 }
@@ -174,10 +173,9 @@ func getPulseData(pn *exporter.FullPulse) types.Pulse {
 	}
 }
 
-// getRecords - order records to map by jetid
-func getRecords(jd *types.PlatformPulseData) (map[insolar.JetID][]types.Record, error) {
+func getRecords(jd *types.PlatformPulseData) (map[insolar.JetID][]types.IRecord, error) {
 	// map need to collect records by JetID
-	res := make(map[insolar.JetID][]types.Record)
+	res := make(map[insolar.JetID][]types.IRecord)
 	if jd == nil {
 		return res, nil
 	}
@@ -209,7 +207,7 @@ func getRecords(jd *types.PlatformPulseData) (map[insolar.JetID][]types.Record, 
 	// TODO: maybe ne need to check the records jetID's with jd.Pulse.Jets
 }
 
-func transferToCanonicalRecord(r *exporter.Record) (types.Record, error) {
+func transferToCanonicalRecord(r *exporter.Record) (types.IRecord, error) {
 	var (
 		recordType          types.RecordType
 		ref                 types.Reference
@@ -235,28 +233,59 @@ func transferToCanonicalRecord(r *exporter.Record) (types.Record, error) {
 	virtual := r.GetRecord().Virtual
 	switch virtual.Union.(type) {
 	case *ins_record.Virtual_Activate:
-		recordType = types.STATE
 		activate := virtual.GetActivate()
-		prototypeReference = activate.Image.Bytes()
 		recordPayload = activate.Memory
 		if r.Record.ID.Pulse() == pulse.MinTimePulse {
 			objectReference = activate.Request.GetLocal().Bytes()
 		}
+		return types.State{
+			Type:            types.ACTIVATE,
+			RecordReference: ref,
+			ObjectReference: objectReference,
+			Request:         activate.Request.Bytes(),
+			Parent:          activate.Parent.Bytes(),
+			IsPrototype:     activate.IsPrototype,
+			Payload:         recordPayload,
+			RawData:         rawData,
+			Image:           activate.Image.Bytes(),
+			Hash:            hash,
+			Order:           order,
+		}, nil
 
 	case *ins_record.Virtual_Amend:
-		recordType = types.STATE
 		amend := virtual.GetAmend()
-		prototypeReference = amend.Image.Bytes()
 		recordPayload = amend.Memory
 		prevRecordReference = amend.PrevStateID().Bytes()
 		if r.Record.ID.Pulse() == pulse.MinTimePulse {
 			objectReference = amend.Request.GetLocal().Bytes()
 		}
+		return types.State{
+			Type:            types.AMEND,
+			RecordReference: ref,
+			ObjectReference: objectReference,
+			Request:         amend.Request.Bytes(),
+			IsPrototype:     amend.IsPrototype,
+			Payload:         recordPayload,
+			RawData:         rawData,
+			Image:           amend.Image.Bytes(),
+			PrevState:       prevRecordReference,
+			Hash:            hash,
+			Order:           order,
+		}, nil
 
 	case *ins_record.Virtual_Deactivate:
-		recordType = types.STATE
 		deactivate := virtual.GetDeactivate()
 		prevRecordReference = deactivate.PrevStateID().Bytes()
+		return types.State{
+			Type:            types.DEACTIVATE,
+			RecordReference: ref,
+			ObjectReference: objectReference,
+			Request:         deactivate.Request.Bytes(),
+			PrevState:       prevRecordReference,
+			RawData:         rawData,
+			Hash:            hash,
+			Order:           order,
+		}, nil
 
 	case *ins_record.Virtual_Result:
 		recordType = types.RESULT
@@ -281,7 +310,7 @@ func transferToCanonicalRecord(r *exporter.Record) (types.Record, error) {
 		return types.Record{}, UnsupportedRecordTypeError
 	}
 
-	retRecord := types.Record{
+	return types.Record{
 		Type:                recordType,
 		Ref:                 ref,
 		ObjectReference:     objectReference,
@@ -291,7 +320,5 @@ func transferToCanonicalRecord(r *exporter.Record) (types.Record, error) {
 		Hash:                hash,
 		RawData:             rawData,
 		Order:               order,
-	}
-
-	return retRecord, nil
+	}, nil
 }
