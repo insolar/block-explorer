@@ -95,8 +95,8 @@ func TestNewProcessor(t *testing.T) {
 func TestProcessor_process_EmptyPrev(t *testing.T) {
 	ctx := belogger.TestContext(t)
 	jd := testutils.CreateJetDropCanonical(
-		[]types.Record{
-			testutils.CreateRecordCanonical(), testutils.CreateRecordCanonical(), testutils.CreateRecordCanonical(),
+		[]types.IRecord{
+			testutils.CreateStateCanonical(types.AMEND), testutils.CreateStateCanonical(types.AMEND), testutils.CreateStateCanonical(types.AMEND),
 		},
 	)
 	trm := mock.NewTransformerMock(t)
@@ -134,8 +134,8 @@ func TestProcessor_process_EmptyPrev(t *testing.T) {
 func TestProcessor_process_SeveralPrev(t *testing.T) {
 	ctx := belogger.TestContext(t)
 	jd := testutils.CreateJetDropCanonical(
-		[]types.Record{
-			testutils.CreateRecordCanonical(), testutils.CreateRecordCanonical(), testutils.CreateRecordCanonical(),
+		[]types.IRecord{
+			testutils.CreateStateCanonical(types.ACTIVATE), testutils.CreateStateCanonical(types.AMEND), testutils.CreateStateCanonical(types.AMEND),
 		},
 	)
 	jd.MainSection.DropContinue.PrevDropHash = [][]byte{testutils.GenerateRandBytes(), testutils.GenerateRandBytes()}
@@ -177,8 +177,8 @@ func TestProcessor_process_SeveralPrev(t *testing.T) {
 func TestProcessor_process_StorageSaveJetDropErr(t *testing.T) {
 	ctx := belogger.TestContext(t)
 	jd := testutils.CreateJetDropCanonical(
-		[]types.Record{
-			testutils.CreateRecordCanonical(), testutils.CreateRecordCanonical(), testutils.CreateRecordCanonical(),
+		[]types.IRecord{
+			testutils.CreateStateCanonical(types.AMEND), testutils.CreateStateCanonical(types.AMEND), testutils.CreateStateCanonical(types.AMEND),
 		},
 	)
 	jd.MainSection.DropContinue.PrevDropHash = [][]byte{testutils.GenerateRandBytes(), testutils.GenerateRandBytes()}
@@ -208,7 +208,7 @@ func TestProcessor_process_StorageSaveJetDropErr(t *testing.T) {
 func TestProcessor_process_StorageSavePulseErr(t *testing.T) {
 	ctx := belogger.TestContext(t)
 	jd := testutils.CreateJetDropCanonical(
-		[]types.Record{
+		[]types.IRecord{
 			testutils.CreateRecordCanonical(), testutils.CreateRecordCanonical(), testutils.CreateRecordCanonical(),
 		},
 	)

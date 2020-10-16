@@ -25,31 +25,31 @@ func BenchmarkTransformSort(b *testing.B) {
 		for bytes.Equal(firstObj, secondObj) {
 			secondObj = gen.Reference().Bytes()
 		}
-		record1 := testutils.CreateRecordCanonical()
+		record1 := testutils.CreateStateCanonical(types.AMEND)
 		record1.ObjectReference = firstObj
-		record2 := testutils.CreateRecordCanonical()
+		record2 := testutils.CreateStateCanonical(types.AMEND)
 		record2.ObjectReference = secondObj
-		record3 := testutils.CreateRecordCanonical()
+		record3 := testutils.CreateStateCanonical(types.AMEND)
 		record3.ObjectReference = firstObj
 		record4RequestType := testutils.CreateRecordCanonical()
 		record4RequestType.Type = types.REQUEST
 		record4RequestType.ObjectReference = firstObj
-		record5 := testutils.CreateRecordCanonical()
+		record5 := testutils.CreateStateCanonical(types.AMEND)
 		record5.ObjectReference = firstObj
-		record6 := testutils.CreateRecordCanonical()
+		record6 := testutils.CreateStateCanonical(types.AMEND)
 		record6.ObjectReference = firstObj
 
 		// make lifeline: 5 <- 3 <- 6 <- 1
-		record1.PrevRecordReference = record6.Ref
-		record6.PrevRecordReference = record3.Ref
-		record3.PrevRecordReference = record5.Ref
+		record1.PrevState = record6.RecordReference
+		record6.PrevState = record3.RecordReference
+		record3.PrevState = record5.RecordReference
 
 		// result can be (4, 5, 3, 6, 1, 2) or (4, 2, 5, 3, 6, 1)
-		expectedResult1 := []types.Record{record4RequestType, record5, record3, record6, record1, record2}
-		expectedResult2 := []types.Record{record4RequestType, record2, record5, record3, record6, record1}
+		expectedResult1 := []types.IRecord{record4RequestType, record5, record3, record6, record1, record2}
+		expectedResult2 := []types.IRecord{record4RequestType, record2, record5, record3, record6, record1}
 
 		b.StartTimer()
-		result, err := sortRecords([]types.Record{record1, record2, record3, record4RequestType, record5, record6})
+		result, err := sortRecords([]types.IRecord{record1, record2, record3, record4RequestType, record5, record6})
 		require.NoError(b, err)
 		require.True(b, assert.ObjectsAreEqual(expectedResult1, result) || assert.ObjectsAreEqual(expectedResult2, result))
 		b.StopTimer()
