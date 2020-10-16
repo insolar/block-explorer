@@ -38,6 +38,26 @@ func InitRecordDB(jetDrop models.JetDrop) models.Record {
 	}
 }
 
+// InitStateDB returns generated state
+func InitStatedDB(jetDrop models.JetDrop, stateType models.StateType) models.State {
+	return models.State{
+		RecordRef:    gen.ID().Bytes(),
+		Type:         stateType,
+		RequestRef:   gen.ID().Bytes(),
+		ParentRef:    gen.ID().Bytes(),
+		ObjectRef:    gen.ID().Bytes(),
+		PrevStateRef: gen.ID().Bytes(),
+		IsPrototype:  false,
+		Payload:      GenerateRandBytes(),
+		ImageRef:     gen.ID().Bytes(),
+		Hash:         GenerateRandBytes(),
+		Order:        1,
+		JetID:        jetDrop.JetID,
+		PulseNumber:  jetDrop.PulseNumber,
+		Timestamp:    jetDrop.Timestamp,
+	}
+}
+
 // InitJetDropDB returns generated jet drop with provided pulse
 func InitJetDropDB(pulse models.Pulse) models.JetDrop {
 	return models.JetDrop{

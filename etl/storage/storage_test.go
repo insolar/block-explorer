@@ -40,6 +40,38 @@ func TestMain(t *testing.M) {
 	os.Exit(retCode)
 }
 
+func TestStorage_SaveJetDropDataWithState(t *testing.T) {
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.State{}, models.JetDrop{}, models.Pulse{}})
+	s := NewStorage(testDB)
+
+	pulse, err := testutils.InitPulseDB()
+	require.NoError(t, err)
+	err = testutils.CreatePulse(testDB, pulse)
+	require.NoError(t, err)
+
+	jetDrop := testutils.InitJetDropDB(pulse)
+	activateRecord := testutils.InitStatedDB(jetDrop, models.Activate)
+	amendRecord := testutils.InitStatedDB(jetDrop, models.Amend)
+	deactivateRecord := testutils.InitStatedDB(jetDrop, models.Deactivate)
+
+	err = s.SaveJetDropData(jetDrop, []models.IRecord{activateRecord, amendRecord, deactivateRecord}, pulse.PulseNumber)
+	require.NoError(t, err)
+
+	var jetDropInDB []models.JetDrop
+	err = testDB.Find(&jetDropInDB).Error
+	require.NoError(t, err)
+	require.Len(t, jetDropInDB, 1)
+	require.EqualValues(t, jetDrop, jetDropInDB[0])
+
+	var statesInDB []models.State
+	err = testDB.Find(&statesInDB).Error
+	require.NoError(t, err)
+	require.Len(t, statesInDB, 3)
+	require.Contains(t, statesInDB, activateRecord)
+	require.Contains(t, statesInDB, amendRecord)
+	require.Contains(t, statesInDB, deactivateRecord)
+}
+
 func TestStorage_SaveJetDropData(t *testing.T) {
 	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.State{}, models.JetDrop{}, models.Pulse{}})
 	s := NewStorage(testDB)
