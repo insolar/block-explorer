@@ -50,6 +50,7 @@ func TestPulsesAPI(t *testing.T) {
 	c := GetHTTPClient()
 
 	t.Run("default query params", func(t *testing.T) {
+		t.Skip("https://insolar.atlassian.net/browse/PENV-802")
 		t.Log("T9341 Get pulses, default limit and offset")
 		response := c.Pulses(t, nil)
 		require.NoError(t, err)

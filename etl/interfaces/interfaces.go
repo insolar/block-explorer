@@ -94,7 +94,7 @@ type Controller interface {
 type StorageSetter interface {
 	// SaveJetDropData saves provided jetDrop and records to db in one transaction.
 	// increase jet_drop_amount and record_amount
-	SaveJetDropData(jetDrop models.JetDrop, records []models.Record, pulseNumber int64) error
+	SaveJetDropData(jetDrop models.JetDrop, records []models.IRecord, pulseNumber int64) error
 	// SavePulse saves provided pulse to db.
 	SavePulse(pulse models.Pulse) error
 	// CompletePulse update pulse with provided number to completeness in db.
