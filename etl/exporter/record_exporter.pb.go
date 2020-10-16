@@ -4,9 +4,9 @@
 package exporter
 
 import (
+	bytes "bytes"
 	context "context"
 	fmt "fmt"
-	_ "github.com/gogo/protobuf/gogoproto"
 	proto "github.com/gogo/protobuf/proto"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
@@ -30,7 +30,11 @@ var _ = math.Inf
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
 type GetRecordsRequest struct {
-	Polymorph uint32 `protobuf:"varint,16,opt,name=Polymorph,proto3" json:"Polymorph,omitempty"`
+	Polymorph    uint32   `protobuf:"varint,16,opt,name=Polymorph,proto3" json:"Polymorph,omitempty"`
+	PulseNumber  uint32   `protobuf:"varint,1,opt,name=PulseNumber,proto3" json:"PulseNumber,omitempty"`
+	Prototypes   [][]byte `protobuf:"bytes,2,rep,name=Prototypes,proto3" json:"Prototypes,omitempty"`
+	RecordNumber uint32   `protobuf:"varint,3,opt,name=RecordNumber,proto3" json:"RecordNumber,omitempty"`
+	Count        uint32   `protobuf:"varint,4,opt,name=Count,proto3" json:"Count,omitempty"`
 }
 
 func (m *GetRecordsRequest) Reset()      { *m = GetRecordsRequest{} }
@@ -72,8 +76,45 @@ func (m *GetRecordsRequest) GetPolymorph() uint32 {
 	return 0
 }
 
+func (m *GetRecordsRequest) GetPulseNumber() uint32 {
+	if m != nil {
+		return m.PulseNumber
+	}
+	return 0
+}
+
+func (m *GetRecordsRequest) GetPrototypes() [][]byte {
+	if m != nil {
+		return m.Prototypes
+	}
+	return nil
+}
+
+func (m *GetRecordsRequest) GetRecordNumber() uint32 {
+	if m != nil {
+		return m.RecordNumber
+	}
+	return 0
+}
+
+func (m *GetRecordsRequest) GetCount() uint32 {
+	if m != nil {
+		return m.Count
+	}
+	return 0
+}
+
 type GetRecordsResponse struct {
-	Polymorph uint32 `protobuf:"varint,16,opt,name=Polymorph,proto3" json:"Polymorph,omitempty"`
+	Polymorph           uint32 `protobuf:"varint,16,opt,name=Polymorph,proto3" json:"Polymorph,omitempty"`
+	RecordNumber        uint32 `protobuf:"varint,1,opt,name=RecordNumber,proto3" json:"RecordNumber,omitempty"`
+	Reference           []byte `protobuf:"bytes,2,opt,name=Reference,proto3" json:"Reference,omitempty"`
+	Type                string `protobuf:"bytes,3,opt,name=Type,proto3" json:"Type,omitempty"`
+	ObjectReference     []byte `protobuf:"bytes,4,opt,name=ObjectReference,proto3" json:"ObjectReference,omitempty"`
+	PrototypeReference  []byte `protobuf:"bytes,5,opt,name=PrototypeReference,proto3" json:"PrototypeReference,omitempty"`
+	Payload             []byte `protobuf:"bytes,6,opt,name=Payload,proto3" json:"Payload,omitempty"`
+	PrevRecordReference []byte `protobuf:"bytes,7,opt,name=PrevRecordReference,proto3" json:"PrevRecordReference,omitempty"`
+	PulseNumber         uint32 `protobuf:"varint,8,opt,name=PulseNumber,proto3" json:"PulseNumber,omitempty"`
+	Timestamp           uint32 `protobuf:"varint,9,opt,name=Timestamp,proto3" json:"Timestamp,omitempty"`
 }
 
 func (m *GetRecordsResponse) Reset()      { *m = GetRecordsResponse{} }
@@ -115,6 +156,69 @@ func (m *GetRecordsResponse) GetPolymorph() uint32 {
 	return 0
 }
 
+func (m *GetRecordsResponse) GetRecordNumber() uint32 {
+	if m != nil {
+		return m.RecordNumber
+	}
+	return 0
+}
+
+func (m *GetRecordsResponse) GetReference() []byte {
+	if m != nil {
+		return m.Reference
+	}
+	return nil
+}
+
+func (m *GetRecordsResponse) GetType() string {
+	if m != nil {
+		return m.Type
+	}
+	return ""
+}
+
+func (m *GetRecordsResponse) GetObjectReference() []byte {
+	if m != nil {
+		return m.ObjectReference
+	}
+	return nil
+}
+
+func (m *GetRecordsResponse) GetPrototypeReference() []byte {
+	if m != nil {
+		return m.PrototypeReference
+	}
+	return nil
+}
+
+func (m *GetRecordsResponse) GetPayload() []byte {
+	if m != nil {
+		return m.Payload
+	}
+	return nil
+}
+
+func (m *GetRecordsResponse) GetPrevRecordReference() []byte {
+	if m != nil {
+		return m.PrevRecordReference
+	}
+	return nil
+}
+
+func (m *GetRecordsResponse) GetPulseNumber() uint32 {
+	if m != nil {
+		return m.PulseNumber
+	}
+	return 0
+}
+
+func (m *GetRecordsResponse) GetTimestamp() uint32 {
+	if m != nil {
+		return m.Timestamp
+	}
+	return 0
+}
+
 func init() {
 	proto.RegisterType((*GetRecordsRequest)(nil), "exporter.GetRecordsRequest")
 	proto.RegisterType((*GetRecordsResponse)(nil), "exporter.GetRecordsResponse")
@@ -125,22 +229,32 @@ func init() {
 }
 
 var fileDescriptor_90e5b7e8e6ba6921 = []byte{
-	// 238 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0x52, 0x4a, 0x2d, 0xc9, 0xd1,
-	0x4f, 0xad, 0x28, 0xc8, 0x2f, 0x2a, 0x49, 0x2d, 0xd2, 0x2f, 0x4a, 0x4d, 0xce, 0x2f, 0x4a, 0x89,
-	0x87, 0xf1, 0xf5, 0x0a, 0x8a, 0xf2, 0x4b, 0xf2, 0x85, 0x38, 0x60, 0x7c, 0x29, 0xdd, 0xf4, 0xcc,
-	0x92, 0x8c, 0xd2, 0x24, 0xbd, 0xe4, 0xfc, 0x5c, 0xfd, 0xf4, 0xfc, 0xf4, 0x7c, 0x7d, 0xb0, 0x82,
-	0xa4, 0xd2, 0x34, 0x30, 0x0f, 0xcc, 0x01, 0xb3, 0x20, 0x1a, 0x95, 0x0c, 0xb9, 0x04, 0xdd, 0x53,
-	0x4b, 0x82, 0xc0, 0x86, 0x16, 0x07, 0xa5, 0x16, 0x96, 0xa6, 0x16, 0x97, 0x08, 0xc9, 0x70, 0x71,
-	0x06, 0xe4, 0xe7, 0x54, 0xe6, 0xe6, 0x17, 0x15, 0x64, 0x48, 0x08, 0x28, 0x30, 0x6a, 0xf0, 0x06,
-	0x21, 0x04, 0x94, 0x8c, 0xb8, 0x84, 0x90, 0xb5, 0x14, 0x17, 0xe4, 0xe7, 0x15, 0xa7, 0xe2, 0xd7,
-	0x63, 0x14, 0xcb, 0xc5, 0x07, 0xd1, 0xe0, 0x0a, 0x75, 0xa7, 0x90, 0x37, 0x17, 0x17, 0xc2, 0x14,
-	0x21, 0x69, 0x3d, 0xb8, 0x87, 0x30, 0x9c, 0x23, 0x25, 0x83, 0x5d, 0x12, 0x62, 0xb1, 0x12, 0x83,
-	0x01, 0xa3, 0x93, 0xc9, 0x85, 0x87, 0x72, 0x0c, 0x37, 0x1e, 0xca, 0x31, 0x7c, 0x78, 0x28, 0xc7,
-	0xd8, 0xf0, 0x48, 0x8e, 0x71, 0xc5, 0x23, 0x39, 0xc6, 0x13, 0x8f, 0xe4, 0x18, 0x2f, 0x3c, 0x92,
-	0x63, 0x7c, 0xf0, 0x48, 0x8e, 0xf1, 0xc5, 0x23, 0x39, 0x86, 0x0f, 0x8f, 0xe4, 0x18, 0x27, 0x3c,
-	0x96, 0x63, 0xb8, 0xf0, 0x58, 0x8e, 0xe1, 0xc6, 0x63, 0x39, 0x86, 0x24, 0x36, 0x70, 0x10, 0x18,
-	0x03, 0x02, 0x00, 0x00, 0xff, 0xff, 0xfe, 0x7e, 0xfb, 0x37, 0x61, 0x01, 0x00, 0x00,
+	// 394 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x84, 0x52, 0xbb, 0x8e, 0xd3, 0x40,
+	0x14, 0xf5, 0xe4, 0xed, 0x4b, 0x78, 0x5d, 0x28, 0x46, 0x60, 0x8d, 0x2c, 0x57, 0xae, 0x92, 0x08,
+	0xf8, 0x02, 0x10, 0xa2, 0x40, 0x02, 0xcb, 0x4a, 0x8b, 0x50, 0x1e, 0x17, 0x01, 0xb2, 0x33, 0x66,
+	0x3c, 0x46, 0xb8, 0xe3, 0x13, 0xf8, 0x0c, 0x1a, 0xfe, 0x83, 0x32, 0x65, 0xca, 0x8d, 0xd3, 0x6c,
+	0xb5, 0xca, 0x27, 0xac, 0x76, 0x9c, 0xc4, 0xd9, 0xc4, 0xd2, 0x76, 0xbe, 0xe7, 0x9c, 0xfb, 0xf0,
+	0x9c, 0x03, 0x1e, 0xe9, 0x68, 0x48, 0xbf, 0x12, 0xa9, 0x34, 0xa9, 0xa1, 0xa2, 0x99, 0x54, 0xf3,
+	0xcf, 0xfb, 0x7a, 0x90, 0x28, 0xa9, 0x25, 0xf6, 0xf6, 0xb5, 0xf7, 0x8f, 0xc1, 0xe3, 0x77, 0xa4,
+	0x43, 0x23, 0x4b, 0x43, 0xfa, 0x91, 0x51, 0xaa, 0xd1, 0x01, 0x3b, 0x90, 0x51, 0x1e, 0x4b, 0x95,
+	0x7c, 0xe5, 0x8f, 0x5c, 0xe6, 0xdf, 0x0f, 0x2b, 0x00, 0x5d, 0xb8, 0x17, 0x64, 0x51, 0x4a, 0x1f,
+	0xb2, 0x78, 0x4a, 0x8a, 0x33, 0xc3, 0x1f, 0x43, 0x28, 0x00, 0x82, 0x9b, 0x45, 0x3a, 0x4f, 0x28,
+	0xe5, 0x0d, 0xb7, 0xe9, 0xf7, 0xc3, 0x23, 0x04, 0x3d, 0xe8, 0x97, 0x1b, 0x77, 0x23, 0x9a, 0x66,
+	0xc4, 0x2d, 0x0c, 0x9f, 0x42, 0xfb, 0x8d, 0xcc, 0x16, 0x9a, 0xb7, 0x0c, 0x59, 0x16, 0xde, 0x55,
+	0x03, 0xf0, 0xf8, 0xde, 0x34, 0x91, 0x8b, 0x94, 0xee, 0x38, 0xf8, 0x74, 0x1d, 0xab, 0x59, 0xe7,
+	0x80, 0x1d, 0xd2, 0x17, 0x52, 0xb4, 0x98, 0x11, 0x6f, 0xb8, 0xcc, 0xef, 0x87, 0x15, 0x80, 0x08,
+	0xad, 0x71, 0x9e, 0x90, 0x39, 0xd4, 0x0e, 0xcd, 0x37, 0xfa, 0xf0, 0xf0, 0xe3, 0xf4, 0x3b, 0xcd,
+	0x74, 0xd5, 0xd7, 0x32, 0x7d, 0xa7, 0x30, 0x0e, 0x00, 0x0f, 0x3f, 0x5f, 0x89, 0xdb, 0x46, 0x5c,
+	0xc3, 0x20, 0x87, 0x6e, 0x30, 0xc9, 0x23, 0x39, 0x99, 0xf3, 0x8e, 0x11, 0xed, 0x4b, 0x1c, 0xc1,
+	0x93, 0x40, 0xd1, 0xcf, 0xf2, 0xf2, 0x6a, 0x54, 0xd7, 0xa8, 0xea, 0xa8, 0x53, 0xb3, 0x7a, 0xe7,
+	0x66, 0x39, 0x60, 0x8f, 0xbf, 0xc5, 0x94, 0xea, 0x49, 0x9c, 0x70, 0xbb, 0x7c, 0xbb, 0x03, 0xf0,
+	0xe2, 0x13, 0x3c, 0x28, 0x47, 0xbe, 0xdd, 0x45, 0x06, 0xdf, 0x03, 0x54, 0x0e, 0xe0, 0xf3, 0xc1,
+	0x21, 0x5b, 0x67, 0x39, 0x7a, 0xe6, 0xd4, 0x93, 0xa5, 0x69, 0x9e, 0x35, 0x62, 0xaf, 0x5f, 0x2d,
+	0xd7, 0xc2, 0x5a, 0xad, 0x85, 0xb5, 0x5d, 0x0b, 0xf6, 0xbb, 0x10, 0xec, 0x6f, 0x21, 0xd8, 0xff,
+	0x42, 0xb0, 0x65, 0x21, 0xd8, 0x45, 0x21, 0xd8, 0x65, 0x21, 0xac, 0x6d, 0x21, 0xd8, 0x9f, 0x8d,
+	0xb0, 0x96, 0x1b, 0x61, 0xad, 0x36, 0xc2, 0x9a, 0x76, 0x4c, 0x8c, 0x5f, 0x5e, 0x07, 0x00, 0x00,
+	0xff, 0xff, 0xa8, 0x4e, 0x31, 0x1d, 0xec, 0x02, 0x00, 0x00,
 }
 
 func (this *GetRecordsRequest) Equal(that interface{}) bool {
@@ -163,6 +277,23 @@ func (this *GetRecordsRequest) Equal(that interface{}) bool {
 		return false
 	}
 	if this.Polymorph != that1.Polymorph {
+		return false
+	}
+	if this.PulseNumber != that1.PulseNumber {
+		return false
+	}
+	if len(this.Prototypes) != len(that1.Prototypes) {
+		return false
+	}
+	for i := range this.Prototypes {
+		if !bytes.Equal(this.Prototypes[i], that1.Prototypes[i]) {
+			return false
+		}
+	}
+	if this.RecordNumber != that1.RecordNumber {
+		return false
+	}
+	if this.Count != that1.Count {
 		return false
 	}
 	return true
@@ -189,15 +320,46 @@ func (this *GetRecordsResponse) Equal(that interface{}) bool {
 	if this.Polymorph != that1.Polymorph {
 		return false
 	}
+	if this.RecordNumber != that1.RecordNumber {
+		return false
+	}
+	if !bytes.Equal(this.Reference, that1.Reference) {
+		return false
+	}
+	if this.Type != that1.Type {
+		return false
+	}
+	if !bytes.Equal(this.ObjectReference, that1.ObjectReference) {
+		return false
+	}
+	if !bytes.Equal(this.PrototypeReference, that1.PrototypeReference) {
+		return false
+	}
+	if !bytes.Equal(this.Payload, that1.Payload) {
+		return false
+	}
+	if !bytes.Equal(this.PrevRecordReference, that1.PrevRecordReference) {
+		return false
+	}
+	if this.PulseNumber != that1.PulseNumber {
+		return false
+	}
+	if this.Timestamp != that1.Timestamp {
+		return false
+	}
 	return true
 }
 func (this *GetRecordsRequest) GoString() string {
 	if this == nil {
 		return "nil"
 	}
-	s := make([]string, 0, 5)
+	s := make([]string, 0, 9)
 	s = append(s, "&exporter.GetRecordsRequest{")
 	s = append(s, "Polymorph: "+fmt.Sprintf("%#v", this.Polymorph)+",\n")
+	s = append(s, "PulseNumber: "+fmt.Sprintf("%#v", this.PulseNumber)+",\n")
+	s = append(s, "Prototypes: "+fmt.Sprintf("%#v", this.Prototypes)+",\n")
+	s = append(s, "RecordNumber: "+fmt.Sprintf("%#v", this.RecordNumber)+",\n")
+	s = append(s, "Count: "+fmt.Sprintf("%#v", this.Count)+",\n")
 	s = append(s, "}")
 	return strings.Join(s, "")
 }
@@ -205,9 +367,18 @@ func (this *GetRecordsResponse) GoString() string {
 	if this == nil {
 		return "nil"
 	}
-	s := make([]string, 0, 5)
+	s := make([]string, 0, 14)
 	s = append(s, "&exporter.GetRecordsResponse{")
 	s = append(s, "Polymorph: "+fmt.Sprintf("%#v", this.Polymorph)+",\n")
+	s = append(s, "RecordNumber: "+fmt.Sprintf("%#v", this.RecordNumber)+",\n")
+	s = append(s, "Reference: "+fmt.Sprintf("%#v", this.Reference)+",\n")
+	s = append(s, "Type: "+fmt.Sprintf("%#v", this.Type)+",\n")
+	s = append(s, "ObjectReference: "+fmt.Sprintf("%#v", this.ObjectReference)+",\n")
+	s = append(s, "PrototypeReference: "+fmt.Sprintf("%#v", this.PrototypeReference)+",\n")
+	s = append(s, "Payload: "+fmt.Sprintf("%#v", this.Payload)+",\n")
+	s = append(s, "PrevRecordReference: "+fmt.Sprintf("%#v", this.PrevRecordReference)+",\n")
+	s = append(s, "PulseNumber: "+fmt.Sprintf("%#v", this.PulseNumber)+",\n")
+	s = append(s, "Timestamp: "+fmt.Sprintf("%#v", this.Timestamp)+",\n")
 	s = append(s, "}")
 	return strings.Join(s, "")
 }
@@ -354,6 +525,30 @@ func (m *GetRecordsRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i--
 		dAtA[i] = 0x80
 	}
+	if m.Count != 0 {
+		i = encodeVarintRecordExporter(dAtA, i, uint64(m.Count))
+		i--
+		dAtA[i] = 0x20
+	}
+	if m.RecordNumber != 0 {
+		i = encodeVarintRecordExporter(dAtA, i, uint64(m.RecordNumber))
+		i--
+		dAtA[i] = 0x18
+	}
+	if len(m.Prototypes) > 0 {
+		for iNdEx := len(m.Prototypes) - 1; iNdEx >= 0; iNdEx-- {
+			i -= len(m.Prototypes[iNdEx])
+			copy(dAtA[i:], m.Prototypes[iNdEx])
+			i = encodeVarintRecordExporter(dAtA, i, uint64(len(m.Prototypes[iNdEx])))
+			i--
+			dAtA[i] = 0x12
+		}
+	}
+	if m.PulseNumber != 0 {
+		i = encodeVarintRecordExporter(dAtA, i, uint64(m.PulseNumber))
+		i--
+		dAtA[i] = 0x8
+	}
 	return len(dAtA) - i, nil
 }
 
@@ -384,6 +579,63 @@ func (m *GetRecordsResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i--
 		dAtA[i] = 0x80
 	}
+	if m.Timestamp != 0 {
+		i = encodeVarintRecordExporter(dAtA, i, uint64(m.Timestamp))
+		i--
+		dAtA[i] = 0x48
+	}
+	if m.PulseNumber != 0 {
+		i = encodeVarintRecordExporter(dAtA, i, uint64(m.PulseNumber))
+		i--
+		dAtA[i] = 0x40
+	}
+	if len(m.PrevRecordReference) > 0 {
+		i -= len(m.PrevRecordReference)
+		copy(dAtA[i:], m.PrevRecordReference)
+		i = encodeVarintRecordExporter(dAtA, i, uint64(len(m.PrevRecordReference)))
+		i--
+		dAtA[i] = 0x3a
+	}
+	if len(m.Payload) > 0 {
+		i -= len(m.Payload)
+		copy(dAtA[i:], m.Payload)
+		i = encodeVarintRecordExporter(dAtA, i, uint64(len(m.Payload)))
+		i--
+		dAtA[i] = 0x32
+	}
+	if len(m.PrototypeReference) > 0 {
+		i -= len(m.PrototypeReference)
+		copy(dAtA[i:], m.PrototypeReference)
+		i = encodeVarintRecordExporter(dAtA, i, uint64(len(m.PrototypeReference)))
+		i--
+		dAtA[i] = 0x2a
+	}
+	if len(m.ObjectReference) > 0 {
+		i -= len(m.ObjectReference)
+		copy(dAtA[i:], m.ObjectReference)
+		i = encodeVarintRecordExporter(dAtA, i, uint64(len(m.ObjectReference)))
+		i--
+		dAtA[i] = 0x22
+	}
+	if len(m.Type) > 0 {
+		i -= len(m.Type)
+		copy(dAtA[i:], m.Type)
+		i = encodeVarintRecordExporter(dAtA, i, uint64(len(m.Type)))
+		i--
+		dAtA[i] = 0x1a
+	}
+	if len(m.Reference) > 0 {
+		i -= len(m.Reference)
+		copy(dAtA[i:], m.Reference)
+		i = encodeVarintRecordExporter(dAtA, i, uint64(len(m.Reference)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if m.RecordNumber != 0 {
+		i = encodeVarintRecordExporter(dAtA, i, uint64(m.RecordNumber))
+		i--
+		dAtA[i] = 0x8
+	}
 	return len(dAtA) - i, nil
 }
 
@@ -404,6 +656,21 @@ func (m *GetRecordsRequest) Size() (n int) {
 	}
 	var l int
 	_ = l
+	if m.PulseNumber != 0 {
+		n += 1 + sovRecordExporter(uint64(m.PulseNumber))
+	}
+	if len(m.Prototypes) > 0 {
+		for _, b := range m.Prototypes {
+			l = len(b)
+			n += 1 + l + sovRecordExporter(uint64(l))
+		}
+	}
+	if m.RecordNumber != 0 {
+		n += 1 + sovRecordExporter(uint64(m.RecordNumber))
+	}
+	if m.Count != 0 {
+		n += 1 + sovRecordExporter(uint64(m.Count))
+	}
 	if m.Polymorph != 0 {
 		n += 2 + sovRecordExporter(uint64(m.Polymorph))
 	}
@@ -416,6 +683,39 @@ func (m *GetRecordsResponse) Size() (n int) {
 	}
 	var l int
 	_ = l
+	if m.RecordNumber != 0 {
+		n += 1 + sovRecordExporter(uint64(m.RecordNumber))
+	}
+	l = len(m.Reference)
+	if l > 0 {
+		n += 1 + l + sovRecordExporter(uint64(l))
+	}
+	l = len(m.Type)
+	if l > 0 {
+		n += 1 + l + sovRecordExporter(uint64(l))
+	}
+	l = len(m.ObjectReference)
+	if l > 0 {
+		n += 1 + l + sovRecordExporter(uint64(l))
+	}
+	l = len(m.PrototypeReference)
+	if l > 0 {
+		n += 1 + l + sovRecordExporter(uint64(l))
+	}
+	l = len(m.Payload)
+	if l > 0 {
+		n += 1 + l + sovRecordExporter(uint64(l))
+	}
+	l = len(m.PrevRecordReference)
+	if l > 0 {
+		n += 1 + l + sovRecordExporter(uint64(l))
+	}
+	if m.PulseNumber != 0 {
+		n += 1 + sovRecordExporter(uint64(m.PulseNumber))
+	}
+	if m.Timestamp != 0 {
+		n += 1 + sovRecordExporter(uint64(m.Timestamp))
+	}
 	if m.Polymorph != 0 {
 		n += 2 + sovRecordExporter(uint64(m.Polymorph))
 	}
@@ -433,6 +733,10 @@ func (this *GetRecordsRequest) String() string {
 		return "nil"
 	}
 	s := strings.Join([]string{`&GetRecordsRequest{`,
+		`PulseNumber:` + fmt.Sprintf("%v", this.PulseNumber) + `,`,
+		`Prototypes:` + fmt.Sprintf("%v", this.Prototypes) + `,`,
+		`RecordNumber:` + fmt.Sprintf("%v", this.RecordNumber) + `,`,
+		`Count:` + fmt.Sprintf("%v", this.Count) + `,`,
 		`Polymorph:` + fmt.Sprintf("%v", this.Polymorph) + `,`,
 		`}`,
 	}, "")
@@ -443,6 +747,15 @@ func (this *GetRecordsResponse) String() string {
 		return "nil"
 	}
 	s := strings.Join([]string{`&GetRecordsResponse{`,
+		`RecordNumber:` + fmt.Sprintf("%v", this.RecordNumber) + `,`,
+		`Reference:` + fmt.Sprintf("%v", this.Reference) + `,`,
+		`Type:` + fmt.Sprintf("%v", this.Type) + `,`,
+		`ObjectReference:` + fmt.Sprintf("%v", this.ObjectReference) + `,`,
+		`PrototypeReference:` + fmt.Sprintf("%v", this.PrototypeReference) + `,`,
+		`Payload:` + fmt.Sprintf("%v", this.Payload) + `,`,
+		`PrevRecordReference:` + fmt.Sprintf("%v", this.PrevRecordReference) + `,`,
+		`PulseNumber:` + fmt.Sprintf("%v", this.PulseNumber) + `,`,
+		`Timestamp:` + fmt.Sprintf("%v", this.Timestamp) + `,`,
 		`Polymorph:` + fmt.Sprintf("%v", this.Polymorph) + `,`,
 		`}`,
 	}, "")
@@ -485,6 +798,95 @@ func (m *GetRecordsRequest) Unmarshal(dAtA []byte) error {
 			return fmt.Errorf("proto: GetRecordsRequest: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field PulseNumber", wireType)
+			}
+			m.PulseNumber = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowRecordExporter
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.PulseNumber |= uint32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Prototypes", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowRecordExporter
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthRecordExporter
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex < 0 {
+				return ErrInvalidLengthRecordExporter
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Prototypes = append(m.Prototypes, make([]byte, postIndex-iNdEx))
+			copy(m.Prototypes[len(m.Prototypes)-1], dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RecordNumber", wireType)
+			}
+			m.RecordNumber = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowRecordExporter
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.RecordNumber |= uint32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 4:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Count", wireType)
+			}
+			m.Count = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowRecordExporter
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Count |= uint32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		case 16:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Polymorph", wireType)
@@ -557,6 +959,265 @@ func (m *GetRecordsResponse) Unmarshal(dAtA []byte) error {
 			return fmt.Errorf("proto: GetRecordsResponse: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RecordNumber", wireType)
+			}
+			m.RecordNumber = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowRecordExporter
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.RecordNumber |= uint32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Reference", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowRecordExporter
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthRecordExporter
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex < 0 {
+				return ErrInvalidLengthRecordExporter
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Reference = append(m.Reference[:0], dAtA[iNdEx:postIndex]...)
+			if m.Reference == nil {
+				m.Reference = []byte{}
+			}
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Type", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowRecordExporter
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthRecordExporter
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthRecordExporter
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Type = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ObjectReference", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowRecordExporter
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthRecordExporter
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex < 0 {
+				return ErrInvalidLengthRecordExporter
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ObjectReference = append(m.ObjectReference[:0], dAtA[iNdEx:postIndex]...)
+			if m.ObjectReference == nil {
+				m.ObjectReference = []byte{}
+			}
+			iNdEx = postIndex
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field PrototypeReference", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowRecordExporter
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthRecordExporter
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex < 0 {
+				return ErrInvalidLengthRecordExporter
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.PrototypeReference = append(m.PrototypeReference[:0], dAtA[iNdEx:postIndex]...)
+			if m.PrototypeReference == nil {
+				m.PrototypeReference = []byte{}
+			}
+			iNdEx = postIndex
+		case 6:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Payload", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowRecordExporter
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthRecordExporter
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex < 0 {
+				return ErrInvalidLengthRecordExporter
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Payload = append(m.Payload[:0], dAtA[iNdEx:postIndex]...)
+			if m.Payload == nil {
+				m.Payload = []byte{}
+			}
+			iNdEx = postIndex
+		case 7:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field PrevRecordReference", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowRecordExporter
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthRecordExporter
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex < 0 {
+				return ErrInvalidLengthRecordExporter
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.PrevRecordReference = append(m.PrevRecordReference[:0], dAtA[iNdEx:postIndex]...)
+			if m.PrevRecordReference == nil {
+				m.PrevRecordReference = []byte{}
+			}
+			iNdEx = postIndex
+		case 8:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field PulseNumber", wireType)
+			}
+			m.PulseNumber = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowRecordExporter
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.PulseNumber |= uint32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 9:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Timestamp", wireType)
+			}
+			m.Timestamp = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowRecordExporter
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Timestamp |= uint32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		case 16:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Polymorph", wireType)
