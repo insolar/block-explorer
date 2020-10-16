@@ -50,7 +50,7 @@ func InitStateDB(jetDrop models.JetDrop) models.State {
 		PrevStateReference: gen.ID().Bytes(),
 		IsPrototype:        false,
 		Payload:            GenerateRandBytes(),
-		ImageRef:           gen.ID().Bytes(),
+		ImageReference:     gen.ID().Bytes(),
 		Hash:               GenerateRandBytes(),
 		Order:              1,
 		JetID:              jetDrop.JetID,
