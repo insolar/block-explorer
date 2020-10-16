@@ -55,7 +55,7 @@ func (p *pulseExporterTestServer) RecvMsg(m interface{}) error {
 func TestExporter_Pulse_Export_Fail(t *testing.T) {
 	sm := mock.NewStorageMock(t)
 	sm.GetNextCompletePulseFilterByPrototypeReferenceMock.Return(models.Pulse{PulseNumber: 1}, nil)
-	pulseServer := NewPulseServer(sm, time.Nanosecond)
+	pulseServer := NewPulseServer(sm, time.Nanosecond, nil)
 
 	EOF := io.EOF
 	iterations := 0
@@ -77,7 +77,7 @@ func TestExporter_Pulse_Export_Success(t *testing.T) {
 		Set(func(prevPulse int64, prototypes [][]byte) (models.Pulse, error) {
 			return pulseForSend, nil
 		})
-	pulseServer := NewPulseServer(sm, time.Nanosecond)
+	pulseServer := NewPulseServer(sm, time.Nanosecond, nil)
 
 	EOF := io.EOF
 	iterations := 0
@@ -117,7 +117,7 @@ func TestExporter_Pulse_Export_All_Situations(t *testing.T) {
 			pulseForSend.PulseNumber += 1
 			return pulseForSend, nil
 		})
-	pulseServer := NewPulseServer(sm, time.Nanosecond)
+	pulseServer := NewPulseServer(sm, time.Nanosecond, nil)
 
 	EOF := io.EOF
 

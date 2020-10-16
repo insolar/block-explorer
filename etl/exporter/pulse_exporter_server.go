@@ -8,23 +8,21 @@ package exporter
 import (
 	"time"
 
+	"github.com/insolar/assured-ledger/ledger-core/v2/log"
 	"github.com/insolar/block-explorer/etl/interfaces"
-	"github.com/insolar/block-explorer/instrumentation/belogger"
 )
 
 type PulseServer struct {
 	repository  interfaces.Storage
 	pulsePeriod time.Duration
+	logger      *log.Logger
 }
 
-func NewPulseServer(repo interfaces.Storage, pulsePeriod time.Duration) *PulseServer {
-	return &PulseServer{repo, pulsePeriod}
+func NewPulseServer(repo interfaces.Storage, pulsePeriod time.Duration, logger *log.Logger) *PulseServer {
+	return &PulseServer{repo, pulsePeriod, logger}
 }
 
 func (s *PulseServer) GetNextPulse(req *GetNextPulseRequest, stream PulseExporter_GetNextPulseServer) error {
-	ctx := stream.Context()
-	logger := belogger.FromContext(ctx)
-
 	currentPN := req.GetPulseNumberFrom()
 	protos := req.GetPrototypes()
 
@@ -47,7 +45,9 @@ func (s *PulseServer) GetNextPulse(req *GetNextPulseRequest, stream PulseExporte
 			RecordAmount:    receivedPulse.RecordAmount,
 		})
 		if err != nil {
-			logger.Error(err)
+			if s.logger != nil {
+				s.logger.Error(err)
+			}
 			return err
 		}
 

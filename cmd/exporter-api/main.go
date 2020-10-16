@@ -75,7 +75,7 @@ func main() {
 	)
 
 	recordExporter = exporter.NewRecordServer()
-	pulseExporter = exporter.NewPulseServer(s, cfg.PulsePeriod)
+	pulseExporter = exporter.NewPulseServer(s, cfg.PulsePeriod, &logger)
 
 	grpcMetrics := grpc_prometheus.NewServerMetrics()
 	grpcMetrics.EnableHandlingTimeHistogram()
