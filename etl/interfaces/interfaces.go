@@ -140,6 +140,11 @@ type StorageFetcher interface {
 	GetJetDrops(pulse models.Pulse) ([]models.JetDrop, error)
 }
 
+//go:generate minimock -i github.com/insolar/block-explorer/etl/interfaces.StorageExtractor -o ./mock -s _mock.go -g
+type StorageExtractor interface {
+	GetRecordsByPrototype(prototypeRef [][]byte, pulseNumber int64, limit uint32, offset uint32) ([]models.Record, error)
+}
+
 //go:generate minimock -i github.com/insolar/block-explorer/etl/interfaces.Storage -o ./mock -s _mock.go -g
 // Storage manipulates data in database
 type Storage interface {

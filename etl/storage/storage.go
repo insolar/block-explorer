@@ -564,3 +564,20 @@ func (s *Storage) GetJetDropsByJetID(jetID string, pulseNumberLte, pulseNumberLt
 
 	return jetDrops, int(total), nil
 }
+
+func (s *Storage) GetRecordsByPrototype(prototypeRef [][]byte, pulseNumber int64, limit uint32, offset uint32) ([]models.Record, error) {
+	timer := prometheus.NewTimer(GetRecordsByJetDropDuration)
+	defer timer.ObserveDuration()
+
+	query := s.db.Model(&models.Record{}).
+		Where("pulse_number = ?", pulseNumber).
+		Where("prototype_reference IN (?)", prototypeRef).
+		Order("order")
+
+	records := []models.Record{}
+	err := query.Limit(limit).Offset(offset).Find(&records).Error
+	if err != nil {
+		return nil, errors.Wrapf(err, "error while select records for pulse %v, from db", pulseNumber)
+	}
+	return records, nil
+}

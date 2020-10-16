@@ -27,7 +27,7 @@ generate-protobuf: ## generate protobuf structs
 
 .PHONY: install-dev
 install-dev:
-	go get github.com/gogo/protobuf
+	go get github.com/gogo/protobuf/...
 
 .PHONY: compile-tests
 compile-tests: ## compile all tests
