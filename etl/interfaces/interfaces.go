@@ -121,7 +121,7 @@ type StorageAPIFetcher interface {
 	// GetJetDropsByJetID returns jetDrops for provided jetID sorting and filtering by pulseNumber.
 	GetJetDropsByJetID(jetID string, pulseNumberLte, pulseNumberLt, pulseNumberGte, pulseNumberGt *int64, limit int, sortByPnAsc bool) ([]models.JetDrop, int, error)
 	// GetLifeline returns records for provided object reference, ordered by desc by pulse number and order fields.
-	GetLifeline(objRef []byte, fromIndex *string, pulseNumberLt, pulseNumberGt, timestampLte, timestampGte *int64, limit, offset int, sortByIndexAsc bool) ([]models.Record, int, error)
+	GetLifeline(objRef []byte, fromIndex *string, pulseNumberLt, pulseNumberGt, timestampLte, timestampGte *int64, limit, offset int, sortByIndexAsc bool) ([]models.State, int, error)
 	// GetRecordsByJetDrop returns records for provided jet drop, ordered by order field.
 	GetRecordsByJetDrop(jetDropID models.JetDropID, fromIndex, recordType *string, limit, offset int) ([]models.Record, int, error)
 	// GetNextSavedPulse returns first pulse with pulse number bigger then fromPulseNumber from db.

@@ -254,6 +254,20 @@ func getRecords(query *gorm.DB, limit, offset int) ([]models.Record, int, error)
 	return records, total, nil
 }
 
+func getStates(query *gorm.DB, limit, offset int) ([]models.State, int, error) {
+	states := []models.State{}
+	var total int
+	err := query.Limit(limit).Offset(offset).Find(&states).Error
+	if err != nil {
+		return nil, 0, err
+	}
+	err = query.Count(&total).Error
+	if err != nil {
+		return nil, 0, err
+	}
+	return states, total, nil
+}
+
 func getPulses(query *gorm.DB, limit, offset int) ([]models.Pulse, int, error) {
 	pulses := []models.Pulse{}
 	var total int
@@ -269,11 +283,11 @@ func getPulses(query *gorm.DB, limit, offset int) ([]models.Pulse, int, error) {
 }
 
 // GetLifeline returns records for provided object reference, ordered by pulse number and order fields.
-func (s *Storage) GetLifeline(objRef []byte, fromIndex *string, pulseNumberLt, pulseNumberGt, timestampLte, timestampGte *int64, limit, offset int, sortByIndexAsc bool) ([]models.Record, int, error) {
+func (s *Storage) GetLifeline(objRef []byte, fromIndex *string, pulseNumberLt, pulseNumberGt, timestampLte, timestampGte *int64, limit, offset int, sortByIndexAsc bool) ([]models.State, int, error) {
 	timer := prometheus.NewTimer(GetLifelineDuration)
 	defer timer.ObserveDuration()
 
-	query := s.db.Model(&models.Record{}).Where("object_reference = ?", objRef).Where("type = ?", models.StateRecord)
+	query := s.db.Model(&models.State{}).Where("object_reference = ?", objRef)
 
 	query = filterByPulse(query, pulseNumberLt, pulseNumberGt)
 
@@ -289,11 +303,11 @@ func (s *Storage) GetLifeline(objRef []byte, fromIndex *string, pulseNumberLt, p
 
 	query = sortRecordsByDirection(query, sortByIndexAsc)
 
-	records, total, err := getRecords(query, limit, offset)
+	states, total, err := getStates(query, limit, offset)
 	if err != nil {
 		return nil, 0, errors.Wrapf(err, "error while select records for object %v from db", objRef)
 	}
-	return records, total, nil
+	return states, total, nil
 }
 
 // GetPulse returns pulse with provided pulse number from db.
