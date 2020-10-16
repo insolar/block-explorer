@@ -5,6 +5,6 @@ bases:
 images:
   - name: localhost/go-autotests
     newName: registry.insolar.io/insolar/go-autotests
-    newTag: latest
+    newTag: REL59
 generatorOptions:
   disableNameSuffixHash: true
