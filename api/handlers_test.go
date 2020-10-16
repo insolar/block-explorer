@@ -101,7 +101,7 @@ func TestObjectLifeline_HappyPath(t *testing.T) {
 	testutils.OrderedRecords(t, testDB, jetDrop, gen.ID(), 3)
 
 	// request records for objRef
-	resp, err := http.Get("http://" + apihost + "/api/v1/lifeline/" + objRef.String() + "/records?limit=20")
+	resp, err := http.Get("http://" + apihost + "/api/v1/lifeline/" + objRef.String() + "/states?limit=20")
 	require.NoError(t, err)
 	require.Equal(t, http.StatusOK, resp.StatusCode)
 	bodyBytes, err := ioutil.ReadAll(resp.Body)
@@ -175,7 +175,7 @@ func TestObjectLifeline_TimestampRange(t *testing.T) {
 	testutils.OrderedRecords(t, testDB, secondJetDrop, gen.ID(), 2)
 
 	// request records for objRef
-	resp, err := http.Get("http://" + apihost + "/api/v1/lifeline/" + objRef.String() + "/records?limit=20" +
+	resp, err := http.Get("http://" + apihost + "/api/v1/lifeline/" + objRef.String() + "/states?limit=20" +
 		fmt.Sprintf("&timestamp_lte=%d&timestamp_gte=%d", thirdPulse.Timestamp, secondPulse.Timestamp))
 
 	require.NoError(t, err)
@@ -214,7 +214,7 @@ func TestObjectLifeline_SortAsc(t *testing.T) {
 
 	// request records for objRef
 	sortAsc := string(server.SortByIndex_index_asc)
-	resp, err := http.Get("http://" + apihost + "/api/v1/lifeline/" + objRef.String() + "/records?sort_by=" + url.QueryEscape(sortAsc))
+	resp, err := http.Get("http://" + apihost + "/api/v1/lifeline/" + objRef.String() + "/states?sort_by=" + url.QueryEscape(sortAsc))
 	require.NoError(t, err)
 	require.Equal(t, http.StatusOK, resp.StatusCode)
 	bodyBytes, err := ioutil.ReadAll(resp.Body)
@@ -233,7 +233,7 @@ func TestObjectLifeline_SortAsc(t *testing.T) {
 
 func TestObjectLifeline_Limit_Error(t *testing.T) {
 	// request records with too big limit
-	resp, err := http.Get("http://" + apihost + "/api/v1/lifeline/" + gen.Reference().String() + "/records?limit=200000000")
+	resp, err := http.Get("http://" + apihost + "/api/v1/lifeline/" + gen.Reference().String() + "/states?limit=200000000")
 	require.NoError(t, err)
 	require.Equal(t, http.StatusBadRequest, resp.StatusCode)
 	bodyBytes, err := ioutil.ReadAll(resp.Body)
@@ -257,7 +257,7 @@ func TestObjectLifeline_Limit_Error(t *testing.T) {
 
 func TestObjectLifeline_Offset_Error(t *testing.T) {
 	// request records with negative offset
-	resp, err := http.Get("http://" + apihost + "/api/v1/lifeline/" + gen.Reference().String() + "/records?offset=-10")
+	resp, err := http.Get("http://" + apihost + "/api/v1/lifeline/" + gen.Reference().String() + "/states?offset=-10")
 	require.NoError(t, err)
 	require.Equal(t, http.StatusBadRequest, resp.StatusCode)
 	bodyBytes, err := ioutil.ReadAll(resp.Body)
@@ -280,7 +280,7 @@ func TestObjectLifeline_Offset_Error(t *testing.T) {
 
 func TestObjectLifeline_Sort_Error(t *testing.T) {
 	// request records with wrong sort param
-	resp, err := http.Get("http://" + apihost + "/api/v1/lifeline/" + gen.Reference().String() + "/records?sort_by=not_supported_sort")
+	resp, err := http.Get("http://" + apihost + "/api/v1/lifeline/" + gen.Reference().String() + "/states?sort_by=not_supported_sort")
 	require.NoError(t, err)
 	require.Equal(t, http.StatusBadRequest, resp.StatusCode)
 	bodyBytes, err := ioutil.ReadAll(resp.Body)
@@ -303,7 +303,7 @@ func TestObjectLifeline_Sort_Error(t *testing.T) {
 
 func TestObjectLifeline_NoRecords(t *testing.T) {
 	// request records for object without records
-	resp, err := http.Get("http://" + apihost + "/api/v1/lifeline/" + gen.Reference().String() + "/records")
+	resp, err := http.Get("http://" + apihost + "/api/v1/lifeline/" + gen.Reference().String() + "/states")
 	require.NoError(t, err)
 	require.Equal(t, http.StatusOK, resp.StatusCode)
 	bodyBytes, err := ioutil.ReadAll(resp.Body)
@@ -319,7 +319,7 @@ func TestObjectLifeline_NoRecords(t *testing.T) {
 
 func TestObjectLifeline_ReferenceFormat_Error(t *testing.T) {
 	// request records with wrong format object reference
-	resp, err := http.Get("http://" + apihost + "/api/v1/lifeline/" + "not_valid_reference" + "/records")
+	resp, err := http.Get("http://" + apihost + "/api/v1/lifeline/" + "not_valid_reference" + "/states")
 	require.NoError(t, err)
 	require.Equal(t, http.StatusBadRequest, resp.StatusCode)
 	bodyBytes, err := ioutil.ReadAll(resp.Body)
@@ -343,7 +343,7 @@ func TestObjectLifeline_ReferenceFormat_Error(t *testing.T) {
 
 func TestObjectLifeline_ReferenceEmpty_Error(t *testing.T) {
 	// request records with empty object reference
-	resp, err := http.Get("http://" + apihost + "/api/v1/lifeline/" + "  " + "/records")
+	resp, err := http.Get("http://" + apihost + "/api/v1/lifeline/" + "  " + "/states")
 	require.NoError(t, err)
 	require.Equal(t, http.StatusBadRequest, resp.StatusCode)
 	bodyBytes, err := ioutil.ReadAll(resp.Body)
@@ -367,7 +367,7 @@ func TestObjectLifeline_ReferenceEmpty_Error(t *testing.T) {
 
 func TestObjectLifeline_Index_Error(t *testing.T) {
 	// request records with wrong format from_index param
-	resp, err := http.Get("http://" + apihost + "/api/v1/lifeline/" + gen.Reference().String() + "/records?from_index=not_valid_index")
+	resp, err := http.Get("http://" + apihost + "/api/v1/lifeline/" + gen.Reference().String() + "/states?from_index=not_valid_index")
 	require.NoError(t, err)
 	require.Equal(t, http.StatusBadRequest, resp.StatusCode)
 	bodyBytes, err := ioutil.ReadAll(resp.Body)
@@ -481,8 +481,8 @@ func TestPulses_HappyPath(t *testing.T) {
 	err = testutils.CreatePulse(testDB, pulse)
 	require.NoError(t, err)
 	secondPulse, err := testutils.InitPulseDB()
-	secondPulse.PulseNumber = pulse.PulseNumber + 10
 	require.NoError(t, err)
+	secondPulse.PulseNumber = pulse.PulseNumber + 10
 	err = testutils.CreatePulse(testDB, secondPulse)
 	require.NoError(t, err)
 
