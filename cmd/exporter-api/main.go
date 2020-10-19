@@ -15,7 +15,9 @@ import (
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	"github.com/insolar/block-explorer/configuration"
 	"github.com/insolar/block-explorer/etl/connection"
+	"github.com/insolar/block-explorer/etl/dbconn"
 	"github.com/insolar/block-explorer/etl/exporter"
+	"github.com/insolar/block-explorer/etl/storage"
 	"github.com/insolar/block-explorer/instrumentation/belogger"
 	"github.com/insolar/block-explorer/instrumentation/metrics"
 	"github.com/insolar/block-explorer/instrumentation/profefe"
@@ -51,6 +53,13 @@ func main() {
 		}
 	}()
 
+	db, err := dbconn.Connect(cfg.DB)
+	if err != nil {
+		logger.Fatalf("Error while connecting to database: %s", err.Error())
+		return
+	}
+	s := storage.NewStorage(db)
+
 	metricConfig := metrics.Config{
 		RefreshInterval:   cfg.Metrics.RefreshInterval,
 		StartServer:       cfg.Metrics.StartServer,
@@ -66,7 +75,7 @@ func main() {
 	)
 
 	recordExporter = exporter.NewRecordServer()
-	pulseExporter = exporter.NewPulseServer()
+	pulseExporter = exporter.NewPulseServer(s, cfg.PulsePeriod, &logger)
 
 	grpcMetrics := grpc_prometheus.NewServerMetrics()
 	grpcMetrics.EnableHandlingTimeHistogram()

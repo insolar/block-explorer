@@ -2208,3 +2208,46 @@ func TestStorage_GetJetDropsByJetId_MultipleCounts(t *testing.T) {
 		})
 	}
 }
+
+func TestStorage_GetNextCompletePulseFilterByPrototypeReference(t *testing.T) {
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+	s := NewStorage(testDB)
+
+	pulse, err := testutils.InitPulseDB()
+	require.NoError(t, err)
+	pulse.IsComplete = true
+	err = testutils.CreatePulse(testDB, pulse)
+	require.NoError(t, err)
+
+	jetDrop := testutils.InitJetDropDB(pulse)
+	firstRecord := testutils.InitRecordDB(jetDrop)
+	secondRecord := testutils.InitRecordDB(jetDrop)
+	require.NotEqual(t, firstRecord.PrototypeReference, secondRecord.PrototypeReference)
+	require.NotEmpty(t, firstRecord.PrototypeReference)
+	require.NotEmpty(t, secondRecord.PrototypeReference)
+
+	err = s.SaveJetDropData(jetDrop, []models.Record{firstRecord, secondRecord}, pulse.PulseNumber)
+	require.NoError(t, err)
+
+	dbPulse, err := s.GetNextCompletePulseFilterByPrototypeReference(pulse.PrevPulseNumber, [][]byte{firstRecord.PrototypeReference})
+	require.NoError(t, err)
+	require.NotEmpty(t, dbPulse)
+	require.Equal(t, pulse.PulseNumber, dbPulse.PulseNumber)
+	require.Equal(t, int64(1), dbPulse.RecordAmount)
+
+	dbPulse, err = s.GetNextCompletePulseFilterByPrototypeReference(pulse.PrevPulseNumber, [][]byte{secondRecord.PrototypeReference})
+	require.NoError(t, err)
+	require.NotEmpty(t, dbPulse)
+	require.Equal(t, pulse.PulseNumber, dbPulse.PulseNumber)
+	require.Equal(t, int64(1), dbPulse.RecordAmount)
+
+	dbPulse, err = s.GetNextCompletePulseFilterByPrototypeReference(pulse.PrevPulseNumber, [][]byte{firstRecord.PrototypeReference, secondRecord.PrototypeReference})
+	require.NoError(t, err)
+	require.NotEmpty(t, dbPulse)
+	require.Equal(t, pulse.PulseNumber, dbPulse.PulseNumber)
+	require.Equal(t, int64(2), dbPulse.RecordAmount)
+
+	dbPulse, err = s.GetNextCompletePulseFilterByPrototypeReference(pulse.PrevPulseNumber, [][]byte{[]byte("hello")})
+	require.NoError(t, err)
+	require.Empty(t, dbPulse)
+}

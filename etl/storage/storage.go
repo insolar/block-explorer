@@ -564,3 +564,27 @@ func (s *Storage) GetJetDropsByJetID(jetID string, pulseNumberLte, pulseNumberLt
 
 	return jetDrops, int(total), nil
 }
+
+func (s *Storage) GetNextCompletePulseFilterByPrototypeReference(prevPulse int64, prototypes [][]byte) (models.Pulse, error) {
+	var pulse models.Pulse
+	db := s.db.Model(&pulse).Joins("JOIN records ON records.pulse_number = pulses.pulse_number").
+		Where("pulses.prev_pulse_number = ?", prevPulse).
+		Where("pulses.is_complete = ?", true).
+		Where("records.prototype_reference IN (?)", prototypes)
+
+	err := db.Limit(-1).Find(&pulse).Error
+	if err != nil {
+		return pulse, nil
+	}
+
+	var total int64
+	err = db.Count(&total).Error
+	if err != nil {
+		return pulse, nil
+	}
+
+	// need to change the record amount regarding by count
+	pulse.RecordAmount = total
+
+	return pulse, err
+}
