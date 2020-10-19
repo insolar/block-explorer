@@ -40,10 +40,10 @@ func InitRecordDB(jetDrop models.JetDrop) models.Record {
 }
 
 // InitStateDB returns generated state
-func InitStateDB(jetDrop models.JetDrop) models.State {
+func InitStatedDB(jetDrop models.JetDrop, stateType models.StateType) models.State {
 	return models.State{
 		RecordReference:    gen.ID().Bytes(),
-		Type:               models.Activate,
+		Type:               stateType,
 		RequestReference:   gen.ID().Bytes(),
 		ParentReference:    gen.ID().Bytes(),
 		ObjectReference:    gen.ID().Bytes(),
@@ -201,7 +201,7 @@ func OrderedRecords(t *testing.T, db *gorm.DB, jetDrop models.JetDrop, objRef in
 func OrderedStates(t *testing.T, db *gorm.DB, jetDrop models.JetDrop, objRef insolar.ID, amount int) []models.State {
 	var result []models.State
 	for i := 1; i <= amount; i++ {
-		state := InitStateDB(jetDrop)
+		state := InitStatedDB(jetDrop, models.Activate)
 		state.ObjectReference = objRef.Bytes()
 		state.Order = i
 		err := CreateState(db, state)
