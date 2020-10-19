@@ -59,6 +59,7 @@ func GenerateVirtualActivateRecord(pulse insolar.PulseNumber, objectID, requestI
 		Activate: &insrecord.Activate{
 			Image:   gen.Reference(),
 			Request: *requestRerence,
+			Parent:  gen.Reference(),
 		},
 	}
 	return r
@@ -129,6 +130,7 @@ func GenerateVirtualDeactivateRecord(pulse insolar.PulseNumber, objectID, prevSt
 	r.Record.Virtual.Union = &insrecord.Virtual_Deactivate{
 		Deactivate: &insrecord.Deactivate{
 			PrevState: prevStateID,
+			Request:   gen.Reference(),
 		},
 	}
 	return r
