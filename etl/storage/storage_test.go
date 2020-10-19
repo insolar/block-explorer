@@ -40,8 +40,40 @@ func TestMain(t *testing.M) {
 	os.Exit(retCode)
 }
 
+func TestStorage_SaveJetDropDataWithState(t *testing.T) {
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.State{}, models.JetDrop{}, models.Pulse{}})
+	s := NewStorage(testDB)
+
+	pulse, err := testutils.InitPulseDB()
+	require.NoError(t, err)
+	err = testutils.CreatePulse(testDB, pulse)
+	require.NoError(t, err)
+
+	jetDrop := testutils.InitJetDropDB(pulse)
+	activateRecord := testutils.InitStatedDB(jetDrop, models.Activate)
+	amendRecord := testutils.InitStatedDB(jetDrop, models.Amend)
+	deactivateRecord := testutils.InitStatedDB(jetDrop, models.Deactivate)
+
+	err = s.SaveJetDropData(jetDrop, []models.IRecord{activateRecord, amendRecord, deactivateRecord}, pulse.PulseNumber)
+	require.NoError(t, err)
+
+	var jetDropInDB []models.JetDrop
+	err = testDB.Find(&jetDropInDB).Error
+	require.NoError(t, err)
+	require.Len(t, jetDropInDB, 1)
+	require.EqualValues(t, jetDrop, jetDropInDB[0])
+
+	var statesInDB []models.State
+	err = testDB.Find(&statesInDB).Error
+	require.NoError(t, err)
+	require.Len(t, statesInDB, 3)
+	require.Contains(t, statesInDB, activateRecord)
+	require.Contains(t, statesInDB, amendRecord)
+	require.Contains(t, statesInDB, deactivateRecord)
+}
+
 func TestStorage_SaveJetDropData(t *testing.T) {
-	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.State{}, models.JetDrop{}, models.Pulse{}})
 	s := NewStorage(testDB)
 
 	pulse, err := testutils.InitPulseDB()
@@ -53,7 +85,7 @@ func TestStorage_SaveJetDropData(t *testing.T) {
 	firstRecord := testutils.InitRecordDB(jetDrop)
 	secondRecord := testutils.InitRecordDB(jetDrop)
 
-	err = s.SaveJetDropData(jetDrop, []models.Record{firstRecord, secondRecord}, pulse.PulseNumber)
+	err = s.SaveJetDropData(jetDrop, []models.IRecord{firstRecord, secondRecord}, pulse.PulseNumber)
 	require.NoError(t, err)
 
 	jetDropInDB := []models.JetDrop{}
@@ -71,7 +103,7 @@ func TestStorage_SaveJetDropData(t *testing.T) {
 }
 
 func TestStorage_SaveJetDropData_PulseUpdated(t *testing.T) {
-	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.State{}, models.JetDrop{}, models.Pulse{}})
 	s := NewStorage(testDB)
 
 	pulse, err := testutils.InitPulseDB()
@@ -82,13 +114,13 @@ func TestStorage_SaveJetDropData_PulseUpdated(t *testing.T) {
 	jetDrop := testutils.InitJetDropDB(pulse)
 	firstRecord := testutils.InitRecordDB(jetDrop)
 	secondRecord := testutils.InitRecordDB(jetDrop)
-	err = s.SaveJetDropData(jetDrop, []models.Record{firstRecord, secondRecord}, pulse.PulseNumber)
+	err = s.SaveJetDropData(jetDrop, []models.IRecord{firstRecord, secondRecord}, pulse.PulseNumber)
 	require.NoError(t, err)
 
 	jetDrop = testutils.InitJetDropDB(pulse)
 	firstRecord = testutils.InitRecordDB(jetDrop)
 	secondRecord = testutils.InitRecordDB(jetDrop)
-	err = s.SaveJetDropData(jetDrop, []models.Record{firstRecord, secondRecord}, pulse.PulseNumber)
+	err = s.SaveJetDropData(jetDrop, []models.IRecord{firstRecord, secondRecord}, pulse.PulseNumber)
 	require.NoError(t, err)
 
 	expectedPulse := pulse
@@ -102,7 +134,7 @@ func TestStorage_SaveJetDropData_PulseUpdated(t *testing.T) {
 }
 
 func TestStorage_SaveJetDropData_ConcurrentCalls(t *testing.T) {
-	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.State{}, models.JetDrop{}, models.Pulse{}})
 	s := NewStorage(testDB)
 
 	pulse, err := testutils.InitPulseDB()
@@ -112,7 +144,7 @@ func TestStorage_SaveJetDropData_ConcurrentCalls(t *testing.T) {
 
 	type tmp struct {
 		jetDrops models.JetDrop
-		records  []models.Record
+		records  []models.IRecord
 	}
 	dataSet := make([]tmp, 3)
 
@@ -121,7 +153,7 @@ func TestStorage_SaveJetDropData_ConcurrentCalls(t *testing.T) {
 	secondRecord := testutils.InitRecordDB(jetDrop1)
 	dataSet[0] = tmp{
 		jetDrops: jetDrop1,
-		records:  []models.Record{firstRecord, secondRecord},
+		records:  []models.IRecord{firstRecord, secondRecord},
 	}
 
 	jetDrop2 := testutils.InitJetDropDB(pulse)
@@ -129,7 +161,7 @@ func TestStorage_SaveJetDropData_ConcurrentCalls(t *testing.T) {
 	secondRecord = testutils.InitRecordDB(jetDrop2)
 	dataSet[1] = tmp{
 		jetDrops: jetDrop2,
-		records:  []models.Record{firstRecord, secondRecord},
+		records:  []models.IRecord{firstRecord, secondRecord},
 	}
 	jetDrop3 := testutils.InitJetDropDB(pulse)
 	dataSet[2] = tmp{
@@ -159,7 +191,7 @@ func TestStorage_SaveJetDropData_ConcurrentCalls(t *testing.T) {
 }
 
 func TestStorage_SaveJetDropData_UpdateExistedRecord(t *testing.T) {
-	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.State{}, models.JetDrop{}, models.Pulse{}})
 	s := NewStorage(testDB)
 
 	pulse, err := testutils.InitPulseDB()
@@ -169,7 +201,7 @@ func TestStorage_SaveJetDropData_UpdateExistedRecord(t *testing.T) {
 
 	jetDrop := testutils.InitJetDropDB(pulse)
 	record := testutils.InitRecordDB(jetDrop)
-	err = s.SaveJetDropData(jetDrop, []models.Record{record}, pulse.PulseNumber)
+	err = s.SaveJetDropData(jetDrop, []models.IRecord{record}, pulse.PulseNumber)
 	require.NoError(t, err)
 	newPayload := []byte{0, 1, 0, 1}
 	require.NotEqual(t, record.Payload, newPayload)
@@ -177,7 +209,7 @@ func TestStorage_SaveJetDropData_UpdateExistedRecord(t *testing.T) {
 
 	err = s.SaveJetDropData(
 		models.JetDrop{PulseNumber: pulse.PulseNumber, JetID: converter.JetIDToString(testutils.GenerateUniqueJetID())},
-		[]models.Record{record},
+		[]models.IRecord{record},
 		pulse.PulseNumber,
 	)
 	require.NoError(t, err)
@@ -188,7 +220,7 @@ func TestStorage_SaveJetDropData_UpdateExistedRecord(t *testing.T) {
 }
 
 func TestStorage_SaveJetDropData_UpdateExistedJetDrop(t *testing.T) {
-	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.State{}, models.JetDrop{}, models.Pulse{}})
 	s := NewStorage(testDB)
 
 	pulse, err := testutils.InitPulseDB()
@@ -198,13 +230,13 @@ func TestStorage_SaveJetDropData_UpdateExistedJetDrop(t *testing.T) {
 
 	jetDrop := testutils.InitJetDropDB(pulse)
 	record := testutils.InitRecordDB(jetDrop)
-	err = s.SaveJetDropData(jetDrop, []models.Record{record}, pulse.PulseNumber)
+	err = s.SaveJetDropData(jetDrop, []models.IRecord{record}, pulse.PulseNumber)
 	require.NoError(t, err)
 	newPayload := []byte{0, 1, 0, 1}
 	require.NotEqual(t, record.Payload, newPayload)
 	record.Payload = newPayload
 
-	err = s.SaveJetDropData(jetDrop, []models.Record{record}, pulse.PulseNumber)
+	err = s.SaveJetDropData(jetDrop, []models.IRecord{record}, pulse.PulseNumber)
 	require.NoError(t, err)
 
 	jetDropInDB := []models.JetDrop{}
@@ -215,7 +247,7 @@ func TestStorage_SaveJetDropData_UpdateExistedJetDrop(t *testing.T) {
 }
 
 func TestStorage_SaveJetDropData_RecordError_NilPK(t *testing.T) {
-	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.State{}, models.JetDrop{}, models.Pulse{}})
 	s := NewStorage(testDB)
 
 	pulse, err := testutils.InitPulseDB()
@@ -227,14 +259,14 @@ func TestStorage_SaveJetDropData_RecordError_NilPK(t *testing.T) {
 	record := testutils.InitRecordDB(jetDrop)
 	record.Reference = nil
 
-	err = s.SaveJetDropData(jetDrop, []models.Record{record}, pulse.PulseNumber)
+	err = s.SaveJetDropData(jetDrop, []models.IRecord{record}, pulse.PulseNumber)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "violates not-null constraint")
 	require.Contains(t, err.Error(), "error while saving record")
 }
 
 func TestStorage_SaveJetDropData_ErrorAtTransaction(t *testing.T) {
-	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.State{}, models.JetDrop{}, models.Pulse{}})
 	s := NewStorage(testDB)
 
 	pulse, err := testutils.InitPulseDB()
@@ -247,7 +279,7 @@ func TestStorage_SaveJetDropData_ErrorAtTransaction(t *testing.T) {
 	secondRecord := testutils.InitRecordDB(jetDrop)
 	secondRecord.Reference = nil
 
-	err = s.SaveJetDropData(jetDrop, []models.Record{firstRecord, secondRecord}, pulse.PulseNumber)
+	err = s.SaveJetDropData(jetDrop, []models.IRecord{firstRecord, secondRecord}, pulse.PulseNumber)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "error while saving record")
 
@@ -263,7 +295,7 @@ func TestStorage_SaveJetDropData_ErrorAtTransaction(t *testing.T) {
 }
 
 func TestStorage_GetNotCompletePulses(t *testing.T) {
-	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.State{}, models.JetDrop{}, models.Pulse{}})
 	s := NewStorage(testDB)
 
 	completePulse, err := testutils.InitPulseDB()
@@ -284,7 +316,7 @@ func TestStorage_GetNotCompletePulses(t *testing.T) {
 }
 
 func TestStorage_GetJetDrops(t *testing.T) {
-	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.State{}, models.JetDrop{}, models.Pulse{}})
 	s := NewStorage(testDB)
 
 	firstPulse, err := testutils.InitPulseDB()
@@ -315,7 +347,7 @@ func TestStorage_GetJetDrops(t *testing.T) {
 }
 
 func TestStorage_GetJetDropsWithParams(t *testing.T) {
-	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.State{}, models.JetDrop{}, models.Pulse{}})
 	s := NewStorage(testDB)
 
 	firstPulse, err := testutils.InitPulseDB()
@@ -365,7 +397,7 @@ func TestStorage_GetJetDropsWithParams(t *testing.T) {
 }
 
 func TestStorage_GetJetDropsByID(t *testing.T) {
-	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.State{}, models.JetDrop{}, models.Pulse{}})
 	s := NewStorage(testDB)
 
 	firstPulse, err := testutils.InitPulseDB()
@@ -665,7 +697,7 @@ func pulseSequenceOneObject(t *testing.T, pulseAmount, recordsAmount int) []puls
 }
 
 func TestStorage_GetLifeline(t *testing.T) {
-	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.State{}, models.JetDrop{}, models.Pulse{}})
 	s := NewStorage(testDB)
 
 	pulse, err := testutils.InitPulseDB()
@@ -699,7 +731,7 @@ func TestStorage_GetLifeline_ObjNotExist(t *testing.T) {
 }
 
 func TestStorage_GetLifeline_Index(t *testing.T) {
-	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.State{}, models.JetDrop{}, models.Pulse{}})
 	s := NewStorage(testDB)
 
 	pulse, err := testutils.InitPulseDB()
@@ -724,7 +756,7 @@ func TestStorage_GetLifeline_Index(t *testing.T) {
 }
 
 func TestStorage_GetLifeline_Index_NotExist(t *testing.T) {
-	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.State{}, models.JetDrop{}, models.Pulse{}})
 	s := NewStorage(testDB)
 
 	pulseNumber := int(gen.PulseNumber().AsUint32())
@@ -738,7 +770,7 @@ func TestStorage_GetLifeline_Index_NotExist(t *testing.T) {
 }
 
 func TestStorage_GetLifeline_IndexLimit(t *testing.T) {
-	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.State{}, models.JetDrop{}, models.Pulse{}})
 	s := NewStorage(testDB)
 
 	pulse, err := testutils.InitPulseDB()
@@ -764,7 +796,7 @@ func TestStorage_GetLifeline_IndexLimit(t *testing.T) {
 }
 
 func TestStorage_GetLifeline_IndexOffset(t *testing.T) {
-	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.State{}, models.JetDrop{}, models.Pulse{}})
 	s := NewStorage(testDB)
 
 	pulse, err := testutils.InitPulseDB()
@@ -790,7 +822,7 @@ func TestStorage_GetLifeline_IndexOffset(t *testing.T) {
 }
 
 func TestStorage_GetLifeline_IndexLimit_Asc(t *testing.T) {
-	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.State{}, models.JetDrop{}, models.Pulse{}})
 	s := NewStorage(testDB)
 
 	pulse, err := testutils.InitPulseDB()
@@ -816,7 +848,7 @@ func TestStorage_GetLifeline_IndexLimit_Asc(t *testing.T) {
 }
 
 func TestStorage_GetLifeline_IndexOffset_Asc(t *testing.T) {
-	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.State{}, models.JetDrop{}, models.Pulse{}})
 	s := NewStorage(testDB)
 
 	pulse, err := testutils.InitPulseDB()
@@ -841,7 +873,7 @@ func TestStorage_GetLifeline_IndexOffset_Asc(t *testing.T) {
 }
 
 func TestStorage_GetLifeline_TimestampRange(t *testing.T) {
-	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.State{}, models.JetDrop{}, models.Pulse{}})
 	s := NewStorage(testDB)
 
 	pulses := pulseSequenceOneObject(t, 3, 2)
@@ -859,7 +891,7 @@ func TestStorage_GetLifeline_TimestampRange(t *testing.T) {
 }
 
 func TestStorage_GetLifeline_PulseRange(t *testing.T) {
-	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.State{}, models.JetDrop{}, models.Pulse{}})
 	s := NewStorage(testDB)
 
 	pulses := pulseSequenceOneObject(t, 3, 3)
@@ -875,7 +907,7 @@ func TestStorage_GetLifeline_PulseRange(t *testing.T) {
 }
 
 func TestStorage_GetLifeline_PulseRange_SamePulse(t *testing.T) {
-	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.State{}, models.JetDrop{}, models.Pulse{}})
 	s := NewStorage(testDB)
 
 	pulses := pulseSequenceOneObject(t, 3, 3)
@@ -889,7 +921,7 @@ func TestStorage_GetLifeline_PulseRange_SamePulse(t *testing.T) {
 }
 
 func TestStorage_GetLifeline_PulseRange_Limit(t *testing.T) {
-	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.State{}, models.JetDrop{}, models.Pulse{}})
 	s := NewStorage(testDB)
 
 	pulses := pulseSequenceOneObject(t, 3, 3)
@@ -905,7 +937,7 @@ func TestStorage_GetLifeline_PulseRange_Limit(t *testing.T) {
 }
 
 func TestStorage_GetLifeline_PulseRange_LimitOffset(t *testing.T) {
-	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.State{}, models.JetDrop{}, models.Pulse{}})
 	s := NewStorage(testDB)
 
 	pulses := pulseSequenceOneObject(t, 3, 4)
@@ -921,7 +953,7 @@ func TestStorage_GetLifeline_PulseRange_LimitOffset(t *testing.T) {
 }
 
 func TestStorage_GetLifeline_PulseRange_Limit_Asc(t *testing.T) {
-	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.State{}, models.JetDrop{}, models.Pulse{}})
 	s := NewStorage(testDB)
 
 	pulses := pulseSequenceOneObject(t, 3, 3)
@@ -937,7 +969,7 @@ func TestStorage_GetLifeline_PulseRange_Limit_Asc(t *testing.T) {
 }
 
 func TestStorage_GetLifeline_Index_PulseRange(t *testing.T) {
-	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.State{}, models.JetDrop{}, models.Pulse{}})
 	s := NewStorage(testDB)
 
 	pulses := pulseSequenceOneObject(t, 4, 3)
@@ -954,7 +986,7 @@ func TestStorage_GetLifeline_Index_PulseRange(t *testing.T) {
 }
 
 func TestStorage_GetLifeline_AllParams(t *testing.T) {
-	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.State{}, models.JetDrop{}, models.Pulse{}})
 	s := NewStorage(testDB)
 
 	pulses := pulseSequenceOneObject(t, 4, 3)
@@ -971,7 +1003,7 @@ func TestStorage_GetLifeline_AllParams(t *testing.T) {
 }
 
 func TestStorage_GetLifeline_PulseRange_Empty(t *testing.T) {
-	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.State{}, models.JetDrop{}, models.Pulse{}})
 	s := NewStorage(testDB)
 
 	pulses := pulseSequenceOneObject(t, 4, 3)
@@ -985,7 +1017,7 @@ func TestStorage_GetLifeline_PulseRange_Empty(t *testing.T) {
 }
 
 func TestStorage_GetPulse(t *testing.T) {
-	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.State{}, models.JetDrop{}, models.Pulse{}})
 	s := NewStorage(testDB)
 
 	expectedPulse, err := testutils.InitPulseDB()
@@ -1009,7 +1041,7 @@ func TestStorage_GetPulse(t *testing.T) {
 }
 
 func TestStorage_GetPulse_NoPrevNext(t *testing.T) {
-	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.State{}, models.JetDrop{}, models.Pulse{}})
 	s := NewStorage(testDB)
 
 	expectedPulse, err := testutils.InitPulseDB()
@@ -1029,7 +1061,7 @@ func TestStorage_GetPulse_NoPrevNext(t *testing.T) {
 }
 
 func TestStorage_GetPulse_PulseWithDifferentNext(t *testing.T) {
-	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.State{}, models.JetDrop{}, models.Pulse{}})
 	s := NewStorage(testDB)
 
 	expectedPulse, err := testutils.InitPulseDB()
@@ -1054,7 +1086,7 @@ func TestStorage_GetPulse_PulseWithDifferentNext(t *testing.T) {
 }
 
 func TestStorage_GetPulse_PulseWithRecords(t *testing.T) {
-	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.State{}, models.JetDrop{}, models.Pulse{}})
 	s := NewStorage(testDB)
 	expectedPulse, err := testutils.InitPulseDB()
 	require.NoError(t, err)
@@ -1086,7 +1118,7 @@ func TestStorage_GetPulse_NotExist(t *testing.T) {
 }
 
 func TestStorage_GetPulses(t *testing.T) {
-	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.State{}, models.JetDrop{}, models.Pulse{}})
 	s := NewStorage(testDB)
 
 	firstPulse, err := testutils.InitPulseDB()
@@ -1112,7 +1144,7 @@ func TestStorage_GetPulses(t *testing.T) {
 }
 
 func TestStorage_GetPulses_Limit(t *testing.T) {
-	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.State{}, models.JetDrop{}, models.Pulse{}})
 	s := NewStorage(testDB)
 
 	firstPulse := models.Pulse{
@@ -1149,7 +1181,7 @@ func TestStorage_GetPulses_Limit(t *testing.T) {
 }
 
 func TestStorage_GetPulses_Offset(t *testing.T) {
-	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.State{}, models.JetDrop{}, models.Pulse{}})
 	s := NewStorage(testDB)
 
 	firstPulse := models.Pulse{
@@ -1186,7 +1218,7 @@ func TestStorage_GetPulses_Offset(t *testing.T) {
 }
 
 func TestStorage_GetPulses_TimestampRange(t *testing.T) {
-	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.State{}, models.JetDrop{}, models.Pulse{}})
 	s := NewStorage(testDB)
 
 	firstPulse := models.Pulse{
@@ -1236,7 +1268,7 @@ func TestStorage_GetPulses_TimestampRange(t *testing.T) {
 }
 
 func TestStorage_GetPulses_FromPulse(t *testing.T) {
-	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.State{}, models.JetDrop{}, models.Pulse{}})
 	s := NewStorage(testDB)
 
 	firstPulse := models.Pulse{
@@ -1277,7 +1309,7 @@ func TestStorage_GetPulses_FromPulse(t *testing.T) {
 }
 
 func TestStorage_GetPulses_AllParams(t *testing.T) {
-	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.State{}, models.JetDrop{}, models.Pulse{}})
 	s := NewStorage(testDB)
 
 	firstPulse := models.Pulse{
@@ -1328,7 +1360,7 @@ func TestStorage_GetPulses_AllParams(t *testing.T) {
 }
 
 func TestStorage_GetPulses_PulseNumberFilters(t *testing.T) {
-	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.State{}, models.JetDrop{}, models.Pulse{}})
 	s := NewStorage(testDB)
 	totalPulseCount := 10
 	pulses := make([]models.Pulse, totalPulseCount)
@@ -1464,7 +1496,7 @@ func TestStorage_GetPulses_PulseNumberFilters(t *testing.T) {
 }
 
 func TestStorage_GetPulses_DifferentNextAtLastPulse(t *testing.T) {
-	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.State{}, models.JetDrop{}, models.Pulse{}})
 	s := NewStorage(testDB)
 
 	firstPulse := models.Pulse{
@@ -1519,7 +1551,7 @@ func TestStorage_GetPulses_DifferentNextAtLastPulse(t *testing.T) {
 }
 
 func TestStorage_GetPulses_MissingData_DifferentNext(t *testing.T) {
-	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.State{}, models.JetDrop{}, models.Pulse{}})
 	s := NewStorage(testDB)
 
 	firstPulse := models.Pulse{
@@ -1574,7 +1606,7 @@ func TestStorage_GetPulses_MissingData_DifferentNext(t *testing.T) {
 }
 
 func TestStorage_GetPulses_MissingData_DifferentNextInTop(t *testing.T) {
-	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.State{}, models.JetDrop{}, models.Pulse{}})
 	s := NewStorage(testDB)
 
 	firstPulse := models.Pulse{
@@ -1624,7 +1656,7 @@ func TestStorage_GetPulses_MissingData_DifferentNextInTop(t *testing.T) {
 }
 
 func TestStorage_GetRecordsByJetDrop(t *testing.T) {
-	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.State{}, models.JetDrop{}, models.Pulse{}})
 	s := NewStorage(testDB)
 
 	pulse, err := testutils.InitPulseDB()
@@ -1712,7 +1744,7 @@ func TestStorage_GetRecordsByJetDrop(t *testing.T) {
 }
 
 func TestStorage_GetPulseByPrev(t *testing.T) {
-	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.State{}, models.JetDrop{}, models.Pulse{}})
 	s := NewStorage(testDB)
 
 	prevPulse, err := testutils.InitPulseDB()
@@ -1744,7 +1776,7 @@ func TestStorage_GetPulseByPrev_NotExistError(t *testing.T) {
 }
 
 func TestStorage_GetSequentialPulse(t *testing.T) {
-	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.State{}, models.JetDrop{}, models.Pulse{}})
 	s := NewStorage(testDB)
 
 	sequentialPulse, err := testutils.InitPulseDB()
@@ -1779,7 +1811,7 @@ func TestStorage_GetSequentialPulse_Empty(t *testing.T) {
 }
 
 func TestStorage_GetNextSavedPulse(t *testing.T) {
-	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.State{}, models.JetDrop{}, models.Pulse{}})
 	s := NewStorage(testDB)
 
 	pulse := models.Pulse{
@@ -1816,7 +1848,7 @@ func TestStorage_GetNextSavedPulse_Empty(t *testing.T) {
 }
 
 func TestStorage_GetJetDropsByJetId_Success(t *testing.T) {
-	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.State{}, models.JetDrop{}, models.Pulse{}})
 	s := NewStorage(testDB)
 
 	firstPulse, err := testutils.InitPulseDB()
@@ -1844,7 +1876,7 @@ func TestStorage_GetJetDropsByJetId_Success(t *testing.T) {
 }
 
 func TestStorage_GetJetDropsByJetId_Fail(t *testing.T) {
-	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.State{}, models.JetDrop{}, models.Pulse{}})
 	s := NewStorage(testDB)
 
 	firstPulse, err := testutils.InitPulseDB()
@@ -1876,7 +1908,7 @@ func TestStorage_GetJetDropsByJetId_Fail(t *testing.T) {
 }
 
 func TestStorage_GetJetDropsByJetId(t *testing.T) {
-	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.State{}, models.JetDrop{}, models.Pulse{}})
 	s := NewStorage(testDB)
 
 	someJetIDCount := 5
@@ -2063,7 +2095,7 @@ func TestStorage_GetJetDropsByJetId(t *testing.T) {
 }
 
 func TestStorage_GetJetDropsByJetId_Splites(t *testing.T) {
-	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.State{}, models.JetDrop{}, models.Pulse{}})
 	s := NewStorage(testDB)
 
 	// fnGetJetIDs returns the jetid with middle depth and all possible values fot that
@@ -2187,7 +2219,7 @@ func TestStorage_GetJetDropsByJetId_MultipleCounts(t *testing.T) {
 
 	for testName, data := range tests {
 		t.Run(testName, func(t *testing.T) {
-			defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+			defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.State{}, models.JetDrop{}, models.Pulse{}})
 			someJetId, preparedJetDrops, preparedPulses := testutils.GenerateJetDropsWithSomeJetID(t, data.jetDropCount)
 			err := testutils.CreatePulses(testDB, preparedPulses)
 			require.NoError(t, err)
