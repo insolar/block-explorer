@@ -17,19 +17,18 @@ import (
 )
 
 type RecordServer struct {
-	storage interfaces.StorageExtractor
+	storage interfaces.StorageExporterFetcher
 	logger  log.Logger
 	config  configuration.Exporter
 }
 
-func NewRecordServer(ctx context.Context, storage interfaces.StorageExtractor, config configuration.Exporter) *RecordServer {
+func NewRecordServer(ctx context.Context, storage interfaces.StorageExporterFetcher, config configuration.Exporter) *RecordServer {
 	logger := belogger.FromContext(ctx)
 	return &RecordServer{storage: storage, logger: logger, config: config}
 }
 
 func (s *RecordServer) GetRecords(request *GetRecordsRequest, stream RecordExporter_GetRecordsServer) error {
-	pn := int64(request.PulseNumber)
-	recs, err := s.storage.GetRecordsByPrototype(request.Prototypes, pn, request.Count, request.RecordNumber)
+	recs, err := s.storage.GetRecordsByPrototype(request.Prototypes, request.PulseNumber, request.Count, request.RecordNumber)
 	if err != nil {
 		return fmt.Errorf("error on requesting records")
 	}
@@ -42,7 +41,7 @@ func (s *RecordServer) GetRecords(request *GetRecordsRequest, stream RecordExpor
 			PrototypeReference:  rec.PrototypeReference,
 			Payload:             rec.Payload,
 			PrevRecordReference: rec.PrevRecordReference,
-			PulseNumber:         uint32(rec.PulseNumber),
+			PulseNumber:         rec.PulseNumber,
 			Timestamp:           uint32(rec.Timestamp),
 		}
 		if err := stream.Send(&response); err != nil {

@@ -11,7 +11,7 @@ service RecordExporter {
 
 message GetRecordsRequest {
     uint32 Polymorph = 16;
-    uint32 PulseNumber = 1;
+    int64 PulseNumber = 1;
     repeated bytes Prototypes = 2;
     uint32 RecordNumber = 3;
     uint32 Count = 4;
@@ -26,7 +26,7 @@ message GetRecordsResponse {
     bytes PrototypeReference = 5;
     bytes Payload = 6;
     bytes PrevRecordReference = 7;
-    uint32 PulseNumber = 8;
+    int64 PulseNumber = 8;
     uint32 Timestamp = 9;
 }
 

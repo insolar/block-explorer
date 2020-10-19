@@ -54,6 +54,13 @@ func main() {
 		}
 	}()
 
+	db, err := dbconn.Connect(cfg.DB)
+	if err != nil {
+		logger.Fatalf("Error while connecting to database: %s", err.Error())
+		return
+	}
+	s := storage.NewStorage(db)
+
 	metricConfig := metrics.Config{
 		RefreshInterval:   cfg.Metrics.RefreshInterval,
 		StartServer:       cfg.Metrics.StartServer,
@@ -68,15 +75,8 @@ func main() {
 		pulseExporter  *exporter.PulseServer
 	)
 
-	db, err := dbconn.Connect(cfg.DB)
-	if err != nil {
-		logger.Fatalf("Error while connecting to database: %s", err.Error())
-		return
-	}
-
-	s := storage.NewStorage(db)
 	recordExporter = exporter.NewRecordServer(ctx, s, *cfg)
-	pulseExporter = exporter.NewPulseServer()
+	pulseExporter = exporter.NewPulseServer(s, cfg.PulsePeriod, &logger)
 
 	grpcMetrics := grpc_prometheus.NewServerMetrics()
 	grpcMetrics.EnableHandlingTimeHistogram()
