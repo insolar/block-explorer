@@ -197,16 +197,3 @@ func OrderedStates(t *testing.T, db *gorm.DB, jetDrop models.JetDrop, objRef ins
 	}
 	return result
 }
-
-func OrderedStates(t *testing.T, db *gorm.DB, jetDrop models.JetDrop, objRef insolar.ID, amount int) []models.State {
-	var result []models.State
-	for i := 1; i <= amount; i++ {
-		state := InitStatedDB(jetDrop, models.Activate)
-		state.ObjectReference = objRef.Bytes()
-		state.Order = i
-		err := CreateState(db, state)
-		require.NoError(t, err)
-		result = append(result, state)
-	}
-	return result
-}
