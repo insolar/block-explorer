@@ -153,11 +153,26 @@ func (p *Processor) process(ctx context.Context, jd *types.JetDrop) error {
 		RecordAmount:   len(ms.Records),
 	}
 
-	var mrs []models.Record
+	var mrs []models.IRecord
 	for i, r := range ms.Records {
 		switch r.TypeOf() {
 		case types.STATE:
-			// TODO: https://insolar.atlassian.net/browse/PENV-786
+			mrs = append(mrs, models.State{
+				RecordRef:    models.ReferenceFromTypes(r.Reference()),
+				Type:         models.StateTypeFromTypes(r.(types.State).Type),
+				RequestRef:   models.ReferenceFromTypes(r.(types.State).Request),
+				ParentRef:    models.ReferenceFromTypes(r.(types.State).Parent),
+				ObjectRef:    models.ReferenceFromTypes(r.(types.State).ObjectReference),
+				PrevStateRef: models.ReferenceFromTypes(r.(types.State).PrevState),
+				IsPrototype:  r.(types.State).IsPrototype,
+				Payload:      r.(types.State).Payload,
+				ImageRef:     models.ReferenceFromTypes(r.(types.State).Image),
+				Hash:         r.(types.State).Hash,
+				Order:        i,
+				JetID:        mjd.JetID,
+				PulseNumber:  mjd.PulseNumber,
+				Timestamp:    mjd.Timestamp,
+			})
 			mrs = append(mrs, models.Record{
 				Reference:           models.ReferenceFromTypes(r.Reference()),
 				Type:                models.RecordTypeFromTypes(r.TypeOf()),
