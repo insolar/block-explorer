@@ -161,4 +161,18 @@ func TestNewMockBEAPIServerGetPulses(t *testing.T) {
 		recs := c.ReadAllRecords(stream)
 		require.Equal(t, 10, len(recs))
 	})
+
+	t.Run("no records found for pulse", func(t *testing.T) {
+		protos := [][]byte{proto1}
+		stream, err := c.GetRecords(context.Background(), &exporter.GetRecordsRequest{
+			Polymorph:    0,
+			PulseNumber:  initPulseNum + 100,
+			Prototypes:   protos,
+			RecordNumber: 0,
+			Count:        10,
+		}, grpc.WaitForReady(true))
+		require.NoError(t, err)
+		recs := c.ReadAllRecords(stream)
+		require.Equal(t, 0, len(recs))
+	})
 }

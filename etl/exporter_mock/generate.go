@@ -79,5 +79,5 @@ func (s *MockBEAPIServer) NewCurrentPulseRecords(tmpl RecordsTemplate) {
 
 func (s *MockBEAPIServer) ClearData() {
 	s.Data.Pulses = make([]models.Pulse, 0)
-	s.Data.Records = make([]models.Record, 0)
+	s.Data.RecordsByPulse = make(map[int64][]models.Record)
 }
