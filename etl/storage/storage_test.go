@@ -2258,7 +2258,7 @@ func TestStorage_GetNextCompletePulseFilterByPrototypeReference(t *testing.T) {
 	require.NotEmpty(t, firstRecord.PrototypeReference)
 	require.NotEmpty(t, secondRecord.PrototypeReference)
 
-	err = s.SaveJetDropData(jetDrop, []models.Record{firstRecord, secondRecord}, pulse.PulseNumber)
+	err = s.SaveJetDropData(jetDrop, []models.IRecord{firstRecord, secondRecord}, pulse.PulseNumber)
 	require.NoError(t, err)
 
 	dbPulse, err := s.GetNextCompletePulseFilterByPrototypeReference(pulse.PrevPulseNumber, [][]byte{firstRecord.PrototypeReference})
