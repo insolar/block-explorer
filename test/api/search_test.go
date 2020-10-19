@@ -28,10 +28,10 @@ const (
 	typeJetDrop = "jet-drop"
 	typeRef     = "lifeline"
 	typeRecord  = "record"
+	typeState   = "state"
 )
 
 func TestSearchApi(t *testing.T) {
-	t.Skip("fix it in task https://insolar.atlassian.net/browse/PENV-792")
 	ts := integration.NewBlockExplorerTestSetup(t).WithHTTPServer(t)
 	defer ts.Stop(t)
 
@@ -145,7 +145,7 @@ func TestSearchApi(t *testing.T) {
 
 		response := c.Search(t, ref)
 		exp := client.SearchResponse200{
-			Type: typeRecord,
+			Type: typeState,
 			Meta: client.SearchResponse200Meta{
 				ObjectReference: objRef,
 				Index:           fmt.Sprintf("%v:%v", pn, "0"),
