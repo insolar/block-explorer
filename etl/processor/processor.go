@@ -153,22 +153,56 @@ func (p *Processor) process(ctx context.Context, jd *types.JetDrop) error {
 		RecordAmount:   len(ms.Records),
 	}
 
-	var mrs []models.Record
+	var mrs []models.IRecord
 	for i, r := range ms.Records {
-		mrs = append(mrs, models.Record{
-			Reference:           models.ReferenceFromTypes(r.Ref),
-			Type:                models.RecordTypeFromTypes(r.Type),
-			ObjectReference:     models.ReferenceFromTypes(r.ObjectReference),
-			PrototypeReference:  models.ReferenceFromTypes(r.PrototypeReference),
-			Payload:             r.RecordPayload,
-			PrevRecordReference: models.ReferenceFromTypes(r.PrevRecordReference),
-			Hash:                r.Hash,
-			RawData:             r.RawData,
-			JetID:               mjd.JetID,
-			PulseNumber:         mjd.PulseNumber,
-			Order:               i,
-			Timestamp:           mjd.Timestamp,
-		})
+		switch r.TypeOf() {
+		case types.STATE:
+			mrs = append(mrs, models.State{
+				RecordReference:    models.ReferenceFromTypes(r.Reference()),
+				Type:               models.StateTypeFromTypes(r.(types.State).Type),
+				RequestReference:   models.ReferenceFromTypes(r.(types.State).Request),
+				ParentReference:    models.ReferenceFromTypes(r.(types.State).Parent),
+				ObjectReference:    models.ReferenceFromTypes(r.(types.State).ObjectReference),
+				PrevStateReference: models.ReferenceFromTypes(r.(types.State).PrevState),
+				IsPrototype:        r.(types.State).IsPrototype,
+				Payload:            r.(types.State).Payload,
+				ImageReference:     models.ReferenceFromTypes(r.(types.State).Image),
+				Hash:               r.(types.State).Hash,
+				Order:              i,
+				JetID:              mjd.JetID,
+				PulseNumber:        mjd.PulseNumber,
+				Timestamp:          mjd.Timestamp,
+			})
+			mrs = append(mrs, models.Record{
+				Reference:           models.ReferenceFromTypes(r.Reference()),
+				Type:                models.RecordTypeFromTypes(r.TypeOf()),
+				ObjectReference:     models.ReferenceFromTypes(r.(types.State).ObjectReference),
+				PrototypeReference:  models.ReferenceFromTypes(r.(types.State).Image),
+				Payload:             r.(types.State).Payload,
+				PrevRecordReference: models.ReferenceFromTypes(r.(types.State).PrevState),
+				Hash:                r.(types.State).Hash,
+				RawData:             r.(types.State).RawData,
+				JetID:               mjd.JetID,
+				PulseNumber:         mjd.PulseNumber,
+				Order:               i,
+				Timestamp:           mjd.Timestamp,
+			})
+		default:
+			mrs = append(mrs, models.Record{
+				Reference:           models.ReferenceFromTypes(r.Reference()),
+				Type:                models.RecordTypeFromTypes(r.TypeOf()),
+				ObjectReference:     models.ReferenceFromTypes(r.(types.Record).ObjectReference),
+				PrototypeReference:  models.ReferenceFromTypes(r.(types.Record).PrototypeReference),
+				Payload:             r.(types.Record).RecordPayload,
+				PrevRecordReference: models.ReferenceFromTypes(r.(types.Record).PrevRecordReference),
+				Hash:                r.(types.Record).Hash,
+				RawData:             r.(types.Record).RawData,
+				JetID:               mjd.JetID,
+				PulseNumber:         mjd.PulseNumber,
+				Order:               i,
+				Timestamp:           mjd.Timestamp,
+			})
+		}
 	}
 	err = p.storage.SaveJetDropData(mjd, mrs, mp.PulseNumber)
 	if err != nil {

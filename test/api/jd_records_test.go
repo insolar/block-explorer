@@ -278,7 +278,7 @@ func TestGetRecordsByJetDropID_oneJdCheckFields(t *testing.T) {
 	recordsInJetDropCount := 9
 	records := testutils.GenerateObjectLifeline(pulsesCount, recordsInJetDropCount).StateRecords[0].Records
 
-	expResult := make(map[string]client.ObjectLifelineResponse200Result, len(records))
+	expResult := make(map[string]client.RecordsResponse200Result, len(records))
 	var maxPn insolar.PulseNumber = 0
 	var jetDropID string
 	for i, r := range records {
@@ -292,7 +292,7 @@ func TestGetRecordsByJetDropID_oneJdCheckFields(t *testing.T) {
 		objID := r.Record.ObjectID
 		objRef := insolar.NewReference(objID)
 		recordRef := r.Record.ID.String()
-		expResult[recordRef] = client.ObjectLifelineResponse200Result{
+		expResult[recordRef] = client.RecordsResponse200Result{
 			Reference:       recordRef,
 			ObjectReference: objRef.String(),
 			Type:            "state",
@@ -321,7 +321,7 @@ func TestGetRecordsByJetDropID_oneJdCheckFields(t *testing.T) {
 	require.Equal(t, int64(len(records)), response.Total)
 	require.Len(t, response.Result, len(records))
 	for _, r := range response.Result {
-		var expRecord client.ObjectLifelineResponse200Result
+		var expRecord client.RecordsResponse200Result
 		var ok bool
 		if expRecord, ok = expResult[r.Reference]; !ok {
 			t.Fatalf("Not found record in response, reference: %v", r.Reference)

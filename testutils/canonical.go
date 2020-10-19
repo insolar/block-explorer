@@ -13,7 +13,7 @@ import (
 )
 
 // CreateJetDropCanonical returns generated jet drop with provided record and without prevHash
-func CreateJetDropCanonical(records []types.Record) types.JetDrop {
+func CreateJetDropCanonical(records []types.IRecord) types.JetDrop {
 	pn := int64(gen.PulseNumber())
 	return types.JetDrop{
 		MainSection: &types.MainSection{
@@ -47,5 +47,23 @@ func CreateRecordCanonical() types.Record {
 		Hash:                GenerateRandBytes(),
 		RawData:             GenerateRandBytes(),
 		Order:               0,
+	}
+}
+
+// CreateStateCanonical returns generated state
+func CreateStateCanonical(stateType types.StateType) types.State {
+	return types.State{
+		RecordReference: gen.Reference().Bytes(),
+		Type:            stateType,
+		ObjectReference: gen.Reference().Bytes(),
+		Request:         gen.Reference().Bytes(),
+		Parent:          gen.Reference().Bytes(),
+		IsPrototype:     false,
+		Image:           gen.Reference().Bytes(),
+		PrevState:       gen.Reference().Bytes(),
+		Payload:         GenerateRandBytes(),
+		Hash:            GenerateRandBytes(),
+		RawData:         GenerateRandBytes(),
+		Order:           0,
 	}
 }

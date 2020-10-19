@@ -53,6 +53,43 @@ func Migrations() []*gormigrate.Migration {
 					Order               int
 					Timestamp           int64
 				}
+				type State struct {
+					RecordReference    []byte `gorm:"primary_key;auto_increment:false"`
+					Type               string
+					RequestReference   []byte
+					ParentReference    []byte
+					ObjectReference    []byte
+					PrevStateReference []byte
+					IsPrototype        bool
+					Payload            []byte
+					ImageReference     []byte
+					Hash               []byte
+					Order              int
+					JetID              string
+					PulseNumber        int64
+					Timestamp          int64
+				}
+				type Request struct {
+					RecordReference          []byte `gorm:"primary_key;auto_increment:false"`
+					Type                     string
+					CallType                 string
+					ObjectRef                []byte
+					CallerObjectReference    []byte
+					CalleeObjectReference    []byte
+					APIRequestID             string
+					ReasonRequestReference   []byte
+					OriginalRequestReference []byte
+					Method                   string
+					Arguments                []byte
+					Immutable                bool
+					IsOriginalRequest        bool
+					PrototypeReference       []byte
+					Hash                     []byte
+					JetID                    string
+					PulseNumber              int64
+					Order                    int
+					Timestamp                int64
+				}
 				if err := tx.CreateTable(&Pulse{}).Error; err != nil {
 					return err
 				}
@@ -84,10 +121,37 @@ func Migrations() []*gormigrate.Migration {
 				if err := tx.Model(&Record{}).AddForeignKey("jet_id, pulse_number", "jet_drops(jet_id, pulse_number)", "CASCADE", "CASCADE").Error; err != nil {
 					return err
 				}
+				if err := tx.CreateTable(&State{}).Error; err != nil {
+					return err
+				}
+				if err := tx.Model(&State{}).AddIndex(
+					"idx_state_jetid_pulsenumber_order", "jet_id", "pulse_number", "order").Error; err != nil {
+					return err
+				}
+				if err := tx.Model(&State{}).AddIndex(
+					"idx_state_requestref", "request_reference").Error; err != nil {
+					return err
+				}
+
+				if err := tx.Model(&State{}).AddIndex(
+					"idx_state_objectref", "object_reference").Error; err != nil {
+					return err
+				}
+				if err := tx.CreateTable(&Request{}).Error; err != nil {
+					return err
+				}
+				if err := tx.Model(&Request{}).AddIndex(
+					"idx_request_jetid_pulsenumber_order", "jet_id", "pulse_number", "order").Error; err != nil {
+					return err
+				}
+				if err := tx.Model(&Request{}).AddIndex(
+					"idx_request_apirequestid", "api_request_id").Error; err != nil {
+					return err
+				}
 				return nil
 			},
 			Rollback: func(tx *gorm.DB) error {
-				return tx.DropTableIfExists("records", "jet_drops", "pulses").Error
+				return tx.DropTableIfExists("records", "jet_drops", "pulses", "requests", "states").Error
 			},
 		},
 	}

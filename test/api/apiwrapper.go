@@ -125,14 +125,14 @@ func (c *BEApiClient) SearchWithError(t *testing.T, value string, expError strin
 	return response
 }
 
-func (c *BEApiClient) JetDropRecords(t *testing.T, jetDropID string, localVarOptionals *client.JetDropRecordsOpts) (response client.ObjectLifelineResponse200) {
+func (c *BEApiClient) JetDropRecords(t *testing.T, jetDropID string, localVarOptionals *client.JetDropRecordsOpts) (response client.RecordsResponse200) {
 	response, rawResponse, err := c.Client.RecordApi.JetDropRecords(context.Background(), jetDropID, localVarOptionals)
 	require.NoError(t, err)
 	LogHTTP(t, rawResponse, nil, response)
 	return response
 }
 
-func (c *BEApiClient) JetDropRecordsWithError(t *testing.T, jetDropID string, localVarOptionals *client.JetDropRecordsOpts, expError string) (response client.ObjectLifelineResponse200) {
+func (c *BEApiClient) JetDropRecordsWithError(t *testing.T, jetDropID string, localVarOptionals *client.JetDropRecordsOpts, expError string) (response client.RecordsResponse200) {
 	response, rawResponse, err := c.Client.RecordApi.JetDropRecords(context.Background(), jetDropID, localVarOptionals)
 	require.Error(t, err)
 	require.Equal(t, expError, err.Error())
