@@ -46,15 +46,7 @@ func TestMain(m *testing.M) {
 
 	cfg := configuration.Exporter{
 		Listen: fmt.Sprintf(":%d", port),
-		// DB:      configuration.DB{
-		// 	URL:	"postgres://radist@localhost:5432/be?sslmode=disable",
-		// },
 	}
-	// var err error
-	// testDB, err = dbconn.Connect(cfg.DB)
-	// if err != nil {
-	// 	panic(err)
-	// }
 	s := storage.NewStorage(testDB)
 
 	// create grpc server

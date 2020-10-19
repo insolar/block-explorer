@@ -27,6 +27,6 @@ message GetRecordsResponse {
     bytes Payload = 6;
     bytes PrevRecordReference = 7;
     int64 PulseNumber = 8;
-    uint32 Timestamp = 9;
+    int64 Timestamp = 9;
 }
 

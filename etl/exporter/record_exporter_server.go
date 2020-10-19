@@ -30,7 +30,8 @@ func NewRecordServer(ctx context.Context, storage interfaces.StorageExporterFetc
 func (s *RecordServer) GetRecords(request *GetRecordsRequest, stream RecordExporter_GetRecordsServer) error {
 	recs, err := s.storage.GetRecordsByPrototype(request.Prototypes, request.PulseNumber, request.Count, request.RecordNumber)
 	if err != nil {
-		return fmt.Errorf("error on requesting records")
+		s.logger.Error(err)
+		return fmt.Errorf("error on requesting records %v", err)
 	}
 	for i, rec := range recs {
 		response := GetRecordsResponse{
@@ -42,7 +43,7 @@ func (s *RecordServer) GetRecords(request *GetRecordsRequest, stream RecordExpor
 			Payload:             rec.Payload,
 			PrevRecordReference: rec.PrevRecordReference,
 			PulseNumber:         rec.PulseNumber,
-			Timestamp:           uint32(rec.Timestamp),
+			Timestamp:           rec.Timestamp,
 		}
 		if err := stream.Send(&response); err != nil {
 			return err
