@@ -7,6 +7,7 @@ package transformer
 
 import (
 	"context"
+	"fmt"
 	"github.com/insolar/insolar/pulse"
 
 	"github.com/insolar/block-explorer/instrumentation"
@@ -238,6 +239,7 @@ func transferToCanonicalRecord(r *exporter.Record) (types.IRecord, error) {
 		if r.Record.ID.Pulse() == pulse.MinTimePulse {
 			objectReference = activate.Request.GetLocal().Bytes()
 		}
+		fmt.Println(activate.Request.String())
 		return types.State{
 			Type:            types.ACTIVATE,
 			RecordReference: ref,
@@ -259,6 +261,8 @@ func transferToCanonicalRecord(r *exporter.Record) (types.IRecord, error) {
 		if r.Record.ID.Pulse() == pulse.MinTimePulse {
 			objectReference = amend.Request.GetLocal().Bytes()
 		}
+		fmt.Println(amend.Request.String())
+
 		return types.State{
 			Type:            types.AMEND,
 			RecordReference: ref,
@@ -307,7 +311,6 @@ func transferToCanonicalRecord(r *exporter.Record) (types.IRecord, error) {
 			CallType:          incomingRequest.CallType.String(),
 			ObjectReference:   objectReference,
 			Caller:            incomingRequest.GetCaller().GetLocal().Bytes(),
-			Callee:            incomingRequest.GetObject().Bytes(),
 			APIRequestID:      incomingRequest.APIRequestID,
 			CallReason:        incomingRequest.GetReason().Bytes(),
 			CallSiteMethod:    incomingRequest.GetMethod(),
@@ -332,7 +335,6 @@ func transferToCanonicalRecord(r *exporter.Record) (types.IRecord, error) {
 			CallType:          outgoingRequest.CallType.String(),
 			ObjectReference:   objectReference,
 			Caller:            outgoingRequest.GetCaller().GetLocal().Bytes(),
-			Callee:            outgoingRequest.GetObject().Bytes(),
 			APIRequestID:      outgoingRequest.GetAPIRequestID(),
 			CallReason:        outgoingRequest.GetReason().Bytes(),
 			CallSiteMethod:    outgoingRequest.GetMethod(),
