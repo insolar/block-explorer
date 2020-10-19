@@ -1,4 +1,4 @@
-package exporter_mock
+package exportergofmock
 
 import (
 	"io"

@@ -1,4 +1,4 @@
-package exporter_mock
+package exportergofmock
 
 import (
 	"github.com/insolar/block-explorer/etl/models"
@@ -10,9 +10,9 @@ type DataMock struct {
 	RecordsByPulse map[int64][]models.Record
 }
 
-func NewDataMock() *DataMock {
+func NewDataMock(initPulse int64) *DataMock {
 	return &DataMock{
-		CurrentPulse:   4000000,
+		CurrentPulse:   initPulse,
 		Pulses:         make([]models.Pulse, 0),
 		RecordsByPulse: make(map[int64][]models.Record),
 	}

@@ -1,4 +1,4 @@
-package exporter_mock
+package exportergofmock
 
 import (
 	"bytes"
@@ -19,15 +19,11 @@ type RecordsTemplate struct {
 	Payload      []byte
 }
 
-func (s *MockBEAPIServer) NewCurrentPulseRef() []byte {
+func (s *ExporterServerMemory) NewCurrentPulseRef() []byte {
 	return gen.IDWithPulse(insolar.PulseNumber(s.Data.CurrentPulse)).Bytes()
 }
 
-func (s *MockBEAPIServer) SetInitPulseNumber(pn int64) {
-	s.Data.CurrentPulse = pn
-}
-
-func (s *MockBEAPIServer) NewPulse(complete bool, sequential bool) int64 {
+func (s *ExporterServerMemory) NewPulse(complete bool, sequential bool) int64 {
 	tNow := time.Now().Unix()
 	s.Data.CurrentPulse++
 	p := models.Pulse{
@@ -42,7 +38,7 @@ func (s *MockBEAPIServer) NewPulse(complete bool, sequential bool) int64 {
 	return p.PulseNumber
 }
 
-func (s *MockBEAPIServer) NewCurrentPulseRecords(tmpl RecordsTemplate) {
+func (s *ExporterServerMemory) NewCurrentPulseRecords(tmpl RecordsTemplate) {
 	tNow := time.Now().Unix()
 	records := make([]models.Record, 0)
 	var prevRecordReference []byte
@@ -77,7 +73,7 @@ func (s *MockBEAPIServer) NewCurrentPulseRecords(tmpl RecordsTemplate) {
 	s.Data.RecordsByPulse[s.Data.CurrentPulse] = append(s.Data.RecordsByPulse[s.Data.CurrentPulse], records...)
 }
 
-func (s *MockBEAPIServer) ClearData() {
+func (s *ExporterServerMemory) ClearData() {
 	s.Data.Pulses = make([]models.Pulse, 0)
 	s.Data.RecordsByPulse = make(map[int64][]models.Record)
 }

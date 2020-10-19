@@ -3,7 +3,7 @@
 // This material is licensed under the Insolar License version 1.0,
 // available at https://github.com/insolar/block-explorer/blob/master/LICENSE.md.
 
-package exporter_mock
+package exportergofmock
 
 import (
 	"fmt"
@@ -17,29 +17,33 @@ import (
 	"github.com/insolar/block-explorer/etl/exporter"
 )
 
-type MockBEAPIServer struct {
+type ExporterServerMemory struct {
 	Listen     string
 	grpcServer *grpc.Server
 	Data       *DataMock
 }
 
-func NewExporterMock() *MockBEAPIServer {
+func NewExporterMock(initPulse int64) *ExporterServerMemory {
 	s := grpc.NewServer()
-	d := NewDataMock()
+	d := NewDataMock(initPulse)
 	fp, err := GetFreePort()
 	if err != nil {
 		log.Fatal(err)
 	}
 	exporter.RegisterRecordExporterServer(s, NewRecordServerMock(d))
 	exporter.RegisterPulseExporterServer(s, NewPulseServerMock(d))
-	return &MockBEAPIServer{
+	m := &ExporterServerMemory{
 		Listen:     fmt.Sprintf("0.0.0.0:%d", fp),
 		grpcServer: s,
 		Data:       d,
 	}
+	if err := m.Start(); err != nil {
+		log.Fatal(err)
+	}
+	return m
 }
 
-func (s *MockBEAPIServer) Start() error {
+func (s *ExporterServerMemory) Start() error {
 	if s.grpcServer == nil {
 		return errors.New("gRPC server is required")
 	}
@@ -52,12 +56,12 @@ func (s *MockBEAPIServer) Start() error {
 	return nil
 }
 
-func (s *MockBEAPIServer) Stop() error {
+func (s *ExporterServerMemory) Stop() error {
 	s.grpcServer.GracefulStop()
 	return nil
 }
 
-func (s *MockBEAPIServer) run(l net.Listener) {
+func (s *ExporterServerMemory) run(l net.Listener) {
 	go func() {
 		err := s.grpcServer.Serve(l)
 		if err != nil {
