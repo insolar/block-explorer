@@ -6,6 +6,8 @@
 package exporter_mock
 
 import (
+	"bytes"
+
 	"github.com/insolar/block-explorer/etl/exporter"
 )
 
@@ -18,28 +20,32 @@ func NewRecordServerMock(d *DataMock) *RecordServerMock {
 }
 
 func (s *RecordServerMock) GetRecords(in *exporter.GetRecordsRequest, stream exporter.RecordExporter_GetRecordsServer) error {
-	// for _, p := range s.RecordsByPulse {
-	// 	for _, r := range p {
-	// 		for _, proto := range in.Prototypes {
-	// 			if bytes.Equal(proto, r.PrototypeReference) {
-	// 				resp := &exporter.GetRecordsResponse{
-	// 					Polymorph:           0,
-	// 					RecordNumber:        uint32(r.Order),
-	// 					Reference:           r.Reference,
-	// 					Type:                string(r.Type),
-	// 					ObjectReference:     r.ObjectReference,
-	// 					PrototypeReference:  r.PrototypeReference,
-	// 					Payload:             r.Payload,
-	// 					PrevRecordReference: r.PrevRecordReference,
-	// 					PulseNumber:         uint32(r.PulseNumber),
-	// 					Timestamp:           uint32(r.Timestamp),
-	// 				}
-	// 				if err := stream.Send(resp); err != nil {
-	// 					return err
-	// 				}
-	// 			}
-	// 		}
-	// 	}
-	// }
+	for _, p := range s.RecordsByPulse {
+		iterateToRecord := int(in.RecordNumber + in.Count)
+		if iterateToRecord > len(p) {
+			iterateToRecord = len(p)
+		}
+		for i := int(in.RecordNumber); i < iterateToRecord; i++ {
+			for _, proto := range in.Prototypes {
+				if bytes.Equal(proto, p[i].PrototypeReference) {
+					resp := &exporter.GetRecordsResponse{
+						Polymorph:           0,
+						RecordNumber:        uint32(p[i].Order),
+						Reference:           p[i].Reference,
+						Type:                string(p[i].Type),
+						ObjectReference:     p[i].ObjectReference,
+						PrototypeReference:  p[i].PrototypeReference,
+						Payload:             p[i].Payload,
+						PrevRecordReference: p[i].PrevRecordReference,
+						PulseNumber:         p[i].PulseNumber,
+						Timestamp:           uint32(p[i].Timestamp),
+					}
+					if err := stream.Send(resp); err != nil {
+						return err
+					}
+				}
+			}
+		}
+	}
 	return nil
 }

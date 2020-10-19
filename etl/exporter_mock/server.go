@@ -23,7 +23,7 @@ type MockBEAPIServer struct {
 	Data       *DataMock
 }
 
-func NewBEExporter() *MockBEAPIServer {
+func NewExporterMock() *MockBEAPIServer {
 	s := grpc.NewServer()
 	d := NewDataMock()
 	fp, err := GetFreePort()

@@ -13,7 +13,7 @@ import (
 )
 
 func TestNewMockBEAPIServerGetPulses(t *testing.T) {
-	e := NewBEExporter()
+	e := NewExporterMock()
 	err := e.Start()
 	defer e.Stop()
 	require.NoError(t, err)
@@ -79,6 +79,7 @@ func TestNewMockBEAPIServerGetPulses(t *testing.T) {
 		require.NoError(t, err)
 		pulses := c.ReadAllPulses(stream)
 		require.Equal(t, 1, len(pulses))
+		require.Equal(t, int64(10), pulses[0].RecordAmount)
 	})
 
 	t.Run("no pulse is found if PulseNumberFrom > pulse stored in mock", func(t *testing.T) {
@@ -89,7 +90,7 @@ func TestNewMockBEAPIServerGetPulses(t *testing.T) {
 		}, grpc.WaitForReady(true))
 		require.NoError(t, err)
 		pulses := c.ReadAllPulses(stream)
-		require.Equal(t, 0, len(pulses))
+		require.Empty(t, pulses)
 	})
 
 	t.Run("records for proto3 found in pulses 3 and 4", func(t *testing.T) {
@@ -101,5 +102,63 @@ func TestNewMockBEAPIServerGetPulses(t *testing.T) {
 		require.NoError(t, err)
 		pulses := c.ReadAllPulses(stream)
 		require.Equal(t, 2, len(pulses))
+		require.Equal(t, int64(10), pulses[0].RecordAmount)
+		require.Equal(t, int64(10), pulses[1].RecordAmount)
+	})
+
+	t.Run("it gets all records from pulse 1 in one batch", func(t *testing.T) {
+		protos := [][]byte{proto1}
+		stream, err := c.GetRecords(context.Background(), &exporter.GetRecordsRequest{
+			Polymorph:    0,
+			PulseNumber:  initPulseNum + 1,
+			Prototypes:   protos,
+			RecordNumber: 0,
+			Count:        10,
+		}, grpc.WaitForReady(true))
+		require.NoError(t, err)
+		recs := c.ReadAllRecords(stream)
+		require.Equal(t, 10, len(recs))
+	})
+
+	t.Run("it gets all records from pulse 1 in two batches", func(t *testing.T) {
+		protos := [][]byte{proto1}
+		{
+			stream, err := c.GetRecords(context.Background(), &exporter.GetRecordsRequest{
+				Polymorph:    0,
+				PulseNumber:  initPulseNum + 1,
+				Prototypes:   protos,
+				RecordNumber: 0,
+				Count:        5,
+			}, grpc.WaitForReady(true))
+			require.NoError(t, err)
+			recs := c.ReadAllRecords(stream)
+			require.Equal(t, 5, len(recs))
+		}
+		{
+			stream, err := c.GetRecords(context.Background(), &exporter.GetRecordsRequest{
+				Polymorph:    0,
+				PulseNumber:  initPulseNum + 1,
+				Prototypes:   protos,
+				RecordNumber: 5,
+				Count:        5,
+			}, grpc.WaitForReady(true))
+			require.NoError(t, err)
+			recs := c.ReadAllRecords(stream)
+			require.Equal(t, 5, len(recs))
+		}
+	})
+
+	t.Run("it gets all records if count > records we have", func(t *testing.T) {
+		protos := [][]byte{proto1}
+		stream, err := c.GetRecords(context.Background(), &exporter.GetRecordsRequest{
+			Polymorph:    0,
+			PulseNumber:  initPulseNum + 1,
+			Prototypes:   protos,
+			RecordNumber: 0,
+			Count:        20,
+		}, grpc.WaitForReady(true))
+		require.NoError(t, err)
+		recs := c.ReadAllRecords(stream)
+		require.Equal(t, 10, len(recs))
 	})
 }
