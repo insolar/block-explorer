@@ -30,7 +30,7 @@ func NewStorage(db *gorm.DB) *Storage {
 
 // SaveJetDropData saves provided jetDrop and records to db in one transaction.
 // increase jet_drop_amount and record_amount
-func (s *Storage) SaveJetDropData(jetDrop models.JetDrop, records []models.Record, pulseNumber int64) error {
+func (s *Storage) SaveJetDropData(jetDrop models.JetDrop, records []models.IRecord, pulseNumber int64) error {
 	timer := prometheus.NewTimer(SaveJetDropDataDuration)
 	defer timer.ObserveDuration()
 
@@ -44,7 +44,7 @@ func (s *Storage) SaveJetDropData(jetDrop models.JetDrop, records []models.Recor
 	return err
 }
 
-func (s *Storage) initJD(jetDrop models.JetDrop, records []models.Record, pulseNumber int64) error {
+func (s *Storage) initJD(jetDrop models.JetDrop, records []models.IRecord, pulseNumber int64) error {
 	return s.db.Transaction(func(tx *gorm.DB) error {
 		jd := &jetDrop
 		transaction := tx.New()
@@ -53,8 +53,17 @@ func (s *Storage) initJD(jetDrop models.JetDrop, records []models.Record, pulseN
 		}
 
 		for _, record := range records {
-			if err := tx.Save(&record).Error; err != nil { // nolint
-				return errors.Wrap(err, "error while saving record")
+			state, ok := record.(models.State)
+			if ok {
+				if err := tx.Save(&state).Error; err != nil { // nolint
+					return errors.Wrap(err, "error while saving state")
+				}
+			}
+			record, ok := record.(models.Record)
+			if ok {
+				if err := tx.Save(&record).Error; err != nil { // nolint
+					return errors.Wrap(err, "error while saving record")
+				}
 			}
 		}
 
@@ -70,7 +79,7 @@ func (s *Storage) initJD(jetDrop models.JetDrop, records []models.Record, pulseN
 	})
 }
 
-func (s *Storage) updateJD(jetDrop models.JetDrop, records []models.Record) error {
+func (s *Storage) updateJD(jetDrop models.JetDrop, records []models.IRecord) error {
 	return s.db.Transaction(func(tx *gorm.DB) error {
 		jd := &jetDrop
 		if err := tx.Save(jd).Error; err != nil {
@@ -78,8 +87,17 @@ func (s *Storage) updateJD(jetDrop models.JetDrop, records []models.Record) erro
 		}
 
 		for _, record := range records {
-			if err := tx.Save(&record).Error; err != nil { // nolint
-				return errors.Wrap(err, "error while saving record")
+			state, ok := record.(models.State)
+			if ok {
+				if err := tx.Save(&state).Error; err != nil { // nolint
+					return errors.Wrap(err, "error while saving state")
+				}
+			}
+			record, ok := record.(models.Record)
+			if ok {
+				if err := tx.Save(&record).Error; err != nil { // nolint
+					return errors.Wrap(err, "error while saving record")
+				}
 			}
 		}
 		return nil

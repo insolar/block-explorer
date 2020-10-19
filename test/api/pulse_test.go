@@ -44,6 +44,7 @@ func TestGetPulse(t *testing.T) {
 	require.Len(t, pulsesResp.Result, size)
 
 	t.Run("existing pulses", func(t *testing.T) {
+		t.Skip("https://insolar.atlassian.net/browse/PENV-802")
 		t.Log("C5218 Get pulse data")
 		for i, p := range pulses[:len(pulses)-1] {
 			response := c.Pulse(t, int64(p))

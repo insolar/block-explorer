@@ -500,7 +500,7 @@ func GenerateJetDropsWithSplit(t *testing.T, pulseCount, jDCount int, depth int)
 func InitJetDropWithRecords(t *testing.T, s interfaces.StorageSetter, recordAmount int, pulse models.Pulse) models.JetDrop {
 	jetDrop := InitJetDropDB(pulse)
 	jetDrop.RecordAmount = recordAmount
-	record := make([]models.Record, recordAmount)
+	record := make([]models.IRecord, recordAmount)
 	for i := 0; i < recordAmount; i++ {
 		record[i] = InitRecordDB(jetDrop)
 	}

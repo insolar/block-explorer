@@ -29,6 +29,10 @@ const (
 	ResultRecord  RecordType = "result"
 )
 
+func StateTypeFromTypes(sr types.StateType) StateType {
+	return []StateType{"activate", "amend", "deactivate"}[sr]
+}
+
 const (
 	Activate   StateType = "activate"
 	Amend      StateType = "amend"
@@ -46,6 +50,10 @@ func ReferenceFromTypes(r types.Reference) Reference {
 	return Reference(r)
 }
 
+type IRecord interface {
+	TypeOf() RecordType
+}
+
 type Record struct {
 	Reference           Reference `gorm:"primary_key;auto_increment:false"`
 	Type                RecordType
@@ -59,6 +67,10 @@ type Record struct {
 	PulseNumber         int64
 	Order               int
 	Timestamp           int64
+}
+
+func (r Record) TypeOf() RecordType {
+	return r.Type
 }
 
 type JetDrop struct {
@@ -87,6 +99,10 @@ type State struct {
 	JetID              string
 	PulseNumber        int64
 	Timestamp          int64
+}
+
+func (r State) TypeOf() RecordType {
+	return StateRecord
 }
 
 type Request struct {

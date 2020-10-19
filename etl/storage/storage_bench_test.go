@@ -30,7 +30,7 @@ func BenchmarkSaveJetDropData(b *testing.B) {
 		secondRecord := testutils.InitRecordDB(jetDrop)
 
 		b.StartTimer()
-		err = s.SaveJetDropData(jetDrop, []models.Record{firstRecord, secondRecord}, pulse.PulseNumber)
+		err = s.SaveJetDropData(jetDrop, []models.IRecord{firstRecord, secondRecord}, pulse.PulseNumber)
 		require.NoError(b, err)
 		b.StopTimer()
 
