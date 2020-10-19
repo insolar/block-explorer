@@ -140,9 +140,11 @@ type StorageFetcher interface {
 	GetJetDrops(pulse models.Pulse) ([]models.JetDrop, error)
 }
 
+//go:generate minimock -i github.com/insolar/block-explorer/etl/interfaces.StorageExporterFetcher -o ./mock -s _mock.go -g
 // StorageExporterFetcher represents the methods for exporter-api
 type StorageExporterFetcher interface {
 	GetNextCompletePulseFilterByPrototypeReference(prevPulse int64, prototypes [][]byte) (models.Pulse, error)
+	GetRecordsByPrototype(prototypeRef [][]byte, pulseNumber int64, limit uint32, offset uint32) ([]models.Record, error)
 }
 
 //go:generate minimock -i github.com/insolar/block-explorer/etl/interfaces.Storage -o ./mock -s _mock.go -g

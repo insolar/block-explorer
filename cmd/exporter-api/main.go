@@ -13,6 +13,8 @@ import (
 	"syscall"
 
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
+	"github.com/insolar/insconfig"
+
 	"github.com/insolar/block-explorer/configuration"
 	"github.com/insolar/block-explorer/etl/connection"
 	"github.com/insolar/block-explorer/etl/dbconn"
@@ -21,7 +23,6 @@ import (
 	"github.com/insolar/block-explorer/instrumentation/belogger"
 	"github.com/insolar/block-explorer/instrumentation/metrics"
 	"github.com/insolar/block-explorer/instrumentation/profefe"
-	"github.com/insolar/insconfig"
 )
 
 var stop = make(chan os.Signal, 1)
@@ -74,7 +75,7 @@ func main() {
 		pulseExporter  *exporter.PulseServer
 	)
 
-	recordExporter = exporter.NewRecordServer()
+	recordExporter = exporter.NewRecordServer(ctx, s, *cfg)
 	pulseExporter = exporter.NewPulseServer(s, cfg.PulsePeriod, &logger)
 
 	grpcMetrics := grpc_prometheus.NewServerMetrics()
