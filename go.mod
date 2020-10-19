@@ -27,7 +27,6 @@ require (
 	github.com/mitchellh/mapstructure v1.3.3 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/ory/dockertest/v3 v3.6.0
-	github.com/ory/go-acc v0.2.3 // indirect
 	github.com/pelletier/go-toml v1.8.0 // indirect
 	github.com/pkg/errors v0.9.1
 	github.com/profefe/profefe v0.0.0-20200908185235-7b5c3a7e8970
