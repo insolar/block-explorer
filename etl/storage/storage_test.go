@@ -644,11 +644,6 @@ type pulseRecords struct {
 	pulse   models.Pulse
 }
 
-type pulseStates struct {
-	records []models.State
-	pulse   models.Pulse
-}
-
 func pulseSequenceOneObject(t *testing.T, pulseAmount, recordsAmount int) []pulseRecords {
 	var result []pulseRecords
 	objRef := gen.ID()
@@ -664,26 +659,6 @@ func pulseSequenceOneObject(t *testing.T, pulseAmount, recordsAmount int) []puls
 		require.NoError(t, err)
 		records := testutils.OrderedRecords(t, testDB, jetDrop, objRef, recordsAmount)
 		result = append(result, pulseRecords{records: records, pulse: pulse})
-		pulseNumber = pulseNumber.Next(10)
-	}
-	return result
-}
-
-func pulseSequenceStateObject(t *testing.T, pulseAmount, recordsAmount int) []pulseStates {
-	var result []pulseStates
-	objRef := gen.ID()
-	pulseNumber := gen.PulseNumber()
-	for i := 0; i < pulseAmount; i++ {
-		timestamp, err := pulseNumber.AsApproximateTime()
-		require.NoError(t, err)
-		pulse := models.Pulse{PulseNumber: int64(pulseNumber), Timestamp: timestamp.Unix()}
-		err = testutils.CreatePulse(testDB, pulse)
-		require.NoError(t, err)
-		jetDrop := testutils.InitJetDropDB(pulse)
-		err = testutils.CreateJetDrop(testDB, jetDrop)
-		require.NoError(t, err)
-		states := testutils.OrderedStates(t, testDB, jetDrop, objRef, recordsAmount)
-		result = append(result, pulseStates{records: states, pulse: pulse})
 		pulseNumber = pulseNumber.Next(10)
 	}
 	return result
@@ -866,25 +841,21 @@ func TestStorage_GetLifeline_IndexOffset_Asc(t *testing.T) {
 }
 
 func TestStorage_GetLifeline_TimestampRange(t *testing.T) {
-	defer testutils.TruncateTables(t, testDB, []interface{}{models.State{}, models.JetDrop{}, models.Pulse{}})
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
 	s := NewStorage(testDB)
 
-	pulses := pulseSequenceStateObject(t, 3, 2)
+	pulses := pulseSequenceOneObject(t, 3, 2)
 
-	expectedRecords := []models.State{pulses[1].records[1], pulses[1].records[0], pulses[0].records[1], pulses[0].records[0]}
+	expectedRecords := []models.Record{pulses[1].records[1], pulses[1].records[0], pulses[0].records[1], pulses[0].records[0]}
 
 	timestampLte := int64(pulses[1].pulse.Timestamp)
 	timestampGte := int64(pulses[0].pulse.Timestamp)
-	states, total, err := s.GetLifeline(
+	records, total, err := s.GetLifeline(
 		pulses[1].records[0].ObjectReference, nil,
 		nil, nil, &timestampLte, &timestampGte, 20, 0, false)
 	require.NoError(t, err)
 	require.Equal(t, 4, total)
-	require.Equal(t, expectedRecords[0], states[0])
-	require.Equal(t, expectedRecords[1], states[1])
-	require.Equal(t, expectedRecords[2], states[2])
-	require.Equal(t, expectedRecords[3], states[3])
-	require.Equal(t, expectedRecords, states)
+	require.Equal(t, expectedRecords, records)
 }
 
 func TestStorage_GetLifeline_PulseRange(t *testing.T) {
