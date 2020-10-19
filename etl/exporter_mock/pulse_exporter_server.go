@@ -25,19 +25,21 @@ func (s *PulseServerMock) GetNextPulse(in *exporter.GetNextPulseRequest, stream 
 			if pNum < in.PulseNumberFrom {
 				continue
 			}
+			var recsFound int64
 			for _, r := range records {
 				if bytes.Equal(r.PrototypeReference, proto) {
-					resp := &exporter.GetNextPulseResponse{
-						PulseNumber:     pNum,
-						PrevPulseNumber: pNum - 1,
-						// TODO: count records
-						RecordAmount: 100,
-					}
-					if err := stream.Send(resp); err != nil {
-						return err
-					}
+					recsFound++
 				}
-				break
+			}
+			if recsFound > 0 {
+				resp := &exporter.GetNextPulseResponse{
+					PulseNumber:     pNum,
+					PrevPulseNumber: pNum - 1,
+					RecordAmount:    recsFound,
+				}
+				if err := stream.Send(resp); err != nil {
+					return err
+				}
 			}
 		}
 	}

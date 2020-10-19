@@ -18,13 +18,28 @@ func NewRecordServerMock(d *DataMock) *RecordServerMock {
 }
 
 func (s *RecordServerMock) GetRecords(in *exporter.GetRecordsRequest, stream exporter.RecordExporter_GetRecordsServer) error {
-	for _, _ = range s.Records {
-		resp := &exporter.GetRecordsResponse{
-			Polymorph: 0,
-		}
-		if err := stream.Send(resp); err != nil {
-			return err
-		}
-	}
+	// for _, p := range s.RecordsByPulse {
+	// 	for _, r := range p {
+	// 		for _, proto := range in.Prototypes {
+	// 			if bytes.Equal(proto, r.PrototypeReference) {
+	// 				resp := &exporter.GetRecordsResponse{
+	// 					Polymorph:           0,
+	// 					RecordNumber:        uint32(r.Order),
+	// 					Reference:           r.Reference,
+	// 					Type:                string(r.Type),
+	// 					ObjectReference:     r.ObjectReference,
+	// 					PrototypeReference:  r.PrototypeReference,
+	// 					Payload:             r.Payload,
+	// 					PrevRecordReference: r.PrevRecordReference,
+	// 					PulseNumber:         uint32(r.PulseNumber),
+	// 					Timestamp:           uint32(r.Timestamp),
+	// 				}
+	// 				if err := stream.Send(resp); err != nil {
+	// 					return err
+	// 				}
+	// 			}
+	// 		}
+	// 	}
+	// }
 	return nil
 }
