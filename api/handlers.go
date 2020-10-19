@@ -559,14 +559,14 @@ func (s *Server) searchReferencePulse(ctx echo.Context, ref *insolar.Reference) 
 		})
 	}
 	// get record from db to provide information for response
-	record, err := s.storage.GetRecord(ref.GetLocal().Bytes())
+	state, err := s.storage.GetState(ref.GetLocal().Bytes())
 	if err != nil {
 		if gorm.IsRecordNotFoundError(err) {
 			response := server.CodeValidationError{
 				Code:        NullableString(http.StatusText(http.StatusBadRequest)),
 				Description: NullableString(InvalidParamsMessage),
 				ValidationFailures: &[]server.CodeValidationFailures{{
-					FailureReason: NullableString("record reference not found"),
+					FailureReason: NullableString("reference not found"),
 					Property:      NullableString("value"),
 				}},
 			}
@@ -580,10 +580,10 @@ func (s *Server) searchReferencePulse(ctx echo.Context, ref *insolar.Reference) 
 			Index           *string `json:"index,omitempty"`
 			ObjectReference *string `json:"object_reference,omitempty"`
 		}{
-			Index:           NullableString(fmt.Sprintf("%d:%d", record.PulseNumber, record.Order)),
-			ObjectReference: NullableString(insolar.NewReference(*insolar.NewIDFromBytes(record.ObjectReference)).String()),
+			Index:           NullableString(fmt.Sprintf("%d:%d", state.PulseNumber, state.Order)),
+			ObjectReference: NullableString(insolar.NewReference(*insolar.NewIDFromBytes(state.ObjectReference)).String()),
 		},
-		Type: NullableString("record"),
+		Type: NullableString("state"),
 	})
 }
 

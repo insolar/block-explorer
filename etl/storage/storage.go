@@ -158,13 +158,22 @@ func (s *Storage) SequencePulse(pulseNumber int64) error {
 	})
 }
 
-// GetJetDrops returns records with provided reference from db.
+// GetRecord returns records with provided reference from db.
 func (s *Storage) GetRecord(ref models.Reference) (models.Record, error) {
 	timer := prometheus.NewTimer(GetRecordDuration)
 	defer timer.ObserveDuration()
 	record := models.Record{}
 	err := s.db.Where("reference = ?", []byte(ref)).First(&record).Error
 	return record, err
+}
+
+// GetState returns state with provided reference from db.
+func (s *Storage) GetState(ref models.Reference) (models.State, error) {
+	timer := prometheus.NewTimer(GetStateDuration)
+	defer timer.ObserveDuration()
+	state := models.State{}
+	err := s.db.Where("record_reference = ?", []byte(ref)).First(&state).Error
+	return state, err
 }
 
 func CheckIndex(i string) (int, int, error) {

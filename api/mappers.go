@@ -24,6 +24,7 @@ func NullableString(s string) *string {
 func RecordToAPI(record models.Record) server.Record {
 	pulseNumber := record.PulseNumber
 	jetDropID := models.NewJetDropID(record.JetID, pulseNumber)
+
 	response := server.Record{
 		RecordAbstract: server.RecordAbstract{
 			Hash:        NullableString(base64.StdEncoding.EncodeToString(record.Hash)),

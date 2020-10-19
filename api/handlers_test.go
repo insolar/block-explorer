@@ -481,8 +481,8 @@ func TestPulses_HappyPath(t *testing.T) {
 	err = testutils.CreatePulse(testDB, pulse)
 	require.NoError(t, err)
 	secondPulse, err := testutils.InitPulseDB()
-	secondPulse.PulseNumber = pulse.PulseNumber + 10
 	require.NoError(t, err)
+	secondPulse.PulseNumber = pulse.PulseNumber + 10
 	err = testutils.CreatePulse(testDB, secondPulse)
 	require.NoError(t, err)
 
@@ -542,8 +542,8 @@ func TestPulses_PulsesWithRecords(t *testing.T) {
 	jetDrop2 := testutils.InitJetDropWithRecords(t, s, 2, pulse)
 
 	secondPulse, err := testutils.InitPulseDB()
-	secondPulse.PulseNumber = pulse.PulseNumber + 10
 	require.NoError(t, err)
+	secondPulse.PulseNumber = pulse.PulseNumber + 10
 	err = testutils.CreatePulse(testDB, secondPulse)
 	require.NoError(t, err)
 	jetDrop3 := testutils.InitJetDropWithRecords(t, s, 3, secondPulse)
@@ -667,8 +667,8 @@ func TestPulses_FromPulseNumber(t *testing.T) {
 	err = testutils.CreatePulse(testDB, pulse)
 	require.NoError(t, err)
 	secondPulse, err := testutils.InitPulseDB()
-	secondPulse.PulseNumber = pulse.PulseNumber + 10
 	require.NoError(t, err)
+	secondPulse.PulseNumber = pulse.PulseNumber + 10
 	err = testutils.CreatePulse(testDB, secondPulse)
 	require.NoError(t, err)
 
@@ -1316,7 +1316,7 @@ func TestSearch_Object(t *testing.T) {
 	require.EqualValues(t, objRef, *received.Meta.ObjectReference)
 }
 
-func TestSearch_Record(t *testing.T) {
+func TestSearch_State(t *testing.T) {
 	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
 
 	// insert records
@@ -1330,12 +1330,11 @@ func TestSearch_Record(t *testing.T) {
 
 	objRef := gen.Reference()
 
-	genRecords := testutils.OrderedRecords(t, testDB, jetDrop, *objRef.GetLocal(), 3)
-	testutils.OrderedRecords(t, testDB, jetDrop, gen.ID(), 3)
+	genStates := testutils.OrderedStates(t, testDB, jetDrop, *objRef.GetLocal(), 3)
 
-	recRef := genRecords[1]
+	recRef := genStates[1]
 	// search by record reference
-	resp, err := http.Get("http://" + apihost + "/api/v1/search?value=" + insolar.NewRecordReference(*insolar.NewIDFromBytes(recRef.Reference)).String())
+	resp, err := http.Get("http://" + apihost + "/api/v1/search?value=" + insolar.NewRecordReference(*insolar.NewIDFromBytes(recRef.RecordReference)).String())
 	require.NoError(t, err)
 	require.Equal(t, http.StatusOK, resp.StatusCode)
 	bodyBytes, err := ioutil.ReadAll(resp.Body)
@@ -1344,12 +1343,12 @@ func TestSearch_Record(t *testing.T) {
 	var received server.SearchState
 	err = json.Unmarshal(bodyBytes, &received)
 	require.NoError(t, err)
-	require.EqualValues(t, "record", *received.Type)
+	require.EqualValues(t, "state", *received.Type)
 	require.EqualValues(t, objRef.String(), *received.Meta.ObjectReference)
 	require.EqualValues(t, fmt.Sprintf("%d:%d", recRef.PulseNumber, recRef.Order), *received.Meta.Index)
 }
 
-func TestSearch_Record_NotExist(t *testing.T) {
+func TestSearch_State_NotExist(t *testing.T) {
 	resp, err := http.Get("http://" + apihost + "/api/v1/search?value=" + gen.RecordReference().String())
 	require.NoError(t, err)
 	require.Equal(t, http.StatusBadRequest, resp.StatusCode)
@@ -1360,7 +1359,7 @@ func TestSearch_Record_NotExist(t *testing.T) {
 	err = json.Unmarshal(bodyBytes, &received)
 	require.NoError(t, err)
 	require.Len(t, *received.ValidationFailures, 1)
-	require.EqualValues(t, "record reference not found", *(*received.ValidationFailures)[0].FailureReason)
+	require.EqualValues(t, "reference not found", *(*received.ValidationFailures)[0].FailureReason)
 	require.EqualValues(t, "value", *(*received.ValidationFailures)[0].Property)
 }
 

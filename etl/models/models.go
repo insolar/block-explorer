@@ -85,20 +85,20 @@ type JetDrop struct {
 }
 
 type State struct {
-	RecordRef    []byte `gorm:"primary_key;auto_increment:false"` // State reference.
-	Type         StateType
-	RequestRef   []byte // Reference to the corresponding request.
-	ParentRef    []byte // Reference to the parent object that caused creation of the given object.
-	ObjectRef    []byte
-	PrevStateRef []byte // Reference to a previous state.
-	IsPrototype  bool
-	Payload      []byte
-	ImageRef     []byte
-	Hash         []byte
-	Order        int
-	JetID        string
-	PulseNumber  int64
-	Timestamp    int64
+	RecordReference    []byte `gorm:"primary_key;auto_increment:false"` // State reference.
+	Type               StateType
+	RequestReference   []byte // Reference to the corresponding request.
+	ParentReference    []byte // Reference to the parent object that caused creation of the given object.
+	ObjectReference    []byte
+	PrevStateReference []byte // Reference to a previous state.
+	IsPrototype        bool
+	Payload            []byte
+	ImageReference     []byte
+	Hash               []byte
+	Order              int
+	JetID              string
+	PulseNumber        int64
+	Timestamp          int64
 }
 
 func (r State) TypeOf() RecordType {
@@ -106,25 +106,25 @@ func (r State) TypeOf() RecordType {
 }
 
 type Request struct {
-	RecordRef          []byte `gorm:"primary_key;auto_increment:false"` // Request reference.
-	Type               RequestType
-	CallType           string
-	ObjectRef          []byte // Reference to the corresponding object.
-	CallerObjectRef    []byte // Reference to the object that called this request.
-	CalleeObjectRef    []byte
-	APIRequestID       string // Internal debugging information,filled in case of working with v1 platform
-	ReasonRequestRef   []byte // Reference to the parent request—a request that caused this one
-	OriginalRequestRef []byte // original request, filled in case of working with v2 platform
-	Method             string // Name of the smart contract method that called this request.
-	Arguments          []byte // Arguments of a smart contract method.
-	Immutable          bool   // True if request didn't change the object state. False otherwise.
-	IsOriginalRequest  bool
-	PrototypeRef       []byte
-	Hash               []byte
-	JetID              string
-	PulseNumber        int64
-	Order              int
-	Timestamp          int64
+	RecordReference          []byte `gorm:"primary_key;auto_increment:false"` // Request reference.
+	Type                     RequestType
+	CallType                 string
+	ObjectReference          []byte // Reference to the corresponding object.
+	CallerObjectReference    []byte // Reference to the object that called this request.
+	CalleeObjectReference    []byte
+	APIRequestID             string // Internal debugging information,filled in case of working with v1 platform
+	ReasonRequestReference   []byte // Reference to the parent request—a request that caused this one
+	OriginalRequestReference []byte // original request, filled in case of working with v2 platform
+	Method                   string // Name of the smart contract method that called this request.
+	Arguments                []byte // Arguments of a smart contract method.
+	Immutable                bool   // True if request didn't change the object state. False otherwise.
+	IsOriginalRequest        bool
+	PrototypeReference       []byte
+	Hash                     []byte
+	JetID                    string
+	PulseNumber              int64
+	Order                    int
+	Timestamp                int64
 }
 
 func (j *JetDrop) Siblings() []string {

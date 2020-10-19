@@ -54,41 +54,41 @@ func Migrations() []*gormigrate.Migration {
 					Timestamp           int64
 				}
 				type State struct {
-					RecordRef    []byte `gorm:"primary_key;auto_increment:false"`
-					Type         string
-					RequestRef   []byte
-					ParentRef    []byte
-					ObjectRef    []byte
-					PrevStateRef []byte
-					IsPrototype  bool
-					Payload      []byte
-					ImageRef     []byte
-					Hash         []byte
-					Order        int
-					JetID        string
-					PulseNumber  int64
-					Timestamp    int64
-				}
-				type Request struct {
-					RecordRef          []byte `gorm:"primary_key;auto_increment:false"`
+					RecordReference    []byte `gorm:"primary_key;auto_increment:false"`
 					Type               string
-					CallType           string
-					ObjectRef          []byte
-					CallerObjectRef    []byte
-					CalleeObjectRef    []byte
-					APIRequestID       string
-					ReasonRequestRef   []byte
-					OriginalRequestRef []byte
-					Method             string
-					Arguments          []byte
-					Immutable          bool
-					IsOriginalRequest  bool
-					PrototypeRef       []byte
+					RequestReference   []byte
+					ParentReference    []byte
+					ObjectReference    []byte
+					PrevStateReference []byte
+					IsPrototype        bool
+					Payload            []byte
+					ImageReference     []byte
 					Hash               []byte
+					Order              int
 					JetID              string
 					PulseNumber        int64
-					Order              int
 					Timestamp          int64
+				}
+				type Request struct {
+					RecordReference          []byte `gorm:"primary_key;auto_increment:false"`
+					Type                     string
+					CallType                 string
+					ObjectRef                []byte
+					CallerObjectReference    []byte
+					CalleeObjectReference    []byte
+					APIRequestID             string
+					ReasonRequestReference   []byte
+					OriginalRequestReference []byte
+					Method                   string
+					Arguments                []byte
+					Immutable                bool
+					IsOriginalRequest        bool
+					PrototypeReference       []byte
+					Hash                     []byte
+					JetID                    string
+					PulseNumber              int64
+					Order                    int
+					Timestamp                int64
 				}
 				if err := tx.CreateTable(&Pulse{}).Error; err != nil {
 					return err
@@ -129,12 +129,12 @@ func Migrations() []*gormigrate.Migration {
 					return err
 				}
 				if err := tx.Model(&State{}).AddIndex(
-					"idx_state_requestref", "request_ref").Error; err != nil {
+					"idx_state_requestref", "request_reference").Error; err != nil {
 					return err
 				}
 
 				if err := tx.Model(&State{}).AddIndex(
-					"idx_state_objectref", "object_ref").Error; err != nil {
+					"idx_state_objectref", "object_reference").Error; err != nil {
 					return err
 				}
 				if err := tx.CreateTable(&Request{}).Error; err != nil {
