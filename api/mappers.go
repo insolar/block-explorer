@@ -81,25 +81,31 @@ func StateToAPI(state models.State) server.State {
 	if objectID != nil {
 		response.ObjectReference = NullableString(insolar.NewReference(*objectID).String())
 	}
-
-	prevStateReference := insolar.NewIDFromBytes(state.PrevStateReference)
-	if prevStateReference != nil {
-		response.PrevStateReference = NullableString(prevStateReference.String())
+	if !instrumentation.IsEmpty(state.PrevStateReference) {
+		prevStateReference := insolar.NewIDFromBytes(state.PrevStateReference)
+		if prevStateReference != nil {
+			response.PrevStateReference = NullableString(prevStateReference.String())
+		}
 	}
 
-	prototypeReference := insolar.NewIDFromBytes(state.ImageReference)
-	if prototypeReference != nil {
-		response.PrototypeReference = NullableString(prototypeReference.String())
+	if !instrumentation.IsEmpty(state.ImageReference) {
+		prototypeReference := insolar.NewIDFromBytes(state.ImageReference)
+		if prototypeReference != nil {
+			response.PrototypeReference = NullableString(prototypeReference.String())
+		}
 	}
 
-	parentReference := insolar.NewIDFromBytes(state.ParentReference)
-	if parentReference != nil {
-		response.ParentReference = NullableString(parentReference.String())
+	if !instrumentation.IsEmpty(state.ParentReference) {
+		parentReference := insolar.NewIDFromBytes(state.ParentReference)
+		if parentReference != nil {
+			response.ParentReference = NullableString(parentReference.String())
+		}
 	}
-
-	requestReference := insolar.NewIDFromBytes(state.RequestReference)
-	if requestReference != nil {
-		response.RequestReference = NullableString(requestReference.String())
+	if !instrumentation.IsEmpty(state.RequestReference) {
+		requestReference := insolar.NewIDFromBytes(state.RequestReference)
+		if requestReference != nil {
+			response.RequestReference = NullableString(requestReference.String())
+		}
 	}
 
 	reference := insolar.NewIDFromBytes(state.RecordReference)
