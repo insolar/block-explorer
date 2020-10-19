@@ -656,7 +656,7 @@ func (s *Server) ObjectLifeline(ctx echo.Context, objectReference server.ObjectR
 		timestampGte = &unptr
 	}
 
-	state, count, err := s.storage.GetLifeline(
+	records, count, err := s.storage.GetLifeline(
 		ref.GetLocal().Bytes(),
 		fromIndexString,
 		pulseNumberLt, pulseNumberGt,
@@ -669,12 +669,12 @@ func (s *Server) ObjectLifeline(ctx echo.Context, objectReference server.ObjectR
 		return ctx.JSON(http.StatusInternalServerError, struct{}{})
 	}
 
-	result := []server.State{}
-	for _, r := range state {
-		result = append(result, StateToAPI(r))
+	result := []server.Record{}
+	for _, r := range records {
+		result = append(result, RecordToAPI(r))
 	}
 	cnt := int64(count)
-	return ctx.JSON(http.StatusOK, server.StatesResponse{
+	return ctx.JSON(http.StatusOK, server.RecordsResponse{
 		Total:  &cnt,
 		Result: &result,
 	})

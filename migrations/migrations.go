@@ -60,7 +60,6 @@ func Migrations() []*gormigrate.Migration {
 					ParentReference    []byte
 					ObjectReference    []byte
 					PrevStateReference []byte
-					PrototypeReference []byte
 					IsPrototype        bool
 					Payload            []byte
 					ImageReference     []byte
