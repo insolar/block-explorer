@@ -84,7 +84,7 @@ func TestMain(t *testing.M) {
 }
 
 func TestObjectLifeline_HappyPath(t *testing.T) {
-	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.State{}, models.JetDrop{}, models.Pulse{}})
 
 	// insert records
 	pulse, err := testutils.InitPulseDB()
@@ -97,8 +97,8 @@ func TestObjectLifeline_HappyPath(t *testing.T) {
 
 	objRef := gen.Reference()
 
-	genRecords := testutils.OrderedRecords(t, testDB, jetDrop, *objRef.GetLocal(), 3)
-	testutils.OrderedRecords(t, testDB, jetDrop, gen.ID(), 3)
+	genStates := testutils.OrderedStates(t, testDB, jetDrop, *objRef.GetLocal(), 3)
+	testutils.OrderedStates(t, testDB, jetDrop, gen.ID(), 3)
 
 	// request records for objRef
 	resp, err := http.Get("http://" + apihost + "/api/v1/lifeline/" + objRef.String() + "/states?limit=20")
@@ -107,19 +107,19 @@ func TestObjectLifeline_HappyPath(t *testing.T) {
 	bodyBytes, err := ioutil.ReadAll(resp.Body)
 	require.NoError(t, err)
 
-	var received server.RecordsResponse
+	var received server.StatesResponse
 	err = json.Unmarshal(bodyBytes, &received)
 	require.NoError(t, err)
 	require.EqualValues(t, 3, int(*received.Total))
 	require.Len(t, *received.Result, 3)
 	// check desc order by default
-	require.Equal(t, insolar.NewIDFromBytes(genRecords[0].Reference).String(), *(*received.Result)[2].Reference)
-	require.Equal(t, insolar.NewIDFromBytes(genRecords[1].Reference).String(), *(*received.Result)[1].Reference)
-	require.Equal(t, insolar.NewIDFromBytes(genRecords[2].Reference).String(), *(*received.Result)[0].Reference)
+	require.Equal(t, insolar.NewIDFromBytes(genStates[0].RecordReference).String(), *(*received.Result)[2].Reference)
+	require.Equal(t, insolar.NewIDFromBytes(genStates[1].RecordReference).String(), *(*received.Result)[1].Reference)
+	require.Equal(t, insolar.NewIDFromBytes(genStates[2].RecordReference).String(), *(*received.Result)[0].Reference)
 }
 
 func TestObjectLifeline_TimestampRange(t *testing.T) {
-	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.State{}, models.JetDrop{}, models.Pulse{}})
 
 	// insert records
 	firstPulse, err := testutils.InitPulseDB()
@@ -166,13 +166,13 @@ func TestObjectLifeline_TimestampRange(t *testing.T) {
 	objRef := gen.Reference()
 
 	// pulse is later
-	testutils.OrderedRecords(t, testDB, firstJetDrop, *objRef.GetLocal(), 2)
-	genRecordsSecond := testutils.OrderedRecords(t, testDB, secondJetDrop, *objRef.GetLocal(), 2)
-	genRecordsThird := testutils.OrderedRecords(t, testDB, thirdJetDrop, *objRef.GetLocal(), 2)
+	testutils.OrderedStates(t, testDB, firstJetDrop, *objRef.GetLocal(), 2)
+	genStatesSecond := testutils.OrderedStates(t, testDB, secondJetDrop, *objRef.GetLocal(), 2)
+	genStatesThird := testutils.OrderedStates(t, testDB, thirdJetDrop, *objRef.GetLocal(), 2)
 	// pulse is greater
-	testutils.OrderedRecords(t, testDB, fourthJetDrop, *objRef.GetLocal(), 2)
+	testutils.OrderedStates(t, testDB, fourthJetDrop, *objRef.GetLocal(), 2)
 	// incorrect object, correct pulse
-	testutils.OrderedRecords(t, testDB, secondJetDrop, gen.ID(), 2)
+	testutils.OrderedStates(t, testDB, secondJetDrop, gen.ID(), 2)
 
 	// request records for objRef
 	resp, err := http.Get("http://" + apihost + "/api/v1/lifeline/" + objRef.String() + "/states?limit=20" +
@@ -189,14 +189,14 @@ func TestObjectLifeline_TimestampRange(t *testing.T) {
 	require.EqualValues(t, 4, int(*received.Total))
 	require.Len(t, *received.Result, 4)
 	// check desc order by default
-	require.Equal(t, insolar.NewIDFromBytes(genRecordsSecond[0].Reference).String(), *(*received.Result)[3].Reference)
-	require.Equal(t, insolar.NewIDFromBytes(genRecordsSecond[1].Reference).String(), *(*received.Result)[2].Reference)
-	require.Equal(t, insolar.NewIDFromBytes(genRecordsThird[0].Reference).String(), *(*received.Result)[1].Reference)
-	require.Equal(t, insolar.NewIDFromBytes(genRecordsThird[1].Reference).String(), *(*received.Result)[0].Reference)
+	require.Equal(t, insolar.NewIDFromBytes(genStatesSecond[0].RecordReference).String(), *(*received.Result)[3].Reference)
+	require.Equal(t, insolar.NewIDFromBytes(genStatesSecond[1].RecordReference).String(), *(*received.Result)[2].Reference)
+	require.Equal(t, insolar.NewIDFromBytes(genStatesThird[0].RecordReference).String(), *(*received.Result)[1].Reference)
+	require.Equal(t, insolar.NewIDFromBytes(genStatesThird[1].RecordReference).String(), *(*received.Result)[0].Reference)
 }
 
 func TestObjectLifeline_SortAsc(t *testing.T) {
-	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.State{}, models.JetDrop{}, models.Pulse{}})
 
 	// insert records
 	pulse, err := testutils.InitPulseDB()
@@ -209,8 +209,7 @@ func TestObjectLifeline_SortAsc(t *testing.T) {
 
 	objRef := gen.Reference()
 
-	genRecords := testutils.OrderedRecords(t, testDB, jetDrop, *objRef.GetLocal(), 3)
-	testutils.OrderedRecords(t, testDB, jetDrop, gen.ID(), 3)
+	genStates := testutils.OrderedStates(t, testDB, jetDrop, *objRef.GetLocal(), 3)
 
 	// request records for objRef
 	sortAsc := string(server.SortByIndex_index_asc)
@@ -226,9 +225,9 @@ func TestObjectLifeline_SortAsc(t *testing.T) {
 	require.EqualValues(t, 3, int(*received.Total))
 	require.Len(t, *received.Result, 3)
 	// check asc order
-	require.Equal(t, insolar.NewIDFromBytes(genRecords[0].Reference).String(), *(*received.Result)[0].Reference)
-	require.Equal(t, insolar.NewIDFromBytes(genRecords[1].Reference).String(), *(*received.Result)[1].Reference)
-	require.Equal(t, insolar.NewIDFromBytes(genRecords[2].Reference).String(), *(*received.Result)[2].Reference)
+	require.Equal(t, insolar.NewIDFromBytes(genStates[0].RecordReference).String(), *(*received.Result)[0].Reference)
+	require.Equal(t, insolar.NewIDFromBytes(genStates[1].RecordReference).String(), *(*received.Result)[1].Reference)
+	require.Equal(t, insolar.NewIDFromBytes(genStates[2].RecordReference).String(), *(*received.Result)[2].Reference)
 }
 
 func TestObjectLifeline_Limit_Error(t *testing.T) {
@@ -309,7 +308,7 @@ func TestObjectLifeline_NoRecords(t *testing.T) {
 	bodyBytes, err := ioutil.ReadAll(resp.Body)
 	require.NoError(t, err)
 
-	var received server.RecordsResponse
+	var received server.StatesResponse
 	err = json.Unmarshal(bodyBytes, &received)
 	require.NoError(t, err)
 

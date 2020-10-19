@@ -87,7 +87,7 @@ func StateToAPI(state models.State) server.State {
 		response.PrevStateReference = NullableString(prevStateReference.String())
 	}
 
-	prototypeReference := insolar.NewIDFromBytes(state.PrototypeReference)
+	prototypeReference := insolar.NewIDFromBytes(state.ImageReference)
 	if prototypeReference != nil {
 		response.PrototypeReference = NullableString(prototypeReference.String())
 	}

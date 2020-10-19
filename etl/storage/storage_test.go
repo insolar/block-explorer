@@ -671,13 +671,13 @@ func TestStorage_SavePulse_Concurrency(t *testing.T) {
 	require.EqualValues(t, pulse, pulseInDB[0])
 }
 
-type pulseRecords struct {
-	records []models.Record
+type pulseStates struct {
+	records []models.State
 	pulse   models.Pulse
 }
 
-func pulseSequenceOneObject(t *testing.T, pulseAmount, recordsAmount int) []pulseRecords {
-	var result []pulseRecords
+func pulseSequenceStateOneObject(t *testing.T, pulseAmount, recordsAmount int) []pulseStates {
+	var result []pulseStates
 	objRef := gen.ID()
 	pulseNumber := gen.PulseNumber()
 	for i := 0; i < pulseAmount; i++ {
@@ -689,8 +689,8 @@ func pulseSequenceOneObject(t *testing.T, pulseAmount, recordsAmount int) []puls
 		jetDrop := testutils.InitJetDropDB(pulse)
 		err = testutils.CreateJetDrop(testDB, jetDrop)
 		require.NoError(t, err)
-		records := testutils.OrderedRecords(t, testDB, jetDrop, objRef, recordsAmount)
-		result = append(result, pulseRecords{records: records, pulse: pulse})
+		states := testutils.OrderedStates(t, testDB, jetDrop, objRef, recordsAmount)
+		result = append(result, pulseStates{records: states, pulse: pulse})
 		pulseNumber = pulseNumber.Next(10)
 	}
 	return result
@@ -710,10 +710,8 @@ func TestStorage_GetLifeline(t *testing.T) {
 
 	objRef := gen.ID()
 
-	genRecords := testutils.OrderedRecords(t, testDB, jetDrop, objRef, 3)
-	testutils.OrderedRecords(t, testDB, jetDrop, gen.ID(), 3)
-
-	expectedRecords := []models.Record{genRecords[2], genRecords[1], genRecords[0]}
+	genRecords := testutils.OrderedStates(t, testDB, jetDrop, objRef, 3)
+	expectedRecords := []models.State{genRecords[2], genRecords[1], genRecords[0]}
 
 	records, total, err := s.GetLifeline(objRef.Bytes(), nil, nil, nil, nil, nil, 20, 0, false)
 	require.NoError(t, err)
@@ -744,9 +742,9 @@ func TestStorage_GetLifeline_Index(t *testing.T) {
 
 	objRef := gen.ID()
 
-	genRecords := testutils.OrderedRecords(t, testDB, jetDrop, objRef, 3)
+	genRecords := testutils.OrderedStates(t, testDB, jetDrop, objRef, 3)
 
-	expectedRecords := []models.Record{genRecords[1], genRecords[0]}
+	expectedRecords := []models.State{genRecords[1], genRecords[0]}
 
 	index := fmt.Sprintf("%d:%d", pulse.PulseNumber, genRecords[1].Order)
 	records, total, err := s.GetLifeline(objRef.Bytes(), &index, nil, nil, nil, nil, 20, 0, false)
@@ -783,9 +781,9 @@ func TestStorage_GetLifeline_IndexLimit(t *testing.T) {
 
 	objRef := gen.ID()
 
-	genRecords := testutils.OrderedRecords(t, testDB, jetDrop, objRef, 5)
+	genRecords := testutils.OrderedStates(t, testDB, jetDrop, objRef, 5)
 
-	expectedRecords := []models.Record{genRecords[3], genRecords[2]}
+	expectedRecords := []models.State{genRecords[3], genRecords[2]}
 
 	limit := 2
 	index := fmt.Sprintf("%d:%d", pulse.PulseNumber, genRecords[3].Order)
@@ -809,9 +807,9 @@ func TestStorage_GetLifeline_IndexOffset(t *testing.T) {
 
 	objRef := gen.ID()
 
-	genRecords := testutils.OrderedRecords(t, testDB, jetDrop, objRef, 5)
+	genRecords := testutils.OrderedStates(t, testDB, jetDrop, objRef, 5)
 
-	expectedRecords := []models.Record{genRecords[1], genRecords[0]}
+	expectedRecords := []models.State{genRecords[1], genRecords[0]}
 
 	offset := 2
 	index := fmt.Sprintf("%d:%d", pulse.PulseNumber, genRecords[3].Order)
@@ -835,9 +833,9 @@ func TestStorage_GetLifeline_IndexLimit_Asc(t *testing.T) {
 
 	objRef := gen.ID()
 
-	genRecords := testutils.OrderedRecords(t, testDB, jetDrop, objRef, 5)
+	genRecords := testutils.OrderedStates(t, testDB, jetDrop, objRef, 5)
 
-	expectedRecords := []models.Record{genRecords[2], genRecords[3]}
+	expectedRecords := []models.State{genRecords[2], genRecords[3]}
 
 	limit := 2
 	index := fmt.Sprintf("%d:%d", pulse.PulseNumber, genRecords[2].Order)
@@ -861,9 +859,9 @@ func TestStorage_GetLifeline_IndexOffset_Asc(t *testing.T) {
 
 	objRef := gen.ID()
 
-	genRecords := testutils.OrderedRecords(t, testDB, jetDrop, objRef, 5)
+	genRecords := testutils.OrderedStates(t, testDB, jetDrop, objRef, 5)
 
-	expectedRecords := []models.Record{genRecords[3], genRecords[4]}
+	expectedRecords := []models.State{genRecords[3], genRecords[4]}
 
 	index := fmt.Sprintf("%d:%d", pulse.PulseNumber, genRecords[1].Order)
 	records, total, err := s.GetLifeline(objRef.Bytes(), &index, nil, nil, nil, nil, 20, 2, true)
@@ -876,27 +874,27 @@ func TestStorage_GetLifeline_TimestampRange(t *testing.T) {
 	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.State{}, models.JetDrop{}, models.Pulse{}})
 	s := NewStorage(testDB)
 
-	pulses := pulseSequenceOneObject(t, 3, 2)
+	pulses := pulseSequenceStateOneObject(t, 3, 2)
 
-	expectedRecords := []models.Record{pulses[1].records[1], pulses[1].records[0], pulses[0].records[1], pulses[0].records[0]}
+	expectedRecords := []models.State{pulses[1].records[1], pulses[1].records[0], pulses[0].records[1], pulses[0].records[0]}
 
-	timestampLte := int64(pulses[1].pulse.Timestamp)
-	timestampGte := int64(pulses[0].pulse.Timestamp)
-	records, total, err := s.GetLifeline(
+	timestampLte := pulses[1].pulse.Timestamp
+	timestampGte := pulses[0].pulse.Timestamp
+	states, total, err := s.GetLifeline(
 		pulses[1].records[0].ObjectReference, nil,
 		nil, nil, &timestampLte, &timestampGte, 20, 0, false)
 	require.NoError(t, err)
 	require.Equal(t, 4, total)
-	require.Equal(t, expectedRecords, records)
+	require.Equal(t, expectedRecords, states)
 }
 
 func TestStorage_GetLifeline_PulseRange(t *testing.T) {
 	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.State{}, models.JetDrop{}, models.Pulse{}})
 	s := NewStorage(testDB)
 
-	pulses := pulseSequenceOneObject(t, 3, 3)
+	pulses := pulseSequenceStateOneObject(t, 3, 3)
 
-	expectedRecords := []models.Record{pulses[1].records[2], pulses[1].records[1], pulses[1].records[0]}
+	expectedRecords := []models.State{pulses[1].records[2], pulses[1].records[1], pulses[1].records[0]}
 
 	records, total, err := s.GetLifeline(
 		pulses[1].records[0].ObjectReference, nil,
@@ -910,7 +908,7 @@ func TestStorage_GetLifeline_PulseRange_SamePulse(t *testing.T) {
 	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.State{}, models.JetDrop{}, models.Pulse{}})
 	s := NewStorage(testDB)
 
-	pulses := pulseSequenceOneObject(t, 3, 3)
+	pulses := pulseSequenceStateOneObject(t, 3, 3)
 
 	records, total, err := s.GetLifeline(
 		pulses[1].records[0].ObjectReference, nil,
@@ -924,9 +922,9 @@ func TestStorage_GetLifeline_PulseRange_Limit(t *testing.T) {
 	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.State{}, models.JetDrop{}, models.Pulse{}})
 	s := NewStorage(testDB)
 
-	pulses := pulseSequenceOneObject(t, 3, 3)
+	pulses := pulseSequenceStateOneObject(t, 3, 3)
 
-	expectedRecords := []models.Record{pulses[1].records[2], pulses[1].records[1]}
+	expectedRecords := []models.State{pulses[1].records[2], pulses[1].records[1]}
 
 	records, total, err := s.GetLifeline(
 		pulses[1].records[0].ObjectReference, nil,
@@ -940,9 +938,9 @@ func TestStorage_GetLifeline_PulseRange_LimitOffset(t *testing.T) {
 	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.State{}, models.JetDrop{}, models.Pulse{}})
 	s := NewStorage(testDB)
 
-	pulses := pulseSequenceOneObject(t, 3, 4)
+	pulses := pulseSequenceStateOneObject(t, 3, 4)
 
-	expectedRecords := []models.Record{pulses[1].records[2], pulses[1].records[1]}
+	expectedRecords := []models.State{pulses[1].records[2], pulses[1].records[1]}
 
 	records, total, err := s.GetLifeline(
 		pulses[1].records[0].ObjectReference, nil,
@@ -956,9 +954,9 @@ func TestStorage_GetLifeline_PulseRange_Limit_Asc(t *testing.T) {
 	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.State{}, models.JetDrop{}, models.Pulse{}})
 	s := NewStorage(testDB)
 
-	pulses := pulseSequenceOneObject(t, 3, 3)
+	pulses := pulseSequenceStateOneObject(t, 3, 3)
 
-	expectedRecords := []models.Record{pulses[1].records[0], pulses[1].records[1]}
+	expectedRecords := []models.State{pulses[1].records[0], pulses[1].records[1]}
 
 	records, total, err := s.GetLifeline(
 		pulses[1].records[0].ObjectReference, nil,
@@ -972,9 +970,9 @@ func TestStorage_GetLifeline_Index_PulseRange(t *testing.T) {
 	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.State{}, models.JetDrop{}, models.Pulse{}})
 	s := NewStorage(testDB)
 
-	pulses := pulseSequenceOneObject(t, 4, 3)
+	pulses := pulseSequenceStateOneObject(t, 4, 3)
 
-	expectedRecords := []models.Record{pulses[2].records[1], pulses[2].records[0], pulses[1].records[2], pulses[1].records[1], pulses[1].records[0]}
+	expectedRecords := []models.State{pulses[2].records[1], pulses[2].records[0], pulses[1].records[2], pulses[1].records[1], pulses[1].records[0]}
 
 	index := fmt.Sprintf("%d:%d", pulses[2].pulse.PulseNumber, pulses[2].records[1].Order)
 	records, total, err := s.GetLifeline(
@@ -989,9 +987,9 @@ func TestStorage_GetLifeline_AllParams(t *testing.T) {
 	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.State{}, models.JetDrop{}, models.Pulse{}})
 	s := NewStorage(testDB)
 
-	pulses := pulseSequenceOneObject(t, 4, 3)
+	pulses := pulseSequenceStateOneObject(t, 4, 3)
 
-	expectedRecords := []models.Record{pulses[2].records[0], pulses[1].records[2], pulses[1].records[1]}
+	expectedRecords := []models.State{pulses[2].records[0], pulses[1].records[2], pulses[1].records[1]}
 
 	index := fmt.Sprintf("%d:%d", pulses[2].pulse.PulseNumber, pulses[2].records[1].Order)
 	records, total, err := s.GetLifeline(
@@ -1006,7 +1004,7 @@ func TestStorage_GetLifeline_PulseRange_Empty(t *testing.T) {
 	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.State{}, models.JetDrop{}, models.Pulse{}})
 	s := NewStorage(testDB)
 
-	pulses := pulseSequenceOneObject(t, 4, 3)
+	pulses := pulseSequenceStateOneObject(t, 4, 3)
 
 	records, total, err := s.GetLifeline(
 		pulses[1].records[0].ObjectReference, nil,

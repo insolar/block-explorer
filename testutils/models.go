@@ -43,19 +43,19 @@ func InitRecordDB(jetDrop models.JetDrop) models.Record {
 func InitStatedDB(jetDrop models.JetDrop, stateType models.StateType) models.State {
 	return models.State{
 		RecordReference:    gen.ID().Bytes(),
-		Type:         models.Activate,
+		Type:               stateType,
 		RequestReference:   gen.ID().Bytes(),
 		ParentReference:    gen.ID().Bytes(),
 		ObjectReference:    gen.ID().Bytes(),
 		PrevStateReference: gen.ID().Bytes(),
-		IsPrototype:  false,
-		Payload:      GenerateRandBytes(),
+		IsPrototype:        false,
+		Payload:            GenerateRandBytes(),
 		ImageReference:     gen.ID().Bytes(),
-		Hash:         GenerateRandBytes(),
-		Order:        1,
-		JetID:        jetDrop.JetID,
-		PulseNumber:  jetDrop.PulseNumber,
-		Timestamp:    jetDrop.Timestamp,
+		Hash:               GenerateRandBytes(),
+		Order:              1,
+		JetID:              jetDrop.JetID,
+		PulseNumber:        jetDrop.PulseNumber,
+		Timestamp:          jetDrop.Timestamp,
 	}
 }
 
@@ -185,23 +185,10 @@ func CreatePulses(db *gorm.DB, pulses []models.Pulse) error {
 	})
 }
 
-func OrderedRecords(t *testing.T, db *gorm.DB, jetDrop models.JetDrop, objRef insolar.ID, amount int) []models.Record {
-	var result []models.Record
-	for i := 1; i <= amount; i++ {
-		record := InitRecordDB(jetDrop)
-		record.ObjectReference = objRef.Bytes()
-		record.Order = i
-		err := CreateRecord(db, record)
-		require.NoError(t, err)
-		result = append(result, record)
-	}
-	return result
-}
-
 func OrderedStates(t *testing.T, db *gorm.DB, jetDrop models.JetDrop, objRef insolar.ID, amount int) []models.State {
 	var result []models.State
 	for i := 1; i <= amount; i++ {
-		state := InitStateDB(jetDrop)
+		state := InitStatedDB(jetDrop, models.Activate)
 		state.ObjectReference = objRef.Bytes()
 		state.Order = i
 		err := CreateState(db, state)

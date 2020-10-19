@@ -91,7 +91,6 @@ type State struct {
 	ParentReference    []byte // Reference to the parent object that caused creation of the given object.
 	ObjectReference    []byte
 	PrevStateReference []byte // Reference to a previous state.
-	PrototypeReference []byte
 	IsPrototype        bool
 	Payload            []byte
 	ImageReference     []byte
