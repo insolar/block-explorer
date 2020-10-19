@@ -119,7 +119,7 @@ func TestRecordServer_GetRecords(t *testing.T) {
 	t.Run("happy", func(t *testing.T) {
 		var recordsResponses []*GetRecordsResponse
 		request := GetRecordsRequest{
-			PulseNumber:  uint32(pulse.PulseNumber),
+			PulseNumber:  pulse.PulseNumber,
 			Prototypes:   [][]byte{accountPrototypeReference.Bytes()},
 			RecordNumber: 0,
 			Count:        3,
@@ -142,7 +142,7 @@ func TestRecordServer_GetRecords(t *testing.T) {
 	t.Run("count", func(t *testing.T) {
 		var recordsResponses []*GetRecordsResponse
 		request := GetRecordsRequest{
-			PulseNumber:  uint32(pulse.PulseNumber),
+			PulseNumber:  pulse.PulseNumber,
 			Prototypes:   [][]byte{accountPrototypeReference.Bytes()},
 			RecordNumber: 0,
 			Count:        2,
@@ -164,7 +164,7 @@ func TestRecordServer_GetRecords(t *testing.T) {
 	t.Run("recordNumber", func(t *testing.T) {
 		var recordsResponses []*GetRecordsResponse
 		request := GetRecordsRequest{
-			PulseNumber:  uint32(pulse.PulseNumber),
+			PulseNumber:  pulse.PulseNumber,
 			Prototypes:   [][]byte{accountPrototypeReference.Bytes()},
 			RecordNumber: 1,
 			Count:        1,
@@ -185,7 +185,7 @@ func TestRecordServer_GetRecords(t *testing.T) {
 	t.Run("no protoref", func(t *testing.T) {
 		var recordsResponses []*GetRecordsResponse
 		request := GetRecordsRequest{
-			PulseNumber:  uint32(pulse.PulseNumber),
+			PulseNumber:  pulse.PulseNumber,
 			Prototypes:   [][]byte{gen.Reference().Bytes()},
 			RecordNumber: 1,
 			Count:        1,
