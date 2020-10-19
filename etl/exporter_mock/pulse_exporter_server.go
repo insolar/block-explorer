@@ -22,14 +22,14 @@ func NewPulseServerMock(d *DataMock) *PulseServerMock {
 func (s *PulseServerMock) GetNextPulse(in *exporter.GetNextPulseRequest, stream exporter.PulseExporter_GetNextPulseServer) error {
 	for _, proto := range in.Prototypes {
 		for pNum, records := range s.RecordsByPulse {
-			if pNum < int64(in.PulseNumberFrom) {
+			if pNum < in.PulseNumberFrom {
 				continue
 			}
 			for _, r := range records {
 				if bytes.Equal(r.PrototypeReference, proto) {
 					resp := &exporter.GetNextPulseResponse{
-						PulseNumber:     uint32(pNum),
-						PrevPulseNumber: uint32(pNum - 1),
+						PulseNumber:     pNum,
+						PrevPulseNumber: pNum - 1,
 						// TODO: count records
 						RecordAmount: 100,
 					}

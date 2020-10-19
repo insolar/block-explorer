@@ -19,7 +19,6 @@ func TestNewMockBEAPIServerGetPulses(t *testing.T) {
 	require.NoError(t, err)
 
 	var initPulseNum int64 = 400000
-
 	e.SetInitPulseNumber(initPulseNum)
 
 	// 10 records of proto1/obj1 in first pulse
@@ -74,7 +73,7 @@ func TestNewMockBEAPIServerGetPulses(t *testing.T) {
 	t.Run("it gets one pulse which has records of proto1", func(t *testing.T) {
 		protos := [][]byte{proto1}
 		stream, err := c.GetNextPulse(context.Background(), &exporter.GetNextPulseRequest{
-			PulseNumberFrom: uint32(initPulseNum + 1),
+			PulseNumberFrom: initPulseNum + 1,
 			Prototypes:      protos,
 		}, grpc.WaitForReady(true))
 		require.NoError(t, err)
@@ -85,7 +84,7 @@ func TestNewMockBEAPIServerGetPulses(t *testing.T) {
 	t.Run("no pulse is found if PulseNumberFrom > pulse stored in mock", func(t *testing.T) {
 		protos := [][]byte{proto1}
 		stream, err := c.GetNextPulse(context.Background(), &exporter.GetNextPulseRequest{
-			PulseNumberFrom: uint32(initPulseNum + 2),
+			PulseNumberFrom: initPulseNum + 2,
 			Prototypes:      protos,
 		}, grpc.WaitForReady(true))
 		require.NoError(t, err)
@@ -96,7 +95,7 @@ func TestNewMockBEAPIServerGetPulses(t *testing.T) {
 	t.Run("records for proto3 found in pulses 3 and 4", func(t *testing.T) {
 		protos := [][]byte{proto3}
 		stream, err := c.GetNextPulse(context.Background(), &exporter.GetNextPulseRequest{
-			PulseNumberFrom: uint32(initPulseNum),
+			PulseNumberFrom: initPulseNum,
 			Prototypes:      protos,
 		}, grpc.WaitForReady(true))
 		require.NoError(t, err)

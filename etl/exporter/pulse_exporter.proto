@@ -9,12 +9,12 @@ service PulseExporter {
 
 
 message GetNextPulseResponse {
-    int64 PulseNumber = 1;
-    int64 PrevPulseNumber = 2;
-    int64 RecordAmount = 3;
+    uint32 PulseNumber = 1;
+    uint32 PrevPulseNumber = 2;
+    uint32 RecordAmount = 3;
 }
 
 message GetNextPulseRequest {
-    int64 PulseNumberFrom = 1;
+    uint32 PulseNumberFrom = 1;
     repeated bytes Prototypes = 2;
 }
