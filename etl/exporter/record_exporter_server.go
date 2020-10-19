@@ -17,12 +17,12 @@ import (
 )
 
 type RecordServer struct {
-	storage interfaces.StorageExtractor
+	storage interfaces.StorageExporterFetcher
 	logger  log.Logger
 	config  configuration.Exporter
 }
 
-func NewRecordServer(ctx context.Context, storage interfaces.StorageExtractor, config configuration.Exporter) *RecordServer {
+func NewRecordServer(ctx context.Context, storage interfaces.StorageExporterFetcher, config configuration.Exporter) *RecordServer {
 	logger := belogger.FromContext(ctx)
 	return &RecordServer{storage: storage, logger: logger, config: config}
 }
