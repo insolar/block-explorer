@@ -215,7 +215,7 @@ func transferToCanonicalRecord(r *exporter.Record) (types.IRecord, error) {
 		objectReference     types.Reference
 		prototypeReference  types.Reference = make([]byte, 0)
 		prevRecordReference types.Reference = make([]byte, 0)
-		recordPayload       []byte          = make([]byte, 0)
+		recordPayload       []byte
 		hash                []byte
 		rawData             []byte
 		order               uint32
@@ -292,7 +292,6 @@ func transferToCanonicalRecord(r *exporter.Record) (types.IRecord, error) {
 		}, nil
 
 	case *ins_record.Virtual_Result:
-		recordType = types.RESULT
 		result := virtual.GetResult()
 		recordPayload = result.Payload
 		if r.Record.ID.Pulse() == pulse.MinTimePulse {
@@ -300,7 +299,6 @@ func transferToCanonicalRecord(r *exporter.Record) (types.IRecord, error) {
 		}
 
 	case *ins_record.Virtual_IncomingRequest:
-		recordType = types.REQUEST
 		incomingRequest := virtual.GetIncomingRequest()
 		if r.Record.ID.Pulse() == pulse.MinTimePulse {
 			objectReference = genesisrefs.GenesisRef(incomingRequest.Method).GetLocal().Bytes()
@@ -323,7 +321,6 @@ func transferToCanonicalRecord(r *exporter.Record) (types.IRecord, error) {
 		}, nil
 
 	case *ins_record.Virtual_OutgoingRequest:
-		recordType = types.REQUEST
 		outgoingRequest := virtual.GetOutgoingRequest()
 		if r.Record.ID.Pulse() == pulse.MinTimePulse {
 			objectReference = genesisrefs.GenesisRef(outgoingRequest.Method).GetLocal().Bytes()
