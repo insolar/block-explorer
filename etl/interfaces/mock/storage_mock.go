@@ -51,6 +51,12 @@ type StorageMock struct {
 	beforeGetPulseByPrevCounter uint64
 	GetPulseByPrevMock          mStorageMockGetPulseByPrev
 
+	funcGetRecordsByPrototype          func(prototypeRef [][]byte, pulseNumber int64, limit uint32, offset uint32) (sa1 []models.State, err error)
+	inspectFuncGetRecordsByPrototype   func(prototypeRef [][]byte, pulseNumber int64, limit uint32, offset uint32)
+	afterGetRecordsByPrototypeCounter  uint64
+	beforeGetRecordsByPrototypeCounter uint64
+	GetRecordsByPrototypeMock          mStorageMockGetRecordsByPrototype
+
 	funcGetSequentialPulse          func() (p1 models.Pulse, err error)
 	inspectFuncGetSequentialPulse   func()
 	afterGetSequentialPulseCounter  uint64
@@ -99,6 +105,9 @@ func NewStorageMock(t minimock.Tester) *StorageMock {
 
 	m.GetPulseByPrevMock = mStorageMockGetPulseByPrev{mock: m}
 	m.GetPulseByPrevMock.callArgs = []*StorageMockGetPulseByPrevParams{}
+
+	m.GetRecordsByPrototypeMock = mStorageMockGetRecordsByPrototype{mock: m}
+	m.GetRecordsByPrototypeMock.callArgs = []*StorageMockGetRecordsByPrototypeParams{}
 
 	m.GetSequentialPulseMock = mStorageMockGetSequentialPulse{mock: m}
 
@@ -1339,6 +1348,225 @@ func (m *StorageMock) MinimockGetPulseByPrevInspect() {
 	}
 }
 
+type mStorageMockGetRecordsByPrototype struct {
+	mock               *StorageMock
+	defaultExpectation *StorageMockGetRecordsByPrototypeExpectation
+	expectations       []*StorageMockGetRecordsByPrototypeExpectation
+
+	callArgs []*StorageMockGetRecordsByPrototypeParams
+	mutex    sync.RWMutex
+}
+
+// StorageMockGetRecordsByPrototypeExpectation specifies expectation struct of the Storage.GetRecordsByPrototype
+type StorageMockGetRecordsByPrototypeExpectation struct {
+	mock    *StorageMock
+	params  *StorageMockGetRecordsByPrototypeParams
+	results *StorageMockGetRecordsByPrototypeResults
+	Counter uint64
+}
+
+// StorageMockGetRecordsByPrototypeParams contains parameters of the Storage.GetRecordsByPrototype
+type StorageMockGetRecordsByPrototypeParams struct {
+	prototypeRef [][]byte
+	pulseNumber  int64
+	limit        uint32
+	offset       uint32
+}
+
+// StorageMockGetRecordsByPrototypeResults contains results of the Storage.GetRecordsByPrototype
+type StorageMockGetRecordsByPrototypeResults struct {
+	sa1 []models.State
+	err error
+}
+
+// Expect sets up expected params for Storage.GetRecordsByPrototype
+func (mmGetRecordsByPrototype *mStorageMockGetRecordsByPrototype) Expect(prototypeRef [][]byte, pulseNumber int64, limit uint32, offset uint32) *mStorageMockGetRecordsByPrototype {
+	if mmGetRecordsByPrototype.mock.funcGetRecordsByPrototype != nil {
+		mmGetRecordsByPrototype.mock.t.Fatalf("StorageMock.GetRecordsByPrototype mock is already set by Set")
+	}
+
+	if mmGetRecordsByPrototype.defaultExpectation == nil {
+		mmGetRecordsByPrototype.defaultExpectation = &StorageMockGetRecordsByPrototypeExpectation{}
+	}
+
+	mmGetRecordsByPrototype.defaultExpectation.params = &StorageMockGetRecordsByPrototypeParams{prototypeRef, pulseNumber, limit, offset}
+	for _, e := range mmGetRecordsByPrototype.expectations {
+		if minimock.Equal(e.params, mmGetRecordsByPrototype.defaultExpectation.params) {
+			mmGetRecordsByPrototype.mock.t.Fatalf("Expectation set by When has same params: %#v", *mmGetRecordsByPrototype.defaultExpectation.params)
+		}
+	}
+
+	return mmGetRecordsByPrototype
+}
+
+// Inspect accepts an inspector function that has same arguments as the Storage.GetRecordsByPrototype
+func (mmGetRecordsByPrototype *mStorageMockGetRecordsByPrototype) Inspect(f func(prototypeRef [][]byte, pulseNumber int64, limit uint32, offset uint32)) *mStorageMockGetRecordsByPrototype {
+	if mmGetRecordsByPrototype.mock.inspectFuncGetRecordsByPrototype != nil {
+		mmGetRecordsByPrototype.mock.t.Fatalf("Inspect function is already set for StorageMock.GetRecordsByPrototype")
+	}
+
+	mmGetRecordsByPrototype.mock.inspectFuncGetRecordsByPrototype = f
+
+	return mmGetRecordsByPrototype
+}
+
+// Return sets up results that will be returned by Storage.GetRecordsByPrototype
+func (mmGetRecordsByPrototype *mStorageMockGetRecordsByPrototype) Return(sa1 []models.State, err error) *StorageMock {
+	if mmGetRecordsByPrototype.mock.funcGetRecordsByPrototype != nil {
+		mmGetRecordsByPrototype.mock.t.Fatalf("StorageMock.GetRecordsByPrototype mock is already set by Set")
+	}
+
+	if mmGetRecordsByPrototype.defaultExpectation == nil {
+		mmGetRecordsByPrototype.defaultExpectation = &StorageMockGetRecordsByPrototypeExpectation{mock: mmGetRecordsByPrototype.mock}
+	}
+	mmGetRecordsByPrototype.defaultExpectation.results = &StorageMockGetRecordsByPrototypeResults{sa1, err}
+	return mmGetRecordsByPrototype.mock
+}
+
+//Set uses given function f to mock the Storage.GetRecordsByPrototype method
+func (mmGetRecordsByPrototype *mStorageMockGetRecordsByPrototype) Set(f func(prototypeRef [][]byte, pulseNumber int64, limit uint32, offset uint32) (sa1 []models.State, err error)) *StorageMock {
+	if mmGetRecordsByPrototype.defaultExpectation != nil {
+		mmGetRecordsByPrototype.mock.t.Fatalf("Default expectation is already set for the Storage.GetRecordsByPrototype method")
+	}
+
+	if len(mmGetRecordsByPrototype.expectations) > 0 {
+		mmGetRecordsByPrototype.mock.t.Fatalf("Some expectations are already set for the Storage.GetRecordsByPrototype method")
+	}
+
+	mmGetRecordsByPrototype.mock.funcGetRecordsByPrototype = f
+	return mmGetRecordsByPrototype.mock
+}
+
+// When sets expectation for the Storage.GetRecordsByPrototype which will trigger the result defined by the following
+// Then helper
+func (mmGetRecordsByPrototype *mStorageMockGetRecordsByPrototype) When(prototypeRef [][]byte, pulseNumber int64, limit uint32, offset uint32) *StorageMockGetRecordsByPrototypeExpectation {
+	if mmGetRecordsByPrototype.mock.funcGetRecordsByPrototype != nil {
+		mmGetRecordsByPrototype.mock.t.Fatalf("StorageMock.GetRecordsByPrototype mock is already set by Set")
+	}
+
+	expectation := &StorageMockGetRecordsByPrototypeExpectation{
+		mock:   mmGetRecordsByPrototype.mock,
+		params: &StorageMockGetRecordsByPrototypeParams{prototypeRef, pulseNumber, limit, offset},
+	}
+	mmGetRecordsByPrototype.expectations = append(mmGetRecordsByPrototype.expectations, expectation)
+	return expectation
+}
+
+// Then sets up Storage.GetRecordsByPrototype return parameters for the expectation previously defined by the When method
+func (e *StorageMockGetRecordsByPrototypeExpectation) Then(sa1 []models.State, err error) *StorageMock {
+	e.results = &StorageMockGetRecordsByPrototypeResults{sa1, err}
+	return e.mock
+}
+
+// GetRecordsByPrototype implements interfaces.Storage
+func (mmGetRecordsByPrototype *StorageMock) GetRecordsByPrototype(prototypeRef [][]byte, pulseNumber int64, limit uint32, offset uint32) (sa1 []models.State, err error) {
+	mm_atomic.AddUint64(&mmGetRecordsByPrototype.beforeGetRecordsByPrototypeCounter, 1)
+	defer mm_atomic.AddUint64(&mmGetRecordsByPrototype.afterGetRecordsByPrototypeCounter, 1)
+
+	if mmGetRecordsByPrototype.inspectFuncGetRecordsByPrototype != nil {
+		mmGetRecordsByPrototype.inspectFuncGetRecordsByPrototype(prototypeRef, pulseNumber, limit, offset)
+	}
+
+	mm_params := &StorageMockGetRecordsByPrototypeParams{prototypeRef, pulseNumber, limit, offset}
+
+	// Record call args
+	mmGetRecordsByPrototype.GetRecordsByPrototypeMock.mutex.Lock()
+	mmGetRecordsByPrototype.GetRecordsByPrototypeMock.callArgs = append(mmGetRecordsByPrototype.GetRecordsByPrototypeMock.callArgs, mm_params)
+	mmGetRecordsByPrototype.GetRecordsByPrototypeMock.mutex.Unlock()
+
+	for _, e := range mmGetRecordsByPrototype.GetRecordsByPrototypeMock.expectations {
+		if minimock.Equal(e.params, mm_params) {
+			mm_atomic.AddUint64(&e.Counter, 1)
+			return e.results.sa1, e.results.err
+		}
+	}
+
+	if mmGetRecordsByPrototype.GetRecordsByPrototypeMock.defaultExpectation != nil {
+		mm_atomic.AddUint64(&mmGetRecordsByPrototype.GetRecordsByPrototypeMock.defaultExpectation.Counter, 1)
+		mm_want := mmGetRecordsByPrototype.GetRecordsByPrototypeMock.defaultExpectation.params
+		mm_got := StorageMockGetRecordsByPrototypeParams{prototypeRef, pulseNumber, limit, offset}
+		if mm_want != nil && !minimock.Equal(*mm_want, mm_got) {
+			mmGetRecordsByPrototype.t.Errorf("StorageMock.GetRecordsByPrototype got unexpected parameters, want: %#v, got: %#v%s\n", *mm_want, mm_got, minimock.Diff(*mm_want, mm_got))
+		}
+
+		mm_results := mmGetRecordsByPrototype.GetRecordsByPrototypeMock.defaultExpectation.results
+		if mm_results == nil {
+			mmGetRecordsByPrototype.t.Fatal("No results are set for the StorageMock.GetRecordsByPrototype")
+		}
+		return (*mm_results).sa1, (*mm_results).err
+	}
+	if mmGetRecordsByPrototype.funcGetRecordsByPrototype != nil {
+		return mmGetRecordsByPrototype.funcGetRecordsByPrototype(prototypeRef, pulseNumber, limit, offset)
+	}
+	mmGetRecordsByPrototype.t.Fatalf("Unexpected call to StorageMock.GetRecordsByPrototype. %v %v %v %v", prototypeRef, pulseNumber, limit, offset)
+	return
+}
+
+// GetRecordsByPrototypeAfterCounter returns a count of finished StorageMock.GetRecordsByPrototype invocations
+func (mmGetRecordsByPrototype *StorageMock) GetRecordsByPrototypeAfterCounter() uint64 {
+	return mm_atomic.LoadUint64(&mmGetRecordsByPrototype.afterGetRecordsByPrototypeCounter)
+}
+
+// GetRecordsByPrototypeBeforeCounter returns a count of StorageMock.GetRecordsByPrototype invocations
+func (mmGetRecordsByPrototype *StorageMock) GetRecordsByPrototypeBeforeCounter() uint64 {
+	return mm_atomic.LoadUint64(&mmGetRecordsByPrototype.beforeGetRecordsByPrototypeCounter)
+}
+
+// Calls returns a list of arguments used in each call to StorageMock.GetRecordsByPrototype.
+// The list is in the same order as the calls were made (i.e. recent calls have a higher index)
+func (mmGetRecordsByPrototype *mStorageMockGetRecordsByPrototype) Calls() []*StorageMockGetRecordsByPrototypeParams {
+	mmGetRecordsByPrototype.mutex.RLock()
+
+	argCopy := make([]*StorageMockGetRecordsByPrototypeParams, len(mmGetRecordsByPrototype.callArgs))
+	copy(argCopy, mmGetRecordsByPrototype.callArgs)
+
+	mmGetRecordsByPrototype.mutex.RUnlock()
+
+	return argCopy
+}
+
+// MinimockGetRecordsByPrototypeDone returns true if the count of the GetRecordsByPrototype invocations corresponds
+// the number of defined expectations
+func (m *StorageMock) MinimockGetRecordsByPrototypeDone() bool {
+	for _, e := range m.GetRecordsByPrototypeMock.expectations {
+		if mm_atomic.LoadUint64(&e.Counter) < 1 {
+			return false
+		}
+	}
+
+	// if default expectation was set then invocations count should be greater than zero
+	if m.GetRecordsByPrototypeMock.defaultExpectation != nil && mm_atomic.LoadUint64(&m.afterGetRecordsByPrototypeCounter) < 1 {
+		return false
+	}
+	// if func was set then invocations count should be greater than zero
+	if m.funcGetRecordsByPrototype != nil && mm_atomic.LoadUint64(&m.afterGetRecordsByPrototypeCounter) < 1 {
+		return false
+	}
+	return true
+}
+
+// MinimockGetRecordsByPrototypeInspect logs each unmet expectation
+func (m *StorageMock) MinimockGetRecordsByPrototypeInspect() {
+	for _, e := range m.GetRecordsByPrototypeMock.expectations {
+		if mm_atomic.LoadUint64(&e.Counter) < 1 {
+			m.t.Errorf("Expected call to StorageMock.GetRecordsByPrototype with params: %#v", *e.params)
+		}
+	}
+
+	// if default expectation was set then invocations count should be greater than zero
+	if m.GetRecordsByPrototypeMock.defaultExpectation != nil && mm_atomic.LoadUint64(&m.afterGetRecordsByPrototypeCounter) < 1 {
+		if m.GetRecordsByPrototypeMock.defaultExpectation.params == nil {
+			m.t.Error("Expected call to StorageMock.GetRecordsByPrototype")
+		} else {
+			m.t.Errorf("Expected call to StorageMock.GetRecordsByPrototype with params: %#v", *m.GetRecordsByPrototypeMock.defaultExpectation.params)
+		}
+	}
+	// if func was set then invocations count should be greater than zero
+	if m.funcGetRecordsByPrototype != nil && mm_atomic.LoadUint64(&m.afterGetRecordsByPrototypeCounter) < 1 {
+		m.t.Error("Expected call to StorageMock.GetRecordsByPrototype")
+	}
+}
+
 type mStorageMockGetSequentialPulse struct {
 	mock               *StorageMock
 	defaultExpectation *StorageMockGetSequentialPulseExpectation
@@ -2145,6 +2373,8 @@ func (m *StorageMock) MinimockFinish() {
 
 		m.MinimockGetPulseByPrevInspect()
 
+		m.MinimockGetRecordsByPrototypeInspect()
+
 		m.MinimockGetSequentialPulseInspect()
 
 		m.MinimockSaveJetDropDataInspect()
@@ -2181,6 +2411,7 @@ func (m *StorageMock) minimockDone() bool {
 		m.MinimockGetNextCompletePulseFilterByPrototypeReferenceDone() &&
 		m.MinimockGetNextSavedPulseDone() &&
 		m.MinimockGetPulseByPrevDone() &&
+		m.MinimockGetRecordsByPrototypeDone() &&
 		m.MinimockGetSequentialPulseDone() &&
 		m.MinimockSaveJetDropDataDone() &&
 		m.MinimockSavePulseDone() &&
