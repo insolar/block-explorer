@@ -72,6 +72,7 @@ func StateToAPI(state models.State) server.State {
 		JetId:       NullableString(jetDropID.JetIDToString()),
 		Order:       &order,
 		Payload:     NullableString(base64.StdEncoding.EncodeToString(state.Payload)),
+		Index:       NullableString(fmt.Sprintf("%d:%d", state.PulseNumber, state.Order)),
 		PulseNumber: &pulseNumber,
 		Timestamp:   &state.Timestamp,
 		Type:        NullableString(string(state.Type)),

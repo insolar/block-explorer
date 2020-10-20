@@ -210,7 +210,7 @@ func TestObjectLifeline_SortAsc(t *testing.T) {
 	objRef := gen.Reference()
 
 	genStates := testutils.OrderedStates(t, testDB, jetDrop, *objRef.GetLocal(), 3)
-
+	testutils.OrderedStates(t, testDB, jetDrop, gen.ID(), 3)
 	// request records for objRef
 	sortAsc := string(server.SortByIndex_index_asc)
 	resp, err := http.Get("http://" + apihost + "/api/v1/lifeline/" + objRef.String() + "/states?sort_by=" + url.QueryEscape(sortAsc))

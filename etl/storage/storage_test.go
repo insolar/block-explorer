@@ -711,6 +711,7 @@ func TestStorage_GetLifeline(t *testing.T) {
 	objRef := gen.ID()
 
 	genRecords := testutils.OrderedStates(t, testDB, jetDrop, objRef, 3)
+	testutils.OrderedStates(t, testDB, jetDrop, gen.ID(), 3)
 	expectedRecords := []models.State{genRecords[2], genRecords[1], genRecords[0]}
 
 	records, total, err := s.GetLifeline(objRef.Bytes(), nil, nil, nil, nil, nil, 20, 0, false)
