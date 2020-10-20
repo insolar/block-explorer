@@ -58,6 +58,7 @@ type IRecord interface {
 	TypeOf() RecordType
 }
 
+// Deprecated
 type Record struct {
 	Reference           Reference `gorm:"primary_key;auto_increment:false"`
 	Type                RecordType
