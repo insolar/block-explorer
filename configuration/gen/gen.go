@@ -21,6 +21,7 @@ func main() {
 		".artifacts/block-explorer.yaml":  configuration.BlockExplorer{},
 		".artifacts/migrate.yaml":         configuration.DB{},
 		".artifacts/api.yaml":             configuration.API{},
+		".artifacts/exporter-api.yaml":    configuration.Exporter{},
 		"./load/migrate_cfg/migrate.yaml": configuration.TestDB{},
 	}
 

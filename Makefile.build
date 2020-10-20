@@ -8,6 +8,7 @@ build: ## build all applications
 	go build -ldflags "$(LDFLAGS)" -o $(BIN_DIR)/migrate cmd/migrate/*.go
 	go build -ldflags "$(LDFLAGS)" -o $(BIN_DIR)/block-explorer cmd/block-explorer/*.go
 	go build -ldflags "$(LDFLAGS)" -o $(BIN_DIR)/api cmd/api/*.go
+	go build -ldflags "$(LDFLAGS)" -o $(BIN_DIR)/exporter-api cmd/exporter-api/*.go
 	go build -ldflags "$(LDFLAGS)" -o $(BIN_DIR)/loadtest_migrate cmd/loadtest_migrate/*.go
 
 .PHONY: generate
@@ -20,7 +21,9 @@ generate-protobuf: ## generate protobuf structs
 		echo "error: protoc not installed" >&2; \
 		exit 1; \
 	fi
-	protoc -I./ --gogoslick_out=plugins=grpc:./ test/heavymock/import_records.proto
+	protoc -I./ -I$(GOPATH)/src --gogoslick_out=plugins=grpc:./ test/heavymock/import_records.proto
+	protoc -I./ -I$(GOPATH)/src --gogoslick_out=plugins=grpc:./ etl/exporter/pulse_exporter.proto
+	protoc -I./ -I$(GOPATH)/src --gogoslick_out=plugins=grpc:./ etl/exporter/record_exporter.proto
 
 .PHONY: install-dev
 install-dev:
