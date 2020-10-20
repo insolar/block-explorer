@@ -32,7 +32,6 @@ const (
 )
 
 func TestSearchApi(t *testing.T) {
-
 	ts := integration.NewBlockExplorerTestSetup(t).WithHTTPServer(t)
 	defer ts.Stop(t)
 

@@ -62,6 +62,60 @@ func RecordToAPI(record models.Record) server.Record {
 	return response
 }
 
+func StateToAPI(state models.State) server.State {
+	pulseNumber := state.PulseNumber
+	order := int64(state.Order)
+	jetDropID := models.NewJetDropID(state.JetID, pulseNumber)
+	response := server.State{
+		Hash:        NullableString(base64.StdEncoding.EncodeToString(state.Hash)),
+		JetDropId:   NullableString(jetDropID.ToString()),
+		JetId:       NullableString(jetDropID.JetIDToString()),
+		Order:       &order,
+		Payload:     NullableString(base64.StdEncoding.EncodeToString(state.Payload)),
+		Index:       NullableString(fmt.Sprintf("%d:%d", state.PulseNumber, state.Order)),
+		PulseNumber: &pulseNumber,
+		Timestamp:   &state.Timestamp,
+		Type:        NullableString(string(state.Type)),
+	}
+
+	objectID := insolar.NewIDFromBytes(state.ObjectReference)
+	if objectID != nil {
+		response.ObjectReference = NullableString(insolar.NewReference(*objectID).String())
+	}
+	if !instrumentation.IsEmpty(state.PrevStateReference) {
+		prevStateReference := insolar.NewIDFromBytes(state.PrevStateReference)
+		if prevStateReference != nil {
+			response.PrevStateReference = NullableString(prevStateReference.String())
+		}
+	}
+
+	if !instrumentation.IsEmpty(state.ImageReference) {
+		prototypeReference := insolar.NewIDFromBytes(state.ImageReference)
+		if prototypeReference != nil {
+			response.PrototypeReference = NullableString(prototypeReference.String())
+		}
+	}
+
+	if !instrumentation.IsEmpty(state.ParentReference) {
+		parentReference := insolar.NewIDFromBytes(state.ParentReference)
+		if parentReference != nil {
+			response.ParentReference = NullableString(parentReference.String())
+		}
+	}
+	if !instrumentation.IsEmpty(state.RequestReference) {
+		requestReference := insolar.NewIDFromBytes(state.RequestReference)
+		if requestReference != nil {
+			response.RequestReference = NullableString(requestReference.String())
+		}
+	}
+
+	reference := insolar.NewIDFromBytes(state.RecordReference)
+	if reference != nil {
+		response.Reference = NullableString(reference.String())
+	}
+	return response
+}
+
 func PulseToAPI(pulse models.Pulse) server.Pulse {
 	pulseNumber := pulse.PulseNumber
 	prevPulseNumber := pulse.PrevPulseNumber
