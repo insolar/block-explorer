@@ -143,9 +143,15 @@ type StorageFetcher interface {
 	GetJetDrops(pulse models.Pulse) ([]models.JetDrop, error)
 }
 
+// StorageExporterFetcher represents the methods for exporter-api
+type StorageExporterFetcher interface {
+	GetNextCompletePulseFilterByPrototypeReference(prevPulse int64, prototypes [][]byte) (models.Pulse, error)
+}
+
 //go:generate minimock -i github.com/insolar/block-explorer/etl/interfaces.Storage -o ./mock -s _mock.go -g
 // Storage manipulates data in database
 type Storage interface {
 	StorageSetter
 	StorageFetcher
+	StorageExporterFetcher
 }

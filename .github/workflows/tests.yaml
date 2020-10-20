@@ -69,6 +69,14 @@ jobs:
       - name: Test
         run: make mod unit
         working-directory: ${{env.GOPATH}}/src/github.com/insolar/block-explorer
+      - name: Send failure notification to Slack
+        if: failure() && github.event_name == 'schedule'
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          fields: repo,message,commit,author,action,eventName,ref,workflow
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.ACTIONS_NOTIFICATIONS_SLACK_HOOK_URL }}
   integration:
     name: Integration tests
     runs-on: ubuntu-latest
@@ -104,22 +112,25 @@ jobs:
       - name: Test
         run: make mod integration
         working-directory: ${{env.GOPATH}}/src/github.com/insolar/block-explorer
+      - name: Send failure notification to Slack
+        if: failure() && github.event_name == 'schedule'
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          fields: repo,message,commit,author,action,eventName,ref,workflow
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.ACTIONS_NOTIFICATIONS_SLACK_HOOK_URL }}
   test-with-mock:
     name: heavy mock integration tests
     runs-on: ubuntu-latest
     env:
       GOPATH: /home/runner/work/block-explorer/block-explorer/go
     steps:
-      - name: set push_to_master run params
-        if: github.event_name == 'push'
+      - name: set pull_request and push_to_master run params
+        if: github.event_name == 'push' || github.event_name == 'pull_request'
         run: |
           echo "::set-env name=TEST_COUNT::10"
           echo "::set-env name=TEST_ARGS::-timeout 30m -json"
-      - name: set pull_request run params
-        if: github.event_name == 'pull_request'
-        run: |
-          echo "::set-env name=TEST_COUNT::10"
-          echo "::set-env name=TEST_ARGS::-timeout 30m"
       - name: set scheduled run params
         if: github.event_name == 'schedule'
         run: |
@@ -161,6 +172,33 @@ jobs:
           TR_PASSWORD: ${{ secrets.TR_PASSWORD }}
         run: make publish_tests
         working-directory: ${{env.GOPATH}}/src/github.com/insolar/block-explorer
+      - name: Send failure notification to Slack
+        if: failure() && github.event_name == 'schedule'
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          fields: repo,message,commit,author,action,eventName,ref,workflow
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.ACTIONS_NOTIFICATIONS_SLACK_HOOK_URL }}
+      - name: Download go-test-parser
+        if: failure()
+        run: |
+          mkdir -p $GITHUB_WORKSPACE/bin
+          curl -L -s "https://github.com/Tsovak/go-test-parser/releases/download/v1.1.0/go-test-parser_v1.1.0_Linux_x86_64.tar.gz" -o go-test-parser.tar.gz
+          tar -xf go-test-parser.tar.gz -C $GITHUB_WORKSPACE/bin/
+          chmod +x bin/go-test-parser
+          echo "::add-path::$GITHUB_WORKSPACE/bin"
+      - name: create tests report
+        if: failure()
+        run: |
+          go-test-parser ./autotest.log -o report
+        working-directory: ${{env.GOPATH}}/src/github.com/insolar/block-explorer
+      - name: Upload report to artifacts
+        if: failure()
+        uses: actions/upload-artifact@v2
+        with:
+          name: report
+          path: "${{env.GOPATH}}/src/github.com/insolar/block-explorer/report"
   test-with-coverage:
     name: tests with coverage
     runs-on: ubuntu-latest
