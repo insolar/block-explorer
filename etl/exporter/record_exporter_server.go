@@ -28,22 +28,22 @@ func NewRecordServer(ctx context.Context, storage interfaces.StorageExporterFetc
 }
 
 func (s *RecordServer) GetRecords(request *GetRecordsRequest, stream RecordExporter_GetRecordsServer) error {
-	recs, err := s.storage.GetRecordsByPrototype(request.Prototypes, request.PulseNumber, request.Count, request.RecordNumber)
+	states, err := s.storage.GetRecordsByPrototype(request.Prototypes, request.PulseNumber, request.Count, request.RecordNumber)
 	if err != nil {
 		s.logger.Error(err)
 		return fmt.Errorf("error on requesting records %v", err)
 	}
-	for i, rec := range recs {
+	for i, state := range states {
 		response := GetRecordsResponse{
 			RecordNumber:        uint32(i),
-			Reference:           rec.Reference,
-			Type:                string(rec.Type),
-			ObjectReference:     rec.ObjectReference,
-			PrototypeReference:  rec.PrototypeReference,
-			Payload:             rec.Payload,
-			PrevRecordReference: rec.PrevRecordReference,
-			PulseNumber:         rec.PulseNumber,
-			Timestamp:           rec.Timestamp,
+			Reference:           state.RecordReference,
+			Type:                string(state.Type),
+			ObjectReference:     state.ObjectReference,
+			PrototypeReference:  state.ImageReference,
+			Payload:             state.Payload,
+			PrevRecordReference: state.PrevStateReference,
+			PulseNumber:         state.PulseNumber,
+			Timestamp:           state.Timestamp,
 		}
 		if err := stream.Send(&response); err != nil {
 			return err

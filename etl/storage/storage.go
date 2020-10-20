@@ -630,19 +630,19 @@ func (s *Storage) GetNextCompletePulseFilterByPrototypeReference(prevPulse int64
 	return pulse, err
 }
 
-func (s *Storage) GetRecordsByPrototype(prototypeRef [][]byte, pulseNumber int64, limit uint32, offset uint32) ([]models.Record, error) {
+func (s *Storage) GetRecordsByPrototype(prototypeRef [][]byte, pulseNumber int64, limit uint32, offset uint32) ([]models.State, error) {
 	timer := prometheus.NewTimer(GetRecordsByPrototype)
 	defer timer.ObserveDuration()
 
-	query := s.db.Model(&models.Record{}).
+	query := s.db.Model(&models.State{}).
 		Where("pulse_number = ?", pulseNumber).
-		Where("prototype_reference IN (?)", prototypeRef).
+		Where("image_reference IN (?)", prototypeRef).
 		Order("order")
 
-	records := []models.Record{}
-	err := query.Limit(limit).Offset(offset).Find(&records).Error
+	states := []models.State{}
+	err := query.Limit(limit).Offset(offset).Find(&states).Error
 	if err != nil {
-		return nil, errors.Wrapf(err, "error while select records for pulse %v, from db", pulseNumber)
+		return nil, errors.Wrapf(err, "error while select states for pulse %v, from db", pulseNumber)
 	}
-	return records, nil
+	return states, nil
 }

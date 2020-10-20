@@ -21,7 +21,7 @@ type StorageExporterFetcherMock struct {
 	beforeGetNextCompletePulseFilterByPrototypeReferenceCounter uint64
 	GetNextCompletePulseFilterByPrototypeReferenceMock          mStorageExporterFetcherMockGetNextCompletePulseFilterByPrototypeReference
 
-	funcGetRecordsByPrototype          func(prototypeRef [][]byte, pulseNumber int64, limit uint32, offset uint32) (ra1 []models.Record, err error)
+	funcGetRecordsByPrototype          func(prototypeRef [][]byte, pulseNumber int64, limit uint32, offset uint32) (sa1 []models.State, err error)
 	inspectFuncGetRecordsByPrototype   func(prototypeRef [][]byte, pulseNumber int64, limit uint32, offset uint32)
 	afterGetRecordsByPrototypeCounter  uint64
 	beforeGetRecordsByPrototypeCounter uint64
@@ -288,7 +288,7 @@ type StorageExporterFetcherMockGetRecordsByPrototypeParams struct {
 
 // StorageExporterFetcherMockGetRecordsByPrototypeResults contains results of the StorageExporterFetcher.GetRecordsByPrototype
 type StorageExporterFetcherMockGetRecordsByPrototypeResults struct {
-	ra1 []models.Record
+	sa1 []models.State
 	err error
 }
 
@@ -324,7 +324,7 @@ func (mmGetRecordsByPrototype *mStorageExporterFetcherMockGetRecordsByPrototype)
 }
 
 // Return sets up results that will be returned by StorageExporterFetcher.GetRecordsByPrototype
-func (mmGetRecordsByPrototype *mStorageExporterFetcherMockGetRecordsByPrototype) Return(ra1 []models.Record, err error) *StorageExporterFetcherMock {
+func (mmGetRecordsByPrototype *mStorageExporterFetcherMockGetRecordsByPrototype) Return(sa1 []models.State, err error) *StorageExporterFetcherMock {
 	if mmGetRecordsByPrototype.mock.funcGetRecordsByPrototype != nil {
 		mmGetRecordsByPrototype.mock.t.Fatalf("StorageExporterFetcherMock.GetRecordsByPrototype mock is already set by Set")
 	}
@@ -332,12 +332,12 @@ func (mmGetRecordsByPrototype *mStorageExporterFetcherMockGetRecordsByPrototype)
 	if mmGetRecordsByPrototype.defaultExpectation == nil {
 		mmGetRecordsByPrototype.defaultExpectation = &StorageExporterFetcherMockGetRecordsByPrototypeExpectation{mock: mmGetRecordsByPrototype.mock}
 	}
-	mmGetRecordsByPrototype.defaultExpectation.results = &StorageExporterFetcherMockGetRecordsByPrototypeResults{ra1, err}
+	mmGetRecordsByPrototype.defaultExpectation.results = &StorageExporterFetcherMockGetRecordsByPrototypeResults{sa1, err}
 	return mmGetRecordsByPrototype.mock
 }
 
 //Set uses given function f to mock the StorageExporterFetcher.GetRecordsByPrototype method
-func (mmGetRecordsByPrototype *mStorageExporterFetcherMockGetRecordsByPrototype) Set(f func(prototypeRef [][]byte, pulseNumber int64, limit uint32, offset uint32) (ra1 []models.Record, err error)) *StorageExporterFetcherMock {
+func (mmGetRecordsByPrototype *mStorageExporterFetcherMockGetRecordsByPrototype) Set(f func(prototypeRef [][]byte, pulseNumber int64, limit uint32, offset uint32) (sa1 []models.State, err error)) *StorageExporterFetcherMock {
 	if mmGetRecordsByPrototype.defaultExpectation != nil {
 		mmGetRecordsByPrototype.mock.t.Fatalf("Default expectation is already set for the StorageExporterFetcher.GetRecordsByPrototype method")
 	}
@@ -366,13 +366,13 @@ func (mmGetRecordsByPrototype *mStorageExporterFetcherMockGetRecordsByPrototype)
 }
 
 // Then sets up StorageExporterFetcher.GetRecordsByPrototype return parameters for the expectation previously defined by the When method
-func (e *StorageExporterFetcherMockGetRecordsByPrototypeExpectation) Then(ra1 []models.Record, err error) *StorageExporterFetcherMock {
-	e.results = &StorageExporterFetcherMockGetRecordsByPrototypeResults{ra1, err}
+func (e *StorageExporterFetcherMockGetRecordsByPrototypeExpectation) Then(sa1 []models.State, err error) *StorageExporterFetcherMock {
+	e.results = &StorageExporterFetcherMockGetRecordsByPrototypeResults{sa1, err}
 	return e.mock
 }
 
 // GetRecordsByPrototype implements interfaces.StorageExporterFetcher
-func (mmGetRecordsByPrototype *StorageExporterFetcherMock) GetRecordsByPrototype(prototypeRef [][]byte, pulseNumber int64, limit uint32, offset uint32) (ra1 []models.Record, err error) {
+func (mmGetRecordsByPrototype *StorageExporterFetcherMock) GetRecordsByPrototype(prototypeRef [][]byte, pulseNumber int64, limit uint32, offset uint32) (sa1 []models.State, err error) {
 	mm_atomic.AddUint64(&mmGetRecordsByPrototype.beforeGetRecordsByPrototypeCounter, 1)
 	defer mm_atomic.AddUint64(&mmGetRecordsByPrototype.afterGetRecordsByPrototypeCounter, 1)
 
@@ -390,7 +390,7 @@ func (mmGetRecordsByPrototype *StorageExporterFetcherMock) GetRecordsByPrototype
 	for _, e := range mmGetRecordsByPrototype.GetRecordsByPrototypeMock.expectations {
 		if minimock.Equal(e.params, mm_params) {
 			mm_atomic.AddUint64(&e.Counter, 1)
-			return e.results.ra1, e.results.err
+			return e.results.sa1, e.results.err
 		}
 	}
 
@@ -406,7 +406,7 @@ func (mmGetRecordsByPrototype *StorageExporterFetcherMock) GetRecordsByPrototype
 		if mm_results == nil {
 			mmGetRecordsByPrototype.t.Fatal("No results are set for the StorageExporterFetcherMock.GetRecordsByPrototype")
 		}
-		return (*mm_results).ra1, (*mm_results).err
+		return (*mm_results).sa1, (*mm_results).err
 	}
 	if mmGetRecordsByPrototype.funcGetRecordsByPrototype != nil {
 		return mmGetRecordsByPrototype.funcGetRecordsByPrototype(prototypeRef, pulseNumber, limit, offset)
