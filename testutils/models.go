@@ -185,19 +185,6 @@ func CreatePulses(db *gorm.DB, pulses []models.Pulse) error {
 	})
 }
 
-func OrderedRecords(t *testing.T, db *gorm.DB, jetDrop models.JetDrop, objRef insolar.ID, amount int) []models.Record {
-	var result []models.Record
-	for i := 1; i <= amount; i++ {
-		record := InitRecordDB(jetDrop)
-		record.ObjectReference = objRef.Bytes()
-		record.Order = i
-		err := CreateRecord(db, record)
-		require.NoError(t, err)
-		result = append(result, record)
-	}
-	return result
-}
-
 func OrderedStates(t *testing.T, db *gorm.DB, jetDrop models.JetDrop, objRef insolar.ID, amount int) []models.State {
 	var result []models.State
 	for i := 1; i <= amount; i++ {

@@ -11,14 +11,15 @@ import (
 	"testing"
 
 	"github.com/antihax/optional"
-	"github.com/insolar/block-explorer/test/heavymock"
-	"github.com/insolar/block-explorer/test/integration"
-	"github.com/insolar/block-explorer/testutils"
 	"github.com/insolar/insolar/insolar/gen"
 	ins_record "github.com/insolar/insolar/insolar/record"
 	"github.com/insolar/insolar/ledger/heavy/exporter"
 	"github.com/insolar/spec-insolar-block-explorer-api/v1/client"
 	"github.com/stretchr/testify/require"
+
+	"github.com/insolar/block-explorer/test/heavymock"
+	"github.com/insolar/block-explorer/test/integration"
+	"github.com/insolar/block-explorer/testutils"
 )
 
 func TestLifeline_onePulse(t *testing.T) {
