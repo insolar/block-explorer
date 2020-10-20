@@ -78,6 +78,7 @@ func TestMain(m *testing.M) {
 }
 
 func TestRecordServer_GetRecords(t *testing.T) {
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.JetDrop{}, models.Pulse{}})
 	var accountPrototypeReference, _ = insolar.NewObjectReferenceFromString("insolar:0AAABAiGN1L8F9gCH_keBaxOP4atp9fzLiIci7xOg-hs")
 	ctx := context.Background()
 
@@ -90,7 +91,7 @@ func TestRecordServer_GetRecords(t *testing.T) {
 	err = testutils.CreateJetDrop(testDB, jetDrop1)
 	require.NoError(t, err)
 	recordResult := testutils.InitRecordDB(jetDrop1)
-	recordResult.Type = models.Result
+	recordResult.Type = models.ResultRecord
 	recordResult.Order = 1
 	recordResult.PrototypeReference = accountPrototypeReference.Bytes()
 	err = testutils.CreateRecord(testDB, recordResult)
