@@ -63,6 +63,11 @@ var (
 		Help:       "The duration of the GetRecordsByJetDrop function execution",
 		Objectives: quntitile,
 	})
+	GetRecordsByPrototype = prometheus.NewSummary(prometheus.SummaryOpts{
+		Name:       "gbe_storage_stats_GetRecordsByPrototype",
+		Help:       "The duration of the GetRecordsByPrototype function execution",
+		Objectives: quntitile,
+	})
 	GetIncompletePulsesDuration = prometheus.NewSummary(prometheus.SummaryOpts{
 		Name:       "gbe_storage_stats_GetIncompletePulsesDuration",
 		Help:       "The duration of the GetIncompletePulses function execution",
@@ -131,5 +136,6 @@ func (s Metrics) Metrics(p *metrics.Prometheus) []prometheus.Collector {
 		GetJetDropsWithParamsDuration,
 		GetJetDropByIDDuration,
 		GetJetDropsByJetIDDuration,
+		GetRecordsByPrototype,
 	}
 }

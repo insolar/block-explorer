@@ -5,13 +5,49 @@
 
 package exporter
 
+import (
+	"context"
+	"fmt"
+
+	"github.com/insolar/assured-ledger/ledger-core/v2/log"
+
+	"github.com/insolar/block-explorer/configuration"
+	"github.com/insolar/block-explorer/etl/interfaces"
+	"github.com/insolar/block-explorer/instrumentation/belogger"
+)
+
 type RecordServer struct {
+	storage interfaces.StorageExporterFetcher
+	logger  log.Logger
+	config  configuration.Exporter
 }
 
-func NewRecordServer() *RecordServer {
-	return &RecordServer{}
+func NewRecordServer(ctx context.Context, storage interfaces.StorageExporterFetcher, config configuration.Exporter) *RecordServer {
+	logger := belogger.FromContext(ctx)
+	return &RecordServer{storage: storage, logger: logger, config: config}
 }
 
-func (s *RecordServer) GetRecords(*GetRecordsRequest, RecordExporter_GetRecordsServer) error {
+func (s *RecordServer) GetRecords(request *GetRecordsRequest, stream RecordExporter_GetRecordsServer) error {
+	recs, err := s.storage.GetRecordsByPrototype(request.Prototypes, request.PulseNumber, request.Count, request.RecordNumber)
+	if err != nil {
+		s.logger.Error(err)
+		return fmt.Errorf("error on requesting records %v", err)
+	}
+	for i, rec := range recs {
+		response := GetRecordsResponse{
+			RecordNumber:        uint32(i),
+			Reference:           rec.Reference,
+			Type:                string(rec.Type),
+			ObjectReference:     rec.ObjectReference,
+			PrototypeReference:  rec.PrototypeReference,
+			Payload:             rec.Payload,
+			PrevRecordReference: rec.PrevRecordReference,
+			PulseNumber:         rec.PulseNumber,
+			Timestamp:           rec.Timestamp,
+		}
+		if err := stream.Send(&response); err != nil {
+			return err
+		}
+	}
 	return nil
 }
