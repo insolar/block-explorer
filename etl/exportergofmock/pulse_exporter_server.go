@@ -7,7 +7,6 @@ package exportergofmock
 
 import (
 	"bytes"
-	"sort"
 
 	"github.com/insolar/block-explorer/etl/exporter"
 )
@@ -21,26 +20,21 @@ func NewPulseServerMock(d *DataMock) *PulseServerMock {
 }
 
 func (s *PulseServerMock) GetNextPulse(in *exporter.GetNextPulseRequest, stream exporter.PulseExporter_GetNextPulseServer) error {
-	pulses := make([]int64, 0)
-	for pKey := range s.RecordsByPulseNumber {
-		pulses = append(pulses, pKey)
-	}
-	sort.Slice(pulses, func(i, j int) bool { return pulses[i] < pulses[j] })
 	for _, proto := range in.Prototypes {
-		for _, pNum := range pulses {
-			if pNum < in.PulseNumberFrom {
+		for _, p := range s.Pulses {
+			if p.PulseNumber < in.PulseNumberFrom {
 				continue
 			}
 			var recsFound int64
-			for _, r := range s.RecordsByPulseNumber[pNum] {
+			for _, r := range s.RecordsByPulseNumber[p.PulseNumber] {
 				if bytes.Equal(r.PrototypeReference, proto) {
 					recsFound++
 				}
 				// send empty pulses too
 			}
 			resp := &exporter.GetNextPulseResponse{
-				PulseNumber:     pNum,
-				PrevPulseNumber: pNum - 1,
+				PulseNumber:     p.PulseNumber,
+				PrevPulseNumber: p.PulseNumber - 1,
 				RecordAmount:    recsFound,
 			}
 			if err := stream.Send(resp); err != nil {
