@@ -290,6 +290,7 @@ func transferToCanonicalRecord(r *exporter.Record) (types.IRecord, error) {
 		}, nil
 
 	case *ins_record.Virtual_Result:
+		recordType = types.RESULT
 		result := virtual.GetResult()
 		recordPayload = result.Payload
 		if r.Record.ID.Pulse() == pulse.MinTimePulse {
