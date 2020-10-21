@@ -178,22 +178,16 @@ func (p *Processor) process(ctx context.Context, jd *types.JetDrop) error {
 				Order:                  i,
 				Timestamp:              mjd.Timestamp,
 			})
-			mrs = append(mrs, models.Request{
-				RecordReference:        models.ReferenceFromTypes(r.Reference()),
-				Type:                   models.RequestTypeFromTypes(r.(types.Request).Type),
-				CallType:               r.(types.Request).CallType,
-				ObjectReference:        models.ReferenceFromTypes(r.(types.Request).ObjectReference),
-				CallerObjectReference:  models.ReferenceFromTypes(r.(types.Request).Caller),
-				APIRequestID:           r.(types.Request).APIRequestID,
-				ReasonRequestReference: models.ReferenceFromTypes(r.(types.Request).CallReason),
-				Method:                 r.(types.Request).CallSiteMethod,
-				Arguments:              r.(types.Request).Arguments,
-				Immutable:              r.(types.Request).Immutable,
-				IsOriginalRequest:      r.(types.Request).IsOriginalRequest,
-				JetID:                  mjd.JetID,
-				PulseNumber:            mjd.PulseNumber,
-				Order:                  i,
-				Timestamp:              mjd.Timestamp,
+			mrs = append(mrs, models.Record{
+				Reference:       models.ReferenceFromTypes(r.Reference()),
+				Type:            models.RecordTypeFromTypes(r.TypeOf()),
+				ObjectReference: models.ReferenceFromTypes(r.(types.Request).ObjectReference),
+				Hash:            r.(types.State).Hash,
+				RawData:         r.(types.State).RawData,
+				JetID:           mjd.JetID,
+				PulseNumber:     mjd.PulseNumber,
+				Order:           i,
+				Timestamp:       mjd.Timestamp,
 			})
 		case types.STATE:
 			_, ok := r.(types.State)
