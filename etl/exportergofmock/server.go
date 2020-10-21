@@ -56,9 +56,8 @@ func (s *ExporterServerMemory) Start() error {
 	return nil
 }
 
-func (s *ExporterServerMemory) Stop() error {
+func (s *ExporterServerMemory) Stop() {
 	s.grpcServer.GracefulStop()
-	return nil
 }
 
 func (s *ExporterServerMemory) run(l net.Listener) {
