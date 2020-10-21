@@ -361,7 +361,7 @@ func (s *Storage) GetPulses(fromPulse *int64, timestampLte, timestampGte, pulseN
 
 	var err error
 	if fromPulse != nil {
-		query = query.Where("pulse_number <= ?", &fromPulse)
+		query = query.Where("pulse_number <= ?", *fromPulse)
 	}
 
 	pulses, total, err := getPulses(query, limit, offset)
@@ -608,14 +608,20 @@ func (s *Storage) GetJetDropsByJetID(jetID string, pulseNumberLte, pulseNumberLt
 
 func (s *Storage) GetNextCompletePulseFilterByPrototypeReference(prevPulse int64, prototypes [][]byte) (models.Pulse, error) {
 	var pulse models.Pulse
-	db := s.db.Model(&pulse).Joins("JOIN records ON records.pulse_number = pulses.pulse_number").
+	db := s.db.Model(&pulse).Joins("LEFT JOIN records ON records.pulse_number = pulses.pulse_number and records.prototype_reference IN (?)", prototypes).
 		Where("pulses.prev_pulse_number = ?", prevPulse).
-		Where("pulses.is_complete = ?", true).
-		Where("records.prototype_reference IN (?)", prototypes)
+		Where("pulses.is_complete = ?", true)
 
 	err := db.Limit(-1).Find(&pulse).Error
 	if err != nil {
 		return pulse, nil
+	}
+
+	db = s.db.Model(&models.Record{}).
+		Where("pulse_number = ?", pulse.PulseNumber)
+
+	if len(prototypes) > 0 {
+		db = db.Where("records.prototype_reference IN (?)", prototypes)
 	}
 
 	var total int64
