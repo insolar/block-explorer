@@ -7,7 +7,6 @@ package transformer
 
 import (
 	"context"
-	"fmt"
 	"github.com/insolar/insolar/pulse"
 
 	"github.com/insolar/block-explorer/instrumentation"
@@ -240,7 +239,6 @@ func transferToCanonicalRecord(r *exporter.Record) (types.IRecord, error) {
 		if r.Record.ID.Pulse() == pulse.MinTimePulse {
 			objectReference = activate.Request.GetLocal().Bytes()
 		}
-		fmt.Println(activate.Request.String())
 		return types.State{
 			Type:            types.ACTIVATE,
 			RecordReference: ref,
@@ -262,7 +260,6 @@ func transferToCanonicalRecord(r *exporter.Record) (types.IRecord, error) {
 		if r.Record.ID.Pulse() == pulse.MinTimePulse {
 			objectReference = amend.Request.GetLocal().Bytes()
 		}
-		fmt.Println(amend.Request.String())
 
 		return types.State{
 			Type:            types.AMEND,
