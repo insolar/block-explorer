@@ -16,15 +16,32 @@ import (
 )
 
 type RecordType string
+type StateType string
+type RequestType string
 
 func RecordTypeFromTypes(rt types.RecordType) RecordType {
 	return []RecordType{"state", "request", "result"}[rt]
 }
 
 const (
-	State   RecordType = "state"
-	Request RecordType = "request"
-	Result  RecordType = "result"
+	StateRecord   RecordType = "state"
+	RequestRecord RecordType = "request"
+	ResultRecord  RecordType = "result"
+)
+
+func StateTypeFromTypes(sr types.StateType) StateType {
+	return []StateType{"activate", "amend", "deactivate"}[sr]
+}
+
+const (
+	Activate   StateType = "activate"
+	Amend      StateType = "amend"
+	Deactivate StateType = "deactivate"
+)
+
+const (
+	Incoming RequestType = "incoming"
+	Outgoing RequestType = "outgoing"
 )
 
 type Reference []byte
@@ -33,6 +50,11 @@ func ReferenceFromTypes(r types.Reference) Reference {
 	return Reference(r)
 }
 
+type IRecord interface {
+	TypeOf() RecordType
+}
+
+// Deprecated
 type Record struct {
 	Reference           Reference `gorm:"primary_key;auto_increment:false"`
 	Type                RecordType
@@ -48,6 +70,10 @@ type Record struct {
 	Timestamp           int64
 }
 
+func (r Record) TypeOf() RecordType {
+	return r.Type
+}
+
 type JetDrop struct {
 	PulseNumber    int64  `gorm:"primary_key;auto_increment:false"`
 	JetID          string `gorm:"primary_key;auto_increment:false;default:''"`
@@ -57,6 +83,49 @@ type JetDrop struct {
 	RawData        []byte
 	Timestamp      int64
 	RecordAmount   int
+}
+
+type State struct {
+	RecordReference    []byte `gorm:"primary_key;auto_increment:false"` // State reference.
+	Type               StateType
+	RequestReference   []byte // Reference to the corresponding request.
+	ParentReference    []byte // Reference to the parent object that caused creation of the given object.
+	ObjectReference    []byte
+	PrevStateReference []byte // Reference to a previous state.
+	IsPrototype        bool
+	Payload            []byte
+	ImageReference     []byte
+	Hash               []byte
+	Order              int
+	JetID              string
+	PulseNumber        int64
+	Timestamp          int64
+}
+
+func (r State) TypeOf() RecordType {
+	return StateRecord
+}
+
+type Request struct {
+	RecordReference          []byte `gorm:"primary_key;auto_increment:false"` // Request reference.
+	Type                     RequestType
+	CallType                 string
+	ObjectReference          []byte // Reference to the corresponding object.
+	CallerObjectReference    []byte // Reference to the object that called this request.
+	CalleeObjectReference    []byte
+	APIRequestID             string // Internal debugging information,filled in case of working with v1 platform
+	ReasonRequestReference   []byte // Reference to the parent request—a request that caused this one
+	OriginalRequestReference []byte // original request, filled in case of working with v2 platform
+	Method                   string // Name of the smart contract method that called this request.
+	Arguments                []byte // Arguments of a smart contract method.
+	Immutable                bool   // True if request didn't change the object state. False otherwise.
+	IsOriginalRequest        bool
+	PrototypeReference       []byte
+	Hash                     []byte
+	JetID                    string
+	PulseNumber              int64
+	Order                    int
+	Timestamp                int64
 }
 
 func (j *JetDrop) Siblings() []string {

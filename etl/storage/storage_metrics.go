@@ -38,6 +38,11 @@ var (
 		Help:       "The duration of the GetRecord function execution",
 		Objectives: quntitile,
 	})
+	GetStateDuration = prometheus.NewSummary(prometheus.SummaryOpts{
+		Name:       "gbe_storage_stats_GetStateDuration",
+		Help:       "The duration of the GetState function execution",
+		Objectives: quntitile,
+	})
 	GetLifelineDuration = prometheus.NewSummary(prometheus.SummaryOpts{
 		Name:       "gbe_storage_stats_GetLifelineDuration",
 		Help:       "The duration of the GetLifeline function execution",
@@ -56,6 +61,11 @@ var (
 	GetRecordsByJetDropDuration = prometheus.NewSummary(prometheus.SummaryOpts{
 		Name:       "gbe_storage_stats_GetRecordsByJetDropDuration",
 		Help:       "The duration of the GetRecordsByJetDrop function execution",
+		Objectives: quntitile,
+	})
+	GetRecordsByPrototype = prometheus.NewSummary(prometheus.SummaryOpts{
+		Name:       "gbe_storage_stats_GetRecordsByPrototype",
+		Help:       "The duration of the GetRecordsByPrototype function execution",
 		Objectives: quntitile,
 	})
 	GetIncompletePulsesDuration = prometheus.NewSummary(prometheus.SummaryOpts{
@@ -126,5 +136,6 @@ func (s Metrics) Metrics(p *metrics.Prometheus) []prometheus.Collector {
 		GetJetDropsWithParamsDuration,
 		GetJetDropByIDDuration,
 		GetJetDropsByJetIDDuration,
+		GetRecordsByPrototype,
 	}
 }

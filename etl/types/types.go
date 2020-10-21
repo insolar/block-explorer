@@ -37,7 +37,7 @@ func (m MainSection) IsSection() bool { return true }
 type MainSection struct {
 	Start        DropStart
 	DropContinue DropContinue
-	Records      []Record
+	Records      []IRecord
 }
 
 type AdditionalSection struct {
@@ -62,17 +62,15 @@ type Pulse struct {
 	PrevPulseNumber int64
 }
 
-type RecordType int
-
-const (
-	// state type means activate, amend, deactivate records
-	STATE RecordType = iota
-	REQUEST
-	RESULT
-)
-
 // Reference based on Insolar.Reference
 type Reference []byte
+
+// TODO: https://insolar.atlassian.net/browse/PENV-802
+type IRecord interface {
+	TypeOf() RecordType
+	Reference() Reference
+}
+
 type Record struct {
 	Type                RecordType
 	Ref                 Reference
@@ -83,4 +81,65 @@ type Record struct {
 	Hash                []byte
 	RawData             []byte
 	Order               uint32
+}
+
+type RecordType int
+
+const (
+	STATE RecordType = iota
+	REQUEST
+	RESULT
+)
+
+func (r Record) TypeOf() RecordType {
+	return r.Type
+}
+
+func (r Record) Reference() Reference {
+	return r.Ref
+}
+
+type StateType int
+
+const (
+	ACTIVATE StateType = iota
+	AMEND
+	DEACTIVATE
+)
+
+type State struct {
+	RecordReference Reference // ref = r.RecordReference.ID.Bytes()
+	Type            StateType
+	ObjectReference Reference
+	Request         Reference // reference to request
+	Parent          Reference // has activate link to parent object
+	IsPrototype     bool      // has activate, amend
+	Image           Reference // has activate, amend
+	PrevState       Reference // has amend, deactivate
+	Payload         []byte
+	RawData         []byte
+	Hash            []byte // hash of record
+	Order           uint32 // record number
+}
+
+func (s State) TypeOf() RecordType {
+	return STATE
+}
+
+func (s State) Reference() Reference {
+	return s.RecordReference
+}
+
+type Request struct {
+}
+
+func (r Request) TypeOf() RecordType {
+	return REQUEST
+}
+
+type Result struct {
+}
+
+func (r Result) TypeOf() RecordType {
+	return RESULT
 }

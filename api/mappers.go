@@ -24,15 +24,18 @@ func NullableString(s string) *string {
 func RecordToAPI(record models.Record) server.Record {
 	pulseNumber := record.PulseNumber
 	jetDropID := models.NewJetDropID(record.JetID, pulseNumber)
+
 	response := server.Record{
-		Hash:        NullableString(base64.StdEncoding.EncodeToString(record.Hash)),
-		JetDropId:   NullableString(jetDropID.ToString()),
-		JetId:       NullableString(jetDropID.JetIDToString()),
-		Index:       NullableString(fmt.Sprintf("%d:%d", record.PulseNumber, record.Order)),
-		Payload:     NullableString(base64.StdEncoding.EncodeToString(record.Payload)),
-		PulseNumber: &pulseNumber,
-		Timestamp:   &record.Timestamp,
-		Type:        NullableString(string(record.Type)),
+		RecordAbstract: server.RecordAbstract{
+			Hash:        NullableString(base64.StdEncoding.EncodeToString(record.Hash)),
+			JetId:       NullableString(jetDropID.JetIDToString()),
+			PulseNumber: &pulseNumber,
+			Timestamp:   &record.Timestamp,
+		},
+		JetDropId: NullableString(jetDropID.ToString()),
+		Index:     NullableString(fmt.Sprintf("%d:%d", record.PulseNumber, record.Order)),
+		Payload:   NullableString(base64.StdEncoding.EncodeToString(record.Payload)),
+		Type:      NullableString(string(record.Type)),
 	}
 	if !instrumentation.IsEmpty(record.ObjectReference) {
 		objectID := insolar.NewIDFromBytes(record.ObjectReference)
@@ -53,6 +56,60 @@ func RecordToAPI(record models.Record) server.Record {
 		}
 	}
 	reference := insolar.NewIDFromBytes(record.Reference)
+	if reference != nil {
+		response.Reference = NullableString(reference.String())
+	}
+	return response
+}
+
+func StateToAPI(state models.State) server.State {
+	pulseNumber := state.PulseNumber
+	order := int64(state.Order)
+	jetDropID := models.NewJetDropID(state.JetID, pulseNumber)
+	response := server.State{
+		Hash:        NullableString(base64.StdEncoding.EncodeToString(state.Hash)),
+		JetDropId:   NullableString(jetDropID.ToString()),
+		JetId:       NullableString(jetDropID.JetIDToString()),
+		Order:       &order,
+		Payload:     NullableString(base64.StdEncoding.EncodeToString(state.Payload)),
+		Index:       NullableString(fmt.Sprintf("%d:%d", state.PulseNumber, state.Order)),
+		PulseNumber: &pulseNumber,
+		Timestamp:   &state.Timestamp,
+		Type:        NullableString(string(state.Type)),
+	}
+
+	objectID := insolar.NewIDFromBytes(state.ObjectReference)
+	if objectID != nil {
+		response.ObjectReference = NullableString(insolar.NewReference(*objectID).String())
+	}
+	if !instrumentation.IsEmpty(state.PrevStateReference) {
+		prevStateReference := insolar.NewIDFromBytes(state.PrevStateReference)
+		if prevStateReference != nil {
+			response.PrevStateReference = NullableString(prevStateReference.String())
+		}
+	}
+
+	if !instrumentation.IsEmpty(state.ImageReference) {
+		prototypeReference := insolar.NewIDFromBytes(state.ImageReference)
+		if prototypeReference != nil {
+			response.PrototypeReference = NullableString(prototypeReference.String())
+		}
+	}
+
+	if !instrumentation.IsEmpty(state.ParentReference) {
+		parentReference := insolar.NewIDFromBytes(state.ParentReference)
+		if parentReference != nil {
+			response.ParentReference = NullableString(parentReference.String())
+		}
+	}
+	if !instrumentation.IsEmpty(state.RequestReference) {
+		requestReference := insolar.NewIDFromBytes(state.RequestReference)
+		if requestReference != nil {
+			response.RequestReference = NullableString(requestReference.String())
+		}
+	}
+
+	reference := insolar.NewIDFromBytes(state.RecordReference)
 	if reference != nil {
 		response.Reference = NullableString(reference.String())
 	}

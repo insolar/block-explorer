@@ -30,7 +30,7 @@ func NewStorage(db *gorm.DB) *Storage {
 
 // SaveJetDropData saves provided jetDrop and records to db in one transaction.
 // increase jet_drop_amount and record_amount
-func (s *Storage) SaveJetDropData(jetDrop models.JetDrop, records []models.Record, pulseNumber int64) error {
+func (s *Storage) SaveJetDropData(jetDrop models.JetDrop, records []models.IRecord, pulseNumber int64) error {
 	timer := prometheus.NewTimer(SaveJetDropDataDuration)
 	defer timer.ObserveDuration()
 
@@ -44,7 +44,7 @@ func (s *Storage) SaveJetDropData(jetDrop models.JetDrop, records []models.Recor
 	return err
 }
 
-func (s *Storage) initJD(jetDrop models.JetDrop, records []models.Record, pulseNumber int64) error {
+func (s *Storage) initJD(jetDrop models.JetDrop, records []models.IRecord, pulseNumber int64) error {
 	return s.db.Transaction(func(tx *gorm.DB) error {
 		jd := &jetDrop
 		transaction := tx.New()
@@ -53,8 +53,17 @@ func (s *Storage) initJD(jetDrop models.JetDrop, records []models.Record, pulseN
 		}
 
 		for _, record := range records {
-			if err := tx.Save(&record).Error; err != nil { // nolint
-				return errors.Wrap(err, "error while saving record")
+			state, ok := record.(models.State)
+			if ok {
+				if err := tx.Save(&state).Error; err != nil { // nolint
+					return errors.Wrap(err, "error while saving state")
+				}
+			}
+			record, ok := record.(models.Record)
+			if ok {
+				if err := tx.Save(&record).Error; err != nil { // nolint
+					return errors.Wrap(err, "error while saving record")
+				}
 			}
 		}
 
@@ -70,7 +79,7 @@ func (s *Storage) initJD(jetDrop models.JetDrop, records []models.Record, pulseN
 	})
 }
 
-func (s *Storage) updateJD(jetDrop models.JetDrop, records []models.Record) error {
+func (s *Storage) updateJD(jetDrop models.JetDrop, records []models.IRecord) error {
 	return s.db.Transaction(func(tx *gorm.DB) error {
 		jd := &jetDrop
 		if err := tx.Save(jd).Error; err != nil {
@@ -78,8 +87,17 @@ func (s *Storage) updateJD(jetDrop models.JetDrop, records []models.Record) erro
 		}
 
 		for _, record := range records {
-			if err := tx.Save(&record).Error; err != nil { // nolint
-				return errors.Wrap(err, "error while saving record")
+			state, ok := record.(models.State)
+			if ok {
+				if err := tx.Save(&state).Error; err != nil { // nolint
+					return errors.Wrap(err, "error while saving state")
+				}
+			}
+			record, ok := record.(models.Record)
+			if ok {
+				if err := tx.Save(&record).Error; err != nil { // nolint
+					return errors.Wrap(err, "error while saving record")
+				}
 			}
 		}
 		return nil
@@ -140,13 +158,22 @@ func (s *Storage) SequencePulse(pulseNumber int64) error {
 	})
 }
 
-// GetJetDrops returns records with provided reference from db.
+// GetRecord returns records with provided reference from db.
 func (s *Storage) GetRecord(ref models.Reference) (models.Record, error) {
 	timer := prometheus.NewTimer(GetRecordDuration)
 	defer timer.ObserveDuration()
 	record := models.Record{}
 	err := s.db.Where("reference = ?", []byte(ref)).First(&record).Error
 	return record, err
+}
+
+// GetState returns state with provided reference from db.
+func (s *Storage) GetState(ref models.Reference) (models.State, error) {
+	timer := prometheus.NewTimer(GetStateDuration)
+	defer timer.ObserveDuration()
+	state := models.State{}
+	err := s.db.Where("record_reference = ?", []byte(ref)).First(&state).Error
+	return state, err
 }
 
 func CheckIndex(i string) (int, int, error) {
@@ -245,6 +272,20 @@ func getRecords(query *gorm.DB, limit, offset int) ([]models.Record, int, error)
 	return records, total, nil
 }
 
+func getStates(query *gorm.DB, limit, offset int) ([]models.State, int, error) {
+	states := []models.State{}
+	var total int
+	err := query.Limit(limit).Offset(offset).Find(&states).Error
+	if err != nil {
+		return nil, 0, err
+	}
+	err = query.Count(&total).Error
+	if err != nil {
+		return nil, 0, err
+	}
+	return states, total, nil
+}
+
 func getPulses(query *gorm.DB, limit, offset int) ([]models.Pulse, int, error) {
 	pulses := []models.Pulse{}
 	var total int
@@ -260,11 +301,11 @@ func getPulses(query *gorm.DB, limit, offset int) ([]models.Pulse, int, error) {
 }
 
 // GetLifeline returns records for provided object reference, ordered by pulse number and order fields.
-func (s *Storage) GetLifeline(objRef []byte, fromIndex *string, pulseNumberLt, pulseNumberGt, timestampLte, timestampGte *int64, limit, offset int, sortByIndexAsc bool) ([]models.Record, int, error) {
+func (s *Storage) GetLifeline(objRef []byte, fromIndex *string, pulseNumberLt, pulseNumberGt, timestampLte, timestampGte *int64, limit, offset int, sortByIndexAsc bool) ([]models.State, int, error) {
 	timer := prometheus.NewTimer(GetLifelineDuration)
 	defer timer.ObserveDuration()
 
-	query := s.db.Model(&models.Record{}).Where("object_reference = ?", objRef).Where("type = ?", models.State)
+	query := s.db.Model(&models.State{}).Where("object_reference = ?", objRef)
 
 	query = filterByPulse(query, pulseNumberLt, pulseNumberGt)
 
@@ -280,11 +321,11 @@ func (s *Storage) GetLifeline(objRef []byte, fromIndex *string, pulseNumberLt, p
 
 	query = sortRecordsByDirection(query, sortByIndexAsc)
 
-	records, total, err := getRecords(query, limit, offset)
+	states, total, err := getStates(query, limit, offset)
 	if err != nil {
 		return nil, 0, errors.Wrapf(err, "error while select records for object %v from db", objRef)
 	}
-	return records, total, nil
+	return states, total, nil
 }
 
 // GetPulse returns pulse with provided pulse number from db.
@@ -589,19 +630,19 @@ func (s *Storage) GetNextCompletePulseFilterByPrototypeReference(prevPulse int64
 	return pulse, err
 }
 
-func (s *Storage) GetRecordsByPrototype(prototypeRef [][]byte, pulseNumber int64, limit uint32, offset uint32) ([]models.Record, error) {
-	timer := prometheus.NewTimer(GetRecordsByJetDropDuration)
+func (s *Storage) GetRecordsByPrototype(prototypeRef [][]byte, pulseNumber int64, limit uint32, offset uint32) ([]models.State, error) {
+	timer := prometheus.NewTimer(GetRecordsByPrototype)
 	defer timer.ObserveDuration()
 
-	query := s.db.Model(&models.Record{}).
+	query := s.db.Model(&models.State{}).
 		Where("pulse_number = ?", pulseNumber).
-		Where("prototype_reference IN (?)", prototypeRef).
+		Where("image_reference IN (?)", prototypeRef).
 		Order("order")
 
-	records := []models.Record{}
-	err := query.Limit(limit).Offset(offset).Find(&records).Error
+	states := []models.State{}
+	err := query.Limit(limit).Offset(offset).Find(&states).Error
 	if err != nil {
-		return nil, errors.Wrapf(err, "error while select records for pulse %v, from db", pulseNumber)
+		return nil, errors.Wrapf(err, "error while select states for pulse %v, from db", pulseNumber)
 	}
-	return records, nil
+	return states, nil
 }

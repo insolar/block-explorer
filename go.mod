@@ -17,15 +17,13 @@ require (
 	github.com/insolar/assured-ledger/ledger-core/v2 v2.0.0-20200512113104-4973d6ba44e9
 	github.com/insolar/insconfig v0.0.0-20200617131009-dd635d1fc9e9
 	github.com/insolar/insolar v1.8.1
-	github.com/insolar/spec-insolar-block-explorer-api v1.3.1-0.20200828125644-dc1d48a4964d
+	github.com/insolar/spec-insolar-block-explorer-api v1.5.0
 	github.com/jackc/pgproto3/v2 v2.0.4 // indirect
 	github.com/jackc/pgx/v4 v4.8.1 // indirect
 	github.com/jinzhu/gorm v1.9.15
 	github.com/jinzhu/now v1.1.1 // indirect
-	github.com/kelindar/binary v1.0.9 // indirect
-	github.com/labstack/echo/v4 v4.1.16
+	github.com/labstack/echo/v4 v4.1.17
 	github.com/lib/pq v1.8.0 // indirect
-	github.com/mattn/go-colorable v0.1.7 // indirect
 	github.com/mattn/go-sqlite3 v2.0.1+incompatible // indirect
 	github.com/mitchellh/mapstructure v1.3.3 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
@@ -44,13 +42,9 @@ require (
 	github.com/spf13/cast v1.3.1 // indirect
 	github.com/stretchr/testify v1.6.1
 	github.com/ugorji/go v1.1.7 // indirect
-	github.com/valyala/fasttemplate v1.2.0 // indirect
 	go.opencensus.io v0.22.4
 	go.uber.org/zap v1.15.0 // indirect
-	golang.org/x/crypto v0.0.0-20200728195943-123391ffb6de // indirect
 	golang.org/x/image v0.0.0-20200801110659-972c09e46d76 // indirect
-	golang.org/x/net v0.0.0-20200707034311-ab3426394381 // indirect
-	golang.org/x/sys v0.0.0-20200812155832-6a926be9bd1d // indirect
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
 	google.golang.org/appengine v1.6.6 // indirect
 	google.golang.org/genproto v0.0.0-20200813001606-1ccf2a5ae4fd // indirect

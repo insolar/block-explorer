@@ -11,8 +11,9 @@ import (
 
 	"github.com/insolar/insolar/ledger/heavy/exporter"
 
-	"github.com/insolar/block-explorer/etl/types"
 	"google.golang.org/grpc"
+
+	"github.com/insolar/block-explorer/etl/types"
 
 	"github.com/insolar/block-explorer/etl/models"
 )
@@ -94,7 +95,7 @@ type Controller interface {
 type StorageSetter interface {
 	// SaveJetDropData saves provided jetDrop and records to db in one transaction.
 	// increase jet_drop_amount and record_amount
-	SaveJetDropData(jetDrop models.JetDrop, records []models.Record, pulseNumber int64) error
+	SaveJetDropData(jetDrop models.JetDrop, records []models.IRecord, pulseNumber int64) error
 	// SavePulse saves provided pulse to db.
 	SavePulse(pulse models.Pulse) error
 	// CompletePulse update pulse with provided number to completeness in db.
@@ -107,6 +108,8 @@ type StorageSetter interface {
 type StorageAPIFetcher interface {
 	// GetRecord returns record with provided reference from db.
 	GetRecord(ref models.Reference) (models.Record, error)
+	// GetState returns state with provided reference from db.
+	GetState(ref models.Reference) (models.State, error)
 	// GetPulse returns pulse with provided pulse number from db.
 	GetPulse(pulseNumber int64) (models.Pulse, error)
 	// GetPulse returns pulses from db.
@@ -118,7 +121,7 @@ type StorageAPIFetcher interface {
 	// GetJetDropsByJetID returns jetDrops for provided jetID sorting and filtering by pulseNumber.
 	GetJetDropsByJetID(jetID string, pulseNumberLte, pulseNumberLt, pulseNumberGte, pulseNumberGt *int64, limit int, sortByPnAsc bool) ([]models.JetDrop, int, error)
 	// GetLifeline returns records for provided object reference, ordered by desc by pulse number and order fields.
-	GetLifeline(objRef []byte, fromIndex *string, pulseNumberLt, pulseNumberGt, timestampLte, timestampGte *int64, limit, offset int, sortByIndexAsc bool) ([]models.Record, int, error)
+	GetLifeline(objRef []byte, fromIndex *string, pulseNumberLt, pulseNumberGt, timestampLte, timestampGte *int64, limit, offset int, sortByIndexAsc bool) ([]models.State, int, error)
 	// GetRecordsByJetDrop returns records for provided jet drop, ordered by order field.
 	GetRecordsByJetDrop(jetDropID models.JetDropID, fromIndex, recordType *string, limit, offset int) ([]models.Record, int, error)
 	// GetNextSavedPulse returns first pulse with pulse number bigger then fromPulseNumber from db.
@@ -144,7 +147,7 @@ type StorageFetcher interface {
 // StorageExporterFetcher represents the methods for exporter-api
 type StorageExporterFetcher interface {
 	GetNextCompletePulseFilterByPrototypeReference(prevPulse int64, prototypes [][]byte) (models.Pulse, error)
-	GetRecordsByPrototype(prototypeRef [][]byte, pulseNumber int64, limit uint32, offset uint32) ([]models.Record, error)
+	GetRecordsByPrototype(prototypeRef [][]byte, pulseNumber int64, limit uint32, offset uint32) ([]models.State, error)
 }
 
 //go:generate minimock -i github.com/insolar/block-explorer/etl/interfaces.Storage -o ./mock -s _mock.go -g

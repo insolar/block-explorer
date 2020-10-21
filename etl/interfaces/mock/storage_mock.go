@@ -51,7 +51,7 @@ type StorageMock struct {
 	beforeGetPulseByPrevCounter uint64
 	GetPulseByPrevMock          mStorageMockGetPulseByPrev
 
-	funcGetRecordsByPrototype          func(prototypeRef [][]byte, pulseNumber int64, limit uint32, offset uint32) (ra1 []models.Record, err error)
+	funcGetRecordsByPrototype          func(prototypeRef [][]byte, pulseNumber int64, limit uint32, offset uint32) (sa1 []models.State, err error)
 	inspectFuncGetRecordsByPrototype   func(prototypeRef [][]byte, pulseNumber int64, limit uint32, offset uint32)
 	afterGetRecordsByPrototypeCounter  uint64
 	beforeGetRecordsByPrototypeCounter uint64
@@ -63,8 +63,8 @@ type StorageMock struct {
 	beforeGetSequentialPulseCounter uint64
 	GetSequentialPulseMock          mStorageMockGetSequentialPulse
 
-	funcSaveJetDropData          func(jetDrop models.JetDrop, records []models.Record, pulseNumber int64) (err error)
-	inspectFuncSaveJetDropData   func(jetDrop models.JetDrop, records []models.Record, pulseNumber int64)
+	funcSaveJetDropData          func(jetDrop models.JetDrop, records []models.IRecord, pulseNumber int64) (err error)
+	inspectFuncSaveJetDropData   func(jetDrop models.JetDrop, records []models.IRecord, pulseNumber int64)
 	afterSaveJetDropDataCounter  uint64
 	beforeSaveJetDropDataCounter uint64
 	SaveJetDropDataMock          mStorageMockSaveJetDropData
@@ -1375,7 +1375,7 @@ type StorageMockGetRecordsByPrototypeParams struct {
 
 // StorageMockGetRecordsByPrototypeResults contains results of the Storage.GetRecordsByPrototype
 type StorageMockGetRecordsByPrototypeResults struct {
-	ra1 []models.Record
+	sa1 []models.State
 	err error
 }
 
@@ -1411,7 +1411,7 @@ func (mmGetRecordsByPrototype *mStorageMockGetRecordsByPrototype) Inspect(f func
 }
 
 // Return sets up results that will be returned by Storage.GetRecordsByPrototype
-func (mmGetRecordsByPrototype *mStorageMockGetRecordsByPrototype) Return(ra1 []models.Record, err error) *StorageMock {
+func (mmGetRecordsByPrototype *mStorageMockGetRecordsByPrototype) Return(sa1 []models.State, err error) *StorageMock {
 	if mmGetRecordsByPrototype.mock.funcGetRecordsByPrototype != nil {
 		mmGetRecordsByPrototype.mock.t.Fatalf("StorageMock.GetRecordsByPrototype mock is already set by Set")
 	}
@@ -1419,12 +1419,12 @@ func (mmGetRecordsByPrototype *mStorageMockGetRecordsByPrototype) Return(ra1 []m
 	if mmGetRecordsByPrototype.defaultExpectation == nil {
 		mmGetRecordsByPrototype.defaultExpectation = &StorageMockGetRecordsByPrototypeExpectation{mock: mmGetRecordsByPrototype.mock}
 	}
-	mmGetRecordsByPrototype.defaultExpectation.results = &StorageMockGetRecordsByPrototypeResults{ra1, err}
+	mmGetRecordsByPrototype.defaultExpectation.results = &StorageMockGetRecordsByPrototypeResults{sa1, err}
 	return mmGetRecordsByPrototype.mock
 }
 
 //Set uses given function f to mock the Storage.GetRecordsByPrototype method
-func (mmGetRecordsByPrototype *mStorageMockGetRecordsByPrototype) Set(f func(prototypeRef [][]byte, pulseNumber int64, limit uint32, offset uint32) (ra1 []models.Record, err error)) *StorageMock {
+func (mmGetRecordsByPrototype *mStorageMockGetRecordsByPrototype) Set(f func(prototypeRef [][]byte, pulseNumber int64, limit uint32, offset uint32) (sa1 []models.State, err error)) *StorageMock {
 	if mmGetRecordsByPrototype.defaultExpectation != nil {
 		mmGetRecordsByPrototype.mock.t.Fatalf("Default expectation is already set for the Storage.GetRecordsByPrototype method")
 	}
@@ -1453,13 +1453,13 @@ func (mmGetRecordsByPrototype *mStorageMockGetRecordsByPrototype) When(prototype
 }
 
 // Then sets up Storage.GetRecordsByPrototype return parameters for the expectation previously defined by the When method
-func (e *StorageMockGetRecordsByPrototypeExpectation) Then(ra1 []models.Record, err error) *StorageMock {
-	e.results = &StorageMockGetRecordsByPrototypeResults{ra1, err}
+func (e *StorageMockGetRecordsByPrototypeExpectation) Then(sa1 []models.State, err error) *StorageMock {
+	e.results = &StorageMockGetRecordsByPrototypeResults{sa1, err}
 	return e.mock
 }
 
 // GetRecordsByPrototype implements interfaces.Storage
-func (mmGetRecordsByPrototype *StorageMock) GetRecordsByPrototype(prototypeRef [][]byte, pulseNumber int64, limit uint32, offset uint32) (ra1 []models.Record, err error) {
+func (mmGetRecordsByPrototype *StorageMock) GetRecordsByPrototype(prototypeRef [][]byte, pulseNumber int64, limit uint32, offset uint32) (sa1 []models.State, err error) {
 	mm_atomic.AddUint64(&mmGetRecordsByPrototype.beforeGetRecordsByPrototypeCounter, 1)
 	defer mm_atomic.AddUint64(&mmGetRecordsByPrototype.afterGetRecordsByPrototypeCounter, 1)
 
@@ -1477,7 +1477,7 @@ func (mmGetRecordsByPrototype *StorageMock) GetRecordsByPrototype(prototypeRef [
 	for _, e := range mmGetRecordsByPrototype.GetRecordsByPrototypeMock.expectations {
 		if minimock.Equal(e.params, mm_params) {
 			mm_atomic.AddUint64(&e.Counter, 1)
-			return e.results.ra1, e.results.err
+			return e.results.sa1, e.results.err
 		}
 	}
 
@@ -1493,7 +1493,7 @@ func (mmGetRecordsByPrototype *StorageMock) GetRecordsByPrototype(prototypeRef [
 		if mm_results == nil {
 			mmGetRecordsByPrototype.t.Fatal("No results are set for the StorageMock.GetRecordsByPrototype")
 		}
-		return (*mm_results).ra1, (*mm_results).err
+		return (*mm_results).sa1, (*mm_results).err
 	}
 	if mmGetRecordsByPrototype.funcGetRecordsByPrototype != nil {
 		return mmGetRecordsByPrototype.funcGetRecordsByPrototype(prototypeRef, pulseNumber, limit, offset)
@@ -1731,7 +1731,7 @@ type StorageMockSaveJetDropDataExpectation struct {
 // StorageMockSaveJetDropDataParams contains parameters of the Storage.SaveJetDropData
 type StorageMockSaveJetDropDataParams struct {
 	jetDrop     models.JetDrop
-	records     []models.Record
+	records     []models.IRecord
 	pulseNumber int64
 }
 
@@ -1741,7 +1741,7 @@ type StorageMockSaveJetDropDataResults struct {
 }
 
 // Expect sets up expected params for Storage.SaveJetDropData
-func (mmSaveJetDropData *mStorageMockSaveJetDropData) Expect(jetDrop models.JetDrop, records []models.Record, pulseNumber int64) *mStorageMockSaveJetDropData {
+func (mmSaveJetDropData *mStorageMockSaveJetDropData) Expect(jetDrop models.JetDrop, records []models.IRecord, pulseNumber int64) *mStorageMockSaveJetDropData {
 	if mmSaveJetDropData.mock.funcSaveJetDropData != nil {
 		mmSaveJetDropData.mock.t.Fatalf("StorageMock.SaveJetDropData mock is already set by Set")
 	}
@@ -1761,7 +1761,7 @@ func (mmSaveJetDropData *mStorageMockSaveJetDropData) Expect(jetDrop models.JetD
 }
 
 // Inspect accepts an inspector function that has same arguments as the Storage.SaveJetDropData
-func (mmSaveJetDropData *mStorageMockSaveJetDropData) Inspect(f func(jetDrop models.JetDrop, records []models.Record, pulseNumber int64)) *mStorageMockSaveJetDropData {
+func (mmSaveJetDropData *mStorageMockSaveJetDropData) Inspect(f func(jetDrop models.JetDrop, records []models.IRecord, pulseNumber int64)) *mStorageMockSaveJetDropData {
 	if mmSaveJetDropData.mock.inspectFuncSaveJetDropData != nil {
 		mmSaveJetDropData.mock.t.Fatalf("Inspect function is already set for StorageMock.SaveJetDropData")
 	}
@@ -1785,7 +1785,7 @@ func (mmSaveJetDropData *mStorageMockSaveJetDropData) Return(err error) *Storage
 }
 
 //Set uses given function f to mock the Storage.SaveJetDropData method
-func (mmSaveJetDropData *mStorageMockSaveJetDropData) Set(f func(jetDrop models.JetDrop, records []models.Record, pulseNumber int64) (err error)) *StorageMock {
+func (mmSaveJetDropData *mStorageMockSaveJetDropData) Set(f func(jetDrop models.JetDrop, records []models.IRecord, pulseNumber int64) (err error)) *StorageMock {
 	if mmSaveJetDropData.defaultExpectation != nil {
 		mmSaveJetDropData.mock.t.Fatalf("Default expectation is already set for the Storage.SaveJetDropData method")
 	}
@@ -1800,7 +1800,7 @@ func (mmSaveJetDropData *mStorageMockSaveJetDropData) Set(f func(jetDrop models.
 
 // When sets expectation for the Storage.SaveJetDropData which will trigger the result defined by the following
 // Then helper
-func (mmSaveJetDropData *mStorageMockSaveJetDropData) When(jetDrop models.JetDrop, records []models.Record, pulseNumber int64) *StorageMockSaveJetDropDataExpectation {
+func (mmSaveJetDropData *mStorageMockSaveJetDropData) When(jetDrop models.JetDrop, records []models.IRecord, pulseNumber int64) *StorageMockSaveJetDropDataExpectation {
 	if mmSaveJetDropData.mock.funcSaveJetDropData != nil {
 		mmSaveJetDropData.mock.t.Fatalf("StorageMock.SaveJetDropData mock is already set by Set")
 	}
@@ -1820,7 +1820,7 @@ func (e *StorageMockSaveJetDropDataExpectation) Then(err error) *StorageMock {
 }
 
 // SaveJetDropData implements interfaces.Storage
-func (mmSaveJetDropData *StorageMock) SaveJetDropData(jetDrop models.JetDrop, records []models.Record, pulseNumber int64) (err error) {
+func (mmSaveJetDropData *StorageMock) SaveJetDropData(jetDrop models.JetDrop, records []models.IRecord, pulseNumber int64) (err error) {
 	mm_atomic.AddUint64(&mmSaveJetDropData.beforeSaveJetDropDataCounter, 1)
 	defer mm_atomic.AddUint64(&mmSaveJetDropData.afterSaveJetDropDataCounter, 1)
 

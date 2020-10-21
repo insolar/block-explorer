@@ -46,15 +46,7 @@ func TestMain(m *testing.M) {
 
 	cfg := configuration.Exporter{
 		Listen: fmt.Sprintf(":%d", port),
-		// DB:      configuration.DB{
-		// 	URL:	"postgres://radist@localhost:5432/be?sslmode=disable",
-		// },
 	}
-	// var err error
-	// testDB, err = dbconn.Connect(cfg.DB)
-	// if err != nil {
-	// 	panic(err)
-	// }
 	s := storage.NewStorage(testDB)
 
 	// create grpc server
@@ -86,6 +78,7 @@ func TestMain(m *testing.M) {
 }
 
 func TestRecordServer_GetRecords(t *testing.T) {
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.State{}, models.JetDrop{}, models.Pulse{}})
 	var accountPrototypeReference, _ = insolar.NewObjectReferenceFromString("insolar:0AAABAiGN1L8F9gCH_keBaxOP4atp9fzLiIci7xOg-hs")
 	ctx := context.Background()
 
@@ -97,21 +90,21 @@ func TestRecordServer_GetRecords(t *testing.T) {
 	jetDrop1.JetID = "10101"
 	err = testutils.CreateJetDrop(testDB, jetDrop1)
 	require.NoError(t, err)
-	recordResult := testutils.InitRecordDB(jetDrop1)
-	recordResult.Type = models.Result
+	recordResult := testutils.InitStatedDB(jetDrop1, models.Activate)
+	recordResult.Type = models.StateType(models.ResultRecord)
 	recordResult.Order = 1
-	recordResult.PrototypeReference = accountPrototypeReference.Bytes()
-	err = testutils.CreateRecord(testDB, recordResult)
+	recordResult.ImageReference = accountPrototypeReference.Bytes()
+	err = testutils.CreateState(testDB, recordResult)
 	require.NoError(t, err)
-	recordState1 := testutils.InitRecordDB(jetDrop1)
+	recordState1 := testutils.InitStatedDB(jetDrop1, models.Amend)
 	recordState1.Order = 2
-	recordState1.PrototypeReference = accountPrototypeReference.Bytes()
-	err = testutils.CreateRecord(testDB, recordState1)
+	recordState1.ImageReference = accountPrototypeReference.Bytes()
+	err = testutils.CreateState(testDB, recordState1)
 	require.NoError(t, err)
-	recordState2 := testutils.InitRecordDB(jetDrop1)
+	recordState2 := testutils.InitStatedDB(jetDrop1, models.Deactivate)
 	recordState2.Order = 3
-	recordState2.PrototypeReference = accountPrototypeReference.Bytes()
-	err = testutils.CreateRecord(testDB, recordState2)
+	recordState2.ImageReference = accountPrototypeReference.Bytes()
+	err = testutils.CreateState(testDB, recordState2)
 	require.NoError(t, err)
 
 	client := NewRecordExporterClient(getRecordGRPCConnection)
@@ -134,9 +127,9 @@ func TestRecordServer_GetRecords(t *testing.T) {
 			recordsResponses = append(recordsResponses, pulseResp)
 		}
 		require.Len(t, recordsResponses, 3)
-		require.Equal(t, []byte(recordResult.Reference), recordsResponses[0].Reference)
-		require.Equal(t, []byte(recordState1.Reference), recordsResponses[1].Reference)
-		require.Equal(t, []byte(recordState2.Reference), recordsResponses[2].Reference)
+		require.Equal(t, []byte(recordResult.RecordReference), recordsResponses[0].Reference)
+		require.Equal(t, []byte(recordState1.RecordReference), recordsResponses[1].Reference)
+		require.Equal(t, []byte(recordState2.RecordReference), recordsResponses[2].Reference)
 	})
 
 	t.Run("count", func(t *testing.T) {
@@ -157,8 +150,8 @@ func TestRecordServer_GetRecords(t *testing.T) {
 			recordsResponses = append(recordsResponses, pulseResp)
 		}
 		require.Len(t, recordsResponses, 2)
-		require.Equal(t, []byte(recordResult.Reference), recordsResponses[0].Reference)
-		require.Equal(t, []byte(recordState1.Reference), recordsResponses[1].Reference)
+		require.Equal(t, []byte(recordResult.RecordReference), recordsResponses[0].Reference)
+		require.Equal(t, []byte(recordState1.RecordReference), recordsResponses[1].Reference)
 	})
 
 	t.Run("recordNumber", func(t *testing.T) {
@@ -179,7 +172,7 @@ func TestRecordServer_GetRecords(t *testing.T) {
 			recordsResponses = append(recordsResponses, pulseResp)
 		}
 		require.Len(t, recordsResponses, 1)
-		require.Equal(t, []byte(recordState1.Reference), recordsResponses[0].Reference)
+		require.Equal(t, []byte(recordState1.RecordReference), recordsResponses[0].Reference)
 	})
 
 	t.Run("no protoref", func(t *testing.T) {

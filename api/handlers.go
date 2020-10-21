@@ -47,6 +47,36 @@ func NewServer(ctx context.Context, storage interfaces.StorageAPIFetcher, config
 	return &Server{storage: storage, logger: logger, config: config}
 }
 
+func (s *Server) OriginalRequestByObject(ctx echo.Context, objectReference server.ObjectReferencePath, params server.OriginalRequestByObjectParams) error {
+	// TODO implement me
+	return nil
+}
+
+func (s *Server) Request(ctx echo.Context, requestReference server.RequestReferencePath) error {
+	// TODO implement me
+	return nil
+}
+
+func (s *Server) RequestTree(ctx echo.Context, requestReference server.RequestReferencePath) error {
+	// TODO implement me
+	return nil
+}
+
+func (s *Server) Originalrequest(ctx echo.Context, requestReference server.RequestReferencePath) error {
+	// TODO implement me
+	return nil
+}
+
+func (s *Server) Result(ctx echo.Context, requestReference server.RequestReferencePath) error {
+	// TODO implement me
+	return nil
+}
+
+func (s *Server) State(ctx echo.Context, stateReference server.StateReferencePath) error {
+	// TODO implement me
+	return nil
+}
+
 func (s *Server) JetDropByID(ctx echo.Context, jetDropID server.JetDropIdPath) error {
 	exporterJetDropID, err := models.NewJetDropIDFromString(string(jetDropID))
 	if err != nil {
@@ -529,14 +559,14 @@ func (s *Server) searchReferencePulse(ctx echo.Context, ref *insolar.Reference) 
 		})
 	}
 	// get record from db to provide information for response
-	record, err := s.storage.GetRecord(ref.GetLocal().Bytes())
+	state, err := s.storage.GetState(ref.GetLocal().Bytes())
 	if err != nil {
 		if gorm.IsRecordNotFoundError(err) {
 			response := server.CodeValidationError{
 				Code:        NullableString(http.StatusText(http.StatusBadRequest)),
 				Description: NullableString(InvalidParamsMessage),
 				ValidationFailures: &[]server.CodeValidationFailures{{
-					FailureReason: NullableString("record reference not found"),
+					FailureReason: NullableString("reference not found"),
 					Property:      NullableString("value"),
 				}},
 			}
@@ -545,15 +575,15 @@ func (s *Server) searchReferencePulse(ctx echo.Context, ref *insolar.Reference) 
 		s.logger.Error(err)
 		return ctx.JSON(http.StatusInternalServerError, struct{}{})
 	}
-	return ctx.JSON(http.StatusOK, server.SearchRecord{
+	return ctx.JSON(http.StatusOK, server.SearchState{
 		Meta: &struct {
 			Index           *string `json:"index,omitempty"`
 			ObjectReference *string `json:"object_reference,omitempty"`
 		}{
-			Index:           NullableString(fmt.Sprintf("%d:%d", record.PulseNumber, record.Order)),
-			ObjectReference: NullableString(insolar.NewReference(*insolar.NewIDFromBytes(record.ObjectReference)).String()),
+			Index:           NullableString(fmt.Sprintf("%d:%d", state.PulseNumber, state.Order)),
+			ObjectReference: NullableString(insolar.NewReference(*insolar.NewIDFromBytes(state.ObjectReference)).String()),
 		},
-		Type: NullableString("record"),
+		Type: NullableString("state"),
 	})
 }
 
@@ -626,7 +656,7 @@ func (s *Server) ObjectLifeline(ctx echo.Context, objectReference server.ObjectR
 		timestampGte = &unptr
 	}
 
-	records, count, err := s.storage.GetLifeline(
+	state, count, err := s.storage.GetLifeline(
 		ref.GetLocal().Bytes(),
 		fromIndexString,
 		pulseNumberLt, pulseNumberGt,
@@ -639,12 +669,12 @@ func (s *Server) ObjectLifeline(ctx echo.Context, objectReference server.ObjectR
 		return ctx.JSON(http.StatusInternalServerError, struct{}{})
 	}
 
-	result := []server.Record{}
-	for _, r := range records {
-		result = append(result, RecordToAPI(r))
+	result := []server.State{}
+	for _, r := range state {
+		result = append(result, StateToAPI(r))
 	}
 	cnt := int64(count)
-	return ctx.JSON(http.StatusOK, server.RecordsResponse{
+	return ctx.JSON(http.StatusOK, server.StatesResponse{
 		Total:  &cnt,
 		Result: &result,
 	})
