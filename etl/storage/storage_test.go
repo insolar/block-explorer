@@ -2280,5 +2280,5 @@ func TestStorage_GetNextCompletePulseFilterByPrototypeReference(t *testing.T) {
 
 	dbPulse, err = s.GetNextCompletePulseFilterByPrototypeReference(pulse.PrevPulseNumber, [][]byte{[]byte("hello")})
 	require.NoError(t, err)
-	require.Empty(t, dbPulse)
+	require.Equal(t, int64(0), dbPulse.RecordAmount)
 }
