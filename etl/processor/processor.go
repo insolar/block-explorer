@@ -157,10 +157,6 @@ func (p *Processor) process(ctx context.Context, jd *types.JetDrop) error {
 	for i, r := range ms.Records {
 		switch r.TypeOf() {
 		case types.REQUEST:
-			_, ok := r.(types.Request)
-			if !ok {
-				break
-			}
 			mrs = append(mrs, models.Request{
 				RecordReference:        models.ReferenceFromTypes(r.Reference()),
 				Type:                   models.RequestTypeFromTypes(r.(types.Request).Type),
@@ -190,10 +186,6 @@ func (p *Processor) process(ctx context.Context, jd *types.JetDrop) error {
 				Timestamp:       mjd.Timestamp,
 			})
 		case types.STATE:
-			_, ok := r.(types.State)
-			if !ok {
-				break
-			}
 			mrs = append(mrs, models.State{
 				RecordReference:    models.ReferenceFromTypes(r.Reference()),
 				Type:               models.StateTypeFromTypes(r.(types.State).Type),
