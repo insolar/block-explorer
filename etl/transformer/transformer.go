@@ -142,7 +142,8 @@ func initRecordsMapsByObj(records []types.IRecord) (
 	recordsByObjAndPrevRef := map[string]map[string]types.State{}
 	recordsByObjAndRef := map[string]map[string]types.State{}
 	for _, r := range records {
-		if r.TypeOf() != types.STATE {
+		_, ok := r.(types.State)
+		if !ok {
 			notStateRecords = append(notStateRecords, r)
 			continue
 		}
