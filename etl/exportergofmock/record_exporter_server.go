@@ -20,7 +20,7 @@ func NewRecordServerMock(d *DataMock) *RecordServerMock {
 }
 
 func (s *RecordServerMock) GetRecords(in *exporter.GetRecordsRequest, stream exporter.RecordExporter_GetRecordsServer) error {
-	p, ok := s.RecordsByPulse[in.PulseNumber]
+	p, ok := s.RecordsByPulseNumber[in.PulseNumber]
 	if !ok {
 		return nil
 	}
@@ -41,7 +41,7 @@ func (s *RecordServerMock) GetRecords(in *exporter.GetRecordsRequest, stream exp
 					Payload:             p[i].Payload,
 					PrevRecordReference: p[i].PrevRecordReference,
 					PulseNumber:         p[i].PulseNumber,
-					Timestamp:           uint32(p[i].Timestamp),
+					Timestamp:           p[i].Timestamp,
 				}
 				if err := stream.Send(resp); err != nil {
 					return err

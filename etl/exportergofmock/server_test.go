@@ -27,7 +27,7 @@ func TestNewMockBEAPIServerGetPulses(t *testing.T) {
 		PrototypeRef: proto1,
 		ObjectRef:    obj1,
 		Payload:      objPayload1,
-		RecordType:   models.State,
+		RecordType:   models.StateRecord,
 	})
 
 	// 10 records of proto2/obj2 in second pulse
@@ -40,7 +40,7 @@ func TestNewMockBEAPIServerGetPulses(t *testing.T) {
 		PrototypeRef: proto2,
 		ObjectRef:    obj2,
 		Payload:      objPayload2,
-		RecordType:   models.State,
+		RecordType:   models.StateRecord,
 	})
 
 	// proto3/obj3 span over pulses 3 and 4
@@ -53,7 +53,7 @@ func TestNewMockBEAPIServerGetPulses(t *testing.T) {
 		PrototypeRef: proto3,
 		ObjectRef:    obj3,
 		Payload:      objPayload3,
-		RecordType:   models.State,
+		RecordType:   models.StateRecord,
 	})
 	e.NewPulse(true, true)
 	e.NewCurrentPulseRecords(RecordsTemplate{
@@ -61,7 +61,7 @@ func TestNewMockBEAPIServerGetPulses(t *testing.T) {
 		PrototypeRef: proto3,
 		ObjectRef:    obj3,
 		Payload:      objPayload3,
-		RecordType:   models.State,
+		RecordType:   models.StateRecord,
 	})
 
 	c := NewClient(e.Listen)
@@ -73,8 +73,11 @@ func TestNewMockBEAPIServerGetPulses(t *testing.T) {
 		}, grpc.WaitForReady(true))
 		require.NoError(t, err)
 		pulses := c.ReadAllPulses(stream)
-		require.Equal(t, 1, len(pulses))
+		require.Equal(t, 4, len(pulses))
 		require.Equal(t, int64(10), pulses[0].RecordAmount)
+		require.Equal(t, int64(0), pulses[1].RecordAmount)
+		require.Equal(t, int64(0), pulses[2].RecordAmount)
+		require.Equal(t, int64(0), pulses[3].RecordAmount)
 	})
 
 	t.Run("no pulse is found if PulseNumberFrom > pulse stored in mock", func(t *testing.T) {
@@ -84,7 +87,10 @@ func TestNewMockBEAPIServerGetPulses(t *testing.T) {
 		}, grpc.WaitForReady(true))
 		require.NoError(t, err)
 		pulses := c.ReadAllPulses(stream)
-		require.Empty(t, pulses)
+		require.Equal(t, 3, len(pulses))
+		require.Equal(t, int64(0), pulses[0].RecordAmount)
+		require.Equal(t, int64(0), pulses[1].RecordAmount)
+		require.Equal(t, int64(0), pulses[2].RecordAmount)
 	})
 
 	t.Run("records for proto3 found in pulses 3 and 4", func(t *testing.T) {
@@ -94,9 +100,11 @@ func TestNewMockBEAPIServerGetPulses(t *testing.T) {
 		}, grpc.WaitForReady(true))
 		require.NoError(t, err)
 		pulses := c.ReadAllPulses(stream)
-		require.Equal(t, 2, len(pulses))
-		require.Equal(t, int64(10), pulses[0].RecordAmount)
-		require.Equal(t, int64(10), pulses[1].RecordAmount)
+		require.Equal(t, 4, len(pulses))
+		require.Equal(t, int64(0), pulses[0].RecordAmount)
+		require.Equal(t, int64(0), pulses[1].RecordAmount)
+		require.Equal(t, int64(10), pulses[2].RecordAmount)
+		require.Equal(t, int64(10), pulses[3].RecordAmount)
 	})
 
 	t.Run("it gets all records from pulse 1 in one batch", func(t *testing.T) {
@@ -165,7 +173,7 @@ func TestNewMockBEAPIServerGetPulses(t *testing.T) {
 		require.Equal(t, 0, len(recs))
 	})
 
-	t.Run("no records found for pulse", func(t *testing.T) {
+	t.Run("no records found for not existing pulse", func(t *testing.T) {
 		stream, err := c.GetRecords(context.Background(), &exporter.GetRecordsRequest{
 			Polymorph:    0,
 			PulseNumber:  initPulseNum + 100,

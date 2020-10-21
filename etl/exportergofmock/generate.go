@@ -70,10 +70,10 @@ func (s *ExporterServerMemory) NewCurrentPulseRecords(tmpl RecordsTemplate) {
 		prevRecordReference = recordRef
 		records = append(records, rec)
 	}
-	s.Data.RecordsByPulse[s.Data.CurrentPulse] = append(s.Data.RecordsByPulse[s.Data.CurrentPulse], records...)
+	s.Data.RecordsByPulseNumber[s.Data.CurrentPulse] = append(s.Data.RecordsByPulseNumber[s.Data.CurrentPulse], records...)
 }
 
 func (s *ExporterServerMemory) ClearData() {
 	s.Data.Pulses = make([]models.Pulse, 0)
-	s.Data.RecordsByPulse = make(map[int64][]models.Record)
+	s.Data.RecordsByPulseNumber = make(map[int64][]models.Record)
 }
