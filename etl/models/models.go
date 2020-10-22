@@ -114,7 +114,7 @@ type Request struct {
 	RecordReference          []byte `gorm:"primary_key;auto_increment:false"` // Request reference.
 	Type                     RequestType
 	CallType                 string
-	ObjectReference          []byte // Reference to the corresponding object.
+	ObjectReference          []byte `gorm:"column:object_ref"` // Reference to the corresponding object.
 	CallerObjectReference    []byte // Reference to the object that called this request.
 	CalleeObjectReference    []byte
 	APIRequestID             string // Internal debugging information,filled in case of working with v1 platform
