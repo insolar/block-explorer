@@ -53,8 +53,30 @@ func (s *Server) OriginalRequestByObject(ctx echo.Context, objectReference serve
 }
 
 func (s *Server) Request(ctx echo.Context, requestReference server.RequestReferencePath) error {
-	// TODO implement me
-	return nil
+	ref, err := checkReference(string(requestReference))
+	if err != nil {
+		response := server.CodeValidationError{
+			Code:        NullableString(strconv.Itoa(http.StatusBadRequest)),
+			Description: nil,
+			Message:     NullableString(InvalidParamsMessage),
+			ValidationFailures: &[]server.CodeValidationFailures{{
+				FailureReason: NullableString(errors.Wrapf(err, "invalid").Error()),
+				Property:      NullableString("request reference"),
+			}},
+		}
+		return ctx.JSON(http.StatusBadRequest, response)
+	}
+	request, err := s.storage.GetRequest(ref.GetLocal().Bytes())
+	if err != nil {
+		if gorm.IsRecordNotFoundError(err) {
+			return ctx.JSON(http.StatusNotFound, struct{}{})
+		}
+		s.logger.Error(err)
+		return ctx.JSON(http.StatusInternalServerError, struct{}{})
+	}
+
+	apiRequest := RequestToAPI(request)
+	return ctx.JSON(http.StatusOK, apiRequest)
 }
 
 func (s *Server) RequestTree(ctx echo.Context, requestReference server.RequestReferencePath) error {
@@ -73,6 +95,7 @@ func (s *Server) Result(ctx echo.Context, requestReference server.RequestReferen
 }
 
 func (s *Server) State(ctx echo.Context, stateReference server.StateReferencePath) error {
+
 	// TODO implement me
 	return nil
 }

@@ -110,6 +110,8 @@ type StorageAPIFetcher interface {
 	GetRecord(ref models.Reference) (models.Record, error)
 	// GetState returns state with provided reference from db.
 	GetState(ref models.Reference) (models.State, error)
+	// GetRequest returns request or original request with provided reference from db.
+	GetRequest(ref models.Reference) (models.Request, error)
 	// GetPulse returns pulse with provided pulse number from db.
 	GetPulse(pulseNumber int64) (models.Pulse, error)
 	// GetPulse returns pulses from db.
