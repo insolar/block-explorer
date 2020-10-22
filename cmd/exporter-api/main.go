@@ -12,7 +12,6 @@ import (
 	"os/signal"
 	"syscall"
 
-	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	"github.com/insolar/insconfig"
 
 	"github.com/insolar/block-explorer/configuration"
@@ -61,6 +60,7 @@ func main() {
 	}
 	s := storage.NewStorage(db)
 
+	grpcMetrics := exporter.NewGRPCMetrics()
 	metricConfig := metrics.Config{
 		RefreshInterval:   cfg.Metrics.RefreshInterval,
 		StartServer:       cfg.Metrics.StartServer,
@@ -78,17 +78,14 @@ func main() {
 	recordExporter = exporter.NewRecordServer(ctx, s, *cfg)
 	pulseExporter = exporter.NewPulseServer(s, cfg.PulsePeriod, &logger)
 
-	grpcMetrics := grpc_prometheus.NewServerMetrics()
-	grpcMetrics.EnableHandlingTimeHistogram()
-
-	grpcServer, err := connection.NewGRPCServer(*cfg, grpcMetrics)
+	grpcServer, err := connection.NewGRPCServer(*cfg, grpcMetrics.ServerMetrics)
 	if err != nil {
 		logger.Fatal("failed to initiate a GRPC server: ", err)
 	}
 	exporter.RegisterRecordExporterServer(grpcServer, recordExporter)
 	exporter.RegisterPulseExporterServer(grpcServer, pulseExporter)
 
-	grpcMetrics.InitializeMetrics(grpcServer)
+	grpcMetrics.ServerMetrics.InitializeMetrics(grpcServer)
 
 	exporterServer := exporter.NewServer(cfg.Listen, grpcServer)
 	err = exporterServer.Start(ctx)
