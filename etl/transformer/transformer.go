@@ -214,7 +214,7 @@ func transferToCanonicalRecord(r *exporter.Record) (types.IRecord, error) {
 		objectReference     types.Reference
 		prototypeReference  types.Reference = make([]byte, 0)
 		prevRecordReference types.Reference = make([]byte, 0)
-		recordPayload       []byte          = make([]byte, 0)
+		recordPayload       []byte
 		hash                []byte
 		rawData             []byte
 		order               uint32
@@ -259,6 +259,7 @@ func transferToCanonicalRecord(r *exporter.Record) (types.IRecord, error) {
 		if r.Record.ID.Pulse() == pulse.MinTimePulse {
 			objectReference = amend.Request.GetLocal().Bytes()
 		}
+
 		return types.State{
 			Type:            types.AMEND,
 			RecordReference: ref,
@@ -296,14 +297,49 @@ func transferToCanonicalRecord(r *exporter.Record) (types.IRecord, error) {
 		}
 
 	case *ins_record.Virtual_IncomingRequest:
-		recordType = types.REQUEST
 		incomingRequest := virtual.GetIncomingRequest()
 		if r.Record.ID.Pulse() == pulse.MinTimePulse {
 			objectReference = genesisrefs.GenesisRef(incomingRequest.Method).GetLocal().Bytes()
 		}
+		return types.Request{
+			RecordReference:   ref,
+			Type:              types.INCOMING,
+			CallType:          incomingRequest.CallType.String(),
+			ObjectReference:   objectReference,
+			Caller:            incomingRequest.GetCaller().GetLocal().Bytes(),
+			APIRequestID:      incomingRequest.APIRequestID,
+			CallReason:        incomingRequest.GetReason().Bytes(),
+			CallSiteMethod:    incomingRequest.GetMethod(),
+			Arguments:         incomingRequest.GetArguments(),
+			Immutable:         incomingRequest.GetImmutable(),
+			IsOriginalRequest: incomingRequest.IsAPIRequest(),
+			RawData:           rawData,
+			Hash:              hash,
+			Order:             order,
+		}, nil
 
 	case *ins_record.Virtual_OutgoingRequest:
-		recordType = types.REQUEST
+		outgoingRequest := virtual.GetOutgoingRequest()
+		if r.Record.ID.Pulse() == pulse.MinTimePulse {
+			objectReference = genesisrefs.GenesisRef(outgoingRequest.Method).GetLocal().Bytes()
+		}
+
+		return types.Request{
+			RecordReference:   ref,
+			Type:              types.OUTGOING,
+			CallType:          outgoingRequest.CallType.String(),
+			ObjectReference:   objectReference,
+			Caller:            outgoingRequest.GetCaller().GetLocal().Bytes(),
+			APIRequestID:      outgoingRequest.GetAPIRequestID(),
+			CallReason:        outgoingRequest.GetReason().Bytes(),
+			CallSiteMethod:    outgoingRequest.GetMethod(),
+			Arguments:         outgoingRequest.GetArguments(),
+			Immutable:         outgoingRequest.GetImmutable(),
+			IsOriginalRequest: outgoingRequest.IsAPIRequest(),
+			RawData:           rawData,
+			Hash:              hash,
+			Order:             order,
+		}, nil
 
 	default:
 		// skip unnecessary record
