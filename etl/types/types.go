@@ -131,10 +131,37 @@ func (s State) Reference() Reference {
 }
 
 type Request struct {
+	RecordReference   Reference   // ref = r.Record.ID.Bytes()
+	Type              RequestType // incoming or outgoing
+	CallType          string      // Function, Constructor, Notify, SAGA etc
+	ObjectReference   Reference   // get from r.Record.ObjectID.Bytes()
+	Caller            Reference   // object reference caller object
+	Callee            Reference   // object reference callee object.
+	APIRequestID      string      // v1 field [TraceID of original request]
+	CallReason        Reference   // reference to parent request
+	RootTX            Reference   // reference to origin request
+	CallSiteMethod    string      // method name
+	Arguments         []byte      // request params
+	Immutable         bool        // read or write request type
+	IsOriginalRequest bool        // is original request
+	RawData           []byte
+	Hash              []byte // hash of record
+	Order             uint32 // record number
 }
+
+type RequestType int
+
+const (
+	INCOMING RequestType = iota
+	OUTGOING
+)
 
 func (r Request) TypeOf() RecordType {
 	return REQUEST
+}
+
+func (r Request) Reference() Reference {
+	return r.RecordReference
 }
 
 type Result struct {
