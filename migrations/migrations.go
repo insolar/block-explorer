@@ -73,7 +73,7 @@ func Migrations() []*gormigrate.Migration {
 					RecordReference          []byte `gorm:"primary_key;auto_increment:false"`
 					Type                     string
 					CallType                 string
-					ObjectRef                []byte
+					ObjectReference          []byte
 					CallerObjectReference    []byte
 					CalleeObjectReference    []byte
 					APIRequestID             string
