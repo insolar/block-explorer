@@ -39,6 +39,10 @@ const (
 	Deactivate StateType = "deactivate"
 )
 
+func RequestTypeFromTypes(r types.RequestType) RequestType {
+	return []RequestType{"incoming", "outgoing"}[r]
+}
+
 const (
 	Incoming RequestType = "incoming"
 	Outgoing RequestType = "outgoing"
@@ -102,7 +106,7 @@ type State struct {
 	Timestamp          int64
 }
 
-func (r State) TypeOf() RecordType {
+func (s State) TypeOf() RecordType {
 	return StateRecord
 }
 
@@ -126,6 +130,10 @@ type Request struct {
 	PulseNumber              int64
 	Order                    int
 	Timestamp                int64
+}
+
+func (r Request) TypeOf() RecordType {
+	return RequestRecord
 }
 
 func (j *JetDrop) Siblings() []string {

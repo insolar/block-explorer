@@ -53,10 +53,20 @@ func (s *Storage) initJD(jetDrop models.JetDrop, records []models.IRecord, pulse
 		}
 
 		for _, record := range records {
-			state, ok := record.(models.State)
-			if ok {
-				if err := tx.Save(&state).Error; err != nil { // nolint
-					return errors.Wrap(err, "error while saving state")
+			switch record.TypeOf() {
+			case models.StateRecord:
+				state, ok := record.(models.State)
+				if ok {
+					if err := tx.Save(&state).Error; err != nil { // nolint
+						return errors.Wrap(err, "error while saving state")
+					}
+				}
+			case models.RequestRecord:
+				request, ok := record.(models.Request)
+				if ok {
+					if err := tx.Save(&request).Error; err != nil { // nolint
+						return errors.Wrap(err, "error while saving request")
+					}
 				}
 			}
 			record, ok := record.(models.Record)
@@ -174,6 +184,15 @@ func (s *Storage) GetState(ref models.Reference) (models.State, error) {
 	state := models.State{}
 	err := s.db.Where("record_reference = ?", []byte(ref)).First(&state).Error
 	return state, err
+}
+
+// GetRequest returns request or original request with provided reference from db.
+func (s *Storage) GetRequest(ref models.Reference) (models.Request, error) {
+	timer := prometheus.NewTimer(GetRequestDuration)
+	defer timer.ObserveDuration()
+	request := models.Request{}
+	err := s.db.Where("record_reference = ?", []byte(ref)).First(&request).Error
+	return request, err
 }
 
 func CheckIndex(i string) (int, int, error) {

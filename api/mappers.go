@@ -116,6 +116,65 @@ func StateToAPI(state models.State) server.State {
 	return response
 }
 
+func RequestToAPI(request models.Request) server.Request {
+	pulseNumber := request.PulseNumber
+	order := int64(request.Order)
+	jetDropID := models.NewJetDropID(request.JetID, pulseNumber)
+	response := server.Request{
+		RecordAbstract: server.RecordAbstract{
+			Hash:        NullableString(base64.StdEncoding.EncodeToString(request.Hash)),
+			JetDropId:   NullableString(jetDropID.ToString()),
+			JetId:       NullableString(jetDropID.JetIDToString()),
+			Order:       &order,
+			PulseNumber: &pulseNumber,
+			Timestamp:   &request.Timestamp,
+		},
+		Arguments:         NullableString(base64.StdEncoding.EncodeToString(request.Arguments)),
+		Index:             NullableString(fmt.Sprintf("%d:%d", request.PulseNumber, request.Order)),
+		IsImmutable:       &request.Immutable,
+		IsOriginalRequest: &request.IsOriginalRequest,
+		Method:            &request.Method,
+		TraceId:           &request.APIRequestID,
+	}
+	objectID := insolar.NewIDFromBytes(request.ObjectReference)
+	if objectID != nil {
+		response.ObjectReference = NullableString(insolar.NewReference(*objectID).String())
+	}
+	if !instrumentation.IsEmpty(request.CallerObjectReference) {
+		callerObjectReference := insolar.NewIDFromBytes(request.CallerObjectReference)
+		if callerObjectReference != nil {
+			response.CallerReference = NullableString(callerObjectReference.String())
+		}
+	}
+
+	if !instrumentation.IsEmpty(request.PrototypeReference) {
+		prototypeReference := insolar.NewIDFromBytes(request.PrototypeReference)
+		if prototypeReference != nil {
+			response.PrototypeReference = NullableString(prototypeReference.String())
+		}
+	}
+
+	if !instrumentation.IsEmpty(request.ReasonRequestReference) {
+		reasonReference := insolar.NewIDFromBytes(request.ReasonRequestReference)
+		if reasonReference != nil {
+			response.ReasonReference = NullableString(reasonReference.String())
+		}
+	}
+
+	if !instrumentation.IsEmpty(request.ObjectReference) {
+		objectReference := insolar.NewIDFromBytes(request.ObjectReference)
+		if objectReference != nil {
+			response.ObjectReference = NullableString(objectReference.String())
+		}
+	}
+
+	reference := insolar.NewIDFromBytes(request.RecordReference)
+	if reference != nil {
+		response.Reference = NullableString(reference.String())
+	}
+	return response
+}
+
 func PulseToAPI(pulse models.Pulse) server.Pulse {
 	pulseNumber := pulse.PulseNumber
 	prevPulseNumber := pulse.PrevPulseNumber

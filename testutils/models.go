@@ -39,7 +39,7 @@ func InitRecordDB(jetDrop models.JetDrop) models.Record {
 	}
 }
 
-// InitStateDB returns generated state
+// InitStatedDB returns generated state
 func InitStatedDB(jetDrop models.JetDrop, stateType models.StateType) models.State {
 	return models.State{
 		RecordReference:    gen.ID().Bytes(),
@@ -56,6 +56,31 @@ func InitStatedDB(jetDrop models.JetDrop, stateType models.StateType) models.Sta
 		JetID:              jetDrop.JetID,
 		PulseNumber:        jetDrop.PulseNumber,
 		Timestamp:          jetDrop.Timestamp,
+	}
+}
+
+// InitRequestDB returns generated request
+func InitRequestDB(jetDrop models.JetDrop, requestType models.RequestType) models.Request {
+	return models.Request{
+		RecordReference:          gen.ID().Bytes(),
+		Type:                     requestType,
+		CallType:                 "CTMethod",
+		ObjectReference:          gen.ID().Bytes(),
+		CallerObjectReference:    gen.ID().Bytes(),
+		CalleeObjectReference:    gen.ID().Bytes(),
+		APIRequestID:             "434bee7829e0703b22aed6776410bb9f",
+		ReasonRequestReference:   gen.ID().Bytes(),
+		OriginalRequestReference: gen.ID().Bytes(),
+		Method:                   "AddNewMemberToPublicKeyMap",
+		Arguments:                GenerateRandBytes(),
+		Immutable:                true,
+		IsOriginalRequest:        false,
+		PrototypeReference:       gen.ID().Bytes(),
+		Hash:                     GenerateRandBytes(),
+		JetID:                    jetDrop.JetID,
+		PulseNumber:              jetDrop.PulseNumber,
+		Order:                    1,
+		Timestamp:                jetDrop.Timestamp,
 	}
 }
 
@@ -140,7 +165,15 @@ func CreateRecord(db *gorm.DB, record models.Record) error {
 // CreateState creates provided record at db
 func CreateState(db *gorm.DB, state models.State) error {
 	if err := db.Create(&state).Error; err != nil {
-		return errors.Wrap(err, "error while saving record")
+		return errors.Wrap(err, "error while saving state")
+	}
+	return nil
+}
+
+// CreateRequest creates provided record at db
+func CreateRequest(db *gorm.DB, request models.Request) error {
+	if err := db.Create(&request).Error; err != nil {
+		return errors.Wrap(err, "error while saving request")
 	}
 	return nil
 }

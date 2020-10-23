@@ -156,6 +156,36 @@ func (p *Processor) process(ctx context.Context, jd *types.JetDrop) error {
 	var mrs []models.IRecord
 	for i, r := range ms.Records {
 		switch r.TypeOf() {
+		case types.REQUEST:
+			mrs = append(mrs, models.Request{
+				RecordReference:        models.ReferenceFromTypes(r.Reference()),
+				Type:                   models.RequestTypeFromTypes(r.(types.Request).Type),
+				CallType:               r.(types.Request).CallType,
+				ObjectReference:        models.ReferenceFromTypes(r.(types.Request).ObjectReference),
+				CallerObjectReference:  models.ReferenceFromTypes(r.(types.Request).Caller),
+				APIRequestID:           r.(types.Request).APIRequestID,
+				ReasonRequestReference: models.ReferenceFromTypes(r.(types.Request).CallReason),
+				Method:                 r.(types.Request).CallSiteMethod,
+				Arguments:              r.(types.Request).Arguments,
+				Immutable:              r.(types.Request).Immutable,
+				IsOriginalRequest:      r.(types.Request).IsOriginalRequest,
+				JetID:                  mjd.JetID,
+				PulseNumber:            mjd.PulseNumber,
+				Order:                  i,
+				Timestamp:              mjd.Timestamp,
+				Hash:                   r.(types.Request).Hash,
+			})
+			mrs = append(mrs, models.Record{
+				Reference:       models.ReferenceFromTypes(r.Reference()),
+				Type:            models.RecordTypeFromTypes(r.TypeOf()),
+				ObjectReference: models.ReferenceFromTypes(r.(types.Request).ObjectReference),
+				Hash:            r.(types.Request).Hash,
+				RawData:         r.(types.Request).RawData,
+				JetID:           mjd.JetID,
+				PulseNumber:     mjd.PulseNumber,
+				Order:           i,
+				Timestamp:       mjd.Timestamp,
+			})
 		case types.STATE:
 			mrs = append(mrs, models.State{
 				RecordReference:    models.ReferenceFromTypes(r.Reference()),
