@@ -8,12 +8,13 @@ package testutils
 import (
 	"testing"
 
-	"github.com/insolar/block-explorer/instrumentation/converter"
 	"github.com/insolar/insolar/insolar"
 	"github.com/insolar/insolar/insolar/gen"
 	"github.com/jinzhu/gorm"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
+
+	"github.com/insolar/block-explorer/instrumentation/converter"
 
 	"github.com/insolar/block-explorer/etl/models"
 )
@@ -35,6 +36,26 @@ func InitRecordDB(jetDrop models.JetDrop) models.Record {
 		PulseNumber:         jetDrop.PulseNumber,
 		Order:               1,
 		Timestamp:           jetDrop.Timestamp,
+	}
+}
+
+// InitStateDB returns generated state
+func InitStateDB(jetDrop models.JetDrop) models.State {
+	return models.State{
+		RecordReference:    gen.ID().Bytes(),
+		Type:               models.Activate,
+		RequestReference:   gen.ID().Bytes(),
+		ParentReference:    gen.ID().Bytes(),
+		ObjectReference:    gen.ID().Bytes(),
+		PrevStateReference: gen.ID().Bytes(),
+		IsPrototype:        false,
+		Payload:            GenerateRandBytes(),
+		ImageRef:           gen.ID().Bytes(),
+		Hash:               GenerateRandBytes(),
+		Order:              1,
+		JetID:              jetDrop.JetID,
+		PulseNumber:        jetDrop.PulseNumber,
+		Timestamp:          jetDrop.Timestamp,
 	}
 }
 
@@ -116,6 +137,14 @@ func CreateRecord(db *gorm.DB, record models.Record) error {
 	return nil
 }
 
+// CreateState creates provided record at db
+func CreateState(db *gorm.DB, state models.State) error {
+	if err := db.Create(&state).Error; err != nil {
+		return errors.Wrap(err, "error while saving record")
+	}
+	return nil
+}
+
 // CreatePulse creates provided jet drop at db
 func CreateJetDrop(db *gorm.DB, jetDrop models.JetDrop) error {
 	if err := db.Create(&jetDrop).Error; err != nil {
@@ -165,6 +194,19 @@ func OrderedRecords(t *testing.T, db *gorm.DB, jetDrop models.JetDrop, objRef in
 		err := CreateRecord(db, record)
 		require.NoError(t, err)
 		result = append(result, record)
+	}
+	return result
+}
+
+func OrderedStates(t *testing.T, db *gorm.DB, jetDrop models.JetDrop, objRef insolar.ID, amount int) []models.State {
+	var result []models.State
+	for i := 1; i <= amount; i++ {
+		state := InitStateDB(jetDrop)
+		state.ObjectReference = objRef.Bytes()
+		state.Order = i
+		err := CreateState(db, state)
+		require.NoError(t, err)
+		result = append(result, state)
 	}
 	return result
 }

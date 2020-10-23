@@ -38,6 +38,11 @@ var (
 		Help:       "The duration of the GetRecord function execution",
 		Objectives: quntitile,
 	})
+	GetStateDuration = prometheus.NewSummary(prometheus.SummaryOpts{
+		Name:       "gbe_storage_stats_GetStateDuration",
+		Help:       "The duration of the GetState function execution",
+		Objectives: quntitile,
+	})
 	GetLifelineDuration = prometheus.NewSummary(prometheus.SummaryOpts{
 		Name:       "gbe_storage_stats_GetLifelineDuration",
 		Help:       "The duration of the GetLifeline function execution",
