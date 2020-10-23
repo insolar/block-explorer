@@ -72,6 +72,34 @@ func TestStorage_SaveJetDropDataWithState(t *testing.T) {
 	require.Contains(t, statesInDB, deactivateRecord)
 }
 
+func TestStorage_SaveJetDropDataWithRequest(t *testing.T) {
+	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.State{}, models.Request{}, models.JetDrop{}, models.Pulse{}})
+	s := NewStorage(testDB)
+
+	pulse, err := testutils.InitPulseDB()
+	require.NoError(t, err)
+	err = testutils.CreatePulse(testDB, pulse)
+	require.NoError(t, err)
+
+	jetDrop := testutils.InitJetDropDB(pulse)
+	requestRecord := testutils.InitRequestDB(jetDrop, models.Incoming)
+
+	err = s.SaveJetDropData(jetDrop, []models.IRecord{requestRecord}, pulse.PulseNumber)
+	require.NoError(t, err)
+
+	var jetDropInDB []models.JetDrop
+	err = testDB.Find(&jetDropInDB).Error
+	require.NoError(t, err)
+	require.Len(t, jetDropInDB, 1)
+	require.EqualValues(t, jetDrop, jetDropInDB[0])
+
+	var requestsInDB []models.Request
+	err = testDB.Find(&requestsInDB).Error
+	require.NoError(t, err)
+	require.Len(t, requestsInDB, 1)
+	require.Equal(t, requestsInDB[0], requestRecord)
+}
+
 func TestStorage_SaveJetDropData(t *testing.T) {
 	defer testutils.TruncateTables(t, testDB, []interface{}{models.Record{}, models.State{}, models.JetDrop{}, models.Pulse{}})
 	s := NewStorage(testDB)

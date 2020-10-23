@@ -59,21 +59,21 @@ func InitStatedDB(jetDrop models.JetDrop, stateType models.StateType) models.Sta
 	}
 }
 
-// InitRequestDB returns generated state
-func InitRequestDB(jetDrop models.JetDrop) models.Request {
+// InitRequestDB returns generated request
+func InitRequestDB(jetDrop models.JetDrop, requestType models.RequestType) models.Request {
 	return models.Request{
 		RecordReference:          gen.ID().Bytes(),
-		Type:                     models.Incoming,
+		Type:                     requestType,
 		CallType:                 "CTMethod",
 		ObjectReference:          gen.ID().Bytes(),
 		CallerObjectReference:    gen.ID().Bytes(),
 		CalleeObjectReference:    gen.ID().Bytes(),
-		APIRequestID:             "0b9ac245-2522-4364-9059-efc17907ce54",
+		APIRequestID:             "434bee7829e0703b22aed6776410bb9f",
 		ReasonRequestReference:   gen.ID().Bytes(),
 		OriginalRequestReference: gen.ID().Bytes(),
-		Method:                   "CreateMember",
+		Method:                   "AddNewMemberToPublicKeyMap",
 		Arguments:                GenerateRandBytes(),
-		Immutable:                false,
+		Immutable:                true,
 		IsOriginalRequest:        false,
 		PrototypeReference:       gen.ID().Bytes(),
 		Hash:                     GenerateRandBytes(),

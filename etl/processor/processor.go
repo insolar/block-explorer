@@ -173,6 +173,7 @@ func (p *Processor) process(ctx context.Context, jd *types.JetDrop) error {
 				PulseNumber:            mjd.PulseNumber,
 				Order:                  i,
 				Timestamp:              mjd.Timestamp,
+				Hash:                   r.(types.Request).Hash,
 			})
 			mrs = append(mrs, models.Record{
 				Reference:       models.ReferenceFromTypes(r.Reference()),

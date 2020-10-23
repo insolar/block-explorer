@@ -53,10 +53,20 @@ func (s *Storage) initJD(jetDrop models.JetDrop, records []models.IRecord, pulse
 		}
 
 		for _, record := range records {
-			state, ok := record.(models.State)
-			if ok {
-				if err := tx.Save(&state).Error; err != nil { // nolint
-					return errors.Wrap(err, "error while saving state")
+			switch record.TypeOf() {
+			case models.StateRecord:
+				state, ok := record.(models.State)
+				if ok {
+					if err := tx.Save(&state).Error; err != nil { // nolint
+						return errors.Wrap(err, "error while saving state")
+					}
+				}
+			case models.RequestRecord:
+				request, ok := record.(models.Request)
+				if ok {
+					if err := tx.Save(&request).Error; err != nil { // nolint
+						return errors.Wrap(err, "error while saving request")
+					}
 				}
 			}
 			record, ok := record.(models.Record)
