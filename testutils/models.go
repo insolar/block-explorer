@@ -59,6 +59,31 @@ func InitStatedDB(jetDrop models.JetDrop, stateType models.StateType) models.Sta
 	}
 }
 
+// InitRequestDB returns generated request
+func InitRequestDB(jetDrop models.JetDrop, requestType models.RequestType) models.Request {
+	return models.Request{
+		RecordReference:          gen.ID().Bytes(),
+		Type:                     requestType,
+		CallType:                 "CTMethod",
+		ObjectReference:          gen.ID().Bytes(),
+		CallerObjectReference:    gen.ID().Bytes(),
+		CalleeObjectReference:    gen.ID().Bytes(),
+		APIRequestID:             "434bee7829e0703b22aed6776410bb9f",
+		ReasonRequestReference:   gen.ID().Bytes(),
+		OriginalRequestReference: gen.ID().Bytes(),
+		Method:                   "AddNewMemberToPublicKeyMap",
+		Arguments:                GenerateRandBytes(),
+		Immutable:                true,
+		IsOriginalRequest:        false,
+		PrototypeReference:       gen.ID().Bytes(),
+		Hash:                     GenerateRandBytes(),
+		JetID:                    jetDrop.JetID,
+		PulseNumber:              jetDrop.PulseNumber,
+		Order:                    1,
+		Timestamp:                jetDrop.Timestamp,
+	}
+}
+
 // InitJetDropDB returns generated jet drop with provided pulse
 func InitJetDropDB(pulse models.Pulse) models.JetDrop {
 	return models.JetDrop{
