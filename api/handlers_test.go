@@ -483,10 +483,10 @@ func TestRequest_HappyPath(t *testing.T) {
 	jetDrop := testutils.InitJetDropDB(pulse)
 	err = testutils.CreateJetDrop(testDB, jetDrop)
 	require.NoError(t, err)
-	request := testutils.InitRequestDB(jetDrop)
+	request := testutils.InitRequestDB(jetDrop, models.Incoming)
 	err = testutils.CreateRequest(testDB, request)
 	require.NoError(t, err)
-	notExpectRequest := testutils.InitRequestDB(jetDrop)
+	notExpectRequest := testutils.InitRequestDB(jetDrop, models.Incoming)
 	err = testutils.CreateRequest(testDB, notExpectRequest)
 	require.NoError(t, err)
 
