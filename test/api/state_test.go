@@ -28,6 +28,7 @@ const (
 )
 
 func TestGetStateByStateReference(t *testing.T) {
+	t.Skip("endpoint deprecated in be-api specification")
 	ts := integration.NewBlockExplorerTestSetup(t).WithHTTPServer(t)
 	defer ts.Stop(t)
 
