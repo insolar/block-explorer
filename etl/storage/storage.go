@@ -186,6 +186,15 @@ func (s *Storage) GetState(ref models.Reference) (models.State, error) {
 	return state, err
 }
 
+// GetRequest returns request or original request with provided reference from db.
+func (s *Storage) GetRequest(ref models.Reference) (models.Request, error) {
+	timer := prometheus.NewTimer(GetRequestDuration)
+	defer timer.ObserveDuration()
+	request := models.Request{}
+	err := s.db.Where("record_reference = ?", []byte(ref)).First(&request).Error
+	return request, err
+}
+
 func CheckIndex(i string) (int, int, error) {
 	index := strings.Split(i, ":")
 	if len(index) != 2 {
