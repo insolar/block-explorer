@@ -139,3 +139,18 @@ func (c *BEApiClient) JetDropRecordsWithError(t *testing.T, jetDropID string, lo
 	LogHTTP(t, rawResponse, nil, response)
 	return response
 }
+
+func (c *BEApiClient) State(t *testing.T, stateReference string) (response client.StateResponse200) {
+	response, rawResponse, err := c.Client.RequestResultAndStateApi.State(context.Background(), stateReference)
+	require.NoError(t, err)
+	LogHTTP(t, rawResponse, nil, response)
+	return response
+}
+
+func (c *BEApiClient) StateWithError(t *testing.T, stateReference string, expError string) (response client.StateResponse200) {
+	response, rawResponse, err := c.Client.RequestResultAndStateApi.State(context.Background(), stateReference)
+	require.Error(t, err)
+	require.Equal(t, expError, err.Error())
+	LogHTTP(t, rawResponse, nil, response)
+	return response
+}
