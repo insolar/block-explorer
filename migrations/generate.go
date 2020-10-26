@@ -15,8 +15,8 @@ import (
 	"github.com/insolar/block-explorer/instrumentation/converter"
 )
 
-// generateRandBytesLen generates random bytes array with len
-func generateRandBytesLen(l int) ([]byte, error) {
+// GenerateRandBytesLen generates random bytes array with len
+func GenerateRandBytesLen(l int) ([]byte, error) {
 	b := make([]byte, l)
 	if _, err := crand.Read(b); err != nil {
 		return []byte{}, err
@@ -24,7 +24,7 @@ func generateRandBytesLen(l int) ([]byte, error) {
 	return b, nil
 }
 
-func generatePulses(amount int) []models.Pulse {
+func GeneratePulses(amount int) []models.Pulse {
 	tNow := time.Now().Unix()
 	startPulse := 4000000
 	var pulses []models.Pulse
@@ -53,11 +53,11 @@ func notNullJetID() string {
 	}
 }
 
-func generateJetDrops(pulses []models.Pulse, amount int) ([]models.JetDrop, error) {
+func GenerateJetDrops(pulses []models.Pulse, amount int) ([]models.JetDrop, error) {
 	tNow := time.Now().Unix()
 	var jDrops []models.JetDrop
 	for i := 1; i < amount; i++ {
-		rawData, err := generateRandBytesLen(32)
+		rawData, err := GenerateRandBytesLen(32)
 		if err != nil {
 			return []models.JetDrop{}, err
 		}
@@ -79,11 +79,11 @@ func generateJetDrops(pulses []models.Pulse, amount int) ([]models.JetDrop, erro
 	return jDrops, nil
 }
 
-func generateRecords(jDrops []models.JetDrop, amount int) ([]models.Record, error) {
+func GenerateRecords(jDrops []models.JetDrop, amount int) ([]models.Record, error) {
 	tNow := time.Now().Unix()
 	var records []models.Record
 	for i := 1; i < amount; i++ {
-		rawData, err := generateRandBytesLen(32)
+		rawData, err := GenerateRandBytesLen(32)
 		if err != nil {
 			return []models.Record{}, err
 		}
@@ -110,14 +110,14 @@ func generateRecords(jDrops []models.JetDrop, amount int) ([]models.Record, erro
 }
 
 func generateData(tx *gorm.DB, cfg *configuration.TestDB) error {
-	pulses := generatePulses(cfg.TestPulses)
+	pulses := GeneratePulses(cfg.TestPulses)
 	for _, p := range pulses {
 		pulse := p
 		if err := tx.Save(&pulse).Error; err != nil {
 			return err
 		}
 	}
-	jdrops, err := generateJetDrops(pulses, cfg.TestJetDrops)
+	jdrops, err := GenerateJetDrops(pulses, cfg.TestJetDrops)
 	if err != nil {
 		return err
 	}
@@ -127,7 +127,7 @@ func generateData(tx *gorm.DB, cfg *configuration.TestDB) error {
 			return err
 		}
 	}
-	records, err := generateRecords(jdrops, cfg.TestRecords)
+	records, err := GenerateRecords(jdrops, cfg.TestRecords)
 	if err != nil {
 		return err
 	}
