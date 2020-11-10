@@ -1,8 +1,6 @@
 name: system-tests
 on:
   pull_request:
-  schedule:
-    - cron: 0 2 * * *
 env:
   KUBECONFIG: k3s.yaml
   GITOPS_BRANCH: ?ref=REL-57
